@@ -1,0 +1,440 @@
+{
+  "market": [
+    {
+      "pattern": [
+        "restructuring",
+        "reorg"
+      ],
+      "keyword": "restructuring cycle",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "layoff",
+        "headcount cut"
+      ],
+      "keyword": "workforce reduction",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "hiring freeze",
+        "freeze hiring"
+      ],
+      "keyword": "hiring freeze",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "market downturn",
+        "demand drop"
+      ],
+      "keyword": "demand contraction",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "market growth",
+        "expanding demand"
+      ],
+      "keyword": "demand expansion",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "competitive pressure",
+        "intense competition"
+      ],
+      "keyword": "competition pressure",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "regulatory change",
+        "policy shift"
+      ],
+      "keyword": "policy volatility",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "interest rate",
+        "macro rate"
+      ],
+      "keyword": "rate sensitivity",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "ai automation",
+        "automation wave"
+      ],
+      "keyword": "automation disruption",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "budget cut",
+        "cost pressure"
+      ],
+      "keyword": "budget compression",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "customer churn",
+        "churn risk"
+      ],
+      "keyword": "customer churn",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "pipeline stability",
+        "stable pipeline"
+      ],
+      "keyword": "pipeline stability",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "industry consolidation",
+        "merger trend"
+      ],
+      "keyword": "industry consolidation",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "global exposure",
+        "cross-border risk"
+      ],
+      "keyword": "global exposure",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "currency risk",
+        "fx volatility"
+      ],
+      "keyword": "currency volatility",
+      "weight": 1
+    }
+  ],
+  "internal": [
+    {
+      "pattern": [
+        "manager support",
+        "leadership backing"
+      ],
+      "keyword": "leadership support",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "sponsor",
+        "executive sponsor"
+      ],
+      "keyword": "sponsor support",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "unclear reporting",
+        "reporting confusion"
+      ],
+      "keyword": "reporting ambiguity",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "decision bottleneck",
+        "approval delay"
+      ],
+      "keyword": "decision bottleneck",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "toxic team",
+        "toxic culture"
+      ],
+      "keyword": "culture toxicity",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "team conflict",
+        "stakeholder conflict"
+      ],
+      "keyword": "stakeholder conflict",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "workload surge",
+        "overload"
+      ],
+      "keyword": "workload overload",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "burnout risk",
+        "burnout"
+      ],
+      "keyword": "burnout risk",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "promotion path",
+        "career ladder"
+      ],
+      "keyword": "promotion pathway",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "process clarity",
+        "clear process"
+      ],
+      "keyword": "process clarity",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "org stability",
+        "stable leadership"
+      ],
+      "keyword": "leadership stability",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "leadership change",
+        "new leadership"
+      ],
+      "keyword": "leadership turnover",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "role ambiguity",
+        "scope ambiguity"
+      ],
+      "keyword": "role ambiguity",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "resource constraint",
+        "limited resources"
+      ],
+      "keyword": "resource constraint",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "cross-team dependency",
+        "handoff risk"
+      ],
+      "keyword": "handoff dependency",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "slow execution",
+        "execution delay"
+      ],
+      "keyword": "execution lag",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "performance pressure",
+        "kpi pressure"
+      ],
+      "keyword": "performance pressure",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "policy mismatch",
+        "governance friction"
+      ],
+      "keyword": "governance friction",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "workflow chaos",
+        "chaotic workflow"
+      ],
+      "keyword": "workflow instability",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "knowledge silo",
+        "siloed knowledge"
+      ],
+      "keyword": "knowledge silo",
+      "weight": 1
+    }
+  ],
+  "personal": [
+    {
+      "pattern": [
+        "savings",
+        "cash buffer"
+      ],
+      "keyword": "savings buffer",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "emergency fund",
+        "rainy day fund"
+      ],
+      "keyword": "emergency reserve",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "plan b",
+        "fallback plan"
+      ],
+      "keyword": "backup pathway",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "family support",
+        "parental support"
+      ],
+      "keyword": "family support",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "spouse income",
+        "partner income"
+      ],
+      "keyword": "household income",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "offer in hand",
+        "confirmed offer"
+      ],
+      "keyword": "offer certainty",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "return option",
+        "boomerang option"
+      ],
+      "keyword": "return option",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "visa secured",
+        "visa status"
+      ],
+      "keyword": "visa security",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "health issue",
+        "medical concern"
+      ],
+      "keyword": "health constraint",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "confidence drop",
+        "self doubt"
+      ],
+      "keyword": "confidence strain",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "learning plan",
+        "upskilling"
+      ],
+      "keyword": "skill development",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "risk tolerance",
+        "risk comfort"
+      ],
+      "keyword": "risk tolerance",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "network support",
+        "mentor network"
+      ],
+      "keyword": "network support",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "childcare burden",
+        "caregiving"
+      ],
+      "keyword": "care burden",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "commute stress",
+        "location constraint"
+      ],
+      "keyword": "location constraint",
+      "weight": 1
+    },
+    {
+      "pattern": [
+        "stressful",
+        "stress",
+        "burnout",
+        "exhausted",
+        "fatigue"
+      ],
+      "keyword": "energy sustainability",
+      "weight": 2
+    },
+    {
+      "pattern": [
+        "no safety net",
+        "almost no safety net",
+        "no plan b",
+        "no backup",
+        "no fallback"
+      ],
+      "keyword": "safety net capacity",
+      "weight": 3
+    },
+    {
+      "pattern": [
+        "going to work",
+        "stay put",
+        "do nothing",
+        "status quo"
+      ],
+      "keyword": "status quo continuity",
+      "weight": 1
+    }
+  ]
+}

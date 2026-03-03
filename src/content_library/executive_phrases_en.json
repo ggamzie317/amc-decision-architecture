@@ -1,0 +1,85 @@
+{
+  "verdict": {
+    "pivot_hold": [
+      "A pivot-hold posture appears structurally prudent while downside exposure remains active.",
+      "Pivot-hold status appears appropriate under current signal quality and bounded optionality.",
+      "A measured pivot-hold stance appears indicated until core uncertainty narrows."
+    ],
+    "conditional_go": [
+      "A conditional go appears supportable, subject to continued risk containment and signal confirmation.",
+      "Conditional go appears viable while key assumptions remain within monitored bounds.",
+      "A conditional go posture appears justified if current structural signals hold."
+    ],
+    "hold": [
+      "Hold appears structurally consistent while evidence depth remains below conviction threshold.",
+      "A hold position appears warranted under current uncertainty concentration.",
+      "Hold appears appropriate until directional signals show sustained improvement."
+    ],
+    "go": [
+      "Go appears structurally supportable with manageable residual uncertainty.",
+      "A go posture appears feasible under current stability and exposure conditions.",
+      "Go appears justified, provided present signal balance remains intact."
+    ],
+    "pivot": [
+      "Pivot appears structurally reasonable given current asymmetry in upside and downside.",
+      "A pivot direction appears indicated under prevailing signal mix.",
+      "Pivot appears supportable while preserving controlled optionality."
+    ]
+  },
+  "outlook": {
+    "upward": [
+      "Structural outlook appears supportive, with upward evidence currently outweighing adverse signals.",
+      "Outlook appears constructive with improving directional clarity.",
+      "Forward structure appears favorable, though monitoring remains required."
+    ],
+    "mixed": [
+      "Structural outlook appears mixed, with offsetting strengths and unresolved constraints.",
+      "Outlook suggests partial support, while critical uncertainties remain open.",
+      "Signal pattern indicates a mixed trajectory with conditional forward visibility."
+    ],
+    "flat": [
+      "Structural outlook appears flat, with limited evidence of near-term directional change.",
+      "Outlook indicates a stable but low-momentum structure.",
+      "Signal profile suggests a flat trajectory under current conditions."
+    ],
+    "declining": [
+      "Structural outlook appears weakening, with downside indicators gaining relative weight.",
+      "Outlook indicates deteriorating support across core decision variables.",
+      "Signal balance suggests declining forward conditions at present."
+    ]
+  },
+  "risk": {
+    "low": [
+      "Structural risk appears contained, with control points visible across key dependencies.",
+      "Risk profile indicates manageable exposure under current assumptions.",
+      "Risk concentration appears limited relative to available buffers."
+    ],
+    "moderate": [
+      "Structural risk appears moderate, with selective pressure points requiring active monitoring.",
+      "Risk pattern suggests manageable but non-trivial exposure.",
+      "Risk profile indicates partial containment with identifiable fragilities."
+    ],
+    "high": [
+      "Structural risk appears elevated, with concentrated downside and limited buffer depth.",
+      "Risk pattern indicates high sensitivity to adverse variance.",
+      "Risk profile suggests material fragility in current conditions."
+    ]
+  },
+  "personal_exposure": {
+    "high_fit_managed_risk": [
+      "Personal fit appears strong while exposure remains within manageable bounds.",
+      "Fit signal suggests alignment, with risk currently manageable under staged pacing.",
+      "Alignment appears credible and exposure appears controllable with active guardrails."
+    ],
+    "high_fit_high_risk": [
+      "Personal fit appears strong, though exposure remains elevated under current buffers.",
+      "Fit indicates traction while risk intensity suggests cautious sequencing.",
+      "Alignment appears favorable but exposure concentration remains high."
+    ],
+    "misaligned": [
+      "Personal fit appears partial, with exposure constraints limiting near-term confidence.",
+      "Fit signal indicates misalignment under current risk conditions.",
+      "Alignment appears insufficient relative to present exposure profile."
+    ]
+  }
+}

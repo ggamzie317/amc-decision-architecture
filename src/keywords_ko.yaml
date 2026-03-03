@@ -1,0 +1,253 @@
+market:
+  - pattern:
+      - "구조조정"
+      - "조직개편"
+    keyword: "구조조정 압력"
+    weight: 3
+  - pattern:
+      - "감원"
+      - "인력 감축"
+    keyword: "인력감축 리스크"
+    weight: 3
+  - pattern:
+      - "채용 동결"
+      - "채용중단"
+    keyword: "채용동결 신호"
+    weight: 2
+  - pattern:
+      - "수요 둔화"
+      - "시장 침체"
+    keyword: "수요둔화 압력"
+    weight: 3
+  - pattern:
+      - "수요 확대"
+      - "시장 성장"
+    keyword: "수요확대 기회"
+    weight: 2
+  - pattern:
+      - "경쟁 심화"
+      - "경쟁 압박"
+    keyword: "경쟁심화 압박"
+    weight: 2
+  - pattern:
+      - "규제 변화"
+      - "정책 변화"
+    keyword: "정책변화 리스크"
+    weight: 2
+  - pattern:
+      - "금리 변동"
+      - "거시 변수"
+    keyword: "금리변동 민감도"
+    weight: 1
+  - pattern:
+      - "자동화"
+      - "ai 도입"
+    keyword: "자동화 전환"
+    weight: 2
+  - pattern:
+      - "예산 삭감"
+      - "비용 절감"
+    keyword: "예산축소 압력"
+    weight: 2
+  - pattern:
+      - "고객 이탈"
+      - "이탈 위험"
+    keyword: "고객이탈 리스크"
+    weight: 2
+  - pattern:
+      - "파이프라인 안정"
+      - "안정적 파이프라인"
+    keyword: "파이프라인 안정성"
+    weight: 2
+  - pattern:
+      - "산업 재편"
+      - "인수합병"
+    keyword: "산업재편 흐름"
+    weight: 2
+  - pattern:
+      - "해외 변수"
+      - "글로벌 노출"
+    keyword: "글로벌 노출도"
+    weight: 1
+  - pattern:
+      - "환율 변동"
+      - "환위험"
+    keyword: "환율변동 리스크"
+    weight: 1
+internal:
+  - pattern:
+      - "리더십 지원"
+      - "관리자 지원"
+    keyword: "리더십 지원도"
+    weight: 3
+  - pattern:
+      - "스폰서"
+      - "후원자"
+    keyword: "스폰서 지원"
+    weight: 3
+  - pattern:
+      - "보고 라인 불명확"
+      - "보고체계 혼선"
+    keyword: "보고체계 불명확"
+    weight: 2
+  - pattern:
+      - "의사결정 지연"
+      - "승인 지연"
+    keyword: "의사결정 병목"
+    weight: 2
+  - pattern:
+      - "독성 문화"
+      - "조직 문화 문제"
+    keyword: "조직문화 독성"
+    weight: 3
+  - pattern:
+      - "팀 갈등"
+      - "이해관계 갈등"
+    keyword: "이해관계 갈등"
+    weight: 2
+  - pattern:
+      - "업무 과부하"
+      - "과중한 업무"
+    keyword: "업무과부하 위험"
+    weight: 2
+  - pattern:
+      - "번아웃"
+      - "소진"
+    keyword: "번아웃 위험"
+    weight: 3
+  - pattern:
+      - "승진 경로"
+      - "커리어 사다리"
+    keyword: "승진경로 가시성"
+    weight: 2
+  - pattern:
+      - "프로세스 명확"
+      - "절차 명확"
+    keyword: "프로세스 명확성"
+    weight: 1
+  - pattern:
+      - "조직 안정"
+      - "리더십 안정"
+    keyword: "리더십 안정성"
+    weight: 2
+  - pattern:
+      - "리더십 교체"
+      - "경영진 변경"
+    keyword: "리더십 변동"
+    weight: 2
+  - pattern:
+      - "역할 모호"
+      - "책임 모호"
+    keyword: "역할정의 모호성"
+    weight: 2
+  - pattern:
+      - "자원 부족"
+      - "리소스 부족"
+    keyword: "자원제약 압력"
+    weight: 2
+  - pattern:
+      - "협업 의존"
+      - "핸드오프"
+    keyword: "협업의존 리스크"
+    weight: 1
+  - pattern:
+      - "실행 지연"
+      - "진행 지연"
+    keyword: "실행속도 저하"
+    weight: 1
+  - pattern:
+      - "성과 압박"
+      - "kpi 압박"
+    keyword: "성과압박 강도"
+    weight: 2
+  - pattern:
+      - "정책 불일치"
+      - "거버넌스 마찰"
+    keyword: "거버넌스 마찰"
+    weight: 2
+  - pattern:
+      - "업무 혼선"
+      - "워크플로우 혼란"
+    keyword: "워크플로우 불안정"
+    weight: 2
+  - pattern:
+      - "지식 사일로"
+      - "정보 단절"
+    keyword: "지식사일로 위험"
+    weight: 1
+personal:
+  - pattern:
+      - "비상금"
+      - "비상자금"
+    keyword: "비상자금 버퍼"
+    weight: 3
+  - pattern:
+      - "저축"
+      - "현금 여유"
+    keyword: "저축완충 여력"
+    weight: 3
+  - pattern:
+      - "플랜 b"
+      - "대안 계획"
+    keyword: "대안경로 준비"
+    weight: 2
+  - pattern:
+      - "가족 지원"
+      - "가족 도움"
+    keyword: "가족지원 기반"
+    weight: 2
+  - pattern:
+      - "배우자 소득"
+      - "배우자 수입"
+    keyword: "가계소득 안정성"
+    weight: 2
+  - pattern:
+      - "오퍼 확정"
+      - "오퍼 보유"
+    keyword: "오퍼확정 상태"
+    weight: 3
+  - pattern:
+      - "복귀 옵션"
+      - "원복 가능"
+    keyword: "복귀옵션 보유"
+    weight: 2
+  - pattern:
+      - "비자 확보"
+      - "비자 안정"
+    keyword: "비자안정 상태"
+    weight: 2
+  - pattern:
+      - "건강 문제"
+      - "의료 부담"
+    keyword: "건강제약 요인"
+    weight: 2
+  - pattern:
+      - "자신감 저하"
+      - "자기 의심"
+    keyword: "자신감 부담"
+    weight: 1
+  - pattern:
+      - "학습 계획"
+      - "역량 강화"
+    keyword: "역량개발 계획"
+    weight: 1
+  - pattern:
+      - "위험 선호"
+      - "리스크 성향"
+    keyword: "리스크성향 수준"
+    weight: 1
+  - pattern:
+      - "네트워크 지원"
+      - "멘토 지원"
+    keyword: "네트워크 지원"
+    weight: 1
+  - pattern:
+      - "육아 부담"
+      - "돌봄 부담"
+    keyword: "돌봄부담 요인"
+    weight: 2
+  - pattern:
+      - "통근 부담"
+      - "지역 제약"
+    keyword: "지역제약 부담"
+    weight: 1
