@@ -14,6 +14,7 @@ from scoring.completeness import compute_completeness
 from scoring.diagnosis import build_diagnosis
 from scoring.entity import infer_entity_type
 from scoring.exposure import compute_exposure
+from scoring.external_snapshot import build_external_snapshot as build_external_snapshot_by_type, infer_snapshot_type
 from scoring.external_tags import compute_external_structural_tags
 from scoring.fifwm import build_fifwm, build_fifwm_subscore
 from scoring.motivation import classify_motivation
@@ -504,6 +505,11 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["External_Tag_InstitutionalVolatility"] = fixed_external["institutional_volatility"]
     payload["External_Tag_MobilityLoad"] = fixed_external["mobility_load"]
     payload["external_structural_tags"] = dict(fixed_external)
+
+    snapshot_type = infer_snapshot_type(payload.get("external_inputs", {}))
+    snapshot_block = build_external_snapshot_by_type(snapshot_type, payload.get("external_structural_tags", {}))
+    payload["External_Snapshot_Type"] = snapshot_type
+    payload["External_Snapshot"] = snapshot_block
 
     external_snapshot = build_external_snapshot(payload.get("external_inputs", {}), fixed_external)
     payload.update(external_snapshot)

@@ -32,6 +32,7 @@ from scoring.exposure import score_round_display
 from scoring.external_tags import compute_external_structural_tags
 from scoring.safetynet import safety_net_internal
 from scoring.urgency import urgency_multiplier
+from scoring.external_snapshot import infer_snapshot_type
 
 
 class PipelineTests(unittest.TestCase):
@@ -433,6 +434,10 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(tags["income_compression"], "medium")
         self.assertEqual(tags["irreversibility"], "medium")
         self.assertEqual(tags["mobility_load"], "medium")
+
+    def test_external_snapshot_type_industry_default(self):
+        t = infer_snapshot_type({"decision_text": "considering a promotion or role change"})
+        self.assertEqual(t, "industry_transition")
 
 
 if __name__ == "__main__":
