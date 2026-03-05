@@ -1,8 +1,13 @@
 import os
+import re
+import json
+import tempfile
+import subprocess
 import sys
 import unittest
 
 sys.path.insert(0, os.path.abspath("src"))
+from docx import Document
 
 from heuristics import infer_q27_baseline, infer_q28_safety
 from intake_parser import (
@@ -26,7 +31,7 @@ from keyword_extractor import extract_keywords, variability_bar
 from report_payload_builder import build_executive_blocks, build_hybrid_plan, build_report_payload
 from content_library.external_snapshot import build_external_snapshot
 from content_library.executive_sentences import build_executive_sentences
-from scoring.bars import bar_5, render_bar
+from scoring.bars import build_bar, bar_5, render_bar
 from scoring.entity import infer_entity_type
 from scoring.exposure import score_round_display
 from scoring.external_tags import compute_external_structural_tags
@@ -191,18 +196,23 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(score_round_display(1.5), 2)
 
     def test_bar_mapping_internal_fraction(self):
-        bar_half = bar_5(0.5)
-        bar_one = bar_5(1.0)
-        self.assertLess(bar_half.count("▮"), bar_one.count("▮"))
+        self.assertEqual(bar_5(0), "▯▯▯")
+        self.assertEqual(bar_5(1), "▮▯▯")
+        self.assertEqual(bar_5(2), "▮▮▮")
 
     def test_bar_zero(self):
-        self.assertEqual(render_bar(0.0), "▯▯▯▯▯")
+        self.assertEqual(render_bar(0.0), "▯▯▯")
 
     def test_bar_full(self):
-        self.assertEqual(render_bar(2.0), "▮▮▮▮▮")
+        self.assertEqual(render_bar(2.0), "▮▮▮")
 
     def test_bar_mid(self):
-        self.assertEqual(render_bar(1.0), "▮▮▯▯▯")
+        self.assertEqual(render_bar(1.0), "▮▯▯")
+
+    def test_build_bar_mapping(self):
+        self.assertEqual(build_bar(0), "▯▯▯")
+        self.assertEqual(build_bar(1), "▮▯▯")
+        self.assertEqual(build_bar(2), "▮▮▮")
 
     def test_urgency_multiplier_values(self):
         self.assertEqual(urgency_multiplier("Within 3 months"), 1.15)
@@ -438,6 +448,45 @@ class PipelineTests(unittest.TestCase):
     def test_external_snapshot_type_industry_default(self):
         t = infer_snapshot_type({"decision_text": "considering a promotion or role change"})
         self.assertEqual(t, "industry_transition")
+
+    def test_external_snapshot_payload_and_merge_no_placeholders(self):
+        payload = build_report_payload(self._base_row(), "en")
+        self.assertIn("External_Snapshot_Type", payload)
+        self.assertIn("External_Snapshot", payload)
+        snapshot_lines = [ln.strip() for ln in str(payload["External_Snapshot"]).splitlines() if ln.strip()]
+        self.assertEqual(len(snapshot_lines), 4)
+        self.assertEqual(len(set(snapshot_lines)), 4)
+
+        with tempfile.TemporaryDirectory() as td:
+            template_path = os.path.join(td, "template.docx")
+            payload_path = os.path.join(td, "payload.json")
+            out_path = os.path.join(td, "merged.docx")
+
+            doc = Document()
+            doc.add_paragraph("External Snapshot Type: {{External_Snapshot_Type}}")
+            doc.add_paragraph("{{External_Snapshot}}")
+            doc.save(template_path)
+
+            with open(payload_path, "w", encoding="utf-8") as fh:
+                json.dump(payload, fh, ensure_ascii=False)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    "src/merge_docx.py",
+                    "--template",
+                    template_path,
+                    "--payload",
+                    payload_path,
+                    "--out",
+                    out_path,
+                ],
+                check=True,
+            )
+
+            merged = Document(out_path)
+            full_text = "\n".join(p.text for p in merged.paragraphs)
+            self.assertNotRegex(full_text, re.compile(r"\{\{External_Snapshot[^}]*\}\}"))
 
 
 if __name__ == "__main__":
