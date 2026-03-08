@@ -41,6 +41,7 @@ from scoring.external_snapshot import infer_snapshot_type
 
 
 class PipelineTests(unittest.TestCase):
+    Q6_DECISION_KEY = "Section 2. Main Career Decision\n\n6. What is the main career decision you are considering right now? \n(Paragraph)"
     ALLOWED_COMPLETENESS = {
         "High (qualitative signals available).",
         "Moderate (some qualitative inputs limited).",
@@ -449,9 +450,31 @@ class PipelineTests(unittest.TestCase):
         t = infer_snapshot_type({"decision_text": "considering a promotion or role change"})
         self.assertEqual(t, "industry_transition")
 
+    def test_external_snapshot_title_academic(self):
+        payload = build_report_payload(
+            {
+                **self._base_row(),
+                self.Q6_DECISION_KEY: "Full-time PhD application decision",
+            },
+            "en",
+        )
+        self.assertEqual(payload["External_Snapshot_Title"], "External Snapshot — Academic Transition")
+
+    def test_external_snapshot_title_industry(self):
+        payload = build_report_payload(
+            {
+                **self._base_row(),
+                self.Q6_DECISION_KEY: "Considering a promotion or role change",
+            },
+            "en",
+        )
+        self.assertEqual(payload["External_Snapshot_Title"], "External Snapshot — Industry Transition")
+
     def test_external_snapshot_payload_and_merge_no_placeholders(self):
         payload = build_report_payload(self._base_row(), "en")
         self.assertIn("External_Snapshot_Type", payload)
+        self.assertIn("External_Snapshot_Title", payload)
+        self.assertTrue(str(payload["External_Snapshot_Title"]).strip())
         self.assertIn("External_Snapshot", payload)
         snapshot_lines = [ln.strip() for ln in str(payload["External_Snapshot"]).splitlines() if ln.strip()]
         self.assertEqual(len(snapshot_lines), 4)

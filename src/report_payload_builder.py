@@ -40,6 +40,7 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Exec_Block_3_Line",
     "Exec_Block_4_Title",
     "Exec_Block_4_Line",
+    "External_Snapshot_Title",
     "D1_Core_Read",
     "D2_Core_Read",
     "D3_Core_Read",
@@ -509,7 +510,52 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     snapshot_type = infer_snapshot_type(payload.get("external_inputs", {}))
     snapshot_block = build_external_snapshot_by_type(snapshot_type, payload.get("external_structural_tags", {}))
     payload["External_Snapshot_Type"] = snapshot_type
-    payload["External_Snapshot"] = snapshot_block
+    if snapshot_type == "academic_transition":
+        payload["External_Snapshot_Title"] = "External Snapshot — Academic Transition"
+    elif snapshot_type == "industry_transition":
+        payload["External_Snapshot_Title"] = "External Snapshot — Industry Transition"
+    else:
+        payload["External_Snapshot_Title"] = "External Snapshot"
+    ordered_snapshot_lines = []
+    if isinstance(snapshot_block, dict):
+        for key in (
+            "mobility",
+            "credential",
+            "income",
+            "industry_direction",
+            "competition",
+            "compensation",
+            "transition",
+        ):
+            val = str(snapshot_block.get(key, "") or "").strip()
+            if val:
+                ordered_snapshot_lines.append(val)
+        # Keep exactly four lines for template rendering consistency.
+        deduped = []
+        for line in ordered_snapshot_lines:
+            if line not in deduped:
+                deduped.append(line)
+            if len(deduped) == 4:
+                break
+        while len(deduped) < 4:
+            deduped.append("Signals remain mixed; external structure indicates conditional visibility.")
+        payload["External_Snapshot"] = "\n".join(deduped[:4])
+    else:
+        text = str(snapshot_block or "").strip()
+        if text:
+            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+            while len(lines) < 4:
+                lines.append("Signals remain mixed; external structure indicates conditional visibility.")
+            payload["External_Snapshot"] = "\n".join(lines[:4])
+        else:
+            payload["External_Snapshot"] = "\n".join(
+                [
+                    "Signals suggest transition structure remains conditionally feasible.",
+                    "Buffer and income continuity signals remain mixed under current assumptions.",
+                    "Credential and competition pressure appears moderate in the current path set.",
+                    "Mobility and institutional friction remains visible but not dominant.",
+                ]
+            )
 
     external_snapshot = build_external_snapshot(payload.get("external_inputs", {}), fixed_external)
     payload.update(external_snapshot)
