@@ -535,6 +535,17 @@ class PipelineTests(unittest.TestCase):
             full_text = "\n".join(p.text for p in merged.paragraphs)
             self.assertNotRegex(full_text, re.compile(r"\{\{External_Snapshot[^}]*\}\}"))
 
+    def test_internal_structural_snapshot_exists(self):
+        payload = build_report_payload(self._base_row(), "en")
+        self.assertIn("Internal_Structural_Snapshot", payload)
+
+    def test_internal_structural_snapshot_non_empty_and_not_placeholder(self):
+        payload = build_report_payload(self._base_row(), "en")
+        text = str(payload.get("Internal_Structural_Snapshot", "")).strip()
+        self.assertTrue(text)
+        self.assertNotIn("{{", text)
+        self.assertNotIn("TBD", text.upper())
+
 
 if __name__ == "__main__":
     unittest.main()

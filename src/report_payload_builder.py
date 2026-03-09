@@ -41,6 +41,7 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Exec_Block_4_Title",
     "Exec_Block_4_Line",
     "External_Snapshot_Title",
+    "Internal_Structural_Snapshot",
     "Mobility_Type",
     "Mobility_Reading",
     "Mobility_Implication",
@@ -254,6 +255,23 @@ def _build_mobility_block(decision_text: str, options_text: str) -> Dict[str, st
         "Mobility_Reading": "This decision suggests a structural expansion from the current path into an adjacent domain.",
         "Mobility_Implication": "Skill transfer remains partially intact, though positioning must be re-established.",
     }
+
+
+def _build_internal_structural_snapshot(payload: Dict[str, object], fixed_external: Dict[str, str]) -> str:
+    income = str(fixed_external.get("income_compression", "medium")).strip().lower()
+    irr = str(fixed_external.get("irreversibility", "medium")).strip().lower()
+    cred = str(fixed_external.get("credential_dependency", "medium")).strip().lower()
+    safety = str(payload.get("Q28_Safety_Class", "") or "").strip().lower()
+
+    if income == "high" or safety in {"none", "low"}:
+        if irr == "high" or cred == "high":
+            return "Structural risk appears concentrated in downside pressure, transition irreversibility, and gate dependency."
+        return "Current structural exposure remains centered on downside pressure and limited safety margin."
+    if irr == "high" or cred == "high":
+        return "Internal pressure is driven primarily by transition irreversibility and credential dependency."
+    if income == "medium" or irr == "medium" or cred == "medium":
+        return "Structural exposure remains mixed, with pressure distributed across economic and transition variables."
+    return "Structural exposure remains mixed, with concentrated pressure in key transition variables."
 
 
 def _score_state(score: float) -> str:
@@ -596,6 +614,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["External_Tag_InstitutionalVolatility"] = fixed_external["institutional_volatility"]
     payload["External_Tag_MobilityLoad"] = fixed_external["mobility_load"]
     payload["external_structural_tags"] = dict(fixed_external)
+    payload["Internal_Structural_Snapshot"] = _build_internal_structural_snapshot(payload, fixed_external)
 
     mobility = _build_mobility_block(
         decision_text=str(payload.get("external_inputs", {}).get("decision_text", "") or ""),
