@@ -470,6 +470,30 @@ class PipelineTests(unittest.TestCase):
         )
         self.assertEqual(payload["External_Snapshot_Title"], "External Snapshot — Industry Transition")
 
+    def test_mobility_block_category_switch_for_academic_transition(self):
+        payload = build_report_payload(
+            {
+                **self._base_row(),
+                self.Q6_DECISION_KEY: "Move from corporate leadership to a full-time PhD in academia.",
+            },
+            "en",
+        )
+        self.assertEqual(payload["Mobility_Type"], "Category Switch")
+        self.assertTrue(str(payload["Mobility_Reading"]).strip())
+        self.assertTrue(str(payload["Mobility_Implication"]).strip())
+
+    def test_mobility_block_internal_expansion_for_promotion(self):
+        payload = build_report_payload(
+            {
+                **self._base_row(),
+                self.Q6_DECISION_KEY: "Internal promotion with bigger scope in the same company.",
+            },
+            "en",
+        )
+        self.assertEqual(payload["Mobility_Type"], "Internal Expansion")
+        self.assertTrue(str(payload["Mobility_Reading"]).strip())
+        self.assertTrue(str(payload["Mobility_Implication"]).strip())
+
     def test_external_snapshot_payload_and_merge_no_placeholders(self):
         payload = build_report_payload(self._base_row(), "en")
         self.assertIn("External_Snapshot_Type", payload)

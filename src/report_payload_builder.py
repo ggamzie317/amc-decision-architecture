@@ -41,6 +41,9 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Exec_Block_4_Title",
     "Exec_Block_4_Line",
     "External_Snapshot_Title",
+    "Mobility_Type",
+    "Mobility_Reading",
+    "Mobility_Implication",
     "D1_Core_Read",
     "D2_Core_Read",
     "D3_Core_Read",
@@ -164,6 +167,93 @@ def _find_row_value_contains(row: Dict[str, object], needle: str) -> str:
         if target in str(key).casefold():
             return str(value or "").strip()
     return ""
+
+
+def _has_any(text: str, keywords: Iterable[str]) -> bool:
+    return any(k in text for k in keywords)
+
+
+def _build_mobility_block(decision_text: str, options_text: str) -> Dict[str, str]:
+    decision = str(decision_text or "").strip().lower()
+    options = str(options_text or "").strip().lower()
+    corpus = f"{decision} {options}".strip()
+
+    # Weak-signal deterministic fallback.
+    if not corpus:
+        return {
+            "Mobility_Type": "Category Expansion",
+            "Mobility_Reading": "This decision suggests a structural expansion from the current path into an adjacent domain.",
+            "Mobility_Implication": "Skill transfer remains partially intact, though positioning must be re-established.",
+        }
+
+    switch_signals = (
+        "phd",
+        "doctoral",
+        "academia",
+        "academic",
+        "founder",
+        "startup",
+        "government research",
+        "public sector",
+        "leave corporate",
+    )
+    internal_signals = (
+        "internal",
+        "promotion",
+        "same company",
+        "within current organization",
+        "expand scope internally",
+    )
+    substitution_signals = (
+        "same role",
+        "similar role",
+        "another firm",
+        "another company",
+        "switch company",
+        "same field",
+        "same logic",
+        "peer company",
+    )
+    expansion_signals = (
+        "business development",
+        "strategy",
+        "adjacent",
+        "broader scope",
+        "cross-functional",
+        "sales to strategy",
+        "execution to",
+    )
+
+    if _has_any(corpus, switch_signals):
+        return {
+            "Mobility_Type": "Category Switch",
+            "Mobility_Reading": "This decision represents a structural category switch across distinct career architectures.",
+            "Mobility_Implication": "Existing seniority does not transfer directly, increasing transition friction.",
+        }
+    if _has_any(corpus, internal_signals):
+        return {
+            "Mobility_Type": "Internal Expansion",
+            "Mobility_Reading": "This decision indicates structural expansion within the existing organizational path.",
+            "Mobility_Implication": "Transferability remains high, with execution risk concentrated in scope scaling.",
+        }
+    if _has_any(corpus, substitution_signals):
+        return {
+            "Mobility_Type": "Substitution Shift",
+            "Mobility_Reading": "This decision reflects a structural substitution into a similar role architecture at a different platform.",
+            "Mobility_Implication": "Core capability transfer remains intact, while context adaptation drives early friction.",
+        }
+    if _has_any(corpus, expansion_signals):
+        return {
+            "Mobility_Type": "Category Expansion",
+            "Mobility_Reading": "This decision suggests a structural expansion from the current path into an adjacent domain.",
+            "Mobility_Implication": "Skill transfer remains partially intact, though positioning must be re-established.",
+        }
+
+    return {
+        "Mobility_Type": "Category Expansion",
+        "Mobility_Reading": "This decision suggests a structural expansion from the current path into an adjacent domain.",
+        "Mobility_Implication": "Skill transfer remains partially intact, though positioning must be re-established.",
+    }
 
 
 def _score_state(score: float) -> str:
@@ -506,6 +596,14 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["External_Tag_InstitutionalVolatility"] = fixed_external["institutional_volatility"]
     payload["External_Tag_MobilityLoad"] = fixed_external["mobility_load"]
     payload["external_structural_tags"] = dict(fixed_external)
+
+    mobility = _build_mobility_block(
+        decision_text=str(payload.get("external_inputs", {}).get("decision_text", "") or ""),
+        options_text=str(payload.get("external_inputs", {}).get("options_text", "") or ""),
+    )
+    payload["Mobility_Type"] = mobility["Mobility_Type"]
+    payload["Mobility_Reading"] = mobility["Mobility_Reading"]
+    payload["Mobility_Implication"] = mobility["Mobility_Implication"]
 
     snapshot_type = infer_snapshot_type(payload.get("external_inputs", {}))
     snapshot_block = build_external_snapshot_by_type(snapshot_type, payload.get("external_structural_tags", {}))
