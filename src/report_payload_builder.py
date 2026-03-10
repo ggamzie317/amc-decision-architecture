@@ -45,6 +45,10 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Mobility_Type",
     "Mobility_Reading",
     "Mobility_Implication",
+    "Value_Current_Path",
+    "Value_Transition_Path",
+    "Value_Structure_Reading",
+    "Value_Structure_Implication",
     "D1_Core_Read",
     "D2_Core_Read",
     "D3_Core_Read",
@@ -272,6 +276,93 @@ def _build_internal_structural_snapshot(payload: Dict[str, object], fixed_extern
     if income == "medium" or irr == "medium" or cred == "medium":
         return "Structural exposure remains mixed, with pressure distributed across economic and transition variables."
     return "Structural exposure remains mixed, with concentrated pressure in key transition variables."
+
+
+def _build_value_structure_block(payload: Dict[str, object], fixed_external: Dict[str, str]) -> Dict[str, str]:
+    decision = str(payload.get("external_inputs", {}).get("decision_text", "") or "").lower()
+    options = str(payload.get("external_inputs", {}).get("options_text", "") or "").lower()
+    q27 = str(payload.get("Q27_raw", "") or "").lower()
+    q28 = str(payload.get("Q28_raw", "") or "").lower()
+    corpus = f"{decision} {options} {q27} {q28}".strip()
+
+    income = str(fixed_external.get("income_compression", "medium")).lower()
+    safety = str(payload.get("Q28_Safety_Class", "") or "").lower()
+    weak_buffer = income == "high" or safety in {"none", "low"} or any(
+        t in corpus for t in ("no safety net", "almost no safety net", "no savings", "low buffer")
+    )
+
+    transition_heavy = any(
+        t in corpus
+        for t in (
+            "phd",
+            "doctoral",
+            "degree",
+            "study",
+            "relocation",
+            "relocate",
+            "quit",
+            "resign",
+            "academia",
+        )
+    )
+    continuity = any(
+        t in corpus for t in ("internal", "promotion", "same company", "same role", "expand scope internally")
+    )
+
+    current_path = "Current path retains institutional familiarity and lower switching cost."
+    transition_path = "Higher transition cost with possible long-term positioning upside."
+    reading = (
+        "Current structure preserves economic continuity, while the transition path increases long-term optionality at higher near-term cost."
+    )
+    implication = (
+        "The core trade-off remains between immediate continuity and longer-horizon structural upside."
+    )
+
+    if continuity and not transition_heavy:
+        current_path = "Established role continuity with preserved income structure."
+        transition_path = "Transition path remains adjacent, with moderate scope expansion and limited switching friction."
+        reading = (
+            "Current and transition structures remain closely aligned, with continuity preserved across core value drivers."
+        )
+        implication = (
+            "Decision tension remains limited, with emphasis on scope calibration rather than structural re-positioning."
+        )
+    elif transition_heavy and weak_buffer:
+        current_path = "Stable income, existing seniority, and lower transition cost."
+        transition_path = (
+            "Lower short-term income, higher credential dependency, and expanded long-term optionality."
+        )
+        reading = (
+            "The transition path weakens short-term stability while potentially expanding long-term positioning value."
+        )
+        implication = (
+            "The decision turns on whether near-term compression is acceptable relative to long-term repositioning value."
+        )
+    elif transition_heavy:
+        current_path = "Current path retains institutional familiarity and lower switching cost."
+        transition_path = "Higher transition cost with possible long-term positioning upside."
+        reading = (
+            "Current structure preserves economic continuity, while the transition path increases long-term optionality at higher near-term cost."
+        )
+        implication = (
+            "The core trade-off remains between immediate continuity and longer-horizon structural upside."
+        )
+    elif weak_buffer:
+        current_path = "Established role continuity with preserved income structure."
+        transition_path = "Reduced immediate stability with greater structural re-positioning potential."
+        reading = (
+            "Current path protects near-term stability, while transition value remains conditional under tighter safety margins."
+        )
+        implication = (
+            "Primary tension is the balance between downside compression and future positioning optionality."
+        )
+
+    return {
+        "Value_Current_Path": current_path,
+        "Value_Transition_Path": transition_path,
+        "Value_Structure_Reading": reading,
+        "Value_Structure_Implication": implication,
+    }
 
 
 def _score_state(score: float) -> str:
@@ -615,6 +706,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["External_Tag_MobilityLoad"] = fixed_external["mobility_load"]
     payload["external_structural_tags"] = dict(fixed_external)
     payload["Internal_Structural_Snapshot"] = _build_internal_structural_snapshot(payload, fixed_external)
+    payload.update(_build_value_structure_block(payload, fixed_external))
 
     mobility = _build_mobility_block(
         decision_text=str(payload.get("external_inputs", {}).get("decision_text", "") or ""),

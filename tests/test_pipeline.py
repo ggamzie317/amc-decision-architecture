@@ -546,6 +546,44 @@ class PipelineTests(unittest.TestCase):
         self.assertNotIn("{{", text)
         self.assertNotIn("TBD", text.upper())
 
+    def test_value_structure_fields_exist(self):
+        payload = build_report_payload(self._base_row(), "en")
+        for key in (
+            "Value_Current_Path",
+            "Value_Transition_Path",
+            "Value_Structure_Reading",
+            "Value_Structure_Implication",
+        ):
+            self.assertIn(key, payload)
+
+    def test_value_structure_fields_non_empty(self):
+        payload = build_report_payload(self._base_row(), "en")
+        for key in (
+            "Value_Current_Path",
+            "Value_Transition_Path",
+            "Value_Structure_Reading",
+            "Value_Structure_Implication",
+        ):
+            self.assertIsInstance(payload[key], str)
+            self.assertTrue(payload[key].strip())
+
+    def test_value_structure_phd_case_mentions_key_tension_terms(self):
+        payload = build_report_payload(
+            {
+                **self._base_row(),
+                self.Q6_DECISION_KEY: "Considering quitting current role for a full-time PhD transition.",
+                "8. What career options are you currently considering?\nPlease briefly describe each option in 2–3 sentences.\nYou may list them as Option 1, Option 2, etc.": "PhD study with relocation versus staying in current corporate track.",
+                Q28_HEADER: "I have almost no safety net and low savings buffer.",
+            },
+            "en",
+        )
+        combined = (
+            f"{payload.get('Value_Structure_Reading', '')} {payload.get('Value_Structure_Implication', '')}"
+        ).lower()
+        self.assertTrue(
+            any(term in combined for term in ("stability", "compression", "optionality", "transition cost"))
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
