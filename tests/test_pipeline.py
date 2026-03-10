@@ -584,6 +584,37 @@ class PipelineTests(unittest.TestCase):
             any(term in combined for term in ("stability", "compression", "optionality", "transition cost"))
         )
 
+    def test_temperament_fields_exist_and_non_empty(self):
+        payload = build_report_payload(self._base_row(), "en")
+        for key in ("Temperament_Profile", "Temperament_Reading", "Temperament_Implication"):
+            self.assertIn(key, payload)
+            self.assertIsInstance(payload[key], str)
+            self.assertTrue(payload[key].strip())
+
+    def test_temperament_enterprising_case(self):
+        payload = build_report_payload(
+            {
+                **self._base_row(),
+                Q23_HEADER: "maximize upside with visible risk acceptance",
+                Q24_HEADER: "comfortable with taking visible risks",
+                Q25_HEADER: "all-in commitment once chosen",
+            },
+            "en",
+        )
+        self.assertEqual(payload["Temperament_Profile"], "Enterprising leaning")
+
+    def test_temperament_defensive_case(self):
+        payload = build_report_payload(
+            {
+                **self._base_row(),
+                Q23_HEADER: "protecting the downside first",
+                Q24_HEADER: "not comfortable with visible risks",
+                Q25_HEADER: "small, reversible testing steps gradually",
+            },
+            "en",
+        )
+        self.assertEqual(payload["Temperament_Profile"], "Defensive leaning")
+
 
 if __name__ == "__main__":
     unittest.main()

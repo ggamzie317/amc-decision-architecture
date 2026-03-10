@@ -49,6 +49,8 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Value_Transition_Path",
     "Value_Structure_Reading",
     "Value_Structure_Implication",
+    "Temperament_Reading",
+    "Temperament_Implication",
     "D1_Core_Read",
     "D2_Core_Read",
     "D3_Core_Read",
@@ -362,6 +364,61 @@ def _build_value_structure_block(payload: Dict[str, object], fixed_external: Dic
         "Value_Transition_Path": transition_path,
         "Value_Structure_Reading": reading,
         "Value_Structure_Implication": implication,
+    }
+
+
+def _build_temperament_block(row: Dict[str, object]) -> Dict[str, str]:
+    q23 = _find_row_value_contains(row, "23.")
+    q24 = _find_row_value_contains(row, "24.")
+    q25 = _find_row_value_contains(row, "25.")
+    corpus = f"{q23} {q24} {q25}".lower()
+
+    enterprising_terms = (
+        "maximize",
+        "upside",
+        "comfortable",
+        "visible risk",
+        "all-in",
+        "all in",
+        "aggressive",
+        "push",
+        "strong commitment",
+        "impulsive",
+    )
+    defensive_terms = (
+        "protect",
+        "downside",
+        "not comfortable",
+        "reversible",
+        "caution",
+        "stability",
+        "gradually",
+        "testing",
+        "small steps",
+        "risk-averse",
+        "risk averse",
+    )
+
+    enterprising_score = sum(1 for t in enterprising_terms if t in corpus)
+    defensive_score = sum(1 for t in defensive_terms if t in corpus)
+
+    if enterprising_score >= defensive_score + 1 and enterprising_score >= 2:
+        profile = "Enterprising leaning"
+        reading = "Behavioral profile suggests strong commitment once direction is chosen."
+        implication = "This increases tolerance for high-friction moves if structural upside remains credible."
+    elif defensive_score >= enterprising_score + 1 and defensive_score >= 2:
+        profile = "Defensive leaning"
+        reading = "Behavioral profile indicates preference for downside containment and reversible movement."
+        implication = "This favors staged testing over irreversible transition under uncertainty."
+    else:
+        profile = "Balanced"
+        reading = "Behavioral profile reflects mixed optimization between stability and opportunity."
+        implication = "This supports a conditional path in which risk is reduced before commitment."
+
+    return {
+        "Temperament_Profile": profile,
+        "Temperament_Reading": reading,
+        "Temperament_Implication": implication,
     }
 
 
@@ -707,6 +764,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["external_structural_tags"] = dict(fixed_external)
     payload["Internal_Structural_Snapshot"] = _build_internal_structural_snapshot(payload, fixed_external)
     payload.update(_build_value_structure_block(payload, fixed_external))
+    payload.update(_build_temperament_block(row))
 
     mobility = _build_mobility_block(
         decision_text=str(payload.get("external_inputs", {}).get("decision_text", "") or ""),
