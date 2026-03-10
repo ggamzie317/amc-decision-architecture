@@ -615,6 +615,35 @@ class PipelineTests(unittest.TestCase):
         )
         self.assertEqual(payload["Temperament_Profile"], "Defensive leaning")
 
+    def test_dashboard_fields_exist(self):
+        payload = build_report_payload(self._base_row(), "en")
+        for key in (
+            "Dashboard_Verdict",
+            "Dashboard_Core_Insight",
+            "Dashboard_Risk_Summary",
+            "Dashboard_Value_Summary",
+            "Dashboard_Mobility_Summary",
+            "Dashboard_Temperament_Summary",
+        ):
+            self.assertIn(key, payload)
+
+    def test_dashboard_fields_non_empty_strings(self):
+        payload = build_report_payload(self._base_row(), "en")
+        for key in (
+            "Dashboard_Verdict",
+            "Dashboard_Core_Insight",
+            "Dashboard_Risk_Summary",
+            "Dashboard_Value_Summary",
+            "Dashboard_Mobility_Summary",
+            "Dashboard_Temperament_Summary",
+        ):
+            self.assertIsInstance(payload[key], str)
+            self.assertTrue(payload[key].strip())
+
+    def test_dashboard_verdict_matches_verdict_label(self):
+        payload = build_report_payload(self._base_row(), "en")
+        self.assertEqual(payload["Dashboard_Verdict"], payload["Verdict_Label"])
+
 
 if __name__ == "__main__":
     unittest.main()

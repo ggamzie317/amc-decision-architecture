@@ -49,6 +49,12 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Value_Transition_Path",
     "Value_Structure_Reading",
     "Value_Structure_Implication",
+    "Dashboard_Verdict",
+    "Dashboard_Core_Insight",
+    "Dashboard_Risk_Summary",
+    "Dashboard_Value_Summary",
+    "Dashboard_Mobility_Summary",
+    "Dashboard_Temperament_Summary",
     "Temperament_Reading",
     "Temperament_Implication",
     "D1_Core_Read",
@@ -422,6 +428,61 @@ def _build_temperament_block(row: Dict[str, object]) -> Dict[str, str]:
     }
 
 
+def _build_dashboard_block(payload: Dict[str, object]) -> Dict[str, str]:
+    verdict = str(payload.get("Verdict_Label", "") or "Conditional")
+    internal = str(payload.get("Internal_Structural_Snapshot", "") or "").strip()
+    external_title = str(payload.get("External_Snapshot_Title", "") or "").strip()
+    value_reading = str(payload.get("Value_Structure_Reading", "") or "").strip()
+    mobility_type = str(payload.get("Mobility_Type", "") or "").strip()
+    mobility_reading = str(payload.get("Mobility_Reading", "") or "").strip()
+    temperament_profile = str(payload.get("Temperament_Profile", "") or "").strip()
+    temperament_reading = str(payload.get("Temperament_Reading", "") or "").strip()
+
+    core = "Structural signals remain mixed, with selective upside under contained transition pressure."
+    if internal and external_title:
+        if "high" in internal.lower() or "concentrated" in internal.lower():
+            core = "Structural upside remains conditional, with near-term pressure concentrated in key transition variables."
+        else:
+            core = "Structural context remains balanced, with internal and external signals indicating conditional viability."
+
+    risk = "Risk remains mixed across internal and external structures."
+    if internal:
+        risk = internal
+    elif external_title:
+        risk = f"Risk framing remains anchored in {external_title.lower()} conditions."
+
+    value_summary = (
+        value_reading
+        if value_reading
+        else "Value structure remains a trade-off between near-term continuity and longer-horizon repositioning."
+    )
+
+    mobility_summary = (
+        f"Mobility profile indicates {mobility_type.lower()} with transition friction concentrated in execution detail."
+        if mobility_type
+        else "Mobility profile indicates a conditional shift with moderate structural friction."
+    )
+    if mobility_reading:
+        mobility_summary = mobility_reading
+
+    temperament_summary = (
+        f"Temperament profile is {temperament_profile.lower()}, shaping commitment pace under uncertainty."
+        if temperament_profile
+        else "Temperament profile remains balanced across opportunity pursuit and downside containment."
+    )
+    if temperament_reading:
+        temperament_summary = temperament_reading
+
+    return {
+        "Dashboard_Verdict": verdict,
+        "Dashboard_Core_Insight": core,
+        "Dashboard_Risk_Summary": risk,
+        "Dashboard_Value_Summary": value_summary,
+        "Dashboard_Mobility_Summary": mobility_summary,
+        "Dashboard_Temperament_Summary": temperament_summary,
+    }
+
+
 def _score_state(score: float) -> str:
     x = float(score)
     if x <= 0:
@@ -783,6 +844,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
         payload["External_Snapshot_Title"] = "External Snapshot — Industry Transition"
     else:
         payload["External_Snapshot_Title"] = "External Snapshot"
+    payload.update(_build_dashboard_block(payload))
     ordered_snapshot_lines = []
     if isinstance(snapshot_block, dict):
         for key in (
