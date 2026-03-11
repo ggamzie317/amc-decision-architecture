@@ -535,6 +535,21 @@ class PipelineTests(unittest.TestCase):
             full_text = "\n".join(p.text for p in merged.paragraphs)
             self.assertNotRegex(full_text, re.compile(r"\{\{External_Snapshot[^}]*\}\}"))
 
+    def test_external_snapshot_labeled_fields_exist_and_clean(self):
+        payload = build_report_payload(self._base_row(), "en")
+        keys = (
+            "External_Market_Direction",
+            "External_Competition_Pressure",
+            "External_Economic_Pressure",
+            "External_Transition_Friction",
+        )
+        for key in keys:
+            self.assertIn(key, payload)
+            value = str(payload[key]).strip()
+            self.assertTrue(value)
+            self.assertNotIn("{{", value)
+            self.assertNotIn("TBD", value.upper())
+
     def test_internal_structural_snapshot_exists(self):
         payload = build_report_payload(self._base_row(), "en")
         self.assertIn("Internal_Structural_Snapshot", payload)

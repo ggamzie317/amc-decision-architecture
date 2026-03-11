@@ -55,6 +55,10 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Dashboard_Value_Summary",
     "Dashboard_Mobility_Summary",
     "Dashboard_Temperament_Summary",
+    "External_Market_Direction",
+    "External_Competition_Pressure",
+    "External_Economic_Pressure",
+    "External_Transition_Friction",
     "Temperament_Reading",
     "Temperament_Implication",
     "D1_Core_Read",
@@ -483,6 +487,75 @@ def _build_dashboard_block(payload: Dict[str, object]) -> Dict[str, str]:
     }
 
 
+def _build_external_snapshot_fields(payload: Dict[str, object], fixed_external: Dict[str, str]) -> Dict[str, str]:
+    competition = str(fixed_external.get("competition_density", "medium")).lower()
+    credential = str(fixed_external.get("credential_dependency", "medium")).lower()
+    income = str(fixed_external.get("income_compression", "medium")).lower()
+    irreversibility = str(fixed_external.get("irreversibility", "medium")).lower()
+    mobility = str(fixed_external.get("mobility_load", "medium")).lower()
+    volatility = str(fixed_external.get("institutional_volatility", "medium")).lower()
+    safety = str(payload.get("Q28_Safety_Class", "") or "").lower()
+
+    if volatility == "high":
+        market_direction = (
+            "Market direction appears conditionally supportive, while policy and cycle sensitivity remain elevated across the target path."
+        )
+    elif volatility == "low":
+        market_direction = (
+            "Market direction appears relatively stable, with demand visibility supported by lower external variance in the near-term window."
+        )
+    else:
+        market_direction = (
+            "Market direction appears mixed, with directional visibility present but still moderated by external policy and cycle uncertainty."
+        )
+
+    if competition == "high" or credential == "high":
+        competition_pressure = (
+            "Competition pressure appears high, with screening intensity concentrated in credential gates and differentiated positioning requirements."
+        )
+    elif competition == "low" and credential == "low":
+        competition_pressure = (
+            "Competition pressure appears moderate-to-low, with entry barriers comparatively lighter and positional differentiation more transferable."
+        )
+    else:
+        competition_pressure = (
+            "Competition pressure appears moderate, with selective gate effects and uneven differentiation pressure across adjacent option sets."
+        )
+
+    if income == "high" or safety in {"none", "low"}:
+        economic_pressure = (
+            "Economic pressure appears elevated, as near-term income continuity and downside buffer resilience remain structurally constrained."
+        )
+    elif income == "low" and safety in {"strong", "high"}:
+        economic_pressure = (
+            "Economic pressure appears contained, with continuity support reducing immediate compression risk during transition execution."
+        )
+    else:
+        economic_pressure = (
+            "Economic pressure appears moderate, with manageable continuity risk but visible sensitivity to short-term cash-flow disruption."
+        )
+
+    if mobility == "high" or irreversibility == "high":
+        transition_friction = (
+            "Transition friction appears high, with path irreversibility and mobility constraints increasing execution drag across commitment stages."
+        )
+    elif mobility == "low" and irreversibility == "low":
+        transition_friction = (
+            "Transition friction appears lower, with reversibility and mobility conditions supporting phased movement across role boundaries."
+        )
+    else:
+        transition_friction = (
+            "Transition friction appears moderate, with partial reversibility but meaningful execution load concentrated in adaptation phases."
+        )
+
+    return {
+        "External_Market_Direction": market_direction,
+        "External_Competition_Pressure": competition_pressure,
+        "External_Economic_Pressure": economic_pressure,
+        "External_Transition_Friction": transition_friction,
+    }
+
+
 def _score_state(score: float) -> str:
     x = float(score)
     if x <= 0:
@@ -823,6 +896,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["External_Tag_InstitutionalVolatility"] = fixed_external["institutional_volatility"]
     payload["External_Tag_MobilityLoad"] = fixed_external["mobility_load"]
     payload["external_structural_tags"] = dict(fixed_external)
+    payload.update(_build_external_snapshot_fields(payload, fixed_external))
     payload["Internal_Structural_Snapshot"] = _build_internal_structural_snapshot(payload, fixed_external)
     payload.update(_build_value_structure_block(payload, fixed_external))
     payload.update(_build_temperament_block(row))
