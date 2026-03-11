@@ -566,12 +566,26 @@ class PipelineTests(unittest.TestCase):
             "External_Comparative_Reading",
             "External_Comparative_Implication",
         )
+        table_keys = (
+            "External_OptionA_Market_Direction",
+            "External_OptionA_Competition_Pressure",
+            "External_OptionA_Economic_Pressure",
+            "External_OptionA_Transition_Friction",
+            "External_OptionB_Market_Direction",
+            "External_OptionB_Competition_Pressure",
+            "External_OptionB_Economic_Pressure",
+            "External_OptionB_Transition_Friction",
+        )
         for key in keys:
             self.assertIn(key, payload)
             value = str(payload[key]).strip()
             self.assertTrue(value)
             self.assertNotIn("{{", value)
             self.assertNotIn("TBD", value.upper())
+        for key in table_keys:
+            self.assertLessEqual(len(str(payload[key]).split()), 32)
+        self.assertLessEqual(len(str(payload["External_Comparative_Reading"]).split()), 40)
+        self.assertLessEqual(len(str(payload["External_Comparative_Implication"]).split()), 40)
         self.assertNotIn("(1 line)", payload["External_Comparative_Reading"])
         self.assertNotIn("(1 line)", payload["External_Comparative_Implication"])
 

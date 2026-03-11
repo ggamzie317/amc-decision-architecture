@@ -569,6 +569,17 @@ def _build_external_snapshot_fields(payload: Dict[str, object], fixed_external: 
 
 
 def _build_external_comparative_fields(payload: Dict[str, object], fixed_external: Dict[str, str]) -> Dict[str, str]:
+    def compact_sentence(text: str, max_words: int) -> str:
+        cleaned = " ".join(str(text or "").replace(";", ",").split()).strip()
+        if not cleaned:
+            return ""
+        words = cleaned.split(" ")
+        if len(words) > max_words:
+            cleaned = " ".join(words[:max_words]).rstrip(" ,.")
+        if not cleaned.endswith("."):
+            cleaned = cleaned.rstrip(" ,.") + "."
+        return cleaned
+
     income = str(fixed_external.get("income_compression", "medium")).lower()
     competition = str(fixed_external.get("competition_density", "medium")).lower()
     friction = "high" if (
@@ -605,7 +616,7 @@ def _build_external_comparative_fields(payload: Dict[str, object], fixed_externa
     reading = "The two options differ primarily in continuity, external pressure, and transition cost."
     implication = "The core trade-off lies between preserved continuity and greater long-horizon repositioning."
 
-    return {
+    table_fields = {
         "External_OptionA_Label": "Option A",
         "External_OptionA_Market_Direction": option_a_market,
         "External_OptionA_Competition_Pressure": option_a_competition,
@@ -616,9 +627,22 @@ def _build_external_comparative_fields(payload: Dict[str, object], fixed_externa
         "External_OptionB_Competition_Pressure": option_b_competition,
         "External_OptionB_Economic_Pressure": option_b_economic,
         "External_OptionB_Transition_Friction": option_b_friction,
-        "External_Comparative_Reading": reading,
-        "External_Comparative_Implication": implication,
     }
+    for key in (
+        "External_OptionA_Market_Direction",
+        "External_OptionA_Competition_Pressure",
+        "External_OptionA_Economic_Pressure",
+        "External_OptionA_Transition_Friction",
+        "External_OptionB_Market_Direction",
+        "External_OptionB_Competition_Pressure",
+        "External_OptionB_Economic_Pressure",
+        "External_OptionB_Transition_Friction",
+    ):
+        table_fields[key] = compact_sentence(str(table_fields[key]), max_words=28)
+
+    table_fields["External_Comparative_Reading"] = compact_sentence(reading, max_words=36)
+    table_fields["External_Comparative_Implication"] = compact_sentence(implication, max_words=36)
+    return table_fields
 
 
 def _score_state(score: float) -> str:
