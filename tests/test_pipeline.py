@@ -603,6 +603,35 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(str(payload.get("External_OptionA_Market_Direction", "")).strip())
         self.assertEqual(payload["External_Mode"], "comparative")
 
+    def test_external_comparative_status_fields_exist_and_valid_enums(self):
+        payload = build_report_payload(self._base_row(), "en")
+        market_allowed = {"▲ Supportive", "◆ Mixed", "▼ Constrained"}
+        pressure_allowed = {"○ Contained", "◐ Moderate", "● Elevated"}
+        status_keys = (
+            "External_OptionA_Market_Status",
+            "External_OptionA_Competition_Status",
+            "External_OptionA_Economic_Status",
+            "External_OptionA_Transition_Status",
+            "External_OptionB_Market_Status",
+            "External_OptionB_Competition_Status",
+            "External_OptionB_Economic_Status",
+            "External_OptionB_Transition_Status",
+        )
+        for key in status_keys:
+            self.assertIn(key, payload)
+            self.assertTrue(str(payload[key]).strip())
+        self.assertIn(payload["External_OptionA_Market_Status"], market_allowed)
+        self.assertIn(payload["External_OptionB_Market_Status"], market_allowed)
+        for key in (
+            "External_OptionA_Competition_Status",
+            "External_OptionA_Economic_Status",
+            "External_OptionA_Transition_Status",
+            "External_OptionB_Competition_Status",
+            "External_OptionB_Economic_Status",
+            "External_OptionB_Transition_Status",
+        ):
+            self.assertIn(payload[key], pressure_allowed)
+
     def test_internal_structural_snapshot_exists(self):
         payload = build_report_payload(self._base_row(), "en")
         self.assertIn("Internal_Structural_Snapshot", payload)

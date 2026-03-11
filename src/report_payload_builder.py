@@ -71,6 +71,14 @@ _MANDATORY_TEMPLATE_KEYS = [
     "External_OptionB_Transition_Friction",
     "External_Comparative_Reading",
     "External_Comparative_Implication",
+    "External_OptionA_Market_Status",
+    "External_OptionA_Competition_Status",
+    "External_OptionA_Economic_Status",
+    "External_OptionA_Transition_Status",
+    "External_OptionB_Market_Status",
+    "External_OptionB_Competition_Status",
+    "External_OptionB_Economic_Status",
+    "External_OptionB_Transition_Status",
     "External_Mode",
     "Temperament_Reading",
     "Temperament_Implication",
@@ -667,6 +675,57 @@ def _infer_external_mode(payload: Dict[str, object]) -> str:
     return "comparative" if populated >= 6 else "single"
 
 
+def _infer_market_status(sentence: str) -> str:
+    text = str(sentence or "").lower()
+    supportive = ("stronger", "stable", "credible", "positive", "growth", "insulated", "supported")
+    mixed = ("mixed", "cyclical", "volatile", "sensitive", "role-level exposure", "dependent")
+    constrained = ("constrained", "scarce", "limited", "institutionally constrained", "position scarcity")
+    if any(k in text for k in constrained):
+        return "▼ Constrained"
+    if any(k in text for k in supportive):
+        return "▲ Supportive"
+    if any(k in text for k in mixed):
+        return "◆ Mixed"
+    return "◆ Mixed"
+
+
+def _infer_pressure_status(sentence: str) -> str:
+    text = str(sentence or "").lower()
+    contained = ("lower", "limited", "preserved", "continuity", "directly transfer", "contained")
+    moderate = ("moderate", "internal tournament", "mixed", "repeated pressure")
+    elevated = (
+        "high",
+        "elevated",
+        "materially higher",
+        "compression",
+        "reset",
+        "repositioning",
+        "friction",
+        "dependency",
+        "uncertainty",
+    )
+    if any(k in text for k in elevated):
+        return "● Elevated"
+    if any(k in text for k in contained):
+        return "○ Contained"
+    if any(k in text for k in moderate):
+        return "◐ Moderate"
+    return "◐ Moderate"
+
+
+def _build_external_status_fields(payload: Dict[str, object]) -> Dict[str, str]:
+    return {
+        "External_OptionA_Market_Status": _infer_market_status(payload.get("External_OptionA_Market_Direction", "")),
+        "External_OptionA_Competition_Status": _infer_pressure_status(payload.get("External_OptionA_Competition_Pressure", "")),
+        "External_OptionA_Economic_Status": _infer_pressure_status(payload.get("External_OptionA_Economic_Pressure", "")),
+        "External_OptionA_Transition_Status": _infer_pressure_status(payload.get("External_OptionA_Transition_Friction", "")),
+        "External_OptionB_Market_Status": _infer_market_status(payload.get("External_OptionB_Market_Direction", "")),
+        "External_OptionB_Competition_Status": _infer_pressure_status(payload.get("External_OptionB_Competition_Pressure", "")),
+        "External_OptionB_Economic_Status": _infer_pressure_status(payload.get("External_OptionB_Economic_Pressure", "")),
+        "External_OptionB_Transition_Status": _infer_pressure_status(payload.get("External_OptionB_Transition_Friction", "")),
+    }
+
+
 def _score_state(score: float) -> str:
     x = float(score)
     if x <= 0:
@@ -1009,6 +1068,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["external_structural_tags"] = dict(fixed_external)
     payload.update(_build_external_snapshot_fields(payload, fixed_external))
     payload.update(_build_external_comparative_fields(payload, fixed_external))
+    payload.update(_build_external_status_fields(payload))
     payload["External_Mode"] = _infer_external_mode(payload)
     payload["Internal_Structural_Snapshot"] = _build_internal_structural_snapshot(payload, fixed_external)
     payload.update(_build_value_structure_block(payload, fixed_external))
