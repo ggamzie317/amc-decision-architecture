@@ -589,6 +589,20 @@ class PipelineTests(unittest.TestCase):
         self.assertNotIn("(1 line)", payload["External_Comparative_Reading"])
         self.assertNotIn("(1 line)", payload["External_Comparative_Implication"])
 
+    def test_external_mode_exists(self):
+        payload = build_report_payload(self._base_row(), "en")
+        self.assertIn("External_Mode", payload)
+
+    def test_external_mode_allowed_values(self):
+        payload = build_report_payload(self._base_row(), "en")
+        self.assertIn(payload["External_Mode"], {"single", "comparative"})
+
+    def test_external_mode_comparative_when_comparative_fields_populated(self):
+        payload = build_report_payload(self._base_row(), "en")
+        self.assertTrue(str(payload.get("External_Comparative_Reading", "")).strip())
+        self.assertTrue(str(payload.get("External_OptionA_Market_Direction", "")).strip())
+        self.assertEqual(payload["External_Mode"], "comparative")
+
     def test_internal_structural_snapshot_exists(self):
         payload = build_report_payload(self._base_row(), "en")
         self.assertIn("Internal_Structural_Snapshot", payload)

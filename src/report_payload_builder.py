@@ -71,6 +71,7 @@ _MANDATORY_TEMPLATE_KEYS = [
     "External_OptionB_Transition_Friction",
     "External_Comparative_Reading",
     "External_Comparative_Implication",
+    "External_Mode",
     "Temperament_Reading",
     "Temperament_Implication",
     "D1_Core_Read",
@@ -645,6 +646,27 @@ def _build_external_comparative_fields(payload: Dict[str, object], fixed_externa
     return table_fields
 
 
+def _infer_external_mode(payload: Dict[str, object]) -> str:
+    comparative_keys = (
+        "External_OptionA_Market_Direction",
+        "External_OptionA_Competition_Pressure",
+        "External_OptionA_Economic_Pressure",
+        "External_OptionA_Transition_Friction",
+        "External_OptionB_Market_Direction",
+        "External_OptionB_Competition_Pressure",
+        "External_OptionB_Economic_Pressure",
+        "External_OptionB_Transition_Friction",
+        "External_Comparative_Reading",
+        "External_Comparative_Implication",
+    )
+    populated = 0
+    for key in comparative_keys:
+        value = str(payload.get(key, "") or "").strip()
+        if value:
+            populated += 1
+    return "comparative" if populated >= 6 else "single"
+
+
 def _score_state(score: float) -> str:
     x = float(score)
     if x <= 0:
@@ -987,6 +1009,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["external_structural_tags"] = dict(fixed_external)
     payload.update(_build_external_snapshot_fields(payload, fixed_external))
     payload.update(_build_external_comparative_fields(payload, fixed_external))
+    payload["External_Mode"] = _infer_external_mode(payload)
     payload["Internal_Structural_Snapshot"] = _build_internal_structural_snapshot(payload, fixed_external)
     payload.update(_build_value_structure_block(payload, fixed_external))
     payload.update(_build_temperament_block(row))
