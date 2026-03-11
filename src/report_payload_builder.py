@@ -59,6 +59,18 @@ _MANDATORY_TEMPLATE_KEYS = [
     "External_Competition_Pressure",
     "External_Economic_Pressure",
     "External_Transition_Friction",
+    "External_OptionA_Label",
+    "External_OptionA_Market_Direction",
+    "External_OptionA_Competition_Pressure",
+    "External_OptionA_Economic_Pressure",
+    "External_OptionA_Transition_Friction",
+    "External_OptionB_Label",
+    "External_OptionB_Market_Direction",
+    "External_OptionB_Competition_Pressure",
+    "External_OptionB_Economic_Pressure",
+    "External_OptionB_Transition_Friction",
+    "External_Comparative_Reading",
+    "External_Comparative_Implication",
     "Temperament_Reading",
     "Temperament_Implication",
     "D1_Core_Read",
@@ -556,6 +568,59 @@ def _build_external_snapshot_fields(payload: Dict[str, object], fixed_external: 
     }
 
 
+def _build_external_comparative_fields(payload: Dict[str, object], fixed_external: Dict[str, str]) -> Dict[str, str]:
+    income = str(fixed_external.get("income_compression", "medium")).lower()
+    competition = str(fixed_external.get("competition_density", "medium")).lower()
+    friction = "high" if (
+        str(fixed_external.get("irreversibility", "medium")).lower() == "high"
+        or str(fixed_external.get("mobility_load", "medium")).lower() == "high"
+    ) else "medium"
+    if (
+        str(fixed_external.get("irreversibility", "medium")).lower() == "low"
+        and str(fixed_external.get("mobility_load", "medium")).lower() == "low"
+    ):
+        friction = "low"
+
+    # Option A: continuity-first external profile
+    if income == "high":
+        option_a_economic = "Option A preserves stronger continuity under tighter downside constraints, with lower near-term economic disruption risk."
+    else:
+        option_a_economic = "Option A preserves greater continuity and lower near-term friction across the current economic structure."
+    option_a_market = "Option A aligns with known market conditions, preserving directional visibility through lower external variance."
+    option_a_competition = "Option A carries moderate competition pressure with transferable positioning from the current path architecture."
+    option_a_friction = "Option A maintains lower transition friction, supported by higher reversibility and reduced mobility burden."
+
+    # Option B: repositioning-first external profile
+    if competition == "high":
+        option_b_competition = "Option B faces elevated competition pressure, with stronger screening gates and denser credential-linked selection dynamics."
+    else:
+        option_b_competition = "Option B carries higher competitive uncertainty, with differentiation requirements increasing during early positioning stages."
+    if friction == "high":
+        option_b_friction = "Option B carries higher structural friction, with mobility and path-commit constraints increasing execution drag."
+    else:
+        option_b_friction = "Option B carries moderate structural friction, with additional adaptation load during the transition phase."
+    option_b_market = "Option B offers broader repositioning exposure, though directional visibility remains more sensitive to cycle and policy variance."
+    option_b_economic = "Option B carries greater repositioning potential with higher structural friction and less near-term continuity."
+
+    reading = "The two options differ primarily in continuity, external pressure, and transition cost."
+    implication = "The core trade-off lies between preserved continuity and greater long-horizon repositioning."
+
+    return {
+        "External_OptionA_Label": "Option A",
+        "External_OptionA_Market_Direction": option_a_market,
+        "External_OptionA_Competition_Pressure": option_a_competition,
+        "External_OptionA_Economic_Pressure": option_a_economic,
+        "External_OptionA_Transition_Friction": option_a_friction,
+        "External_OptionB_Label": "Option B",
+        "External_OptionB_Market_Direction": option_b_market,
+        "External_OptionB_Competition_Pressure": option_b_competition,
+        "External_OptionB_Economic_Pressure": option_b_economic,
+        "External_OptionB_Transition_Friction": option_b_friction,
+        "External_Comparative_Reading": reading,
+        "External_Comparative_Implication": implication,
+    }
+
+
 def _score_state(score: float) -> str:
     x = float(score)
     if x <= 0:
@@ -897,6 +962,7 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     payload["External_Tag_MobilityLoad"] = fixed_external["mobility_load"]
     payload["external_structural_tags"] = dict(fixed_external)
     payload.update(_build_external_snapshot_fields(payload, fixed_external))
+    payload.update(_build_external_comparative_fields(payload, fixed_external))
     payload["Internal_Structural_Snapshot"] = _build_internal_structural_snapshot(payload, fixed_external)
     payload.update(_build_value_structure_block(payload, fixed_external))
     payload.update(_build_temperament_block(row))

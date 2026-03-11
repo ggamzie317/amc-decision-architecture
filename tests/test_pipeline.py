@@ -550,6 +550,31 @@ class PipelineTests(unittest.TestCase):
             self.assertNotIn("{{", value)
             self.assertNotIn("TBD", value.upper())
 
+    def test_external_comparative_fields_exist_non_empty_and_clean(self):
+        payload = build_report_payload(self._base_row(), "en")
+        keys = (
+            "External_OptionA_Label",
+            "External_OptionA_Market_Direction",
+            "External_OptionA_Competition_Pressure",
+            "External_OptionA_Economic_Pressure",
+            "External_OptionA_Transition_Friction",
+            "External_OptionB_Label",
+            "External_OptionB_Market_Direction",
+            "External_OptionB_Competition_Pressure",
+            "External_OptionB_Economic_Pressure",
+            "External_OptionB_Transition_Friction",
+            "External_Comparative_Reading",
+            "External_Comparative_Implication",
+        )
+        for key in keys:
+            self.assertIn(key, payload)
+            value = str(payload[key]).strip()
+            self.assertTrue(value)
+            self.assertNotIn("{{", value)
+            self.assertNotIn("TBD", value.upper())
+        self.assertNotIn("(1 line)", payload["External_Comparative_Reading"])
+        self.assertNotIn("(1 line)", payload["External_Comparative_Implication"])
+
     def test_internal_structural_snapshot_exists(self):
         payload = build_report_payload(self._base_row(), "en")
         self.assertIn("Internal_Structural_Snapshot", payload)
