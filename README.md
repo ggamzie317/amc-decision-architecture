@@ -10,3 +10,26 @@ This repo will host:
 - Scoring engine (Python)
 - Report schema and templates (Markdown/JSON)
 - LLM prompts for narrative generation (ChatGPT, Perplexity, Gemini, Vertex AI, etc.)
+
+## Manus UI Integration (Baseline Report UI)
+
+The Manus-generated AMC report UI is integrated under `manus-ui/` and preserved as the baseline frontend draft.
+
+Run it locally:
+
+```bash
+cd manus-ui
+pnpm install
+pnpm dev
+```
+
+### Sync generated payload to Manus UI
+
+After generating the latest AMC payload, sync it to the Manus UI data file:
+
+```bash
+python3 src/run_latest.py --xlsx "/Users/kwonkibum/Downloads/AMC – Strategic Career Decision Assessment (Responses).xlsx" --sheet "Scores" --lang en --out output/report_payload_latest.json
+python3 src/sync_payload_to_ui.py
+python3 src/generate_email_draft.py
+cd manus-ui && pnpm dev
+```
