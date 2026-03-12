@@ -12,7 +12,13 @@
  */
 
 import { Card } from "@/components/ui/card";
-import { mockReportPayload as report } from "@/data/mockReportPayload";
+import { mockReportPayload } from "@/data/mockReportPayload";
+import reportPayloadJson from "@/data/reportPayload.json";
+
+const report = {
+  ...mockReportPayload,
+  ...reportPayloadJson,
+} as const;
 
 function symbolFromStatus(status: string): string {
   const text = String(status || "");
