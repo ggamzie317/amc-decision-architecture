@@ -1,0 +1,15 @@
+{
+  "External_Mode": "comparative",
+  "External_OptionA_Label": "Remain in Samsung Track",
+  "External_OptionA_Market_Status": "▲ Supportive",
+  "External_OptionA_Competition_Status": "◐ Moderate",
+  "External_OptionA_Economic_Status": "○ Contained",
+  "External_OptionA_Transition_Status": "○ Contained",
+  "External_OptionB_Label": "Enter a PhD Path",
+  "External_OptionB_Market_Status": "◆ Mixed",
+  "External_OptionB_Competition_Status": "● Elevated",
+  "External_OptionB_Economic_Status": "● Elevated",
+  "External_OptionB_Transition_Status": "● Elevated",
+  "External_Comparative_Reading": "Option A remains embedded in a corporate leadership system with stronger continuity and lower credential dependency, while Option B depends on institutional entry, research signaling, and a more selective long-horizon path.",
+  "External_Comparative_Implication": "The core trade-off lies between continuity of status, income, and organizational capital versus multi-year compression, credential reset, and a more uncertain research-oriented repositioning path."
+}
