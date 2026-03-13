@@ -29,7 +29,8 @@ After generating the latest AMC payload, sync it to the Manus UI data file:
 
 ```bash
 python3 src/run_latest.py --xlsx "/Users/kwonkibum/Downloads/AMC – Strategic Career Decision Assessment (Responses).xlsx" --sheet "Scores" --lang en --out output/report_payload_latest.json
-python3 src/sync_payload_to_ui.py
+python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json
+python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json
 python3 src/generate_email_draft.py
 cd manus-ui && pnpm dev
 ```
