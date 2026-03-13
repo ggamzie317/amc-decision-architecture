@@ -1,15 +1,15 @@
 {
   "External_Mode": "comparative",
-  "External_OptionA_Label": "Remain in Samsung Track",
-  "External_OptionA_Market_Status": "▲ Supportive",
+  "External_OptionA_Label": "Remain in Current Internal Track",
+  "External_OptionA_Market_Status": "◆ Mixed",
   "External_OptionA_Competition_Status": "◐ Moderate",
   "External_OptionA_Economic_Status": "○ Contained",
   "External_OptionA_Transition_Status": "○ Contained",
-  "External_OptionB_Label": "Move to GlobalData Shanghai",
-  "External_OptionB_Market_Status": "◆ Mixed",
-  "External_OptionB_Competition_Status": "◐ Moderate",
-  "External_OptionB_Economic_Status": "● Elevated",
-  "External_OptionB_Transition_Status": "● Elevated",
-  "External_Comparative_Reading": "Option A preserves institutional continuity and income stability, while Option B increases external reset exposure through a commercial and sector-level repositioning move.",
-  "External_Comparative_Implication": "The core trade-off lies between preserving accumulated strategic capital and taking on a higher-friction external shift with mixed long-term signaling value."
+  "External_OptionB_Label": "Move via Internal Job Posting",
+  "External_OptionB_Market_Status": "▲ Supportive",
+  "External_OptionB_Competition_Status": "● Elevated",
+  "External_OptionB_Economic_Status": "◐ Moderate",
+  "External_OptionB_Transition_Status": "◐ Moderate",
+  "External_Comparative_Reading": "Option A preserves familiarity and stability within a slower lane, while Option B increases internal contest intensity in exchange for stronger alignment with favored growth areas.",
+  "External_Comparative_Implication": "The core trade-off lies between preserving a known but potentially plateauing path and accepting moderate internal friction to reposition into a more strategically supported track."
 }
