@@ -32,5 +32,35 @@ python3 src/run_latest.py --xlsx "/Users/kwonkibum/Downloads/AMC – Strategic C
 python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json
 python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json
 python3 src/generate_email_draft.py
+python3 src/generate_audio_summary.py
 cd manus-ui && pnpm dev
 ```
+
+### External layer JSON templates (manual authoring)
+
+Use one of the templates under `output/templates/`:
+
+- `output/templates/external_layer_single.template.json`
+- `output/templates/external_layer_comparative.template.json`
+
+Workflow:
+
+1. Copy the appropriate template.
+2. Fill values with normalized external-layer results.
+3. Save as `output/external_layer_latest.json`.
+4. Merge into the AMC payload:
+   `python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json`
+5. Sync merged payload to Manus UI:
+   `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
+
+### Audio summary script (TTS-ready, no TTS API yet)
+
+Generate a narration-ready AMC audio summary script from the latest payload:
+
+`python3 src/generate_audio_summary.py`
+
+Output file:
+
+- `output/audio_summary_script_latest.txt`
+
+Note: TTS engine integration is intentionally deferred to a later step.
