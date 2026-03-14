@@ -1,0 +1,290 @@
+[
+  {
+    "id": "faq_whole_core_point_v1",
+    "category": "whole_report_recap",
+    "scope": "in-report",
+    "user_question": "What is the core point of this report?",
+    "answer_intent": "Clarify that the report structures decision tension, risk concentration, and commitment conditions rather than prescribing a choice.",
+    "response_structure": [
+      "Summarize the report purpose in one sentence.",
+      "State the central structural tension visible in the case.",
+      "Clarify that the output is interpretive, not recommendation-driven."
+    ],
+    "reflective_followup": "Which tension in the report appears most decision-critical at this stage?"
+  },
+  {
+    "id": "faq_whole_what_show_v1",
+    "category": "whole_report_recap",
+    "scope": "in-report",
+    "user_question": "What does this report show me?",
+    "answer_intent": "Provide a concise map of what the report surfaces across external pressure, internal exposure, and commitment conditions.",
+    "response_structure": [
+      "List the major report layers in compact form.",
+      "Explain that the report makes trade-offs and pressure points visible.",
+      "Connect sections to commitment defensibility."
+    ],
+    "reflective_followup": "Which layer currently changes the decision framing most: external, internal, or commitment conditions?"
+  },
+  {
+    "id": "faq_whole_read_order_v1",
+    "category": "whole_report_recap",
+    "scope": "in-report",
+    "user_question": "In what order should I read this report?",
+    "answer_intent": "Offer a clear sequence for reading without changing report logic.",
+    "response_structure": [
+      "Start with Executive Dashboard and Executive Overview.",
+      "Move to External Snapshot and External Comparative Snapshot if present.",
+      "Then read Structural Risk Diagnosis, Value Structure, Mobility, and Temperament.",
+      "Finish with Structural Scorecard, Hybrid Plan, and Decision Conditions."
+    ],
+    "reflective_followup": "Would a section-by-section recap help isolate where uncertainty remains highest?"
+  },
+  {
+    "id": "faq_whole_audio_vs_written_v1",
+    "category": "whole_report_recap",
+    "scope": "in-report",
+    "user_question": "How is the audio summary different from the written report?",
+    "answer_intent": "Differentiate concise narrative recap from full report detail.",
+    "response_structure": [
+      "Explain that audio is a compressed structural recap.",
+      "Clarify that written report contains fuller section-level detail.",
+      "Note that both maintain the same structural framing and non-recommendation stance."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_section_structural_reading_v1",
+    "category": "section_definition",
+    "scope": "in-report",
+    "user_question": "What does Structural Reading mean?",
+    "answer_intent": "Define structural reading as synthesis of exposure, optionality, and conditions under current assumptions.",
+    "response_structure": [
+      "Define Structural Reading in one sentence.",
+      "Connect it to trade-offs and pressure concentration.",
+      "Clarify that it is an interpretation layer, not a directive."
+    ],
+    "reflective_followup": "Does the current structural reading appear stable or conditional to you?"
+  },
+  {
+    "id": "faq_section_external_snapshot_v1",
+    "category": "section_definition",
+    "scope": "in-report",
+    "user_question": "What does External Snapshot show?",
+    "answer_intent": "Explain that External Snapshot captures current external pressure profile across market, competition, economics, and friction.",
+    "response_structure": [
+      "Name the dimensions covered in External Snapshot.",
+      "Explain how these dimensions shape exposure and timing.",
+      "Tie back to decision conditions."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_section_external_comparative_v1",
+    "category": "section_definition",
+    "scope": "in-report",
+    "user_question": "How should I read External Comparative Snapshot?",
+    "answer_intent": "Explain how to compare Option A and Option B using normalized status and comparative synthesis lines.",
+    "response_structure": [
+      "Read each dimension row across Option A and Option B first.",
+      "Use status symbols to locate relative pressure and friction.",
+      "Use Comparative Reading and Comparative Implication to interpret the main trade-off."
+    ],
+    "reflective_followup": "Which dimension currently creates the largest separation between options?"
+  },
+  {
+    "id": "faq_section_value_structure_v1",
+    "category": "section_definition",
+    "scope": "in-report",
+    "user_question": "What does Career Value Structure compare?",
+    "answer_intent": "Clarify that it compares continuity value versus repositioning value under different time horizons and risk profiles.",
+    "response_structure": [
+      "Explain current-path value logic.",
+      "Explain transition-path value logic.",
+      "State the core value trade-off in one sentence."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_section_mobility_type_v1",
+    "category": "section_definition",
+    "scope": "in-report",
+    "user_question": "What does Mobility Type mean?",
+    "answer_intent": "Define mobility classification as structural movement type and associated friction pattern.",
+    "response_structure": [
+      "Define the mobility class shown in the report.",
+      "Explain what transfers directly and what resets.",
+      "Link mobility to execution complexity."
+    ],
+    "reflective_followup": "Does the mobility framing match how reversible the move appears in your own view?"
+  },
+  {
+    "id": "faq_section_temperament_v1",
+    "category": "section_definition",
+    "scope": "in-report",
+    "user_question": "What does Strategic Temperament show?",
+    "answer_intent": "Explain temperament as decision-behavior profile under uncertainty, not a personality judgment.",
+    "response_structure": [
+      "Define profile orientation in neutral terms.",
+      "Explain how it shapes pacing and commitment style.",
+      "Clarify that it informs interpretation, not recommendation."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_section_decision_conditions_v1",
+    "category": "section_definition",
+    "scope": "in-report",
+    "user_question": "What do Decision Conditions mean?",
+    "answer_intent": "Clarify that Decision Conditions describe when commitment becomes more defensible for a given path.",
+    "response_structure": [
+      "Define Decision Conditions as structural thresholds.",
+      "Explain they reduce ambiguity before commitment.",
+      "Emphasize they are conditional signals, not direct commands."
+    ],
+    "reflective_followup": "Which condition appears least satisfied at the moment?"
+  },
+  {
+    "id": "faq_client_internal_interpretation_v1",
+    "category": "client_reexplanation",
+    "scope": "in-report",
+    "user_question": "How does this report read my internal situation?",
+    "answer_intent": "Re-explain internal exposure using diagnosis, value, mobility, and temperament fields.",
+    "response_structure": [
+      "Summarize internal structural snapshot.",
+      "Connect to value and mobility implications.",
+      "Close with how this affects commitment conditions."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_client_external_interpretation_v1",
+    "category": "client_reexplanation",
+    "scope": "in-report",
+    "user_question": "How does it interpret my external situation?",
+    "answer_intent": "Re-explain external pressure profile and where exposure is concentrated.",
+    "response_structure": [
+      "Summarize market, competition, economic, and transition signals.",
+      "Identify the most constraining external variable.",
+      "Relate external pattern to timing defensibility."
+    ],
+    "reflective_followup": "Which external variable appears most likely to change in the near term?"
+  },
+  {
+    "id": "faq_client_why_economic_high_v1",
+    "category": "client_reexplanation",
+    "scope": "in-report",
+    "user_question": "Why is Economic Pressure high in my case?",
+    "answer_intent": "Ground explanation in continuity risk, buffer conditions, and compression signals in the report.",
+    "response_structure": [
+      "State the specific report signals tied to elevated economic pressure.",
+      "Explain the continuity versus compression implication.",
+      "Connect to decision conditions without prescribing a choice."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_client_why_optionb_exposed_v1",
+    "category": "client_reexplanation",
+    "scope": "in-report",
+    "user_question": "Why does Option B appear more exposed?",
+    "answer_intent": "Explain where Option B carries higher pressure or friction using comparative table and synthesis.",
+    "response_structure": [
+      "Identify dimensions where Option B is more elevated.",
+      "Translate those statuses into structural exposure meaning.",
+      "Tie back to the comparative implication line."
+    ],
+    "reflective_followup": "Does Option B exposure concentrate more in external pressure or transition friction in your reading?"
+  },
+  {
+    "id": "faq_client_main_tradeoff_v1",
+    "category": "client_reexplanation",
+    "scope": "in-report",
+    "user_question": "What is the main trade-off in my decision?",
+    "answer_intent": "State the central continuity versus repositioning tension concisely.",
+    "response_structure": [
+      "Summarize the main trade-off in one sentence.",
+      "Connect to risk concentration and optionality.",
+      "Reference commitment conditions as the deciding frame."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_client_rethink_first_v1",
+    "category": "adjacent",
+    "scope": "adjacent",
+    "user_question": "What should I re-think first?",
+    "answer_intent": "Reframe into highest-uncertainty variable rather than direct recommendation.",
+    "response_structure": [
+      "Identify the most decision-sensitive uncertainty from the report.",
+      "Explain why that variable changes defensibility most.",
+      "Suggest clarifying that variable first as analysis priority."
+    ],
+    "reflective_followup": "Which unresolved assumption currently drives the largest swing in your decision confidence?"
+  },
+  {
+    "id": "faq_offreport_what_choose_v1",
+    "category": "off_report_recommendation",
+    "scope": "off-report",
+    "user_question": "So what should I choose?",
+    "answer_intent": "Set boundary that AMC does not select on behalf of user and recenter on structural conditions.",
+    "response_structure": [
+      "State boundary: no direct recommendation.",
+      "Recenter on the structural trade-off clarified by the report.",
+      "Point to decision conditions that govern defensibility."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_offreport_external_research_v1",
+    "category": "off_report_external_research",
+    "scope": "off-report",
+    "user_question": "Can you research information not included in this report?",
+    "answer_intent": "Acknowledge scope boundary and indicate need for additional external analysis layer.",
+    "response_structure": [
+      "State that request exceeds current report scope.",
+      "Clarify what the present report already covers.",
+      "Suggest additional external analysis as a separate layer."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_offreport_company_school_industry_v1",
+    "category": "off_report_external_research",
+    "scope": "off-report",
+    "user_question": "Can you tell me more about this company, school, or industry?",
+    "answer_intent": "Set boundary and connect to report-grounded interpretation before additional research.",
+    "response_structure": [
+      "Clarify that direct external profiling is outside current report scope.",
+      "Recenter on what the report already indicates structurally.",
+      "Indicate this would require a separate external research pass."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_offreport_document_support_v1",
+    "category": "off_report_document_support",
+    "scope": "off-report",
+    "user_question": "Can you help with my resume or essay?",
+    "answer_intent": "Set scope boundary and route to separate document-support workflow.",
+    "response_structure": [
+      "State that document editing is outside this interpreter scope.",
+      "Clarify current scope: structural interpretation of report findings.",
+      "Direct to separate document-support request path."
+    ],
+    "reflective_followup": null
+  },
+  {
+    "id": "faq_offreport_not_enough_next_v1",
+    "category": "adjacent",
+    "scope": "adjacent",
+    "user_question": "If this report is not enough, what should I look at next?",
+    "answer_intent": "Provide non-prescriptive next-analysis framing consistent with AMC structure.",
+    "response_structure": [
+      "Acknowledge that the current report may not close all uncertainty.",
+      "Identify typical missing layers: external data refresh, assumption validation, condition tracking.",
+      "Frame next step as additional analysis rather than direct advice."
+    ],
+    "reflective_followup": "Which uncertainty would most improve decision clarity if reduced first?"
+  }
+]
+

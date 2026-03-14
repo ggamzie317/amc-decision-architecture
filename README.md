@@ -64,3 +64,20 @@ Output file:
 - `output/audio_summary_script_latest.txt`
 
 Note: TTS engine integration is intentionally deferred to a later step.
+
+### AMC chatbot scaffold (report interpreter layer)
+
+AMC chatbot behavior is defined as a report-grounded interpretation layer, not a recommendation engine.
+
+Behavior files:
+
+- System prompt: `prompts/amc_chatbot_system_prompt_v1.txt`
+- Fallback responses: `prompts/amc_chatbot_fallbacks_v1.json`
+- FAQ seed scaffold: `prompts/amc_faq_seed_v1.json`
+
+Scope:
+
+- Interprets report sections, trade-offs, and conditions.
+- Handles scope boundaries consistently for off-report questions.
+- Provides structured FAQ seed entries for later retrieval or chat routing.
+- Future integration steps: payload-grounded chat context wiring, FAQ seed set, and UI/chat integration.
