@@ -68,6 +68,20 @@ Semi-automated flow (no API call) to convert notes into AMC external JSON:
 5. Sync merged payload to UI:
    `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
 
+Optional path from Perplexity-style raw text:
+
+1. Prepare raw comparative text (template):
+   `output/templates/perplexity_external_raw_comparative.template.txt`
+2. Save as:
+   `output/perplexity_external_raw.txt`
+3. Extract normalized notes:
+   `python3 src/extract_external_notes_from_text.py --infile output/perplexity_external_raw.txt --out output/external_layer_notes_latest.json`
+4. Build external layer JSON:
+   `python3 src/build_external_layer_from_notes.py --notes output/external_layer_notes_latest.json --out output/external_layer_latest.json`
+5. Merge and sync:
+   `python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json`
+   `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
+
 ### Audio summary script (TTS-ready, no TTS API yet)
 
 Generate a narration-ready AMC audio summary script from the latest payload:
