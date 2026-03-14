@@ -53,6 +53,21 @@ Workflow:
 5. Sync merged payload to Manus UI:
    `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
 
+### Build external layer JSON from normalized notes
+
+Semi-automated flow (no API call) to convert notes into AMC external JSON:
+
+1. Prepare normalized notes from template:
+   - `output/templates/external_layer_notes_single.template.json`
+   - `output/templates/external_layer_notes_comparative.template.json`
+2. Save as `output/external_layer_notes_latest.json`
+3. Build AMC external layer JSON:
+   `python3 src/build_external_layer_from_notes.py --notes output/external_layer_notes_latest.json --out output/external_layer_latest.json`
+4. Merge into payload:
+   `python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json`
+5. Sync merged payload to UI:
+   `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
+
 ### Audio summary script (TTS-ready, no TTS API yet)
 
 Generate a narration-ready AMC audio summary script from the latest payload:

@@ -1,0 +1,16 @@
+{
+  "mode": "comparative",
+  "option_a_label": "Option A",
+  "option_a_market_status": "◆ Mixed",
+  "option_a_competition_status": "◐ Moderate",
+  "option_a_economic_status": "○ Contained",
+  "option_a_transition_status": "○ Contained",
+  "option_b_label": "Option B",
+  "option_b_market_status": "▲ Supportive",
+  "option_b_competition_status": "● Elevated",
+  "option_b_economic_status": "◐ Moderate",
+  "option_b_transition_status": "● Elevated",
+  "comparative_reading": "Option A preserves greater continuity with lower near-term friction, while Option B carries broader repositioning potential under higher pressure concentration.",
+  "comparative_implication": "The structural trade-off remains between near-term containment and longer-horizon repositioning under elevated execution load."
+}
+
