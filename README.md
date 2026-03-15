@@ -11,6 +11,112 @@ This repo will host:
 - Report schema and templates (Markdown/JSON)
 - LLM prompts for narrative generation (ChatGPT, Perplexity, Gemini, Vertex AI, etc.)
 
+## AMC Pipeline Overview
+
+Current AMC pipeline is deterministic and section-based:
+
+- raw intake normalization
+- structural flag derivation
+- input summary construction
+- narrative section building
+- report payload assembly
+- template payload adaptation
+- DOCX bridge + existing merge path handoff
+
+## Core AMC Modules
+
+- `src/amc/normalizeIntake.ts`: raw intake normalization (`normalizeIntake`)
+- `src/amc/deriveFlags.ts`: structural flag derivation (`deriveFlags`)
+- `src/amc/buildInputSummary.ts`: human-readable input summary (`buildInputSummary`)
+- Narrative section builders:
+  - `src/buildExecutiveOverview.ts`
+  - `src/buildExternalSnapshot.ts`
+  - `src/buildInternalStructuralSnapshot.ts`
+  - `src/buildStructuralRiskDiagnosis.ts`
+  - `src/buildCareerValueStructure.ts`
+  - `src/buildCareerMobilityStructure.ts`
+  - `src/buildStrategicTemperament.ts`
+  - `src/buildDecisionConditions.ts`
+- `src/assembleAmcReportPayload.ts`: orchestrates normalized intake + flags + summary + sections
+- `src/buildAmcTemplatePayload.ts`: template-ready flat placeholder payload
+- `src/buildAmcDocxPayload.ts`: bridge payload (`meta` + `reportPayload` + `templatePayload`)
+- `src/generateAmcReport.ts`: AMC integration entrypoint to existing merge path
+- `src/merge_docx.py`: current placeholder merge implementation for DOCX templates
+
+## Generation Flow
+
+```text
+raw intake
+-> assembleAmcReportPayload
+-> buildAmcTemplatePayload
+-> buildAmcDocxPayload
+-> generateAmcReport
+-> merge_docx.py
+-> final DOCX output
+```
+
+## Current Section Order
+
+1. `executive_overview`
+2. `external_snapshot`
+3. `internal_structural_snapshot`
+4. `structural_risk_diagnosis`
+5. `career_value_structure`
+6. `career_mobility_structure`
+7. `strategic_temperament`
+8. `decision_conditions`
+
+## Example Usage (Current Entrypoint)
+
+Programmatic usage via TypeScript entrypoint (`generateAmcReport`) is currently the canonical AMC integration path:
+
+```ts
+import { generateAmcReport } from "./src/generateAmcReport";
+
+const result = generateAmcReport(rawIntake, {
+  templatePath: "/absolute/path/to/template.docx",
+  outPath: "output/AMC_Report_Latest.docx",
+});
+
+console.log(result.payloadPath, result.outPath);
+```
+
+Quick local execution example:
+
+```bash
+pnpm --dir manus-ui exec tsx ../tests/generateAmcReport.test.ts
+```
+
+## Testing
+
+Core regression:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+Targeted AMC TS tests (examples):
+
+```bash
+pnpm --dir manus-ui exec tsx ../tests/assembleAmcReportPayload.test.ts
+pnpm --dir manus-ui exec tsx ../tests/buildAmcTemplatePayload.test.ts
+pnpm --dir manus-ui exec tsx ../tests/buildAmcDocxPayload.test.ts
+pnpm --dir manus-ui exec tsx ../tests/generateAmcReport.test.ts
+```
+
+## Current Assumptions / Limitations
+
+- Comparative detection is text-signal based (`optionsUnderConsideration` markers).
+- Template path and output path are caller-provided in `generateAmcReport`.
+- Upstream validation is intentionally lightweight; builders fail transparently on missing required data.
+- Template payload is explicit flat key-value mapping for placeholder replacement.
+
+## Immediate Next Recommended Cleanup
+
+- Refine README and developer docs around end-to-end AMC invocation examples.
+- Add/maintain sample intake and sample output fixtures for quick regression checks.
+- Clean up legacy/auxiliary output artifacts (audio/email intermediate files) if out of current AMC scope.
+
 ## Manus UI Integration (Baseline Report UI)
 
 The Manus-generated AMC report UI is integrated under `manus-ui/` and preserved as the baseline frontend draft.
@@ -82,17 +188,34 @@ Optional path from Perplexity-style raw text:
    `python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json`
    `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
 
-### Audio summary script (TTS-ready, no TTS API yet)
+### Audio summary + TTS file generation
 
-Generate a narration-ready AMC audio summary script from the latest payload:
+1. Generate the narration-ready AMC audio summary script:
 
 `python3 src/generate_audio_summary.py`
 
-Output file:
+2. Generate a playable audio file (v1 provider: OpenAI TTS):
 
-- `output/audio_summary_script_latest.txt`
+`python3 src/generate_audio_tts.py --provider openai --infile output/audio_summary_script_latest.txt --outfile output/audio_summary_latest.mp3`
 
-Note: TTS engine integration is intentionally deferred to a later step.
+Required environment variables:
+
+- `OPENAI_API_KEY` for `--provider openai`
+- `GEMINI_API_KEY` reserved for future `--provider gemini` support
+
+Outputs:
+
+- Script: `output/audio_summary_script_latest.txt`
+- Audio: `output/audio_summary_latest.mp3`
+
+Tier note:
+
+- Essential tier includes report + audio summary.
+- Executive tier includes report + audio summary + chatbot layer.
+
+Language note:
+
+- AMC delivery is currently English-first, with language-toggle readiness maintained for Korean / English / Chinese in future phases.
 
 ### AMC chatbot scaffold (report interpreter layer)
 
