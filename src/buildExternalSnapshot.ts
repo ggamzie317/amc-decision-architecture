@@ -1,0 +1,238 @@
+import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
+import type { AmcDerivedFlags } from "./amc/deriveFlags";
+import type { AmcInputSummary } from "./amc/buildInputSummary";
+
+export interface ExternalSnapshotOutput {
+  section: "external_snapshot";
+  title: "External Snapshot";
+  caseType: "single" | "comparative";
+  marketLine: string;
+  positionLine: string;
+  frictionLine: string;
+  signalLine: string;
+  comparativeReading?: string;
+}
+
+export function buildExternalSnapshot(args: {
+  normalized: AmcNormalizedIntake;
+  structuralFlags: AmcDerivedFlags;
+  inputSummary: AmcInputSummary;
+}): ExternalSnapshotOutput {
+  const { normalized, structuralFlags, inputSummary } = args;
+
+  const caseType = inferCaseType(normalized, inputSummary);
+  const weakEvidence = isWeakEvidence(normalized, structuralFlags, inputSummary);
+
+  if (weakEvidence) {
+    const fallback: ExternalSnapshotOutput = {
+      section: "external_snapshot",
+      title: "External Snapshot",
+      caseType,
+      marketLine: "External readability appears present but not yet fully consolidated.",
+      positionLine:
+        "The profile shows some portable elements, though market positioning remains only partially explicit.",
+      frictionLine:
+        "Transition friction appears manageable in principle, but depends on clearer signal formation and execution proof.",
+      signalLine:
+        "This increases the value of stronger external evidence, clearer articulation, and staged validation.",
+    };
+
+    if (caseType === "comparative") {
+      fallback.comparativeReading =
+        "The comparison appears shaped by asymmetric external visibility rather than by a simple quality ranking.";
+    }
+    return fallback;
+  }
+
+  const demandBucket = inferDemandBucket(structuralFlags);
+  const portabilityBucket = inferPortabilityBucket(structuralFlags, caseType);
+  const frictionBucket = inferFrictionBucket(structuralFlags);
+  const signalBucket = inferSignalBucket(structuralFlags);
+
+  const output: ExternalSnapshotOutput = {
+    section: "external_snapshot",
+    title: "External Snapshot",
+    caseType,
+    marketLine: buildMarketLine(demandBucket, caseType),
+    positionLine: buildPositionLine(portabilityBucket, caseType),
+    frictionLine: buildFrictionLine(frictionBucket, caseType),
+    signalLine: buildSignalLine(signalBucket, caseType),
+  };
+
+  if (caseType === "comparative") {
+    output.comparativeReading = buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+  }
+
+  return output;
+}
+
+function inferCaseType(normalized: AmcNormalizedIntake, summary: AmcInputSummary): "single" | "comparative" {
+  const text = [normalized.optionsUnderConsideration, summary.decisionSnapshot.optionsUnderConsideration]
+    .join(" ")
+    .toLowerCase();
+
+  const comparativeSignals = ["option a", "option b", "option 1", "option 2", " vs ", "versus", "compared"];
+  if (comparativeSignals.some((signal) => text.includes(signal))) {
+    return "comparative";
+  }
+
+  return "single";
+}
+
+function isWeakEvidence(
+  normalized: AmcNormalizedIntake,
+  flags: AmcDerivedFlags,
+  summary: AmcInputSummary,
+): boolean {
+  const hasDecisionText =
+    (normalized.mainDecision || "").trim().length > 0 ||
+    (normalized.optionsUnderConsideration || "").trim().length > 0 ||
+    (summary.decisionSnapshot.optionsUnderConsideration || "").trim().length > 0;
+
+  return !hasDecisionText && flags.highInterpretiveNeed;
+}
+
+type DemandBucket = "clear" | "mixed" | "weak";
+type PortabilityBucket = "strong" | "partial" | "constrained";
+type FrictionBucket = "low" | "moderate" | "high";
+type SignalBucket = "visible" | "partial" | "fragmented";
+
+function inferDemandBucket(flags: AmcDerivedFlags): DemandBucket {
+  if (flags.growingMarketOutlook && !flags.highExternalExposure) {
+    return "clear";
+  }
+  if (flags.decliningMarketOutlook || flags.highExternalExposure) {
+    return "weak";
+  }
+  return "mixed";
+}
+
+function inferPortabilityBucket(flags: AmcDerivedFlags, caseType: "single" | "comparative"): PortabilityBucket {
+  if (flags.highDifferentiation && !flags.lowDecisionClarity && !flags.lowSponsorSupport) {
+    return "strong";
+  }
+  if (flags.lowDifferentiation || flags.lowDecisionClarity || flags.lowSponsorSupport) {
+    return "constrained";
+  }
+  if (caseType === "comparative" && flags.mediumDifferentiation) {
+    return "partial";
+  }
+  return "partial";
+}
+
+function inferFrictionBucket(flags: AmcDerivedFlags): FrictionBucket {
+  const frictionSignals = [
+    flags.weakSafetyNet,
+    flags.lowDecisionClarity,
+    flags.majorRestructuringRisk,
+    flags.highExternalExposure,
+    flags.lowCompanyStability,
+  ].filter(Boolean).length;
+
+  if (frictionSignals >= 3) {
+    return "high";
+  }
+  if (frictionSignals >= 1) {
+    return "moderate";
+  }
+  return "low";
+}
+
+function inferSignalBucket(flags: AmcDerivedFlags): SignalBucket {
+  if (
+    flags.highInterpretiveNeed ||
+    flags.urgencyUnclear ||
+    flags.uncertainSponsorSupport ||
+    flags.someRestructuringRisk ||
+    flags.unclearMarketOutlook
+  ) {
+    return "fragmented";
+  }
+  if (flags.structurallySupportedMove && flags.strongSponsorSupport && !flags.highExternalExposure) {
+    return "visible";
+  }
+  return "partial";
+}
+
+function buildMarketLine(bucket: DemandBucket, caseType: "single" | "comparative"): string {
+  if (caseType === "comparative") {
+    if (bucket === "clear") {
+      return "External demand visibility appears clearer in at least one path, though timing sensitivity remains part of the comparison.";
+    }
+    if (bucket === "weak") {
+      return "External demand visibility appears uneven across paths, with constrained readability in more exposed segments.";
+    }
+    return "External demand visibility appears mixed, with path-specific readability and uneven timing dependence.";
+  }
+
+  if (bucket === "clear") {
+    return "External demand visibility appears clear, while defensibility remains shaped by timing and signal quality.";
+  }
+  if (bucket === "weak") {
+    return "External demand visibility appears weak, with external readability constrained by current market conditions.";
+  }
+  return "External demand visibility appears mixed, with partial readability and uneven traction signals.";
+}
+
+function buildPositionLine(bucket: PortabilityBucket, caseType: "single" | "comparative"): string {
+  if (bucket === "strong") {
+    return caseType === "comparative"
+      ? "Profile portability appears stronger in one path, with external narrative transfer remaining broadly legible."
+      : "Profile portability appears strong, with external positioning largely legible across adjacent contexts.";
+  }
+  if (bucket === "constrained") {
+    return caseType === "comparative"
+      ? "Profile portability appears path-dependent, with translation frictions concentrated in the less familiar route."
+      : "Profile portability appears constrained, with positioning requiring clearer external translation and proof.";
+  }
+  return caseType === "comparative"
+    ? "Profile portability appears partial across paths, with credibility transfer varying by context and framing."
+    : "Profile portability appears partial, with credible elements that remain only partly transferable externally.";
+}
+
+function buildFrictionLine(bucket: FrictionBucket, caseType: "single" | "comparative"): string {
+  if (bucket === "high") {
+    return caseType === "comparative"
+      ? "Transition friction appears high overall, with asymmetry driven by translation burden, readiness gaps, and execution proof requirements."
+      : "Transition friction appears high, shaped by translation burden, readiness gaps, and execution proof requirements.";
+  }
+  if (bucket === "low") {
+    return caseType === "comparative"
+      ? "Transition friction appears relatively contained, though path-specific calibration remains necessary."
+      : "Transition friction appears relatively contained, with manageable conversion requirements under disciplined execution.";
+  }
+  return caseType === "comparative"
+    ? "Transition friction appears moderate, with uneven burden across narrative translation and signal conversion."
+    : "Transition friction appears moderate, with conversion burden concentrated in narrative articulation and proof sequencing.";
+}
+
+function buildSignalLine(bucket: SignalBucket, caseType: "single" | "comparative"): string {
+  if (bucket === "visible") {
+    return caseType === "comparative"
+      ? "External signal visibility appears sufficiently formed for comparison, while defensibility still depends on sequence discipline."
+      : "External signal visibility appears reasonably formed, though defensibility remains contingent on disciplined sequencing.";
+  }
+  if (bucket === "fragmented") {
+    return caseType === "comparative"
+      ? "External signal visibility remains fragmented, increasing the importance of staged validation before comparative commitment."
+      : "External signal visibility remains fragmented, increasing the importance of staged validation before commitment conditions tighten.";
+  }
+  return caseType === "comparative"
+    ? "External signal visibility appears partial, with defensibility depending on clearer articulation and balanced evidence across paths."
+    : "External signal visibility appears partial, with defensibility depending on clearer articulation and stronger evidence consolidation.";
+}
+
+function buildComparativeReading(
+  demand: DemandBucket,
+  portability: PortabilityBucket,
+  friction: FrictionBucket,
+  signal: SignalBucket,
+): string {
+  if (friction === "high" || signal === "fragmented") {
+    return "The comparison suggests that the main difference lies in portability and friction distribution rather than in absolute path quality.";
+  }
+  if (demand === "clear" && portability === "strong") {
+    return "The comparison indicates a continuity-versus-repositioning contrast, with different external exposures across otherwise credible paths.";
+  }
+  return "The comparison appears shaped by uneven visibility, portability, and transition friction, not by a simple winner-loser split.";
+}
