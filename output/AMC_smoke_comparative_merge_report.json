@@ -1,0 +1,23 @@
+{
+  "case": "comparative",
+  "leftover_placeholders": [
+    "{{exploration_plan.experiment_1.timeline}}",
+    "{{exploration_plan.experiment_2.timeline}}",
+    "{{exploration_plan.experiment_3.timeline}}"
+  ],
+  "unresolved": [],
+  "invalid_dotted_paths": [
+    "exploration_plan.experiment_1.timeline",
+    "exploration_plan.experiment_2.timeline",
+    "exploration_plan.experiment_3.timeline"
+  ],
+  "marker_errors": [],
+  "missing_render_only": [],
+  "hidden_blocks": [],
+  "shown_blocks": [
+    "comparative"
+  ],
+  "fallback_applied_count": 3,
+  "resolved": 66,
+  "option_labels_outside_comparative": false
+}

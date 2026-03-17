@@ -1,0 +1,482 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "amc-report.schema.json",
+  "title": "AMC Report Payload Schema v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case",
+    "meta",
+    "dashboard",
+    "executive_summary",
+    "external_snapshot",
+    "comparative_snapshot",
+    "matrix",
+    "diagnosis",
+    "exploration_plan",
+    "commitment",
+    "execution_map",
+    "assumptions_watchlist",
+    "temperament",
+    "mobility",
+    "value_structure",
+    "internal_structural_snapshot"
+  ],
+  "properties": {
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verdict_label",
+        "case_type",
+        "option_a_label",
+        "option_b_label"
+      ],
+      "properties": {
+        "verdict_label": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40,
+          "description": "Short verdict label used for dashboard verdict display."
+        },
+        "case_type": {
+          "type": "string",
+          "enum": ["single_path", "comparative"]
+        },
+        "option_a_label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "default": "Option A"
+        },
+        "option_b_label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "default": "Option B"
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "generated_at",
+        "report_version",
+        "input_completeness_score"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "report_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "input_completeness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "dashboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "temperament_summary",
+        "mobility_summary",
+        "value_summary",
+        "risk_summary",
+        "core_structural_insight"
+      ],
+      "properties": {
+        "temperament_summary": { "$ref": "#/$defs/generatedSentence" },
+        "mobility_summary": { "$ref": "#/$defs/generatedSentence" },
+        "value_summary": { "$ref": "#/$defs/generatedSentence" },
+        "risk_summary": { "$ref": "#/$defs/generatedSentence" },
+        "core_structural_insight": { "$ref": "#/$defs/generatedSentenceLong" }
+      }
+    },
+    "executive_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assessment_basis_line",
+        "verdict_line",
+        "structural_outlook_line",
+        "structural_risk_line",
+        "personal_exposure_line"
+      ],
+      "properties": {
+        "assessment_basis_line": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 180,
+          "description": "Assessment basis line derived from input completeness logic."
+        },
+        "verdict_line": { "$ref": "#/$defs/generatedSentence" },
+        "structural_outlook_line": { "$ref": "#/$defs/generatedSentence" },
+        "structural_risk_line": { "$ref": "#/$defs/generatedSentence" },
+        "personal_exposure_line": { "$ref": "#/$defs/generatedSentence" }
+      }
+    },
+    "external_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "market_direction_line",
+        "competition_pressure_line",
+        "economic_pressure_line",
+        "transition_friction_line"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 80
+        },
+        "market_direction_line": { "$ref": "#/$defs/generatedSentence" },
+        "competition_pressure_line": { "$ref": "#/$defs/generatedSentence" },
+        "economic_pressure_line": { "$ref": "#/$defs/generatedSentence" },
+        "transition_friction_line": { "$ref": "#/$defs/generatedSentence" }
+      }
+    },
+    "comparative_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "option_a",
+        "option_b",
+        "reading_line",
+        "implication_line"
+      ],
+      "properties": {
+        "option_a": { "$ref": "#/$defs/comparativeOption" },
+        "option_b": { "$ref": "#/$defs/comparativeOption" },
+        "reading_line": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 180
+        },
+        "implication_line": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 180
+        }
+      }
+    },
+    "matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "market_outlook",
+        "company_stability",
+        "fifwm_risk",
+        "personal_fit",
+        "upside_downside"
+      ],
+      "properties": {
+        "market_outlook": { "$ref": "#/$defs/matrixItem" },
+        "company_stability": { "$ref": "#/$defs/matrixItem" },
+        "fifwm_risk": { "$ref": "#/$defs/matrixItem" },
+        "personal_fit": { "$ref": "#/$defs/matrixItem" },
+        "upside_downside": { "$ref": "#/$defs/matrixItem" }
+      }
+    },
+    "diagnosis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "market_outlook",
+        "company_stability",
+        "fifwm_risk",
+        "personal_fit",
+        "upside_downside"
+      ],
+      "properties": {
+        "market_outlook": { "$ref": "#/$defs/diagnosisItem" },
+        "company_stability": { "$ref": "#/$defs/diagnosisItem" },
+        "fifwm_risk": { "$ref": "#/$defs/diagnosisItem" },
+        "personal_fit": { "$ref": "#/$defs/diagnosisItem" },
+        "upside_downside": { "$ref": "#/$defs/diagnosisItem" }
+      }
+    },
+    "exploration_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "experiment_1",
+        "experiment_2",
+        "experiment_3"
+      ],
+      "properties": {
+        "experiment_1": { "$ref": "#/$defs/explorationExperiment" },
+        "experiment_2": { "$ref": "#/$defs/explorationExperiment" },
+        "experiment_3": { "$ref": "#/$defs/explorationExperiment" }
+      }
+    },
+    "commitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "condition_line",
+        "validation_condition",
+        "readiness_condition",
+        "support_condition"
+      ],
+      "properties": {
+        "condition_line": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 180
+        },
+        "validation_condition": {
+          "type": ["string", "null"],
+          "maxLength": 180
+        },
+        "readiness_condition": {
+          "type": ["string", "null"],
+          "maxLength": 180
+        },
+        "support_condition": {
+          "type": ["string", "null"],
+          "maxLength": 180
+        }
+      }
+    },
+    "execution_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["month_1", "month_2", "month_3"],
+      "properties": {
+        "month_1": { "$ref": "#/$defs/executionMonth" },
+        "month_2": { "$ref": "#/$defs/executionMonth" },
+        "month_3": { "$ref": "#/$defs/executionMonth" }
+      }
+    },
+    "assumptions_watchlist": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assumptions", "watch_list"],
+      "properties": {
+        "assumptions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["assumption_1", "assumption_2", "assumption_3"],
+          "properties": {
+            "assumption_1": { "$ref": "#/$defs/shortBullet" },
+            "assumption_2": { "$ref": "#/$defs/shortBullet" },
+            "assumption_3": { "$ref": "#/$defs/shortBullet" }
+          }
+        },
+        "watch_list": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["watch_1", "watch_2", "watch_3"],
+          "properties": {
+            "watch_1": { "$ref": "#/$defs/shortBullet" },
+            "watch_2": { "$ref": "#/$defs/shortBullet" },
+            "watch_3": { "$ref": "#/$defs/shortBullet" }
+          }
+        }
+      }
+    },
+    "temperament": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "reading", "implication"],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "enum": [
+            "Enterprising leaning",
+            "Cautious strategist",
+            "Defensive stabilizer",
+            "Adaptive executor"
+          ]
+        },
+        "reading": { "$ref": "#/$defs/generatedSentence" },
+        "implication": { "$ref": "#/$defs/generatedSentence" }
+      }
+    },
+    "mobility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "reading", "implication"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Category Expansion",
+            "Internal Repositioning",
+            "External Re-entry",
+            "Lateral Stabilization",
+            "Exit without Replacement"
+          ]
+        },
+        "reading": { "$ref": "#/$defs/generatedSentence" },
+        "implication": { "$ref": "#/$defs/generatedSentence" }
+      }
+    },
+    "value_structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_path",
+        "transition_path",
+        "reading",
+        "implication"
+      ],
+      "properties": {
+        "current_path": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 140
+        },
+        "transition_path": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 140
+        },
+        "reading": { "$ref": "#/$defs/generatedSentence" },
+        "implication": { "$ref": "#/$defs/generatedSentenceLong" }
+      }
+    },
+    "internal_structural_snapshot": {
+      "type": "string",
+      "minLength": 12,
+      "maxLength": 180
+    }
+  },
+  "$defs": {
+    "generatedSentence": {
+      "type": "string",
+      "minLength": 12,
+      "maxLength": 180
+    },
+    "generatedSentenceLong": {
+      "type": "string",
+      "minLength": 18,
+      "maxLength": 220
+    },
+    "shortBullet": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 140
+    },
+    "comparativeOption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "market_status",
+        "competition_status",
+        "economic_status",
+        "transition_status"
+      ],
+      "properties": {
+        "market_status": {
+          "type": "string",
+          "enum": ["▼ Constrained", "◆ Mixed", "▲ Supportive"]
+        },
+        "competition_status": {
+          "type": "string",
+          "enum": ["○ Contained", "◐ Moderate", "● Elevated"]
+        },
+        "economic_status": {
+          "type": "string",
+          "enum": ["○ Contained", "◐ Moderate", "● Elevated"]
+        },
+        "transition_status": {
+          "type": "string",
+          "enum": ["○ Contained", "◐ Moderate", "● Elevated"]
+        }
+      }
+    },
+    "matrixItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score"],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "enum": [0, 1, 2]
+        }
+      }
+    },
+    "diagnosisItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["core_read", "implication"],
+      "properties": {
+        "core_read": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 220
+        },
+        "implication": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 180
+        }
+      }
+    },
+    "explorationExperiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "context_note",
+        "objective",
+        "success_signal",
+        "abort_trigger"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "context_note": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 180
+        },
+        "objective": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 180
+        },
+        "success_signal": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 220
+        },
+        "abort_trigger": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 220
+        }
+      }
+    },
+    "executionMonth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bullet_1", "bullet_2", "bullet_3"],
+      "properties": {
+        "bullet_1": { "$ref": "#/$defs/shortBullet" },
+        "bullet_2": { "$ref": "#/$defs/shortBullet" },
+        "bullet_3": { "$ref": "#/$defs/shortBullet" }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "case": "comparative",
+  "leftover_placeholders": [],
+  "unresolved": [],
+  "invalid_dotted_paths": [],
+  "marker_errors": [],
+  "missing_render_only": [],
+  "hidden_blocks": [],
+  "shown_blocks": [
+    "comparative"
+  ],
+  "fallback_applied_count": 3,
+  "resolved": 60,
+  "option_labels_only_in_comparative": true
+}

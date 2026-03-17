@@ -1,0 +1,56 @@
+{
+  "fullName": "Alex Kim",
+  "email": "alex.kim@example.com",
+  "location": "Seoul, KR",
+  "currentRoleCompany": "Senior Product Manager at ExampleCorp",
+  "yearsExperience": "6–10 years",
+
+  "mainDecision": "Evaluate a transition from current role into an adjacent external strategy role.",
+  "urgency": "Within 3 months",
+  "optionsUnderConsideration": "Single-path evaluation under current constraints.",
+  "forcedChoiceToday": "No immediate forced choice today.",
+
+  "topPriorities": [
+    "Long-term growth",
+    "Income stability",
+    "Execution feasibility"
+  ],
+  "nonNegotiable": "Maintain baseline compensation stability during transition.",
+  "biggestRisks": "Decision ambiguity under moderate timing pressure.",
+
+  "marketDemandOutlook": "Unclear / mixed",
+  "marketDemandReason": "Demand appears present but role-level visibility remains uneven.",
+  "profileDifferentiation": "Some differentiation, but still competitive",
+
+  "companyHealthConfidence": "Medium confidence",
+  "companyStability": "Somewhat stable, but with noticeable changes or uncertainty",
+  "restructuringHistory": "Yes – a few changes, but mostly stable",
+
+  "sponsorSupport": "Maybe – some goodwill, but not sure about real backing",
+  "decisionLineClarity": "Somewhat clear",
+  "workflowPace": "Mixed (some fast, some slow)",
+  "externalShockExposure": "Some exposure, but manageable",
+
+  "riskOptimizationStyle": "Balancing risk and reward",
+  "visibleRiskComfort": "Somewhat comfortable",
+  "commitmentStyle": "I commit gradually but can change direction if needed.",
+  "energizingWorkStyle": "Cross-functional problem solving with strategic scope.",
+
+  "stayScenario12to18m": "Likely continuity with gradual scope expansion but limited directional shift.",
+  "planBStrength": "I have some alternatives or savings.",
+
+  "reportValueExpectation": [
+    "Clarify structural trade-offs",
+    "Improve decision defensibility"
+  ],
+  "mustAnswerQuestion": "What conditions would make this transition structurally defensible?",
+  "consent": "yes, i understand and agree",
+
+  "tier": "essential",
+  "submittedAt": "2026-03-16T09:00:00Z",
+  "reportDate": "2026-03-16",
+  "betaMode": true,
+  "lang": "en",
+  "chatbotAccessToken": "",
+  "chatbotAccessExpiresAt": ""
+}

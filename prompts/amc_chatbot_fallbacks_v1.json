@@ -1,0 +1,43 @@
+[
+  {
+    "id": "fb_recommendation_request_v1",
+    "category": "recommendation_request",
+    "text": "The AMC report does not make direct choices. It clarifies the structural trade-off and conditions that make each path more or less defensible."
+  },
+  {
+    "id": "fb_new_external_research_request_v1",
+    "category": "new_external_research_request",
+    "text": "That request goes beyond the current report scope. It would require an additional external analysis layer rather than direct interpretation of this report."
+  },
+  {
+    "id": "fb_resume_document_request_v1",
+    "category": "resume_or_document_request",
+    "text": "That is outside this report-interpreter scope. It is better handled as a separate document-support workflow."
+  },
+  {
+    "id": "fb_emotional_reassurance_request_v1",
+    "category": "emotional_reassurance_request",
+    "text": "This report is designed to structure uncertainty, not provide reassurance. What it does clarify is where pressure concentrates and which conditions reduce exposure."
+  },
+  {
+    "id": "fb_unclear_question_v1",
+    "category": "unclear_question",
+    "text": "The question is currently broad. Please point to a specific section or field so the interpretation can stay precise and report-grounded."
+  },
+  {
+    "id": "fb_scope_boundary_statement_v1",
+    "category": "scope_boundary_statement",
+    "text": "That question goes beyond the current report scope. The present report supports structural interpretation of trade-offs, risk, and commitment conditions."
+  },
+  {
+    "id": "fb_report_recenter_statement_v1",
+    "category": "report_recenter_statement",
+    "text": "What the report does clarify is the structure of the decision tension and where exposure or optionality is concentrated."
+  },
+  {
+    "id": "fb_followup_analysis_statement_v1",
+    "category": "followup_analysis_statement",
+    "text": "This can be addressed through a follow-up analysis pass with additional assumptions or external inputs, while keeping the same AMC structural framework."
+  }
+]
+
