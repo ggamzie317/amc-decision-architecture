@@ -1,0 +1,9 @@
+{
+  "fullName": "Edge Comparative",
+  "email": "edge.comp@example.com",
+  "mainDecision": "",
+  "optionsUnderConsideration": "Option A: internal. Option B: external.",
+  "consent": "yes",
+  "tier": "essential",
+  "lang": "en"
+}

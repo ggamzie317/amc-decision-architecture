@@ -1,0 +1,13 @@
+{
+  "template": "templates/AMC_Strategic_Career_Decision_Template_v3_3.docx",
+  "fixtures": [
+    {"id": "single_internal_continuity", "type": "single", "path": "fixtures/golden/single_internal_continuity.json"},
+    {"id": "single_external_transition_high_exposure", "type": "single", "path": "fixtures/golden/single_external_transition_high_exposure.json"},
+    {"id": "single_supported_growth", "type": "single", "path": "fixtures/golden/single_supported_growth.json"},
+    {"id": "comparative_continuity_vs_transition", "type": "comparative", "path": "fixtures/golden/comparative_continuity_vs_transition.json"},
+    {"id": "comparative_degree_gate", "type": "comparative", "path": "fixtures/golden/comparative_degree_gate.json"},
+    {"id": "comparative_relocation_friction", "type": "comparative", "path": "fixtures/golden/comparative_relocation_friction.json"},
+    {"id": "edge_sparse_single", "type": "edge", "path": "fixtures/golden/edge_sparse_single.json"},
+    {"id": "edge_sparse_comparative", "type": "edge", "path": "fixtures/golden/edge_sparse_comparative.json"}
+  ]
+}
