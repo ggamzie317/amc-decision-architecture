@@ -1,58 +1,56 @@
-import json, argparse, re
+import argparse
+import json
 from pathlib import Path
+
 from docx import Document
-
-def replace_in_paragraph(paragraph, mapping):
-    # Replace placeholders like {{KEY}} even if split across runs
-    full = "".join(run.text for run in paragraph.runs)
-    if not full:
-        return
-    changed = False
-    for k, v in mapping.items():
-        ph = "{{" + k + "}}"
-        if ph in full:
-            full = full.replace(ph, str(v))
-            changed = True
-    if not changed:
-        return
-    # rewrite runs (simple: put all text into first run, clear others)
-    if paragraph.runs:
-        paragraph.runs[0].text = full
-        for r in paragraph.runs[1:]:
-            r.text = ""
-    else:
-        paragraph.add_run(full)
-
-def replace_in_table(table, mapping):
-    for row in table.rows:
-        for cell in row.cells:
-            for p in cell.paragraphs:
-                replace_in_paragraph(p, mapping)
+from docxtpl import DocxTemplate
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--template", required=True)
     ap.add_argument("--payload", default="output/report_payload_latest.json")
     ap.add_argument("--out", default="output/AMC_Report_Latest.docx")
+    ap.add_argument("--strict-undeclared", action="store_true")
     args = ap.parse_args()
 
-    payload = json.load(open(args.payload))
-    # Only allow string/number values; coerce None to empty string
-    mapping = {k: ("" if payload[k] is None else payload[k]) for k in payload.keys()}
+    with open(args.payload, "r", encoding="utf-8") as f:
+        ctx = json.load(f)
+    if not isinstance(ctx, dict):
+        raise SystemExit("Payload root must be a JSON object for docxtpl context.")
 
-    doc = Document(args.template)
+    tpl = DocxTemplate(args.template)
+    undeclared = sorted(tpl.get_undeclared_template_variables(context=ctx))
+    if undeclared:
+        print("UNDECLARED_TEMPLATE_VARIABLES:", len(undeclared))
+        for key in undeclared:
+            print("  -", key)
+        if args.strict_undeclared:
+            raise SystemExit("Template has undeclared variables for provided context.")
 
-    # paragraphs
-    for p in doc.paragraphs:
-        replace_in_paragraph(p, mapping)
-
-    # tables
-    for t in doc.tables:
-        replace_in_table(t, mapping)
+    tpl.render(ctx)
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    doc.save(str(out_path))
+    tpl.save(str(out_path))
+
+    # Post-merge leftover placeholder audit.
+    doc = Document(str(out_path))
+    leftover = set()
+    for p in doc.paragraphs:
+        text = p.text or ""
+        if "{{" in text and "}}" in text:
+            leftover.add(text)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    text = p.text or ""
+                    if "{{" in text and "}}" in text:
+                        leftover.add(text)
+    if leftover:
+        print("LEFTOVER_PLACEHOLDER_LINES:", len(leftover))
+        for line in sorted(leftover):
+            print("  -", line)
     print("WROTE:", out_path)
 
 if __name__ == "__main__":

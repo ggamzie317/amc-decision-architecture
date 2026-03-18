@@ -37,8 +37,8 @@ test("AMC raw intake can flow to render-ready handoff", () => {
   assert.ok(result.docxPayload);
   assert.ok(result.mergePayload);
   assert.equal(result.docxPayload.meta.generatedAt, "2026-03-15T18:00:00.000Z");
-  assert.equal(result.mergePayload.meta_generated_at, "2026-03-15T18:00:00.000Z");
-  assert.ok(Object.prototype.hasOwnProperty.call(result.mergePayload, "executive_overview_title"));
+  assert.equal(result.mergePayload.meta.generated_at, "2026-03-15T18:00:00.000Z");
+  assert.ok(Object.prototype.hasOwnProperty.call(result.mergePayload, "executive_summary"));
 });
 
 test("existing merge path is invoked and output docx is generated", () => {
@@ -54,8 +54,8 @@ test("existing merge path is invoked and output docx is generated", () => {
       [
         "from docx import Document",
         "doc=Document()",
-        "doc.add_paragraph('Header: {{executive_overview_title}}')",
-        "doc.add_paragraph('Case: {{case_type}}')",
+        "doc.add_paragraph('Header: {{executive_summary.verdict_line}}')",
+        "doc.add_paragraph('Case: {{mode}}')",
         `doc.save(r'''${templatePath}''')`,
       ].join("; "),
     ],
@@ -88,6 +88,6 @@ test("existing merge path is invoked and output docx is generated", () => {
   );
 
   assert.equal(mergedText.includes("{{"), false);
-  assert.equal(mergedText.includes("Executive Overview"), true);
+  assert.equal(mergedText.includes("Header:"), true);
   assert.equal(mergedText.toLowerCase().includes("comparative"), true);
 });
