@@ -74,9 +74,11 @@ function buildNestedTemplateContext(rawIntake: any, docxPayload: ReturnType<type
   const temperament = sections.strategic_temperament || {};
   const conditions = sections.decision_conditions || {};
   const flags = docxPayload?.reportPayload?.inputs?.structuralFlags || {};
+  const normalized = docxPayload?.reportPayload?.inputs?.normalized || {};
   const caseTypeRaw = String(executive.caseType || flat.case_type || "").toLowerCase();
   const mode = caseTypeRaw === "comparative" ? "comparative" : "single";
   const caseType = mode === "comparative" ? "comparative" : "single_path";
+  const completenessScore = computeIntakeCompletenessScore(normalized);
 
   const labels = extractOptionLabels(rawIntake);
 
@@ -117,9 +119,7 @@ function buildNestedTemplateContext(rawIntake: any, docxPayload: ReturnType<type
       structural_outlook_line: valueOrFallback(executive.readingLine || flat.executive_overview_reading_line),
       structural_risk_line: valueOrFallback(risk.primaryRisk || flat.structural_risk_diagnosis_primary_risk),
       personal_exposure_line: valueOrFallback(internal.strainLine || flat.internal_structural_snapshot_strain_line),
-      assessment_basis_line: valueOrFallback(
-        "Assessment basis: Qualitative structural signals available; interpretation reflects current input depth.",
-      ),
+      assessment_basis_line: valueOrFallback(buildAssessmentBasisLine(completenessScore)),
     },
     external_snapshot: {
       title: valueOrFallback(external.title || flat.external_snapshot_title),
@@ -321,4 +321,68 @@ function indexSections(sections: any[] | undefined): Record<string, any> {
     }
   }
   return out;
+}
+
+function computeIntakeCompletenessScore(normalized: Record<string, unknown>): number {
+  const fields = [
+    "fullName",
+    "email",
+    "location",
+    "currentRoleCompany",
+    "yearsExperience",
+    "mainDecision",
+    "urgency",
+    "optionsUnderConsideration",
+    "forcedChoiceToday",
+    "topPriorities",
+    "nonNegotiable",
+    "biggestRisks",
+    "marketDemandOutlook",
+    "marketDemandReason",
+    "profileDifferentiation",
+    "companyHealthConfidence",
+    "companyStability",
+    "restructuringHistory",
+    "sponsorSupport",
+    "decisionLineClarity",
+    "workflowPace",
+    "externalShockExposure",
+    "riskOptimizationStyle",
+    "visibleRiskComfort",
+    "commitmentStyle",
+    "energizingWorkStyle",
+    "stayScenario12to18m",
+    "planBStrength",
+    "reportValueExpectation",
+    "mustAnswerQuestion",
+  ] as const;
+
+  let present = 0;
+  for (const field of fields) {
+    const value = normalized[field];
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        present += 1;
+      }
+      continue;
+    }
+    if (typeof value === "string") {
+      if (value.trim()) {
+        present += 1;
+      }
+      continue;
+    }
+    if (value !== null && value !== undefined) {
+      present += 1;
+    }
+  }
+
+  return present / fields.length;
+}
+
+function buildAssessmentBasisLine(completenessScore: number): string {
+  if (completenessScore >= 0.85) {
+    return "Assessment basis: Qualitative structural signals with sufficient input depth for decision framing.";
+  }
+  return "Assessment basis: Qualitative structural signals available; quantitative depth limited - interpretation reflects available input.";
 }
