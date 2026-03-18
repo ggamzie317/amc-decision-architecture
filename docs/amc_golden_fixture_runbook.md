@@ -21,6 +21,11 @@ Provide a stable representative set of AMC cases to evaluate semantic regression
 4. Tone remains restrained and structurally analytical.
 5. Comparative statuses and implications remain semantically plausible.
 
+## CI Behavior
+- Structural render checks are auto-gated in CI (strict single/comparative render + strict golden render script).
+- `output/golden/review_summary.json` and `output/golden/review_summary.md` are uploaded as CI artifacts for semantic review.
+- Semantic plausibility is still a human review gate, not a hard automated fail condition.
+
 ## Current Fixture Set
 - `single_internal_continuity`
 - `single_external_transition_high_exposure`
