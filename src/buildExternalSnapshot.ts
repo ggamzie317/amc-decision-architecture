@@ -27,6 +27,13 @@ export interface ExternalSnapshotOutput {
     };
     source: "option_text_signal";
   };
+  nativeMetadata?: {
+    weakEvidence: boolean;
+    demandBucket: DemandBucket;
+    portabilityBucket: PortabilityBucket;
+    frictionBucket: FrictionBucket;
+    signalBucket: SignalBucket;
+  };
 }
 
 type MarketStatus = "▲ Supportive" | "◆ Mixed" | "▼ Constrained";
@@ -79,6 +86,13 @@ export function buildExternalSnapshot(args: {
         source: "option_text_signal",
       };
     }
+    fallback.nativeMetadata = {
+      weakEvidence: true,
+      demandBucket: "mixed",
+      portabilityBucket: "partial",
+      frictionBucket: "moderate",
+      signalBucket: "fragmented",
+    };
     return fallback;
   }
 
@@ -114,6 +128,14 @@ export function buildExternalSnapshot(args: {
     };
     output.comparativeOptionSignals = optionSignals;
   }
+
+  output.nativeMetadata = {
+    weakEvidence: false,
+    demandBucket,
+    portabilityBucket,
+    frictionBucket,
+    signalBucket,
+  };
 
   return output;
 }

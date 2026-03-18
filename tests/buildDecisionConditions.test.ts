@@ -83,6 +83,9 @@ test("single-case output returns expected shape", () => {
   assert.ok(result.readinessCondition.length > 0);
   assert.ok(result.supportCondition.length > 0);
   assert.ok(result.commitmentCondition.length > 0);
+  assert.ok(result.nativeMetadata);
+  assert.equal(result.nativeMetadata!.weakEvidence, false);
+  assert.equal(typeof result.nativeMetadata!.explorationDesignHints.experiment1, "string");
 });
 
 test("comparative-case output returns expected shape", () => {
@@ -94,6 +97,8 @@ test("comparative-case output returns expected shape", () => {
   assert.ok(result.readinessCondition.length > 0);
   assert.ok(result.supportCondition.length > 0);
   assert.ok(result.commitmentCondition.length > 0);
+  assert.ok(result.nativeMetadata);
+  assert.equal(result.nativeMetadata!.weakEvidence, false);
 });
 
 test("comparative case can include comparativeReading", () => {

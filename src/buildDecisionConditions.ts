@@ -11,6 +11,19 @@ export interface DecisionConditionsOutput {
   supportCondition: string;
   commitmentCondition: string;
   comparativeReading?: string;
+  nativeMetadata?: {
+    weakEvidence: boolean;
+    validationBucket: ValidationBucket | "fallback";
+    readinessBucket: ReadinessBucket | "fallback";
+    supportBucket: SupportBucket | "fallback";
+    commitmentBucket: CommitmentBucket | "fallback";
+    reassessmentTriggerType: "signal_instability" | "timing_misalignment" | "support_erosion" | "risk_deterioration";
+    explorationDesignHints: {
+      experiment1: string;
+      experiment2: string;
+      experiment3: string;
+    };
+  };
 }
 
 export function buildDecisionConditions(args: {
@@ -41,6 +54,19 @@ export function buildDecisionConditions(args: {
       fallback.comparativeReading =
         "The comparison appears to require different validation emphases rather than a single shared condition set.";
     }
+    fallback.nativeMetadata = {
+      weakEvidence: true,
+      validationBucket: "fallback",
+      readinessBucket: "fallback",
+      supportBucket: "fallback",
+      commitmentBucket: "fallback",
+      reassessmentTriggerType: "signal_instability",
+      explorationDesignHints: {
+        experiment1: "Use short market-readability checks to replace assumption-driven inference.",
+        experiment2: "Use bounded execution probes to distinguish directional interest from readiness.",
+        experiment3: "Use support resilience checks before increasing commitment intensity.",
+      },
+    };
 
     return fallback;
   }
@@ -63,6 +89,19 @@ export function buildDecisionConditions(args: {
   if (caseType === "comparative") {
     output.comparativeReading = buildComparativeReading(validation, readiness, support);
   }
+  output.nativeMetadata = {
+    weakEvidence: false,
+    validationBucket: validation,
+    readinessBucket: readiness,
+    supportBucket: support,
+    commitmentBucket: commitment,
+    reassessmentTriggerType: inferReassessmentTriggerType(structuralFlags),
+    explorationDesignHints: {
+      experiment1: buildExperiment1Hint(validation, caseType),
+      experiment2: buildExperiment2Hint(readiness, caseType),
+      experiment3: buildExperiment3Hint(support, caseType),
+    },
+  };
 
   return output;
 }
@@ -224,4 +263,64 @@ function buildComparativeReading(
     return "One path may require less transition validation, while the other requires stronger proof of portability and burden manageability.";
   }
   return "The two paths appear to require different condition sets across risk, support, and readiness alignment.";
+}
+
+function inferReassessmentTriggerType(
+  flags: AmcDerivedFlags,
+): "signal_instability" | "timing_misalignment" | "support_erosion" | "risk_deterioration" {
+  if (flags.highExecutionRisk || flags.structurallyFragileMove) {
+    return "risk_deterioration";
+  }
+  if (flags.highUrgency && flags.lowDecisionClarity) {
+    return "timing_misalignment";
+  }
+  if (flags.lowSponsorSupport || flags.weakSafetyNet || flags.lowCompanyStability) {
+    return "support_erosion";
+  }
+  return "signal_instability";
+}
+
+function buildExperiment1Hint(validation: ValidationBucket, caseType: "single" | "comparative"): string {
+  if (validation === "comparison_clarity") {
+    return "Use direct side-by-side validation checks to separate comparative signal from narrative preference.";
+  }
+  if (validation === "transferability_validation") {
+    return "Use external transferability checks to validate portability assumptions against market evidence.";
+  }
+  if (validation === "proof_gap") {
+    return "Use concise proof-gathering checks to close validation gaps before faster commitment moves.";
+  }
+  return caseType === "comparative"
+    ? "Use staged signal consolidation checks so comparative differences remain evidence-linked."
+    : "Use staged signal consolidation checks so directional interpretation remains evidence-linked.";
+}
+
+function buildExperiment2Hint(readiness: ReadinessBucket, caseType: "single" | "comparative"): string {
+  if (readiness === "execution_alignment") {
+    return "Use execution simulations to confirm that readiness logic remains stable under practical constraints.";
+  }
+  if (readiness === "timing_sync") {
+    return "Use timing-readiness checkpoints to test whether current pace matches executable capacity.";
+  }
+  if (readiness === "threshold_definition") {
+    return "Use explicit threshold checks to define minimum readiness before increasing commitment depth.";
+  }
+  return caseType === "comparative"
+    ? "Use path-specific readiness probes to avoid carrying intent across options without execution proof."
+    : "Use bounded readiness probes to separate directional intent from executable readiness.";
+}
+
+function buildExperiment3Hint(support: SupportBucket, caseType: "single" | "comparative"): string {
+  if (support === "sponsor_safety") {
+    return "Use support durability checks focused on sponsorship depth and downside coverage reliability.";
+  }
+  if (support === "resource_backing") {
+    return "Use resource and capacity checks to confirm support resilience under real timing conditions.";
+  }
+  if (support === "fallback_protection") {
+    return "Use fallback viability checks to confirm support continuity before stronger commitment.";
+  }
+  return caseType === "comparative"
+    ? "Use cross-path support checks to confirm backing quality is not unevenly distributed."
+    : "Use support reinforcement checks to confirm backing quality before stronger commitment.";
 }

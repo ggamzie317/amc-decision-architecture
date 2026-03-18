@@ -96,10 +96,14 @@ function buildNestedTemplateContext(
   const conditions = sections.decision_conditions || {};
   const flags = docxPayload?.reportPayload?.inputs?.structuralFlags || {};
   const normalized = docxPayload?.reportPayload?.inputs?.normalized || {};
+  const upstreamNative = docxPayload?.reportPayload?.inputs?.nativeMetadata || {};
   const caseTypeRaw = String(executive.caseType || flat.case_type || "").toLowerCase();
   const mode = caseTypeRaw === "comparative" ? "comparative" : "single";
   const caseType = mode === "comparative" ? "comparative" : "single_path";
-  const completenessScore = computeIntakeCompletenessScore(normalized);
+  const completenessScore =
+    typeof upstreamNative.inputCompletenessScore === "number"
+      ? upstreamNative.inputCompletenessScore
+      : computeIntakeCompletenessScore(normalized);
 
   const labels = extractOptionLabels(rawIntake, strings);
   const nativeComparativeStatus =

@@ -83,6 +83,8 @@ test("single-case output returns expected shape", () => {
   assert.ok(result.positionLine.length > 0);
   assert.ok(result.frictionLine.length > 0);
   assert.ok(result.signalLine.length > 0);
+  assert.ok(result.nativeMetadata);
+  assert.equal(result.nativeMetadata!.weakEvidence, false);
 });
 
 test("comparative-case output returns expected shape", () => {
@@ -94,6 +96,8 @@ test("comparative-case output returns expected shape", () => {
   assert.ok(result.positionLine.length > 0);
   assert.ok(result.frictionLine.length > 0);
   assert.ok(result.signalLine.length > 0);
+  assert.ok(result.nativeMetadata);
+  assert.equal(result.nativeMetadata!.weakEvidence, false);
 });
 
 test("comparative case can include comparativeReading", () => {

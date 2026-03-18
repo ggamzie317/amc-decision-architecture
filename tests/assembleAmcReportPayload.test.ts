@@ -45,6 +45,8 @@ test("assembler returns meta, inputs, and sections", () => {
   assert.ok(result.inputs.normalized);
   assert.ok(result.inputs.structuralFlags);
   assert.ok(result.inputs.inputSummary);
+  assert.ok(result.inputs.nativeMetadata);
+  assert.equal(typeof result.inputs.nativeMetadata.inputCompletenessScore, "number");
   assert.ok(Array.isArray(result.sections));
 });
 
