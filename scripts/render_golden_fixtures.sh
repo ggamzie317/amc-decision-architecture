@@ -63,6 +63,7 @@ plan=json.load(open(root/'output/golden/_run_plan.json','r',encoding='utf-8'))
 summary=[]
 for item in plan:
     doc=Document(item['docx'])
+    intake=json.load(open(item['intake'],'r',encoding='utf-8'))
     text=[]
     for p in doc.paragraphs:
         text.append(p.text or '')
@@ -74,15 +75,21 @@ for item in plan:
     full='\n'.join(text)
     leftovers=sorted(set(re.findall(r'\{\{[^}]+\}\}', full)))
     payload=json.load(open(item['payload'],'r',encoding='utf-8'))
+    fallback_count=(
+        full.count('[Not applicable]') +
+        full.count('[해당 없음]') +
+        full.count('[不适用]')
+    )
     summary.append({
         'id': item['id'],
         'type': item['type'],
         'docx': item['docx'],
         'payload': item['payload'],
+        'lang': intake.get('lang','en'),
         'leftover_placeholders': len(leftovers),
         'case_type': payload.get('case',{}).get('case_type'),
         'comparative_section_visible': 'External Comparative Snapshot' in full,
-        'fallback_count': full.count('[Not applicable]')
+        'fallback_count': fallback_count
     })
 
 out_json=root/'output/golden/review_summary.json'
@@ -92,6 +99,7 @@ json.dump(summary, open(out_json,'w',encoding='utf-8'), ensure_ascii=False, inde
 lines=['# AMC Golden Fixture Review Summary','']
 for s in summary:
     lines.append(f"- `{s['id']}` ({s['type']})")
+    lines.append(f"  - lang: `{s['lang']}`")
     lines.append(f"  - case_type: `{s['case_type']}`")
     lines.append(f"  - leftover_placeholders: `{s['leftover_placeholders']}`")
     lines.append(f"  - comparative_section_visible: `{s['comparative_section_visible']}`")
