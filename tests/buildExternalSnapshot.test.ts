@@ -125,6 +125,26 @@ test("comparative case emits native comparative status signals", () => {
   assert.ok(pressureAllowed.has(result.comparativeStatus!.optionB.transitionStatus));
 });
 
+test("comparative option text signals are promoted to per-option native statuses when both options are explicit", () => {
+  const args = makeBaseArgs();
+  args.normalized.optionsUnderConsideration =
+    "Option A: internal promotion with stable income and known network. Option B: external phd relocation with pay cut and top-tier competition.";
+  args.inputSummary.decisionSnapshot.optionsUnderConsideration = args.normalized.optionsUnderConsideration;
+
+  const result = buildExternalSnapshot(args as any);
+
+  assert.equal(result.caseType, "comparative");
+  assert.ok(result.comparativeOptionSignals);
+  assert.equal(result.comparativeOptionSignals!.nativeDimensions.competition, true);
+  assert.equal(result.comparativeOptionSignals!.nativeDimensions.economic, true);
+  assert.equal(result.comparativeOptionSignals!.nativeDimensions.transition, true);
+
+  assert.equal(result.comparativeStatus!.optionA.economicStatus, "○ Contained");
+  assert.equal(result.comparativeStatus!.optionB.economicStatus, "● Elevated");
+  assert.equal(result.comparativeStatus!.optionA.transitionStatus, "○ Contained");
+  assert.equal(result.comparativeStatus!.optionB.transitionStatus, "● Elevated");
+});
+
 test("wording remains recommendation-free", () => {
   const args = makeBaseArgs();
   const result = buildExternalSnapshot(args as any);

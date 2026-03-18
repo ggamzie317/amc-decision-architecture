@@ -14,7 +14,18 @@ export interface ExternalSnapshotOutput {
   comparativeStatus?: {
     optionA: ComparativeStatusSet;
     optionB: ComparativeStatusSet;
-    source: "native_bucket";
+    source: "native_bucket" | "native_option_signal_hybrid";
+  };
+  comparativeOptionSignals?: {
+    optionA: ComparativeStatusSet;
+    optionB: ComparativeStatusSet;
+    nativeDimensions: {
+      market: boolean;
+      competition: boolean;
+      economic: boolean;
+      transition: boolean;
+    };
+    source: "option_text_signal";
   };
 }
 
@@ -56,6 +67,17 @@ export function buildExternalSnapshot(args: {
       fallback.comparativeReading =
         "The comparison appears shaped by asymmetric external visibility rather than by a simple quality ranking.";
       fallback.comparativeStatus = buildComparativeStatus("mixed", "partial", "moderate", "fragmented");
+      fallback.comparativeOptionSignals = {
+        optionA: fallback.comparativeStatus.optionA,
+        optionB: fallback.comparativeStatus.optionB,
+        nativeDimensions: {
+          market: false,
+          competition: false,
+          economic: false,
+          transition: false,
+        },
+        source: "option_text_signal",
+      };
     }
     return fallback;
   }
@@ -77,7 +99,20 @@ export function buildExternalSnapshot(args: {
 
   if (caseType === "comparative") {
     output.comparativeReading = buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
-    output.comparativeStatus = buildComparativeStatus(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+    const baseStatus = buildComparativeStatus(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+    const optionSignals = buildPerOptionComparativeSignals(normalized, inputSummary, baseStatus);
+    output.comparativeStatus = {
+      optionA: optionSignals.optionA,
+      optionB: optionSignals.optionB,
+      source:
+        optionSignals.nativeDimensions.market ||
+        optionSignals.nativeDimensions.competition ||
+        optionSignals.nativeDimensions.economic ||
+        optionSignals.nativeDimensions.transition
+          ? "native_option_signal_hybrid"
+          : "native_bucket",
+    };
+    output.comparativeOptionSignals = optionSignals;
   }
 
   return output;
@@ -313,4 +348,115 @@ function buildComparativeStatus(
   }
 
   return { optionA, optionB, source: "native_bucket" };
+}
+
+function buildPerOptionComparativeSignals(
+  normalized: AmcNormalizedIntake,
+  summary: AmcInputSummary,
+  baseStatus: {
+    optionA: ComparativeStatusSet;
+    optionB: ComparativeStatusSet;
+    source: "native_bucket";
+  },
+): {
+  optionA: ComparativeStatusSet;
+  optionB: ComparativeStatusSet;
+  nativeDimensions: { market: boolean; competition: boolean; economic: boolean; transition: boolean };
+  source: "option_text_signal";
+} {
+  const uniqueSources = Array.from(
+    new Set(
+      [normalized.optionsUnderConsideration, summary.decisionSnapshot.optionsUnderConsideration]
+        .map((item) => (item || "").trim())
+        .filter((item) => item.length > 0),
+    ),
+  );
+  const combined = uniqueSources.join("\n");
+  const options = extractOptionTexts(combined);
+
+  const aSignal = inferStatusFromOptionText(options.optionA);
+  const bSignal = inferStatusFromOptionText(options.optionB);
+
+  const nativeDimensions = {
+    market: aSignal.signaled.market && bSignal.signaled.market,
+    competition: aSignal.signaled.competition && bSignal.signaled.competition,
+    economic: aSignal.signaled.economic && bSignal.signaled.economic,
+    transition: aSignal.signaled.transition && bSignal.signaled.transition,
+  };
+
+  const optionA: ComparativeStatusSet = {
+    marketStatus: nativeDimensions.market ? aSignal.status.marketStatus : baseStatus.optionA.marketStatus,
+    competitionStatus: nativeDimensions.competition
+      ? aSignal.status.competitionStatus
+      : baseStatus.optionA.competitionStatus,
+    economicStatus: nativeDimensions.economic ? aSignal.status.economicStatus : baseStatus.optionA.economicStatus,
+    transitionStatus: nativeDimensions.transition
+      ? aSignal.status.transitionStatus
+      : baseStatus.optionA.transitionStatus,
+  };
+
+  const optionB: ComparativeStatusSet = {
+    marketStatus: nativeDimensions.market ? bSignal.status.marketStatus : baseStatus.optionB.marketStatus,
+    competitionStatus: nativeDimensions.competition
+      ? bSignal.status.competitionStatus
+      : baseStatus.optionB.competitionStatus,
+    economicStatus: nativeDimensions.economic ? bSignal.status.economicStatus : baseStatus.optionB.economicStatus,
+    transitionStatus: nativeDimensions.transition
+      ? bSignal.status.transitionStatus
+      : baseStatus.optionB.transitionStatus,
+  };
+
+  return {
+    optionA,
+    optionB,
+    nativeDimensions,
+    source: "option_text_signal",
+  };
+}
+
+function extractOptionTexts(text: string): { optionA: string; optionB: string } {
+  const normalized = (text || "").replace(/\r\n/g, "\n");
+  const matchA = normalized.match(/option\s*a\s*:\s*([\s\S]*?)(?=option\s*b\s*:|$)/i);
+  const matchB = normalized.match(/option\s*b\s*:\s*([\s\S]*?)$/i);
+  return {
+    optionA: (matchA?.[1] || "").trim(),
+    optionB: (matchB?.[1] || "").trim(),
+  };
+}
+
+function inferStatusFromOptionText(optionText: string): {
+  status: ComparativeStatusSet;
+  signaled: { market: boolean; competition: boolean; economic: boolean; transition: boolean };
+} {
+  const text = (optionText || "").toLowerCase();
+
+  const marketSupportive = hasAny(text, ["growing", "expanding", "in-demand", "tailwind", "demand"]);
+  const marketConstrained = hasAny(text, ["declining", "layoff", "headwind", "limited demand", "stagnant"]);
+  const competitionContained = hasAny(text, ["niche", "internal", "known network", "differentiated"]);
+  const competitionElevated = hasAny(text, ["elite", "highly competitive", "crowded", "saturated", "top-tier"]);
+  const economicContained = hasAny(text, ["stable income", "promotion", "salary stable", "buffer", "savings"]);
+  const economicElevated = hasAny(text, ["pay cut", "salary drop", "no buffer", "tuition", "income uncertainty"]);
+  const transitionContained = hasAny(text, ["internal", "adjacent", "reversible", "pilot", "same company"]);
+  const transitionElevated = hasAny(text, ["relocation", "visa", "phd", "degree", "career switch", "founder"]);
+
+  const status: ComparativeStatusSet = {
+    marketStatus: marketSupportive ? "▲ Supportive" : marketConstrained ? "▼ Constrained" : "◆ Mixed",
+    competitionStatus: competitionContained ? "○ Contained" : competitionElevated ? "● Elevated" : "◐ Moderate",
+    economicStatus: economicContained ? "○ Contained" : economicElevated ? "● Elevated" : "◐ Moderate",
+    transitionStatus: transitionContained ? "○ Contained" : transitionElevated ? "● Elevated" : "◐ Moderate",
+  };
+
+  return {
+    status,
+    signaled: {
+      market: marketSupportive || marketConstrained,
+      competition: competitionContained || competitionElevated,
+      economic: economicContained || economicElevated,
+      transition: transitionContained || transitionElevated,
+    },
+  };
+}
+
+function hasAny(text: string, tokens: string[]): boolean {
+  return tokens.some((token) => text.includes(token));
 }

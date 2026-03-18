@@ -81,7 +81,8 @@ function buildNestedTemplateContext(rawIntake: any, docxPayload: ReturnType<type
   const completenessScore = computeIntakeCompletenessScore(normalized);
 
   const labels = extractOptionLabels(rawIntake);
-  const nativeComparativeStatus = external.comparativeStatus || {};
+  const nativeComparativeStatus =
+    external.comparativeOptionSignals || external.comparativeStatus || {};
 
   const matrix = {
     market_outlook: { visual: visualFromBand(pickBand(flags.growingMarketOutlook, flags.decliningMarketOutlook)) },
