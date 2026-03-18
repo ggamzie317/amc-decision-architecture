@@ -11,6 +11,7 @@ type CliArgs = {
   payload: string;
   python: string;
   strictUndeclared: boolean;
+  lang?: string;
 };
 
 function parseArgs(argv: string[]): CliArgs {
@@ -66,6 +67,11 @@ function parseArgs(argv: string[]): CliArgs {
       args.strictUndeclared = true;
       continue;
     }
+    if (token === "--lang" && next) {
+      args.lang = next;
+      i += 1;
+      continue;
+    }
     if (token === "-h" || token === "--help") {
       printHelp();
       process.exit(0);
@@ -87,6 +93,7 @@ function printHelp(): void {
   console.log("  --payload <path>   Intermediate payload JSON path (default: repo output/amc_docx_payload_latest.json)");
   console.log("  --python <bin>     Python executable for merge_docx.py (default: python3)");
   console.log("  --strict-undeclared  Fail render if undeclared template variables remain");
+  console.log("  --lang <ko|en|zh>  Locale for fixed render strings (default: intake.lang or en)");
 }
 
 function readJson(filePath: string): any {
@@ -115,6 +122,7 @@ function main(): number {
       payloadPath: args.payload,
       pythonBin: args.python,
       strictUndeclared: args.strictUndeclared,
+      locale: args.lang,
     });
 
     const summary = {

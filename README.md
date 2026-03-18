@@ -126,6 +126,12 @@ Comparative render (strict undeclared check):
 pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared
 ```
 
+Optional language layer for fixed render strings (`ko|en|zh`, default `en` or `intake.lang`):
+
+```bash
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared --lang ko
+```
+
 ## Immediate Next Recommended Cleanup
 
 - Refine README and developer docs around end-to-end AMC invocation examples.

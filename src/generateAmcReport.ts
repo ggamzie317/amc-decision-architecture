@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { buildAmcDocxPayload } from "./buildAmcDocxPayload";
+import { getAmcRenderStrings, resolveAmcRenderLocale, type AmcRenderLocale } from "./amc/renderLocale";
 
 export interface GenerateAmcReportOptions {
   templatePath: string;
@@ -12,6 +13,7 @@ export interface GenerateAmcReportOptions {
   pythonBin?: string;
   now?: () => Date;
   strictUndeclared?: boolean;
+  locale?: AmcRenderLocale | string;
 }
 
 export interface AmcRenderInput {
@@ -19,9 +21,12 @@ export interface AmcRenderInput {
   mergePayload: Record<string, unknown>;
 }
 
-export function buildAmcRenderInput(rawIntake: any, options: { now?: () => Date } = {}): AmcRenderInput {
+export function buildAmcRenderInput(
+  rawIntake: any,
+  options: { now?: () => Date; locale?: AmcRenderLocale | string } = {},
+): AmcRenderInput {
   const docxPayload = buildAmcDocxPayload(rawIntake, options);
-  const mergePayload = buildNestedTemplateContext(rawIntake, docxPayload);
+  const mergePayload = buildNestedTemplateContext(rawIntake, docxPayload, options.locale);
   return { docxPayload, mergePayload };
 }
 
@@ -34,6 +39,7 @@ export function generateAmcReport(rawIntake: any, options: GenerateAmcReportOpti
 
   const { docxPayload, mergePayload } = buildAmcRenderInput(rawIntake, {
     now: options.now,
+    locale: options.locale,
   });
 
   fs.mkdirSync(path.dirname(payloadPath), { recursive: true });
@@ -62,7 +68,14 @@ export function generateAmcReport(rawIntake: any, options: GenerateAmcReportOpti
   };
 }
 
-function buildNestedTemplateContext(rawIntake: any, docxPayload: ReturnType<typeof buildAmcDocxPayload>) {
+function buildNestedTemplateContext(
+  rawIntake: any,
+  docxPayload: ReturnType<typeof buildAmcDocxPayload>,
+  localeInput?: AmcRenderLocale | string,
+) {
+  const locale = resolveAmcRenderLocale(localeInput || rawIntake?.lang);
+  const strings = getAmcRenderStrings(locale);
+  const withFallback = (value: unknown) => valueOrFallback(value, strings.notApplicable);
   const flat = docxPayload.templatePayload || {};
   const sections = indexSections(docxPayload?.reportPayload?.sections);
   const executive = sections.executive_overview || {};
@@ -80,199 +93,212 @@ function buildNestedTemplateContext(rawIntake: any, docxPayload: ReturnType<type
   const caseType = mode === "comparative" ? "comparative" : "single_path";
   const completenessScore = computeIntakeCompletenessScore(normalized);
 
-  const labels = extractOptionLabels(rawIntake);
+  const labels = extractOptionLabels(rawIntake, strings);
   const nativeComparativeStatus =
     external.comparativeOptionSignals || external.comparativeStatus || {};
 
   const matrix = {
-    market_outlook: { visual: visualFromBand(pickBand(flags.growingMarketOutlook, flags.decliningMarketOutlook)) },
-    company_stability: {
-      visual: visualFromBand(pickBand(flags.highCompanyStability, flags.lowCompanyStability)),
+    market_outlook: {
+      visual: visualFromBand(pickBand(flags.growingMarketOutlook, flags.decliningMarketOutlook), strings),
     },
-    fifwm_risk: { visual: visualFromBand(pickBand(flags.strongSafetyNet, flags.weakSafetyNet)) },
+    company_stability: {
+      visual: visualFromBand(pickBand(flags.highCompanyStability, flags.lowCompanyStability), strings),
+    },
+    fifwm_risk: { visual: visualFromBand(pickBand(flags.strongSafetyNet, flags.weakSafetyNet), strings) },
     personal_fit: {
       visual: visualFromBand(
         pickBand(
           !!flags.highDecisionClarity && !!flags.highRiskComfort,
           !!flags.lowDecisionClarity || !!flags.lowRiskComfort,
         ),
+        strings,
       ),
     },
     upside_downside: {
-      visual: visualFromBand(pickBand(flags.structurallySupportedMove, flags.structurallyFragileMove)),
+      visual: visualFromBand(pickBand(flags.structurallySupportedMove, flags.structurallyFragileMove), strings),
     },
   };
 
   const nested = {
     meta: {
-      report_type: valueOrFallback(docxPayload?.meta?.reportType),
-      version: valueOrFallback(docxPayload?.meta?.version),
-      generated_at: valueOrFallback(docxPayload?.meta?.generatedAt),
+      report_type: withFallback(docxPayload?.meta?.reportType),
+      version: withFallback(docxPayload?.meta?.version),
+      generated_at: withFallback(docxPayload?.meta?.generatedAt),
     },
     mode,
     case: {
       case_type: caseType,
-      verdict_label: valueOrFallback(deriveVerdictLabel(executive, flat)),
-      option_a_label: mode === "comparative" ? valueOrFallback(labels.optionA) : "",
-      option_b_label: mode === "comparative" ? valueOrFallback(labels.optionB) : "",
+      verdict_label: withFallback(deriveVerdictLabel(executive, flat, strings)),
+      option_a_label: mode === "comparative" ? withFallback(labels.optionA) : "",
+      option_b_label: mode === "comparative" ? withFallback(labels.optionB) : "",
     },
     executive_summary: {
-      verdict_line: valueOrFallback(executive.overviewLine || flat.executive_overview_overview_line),
-      structural_outlook_line: valueOrFallback(executive.readingLine || flat.executive_overview_reading_line),
-      structural_risk_line: valueOrFallback(risk.primaryRisk || flat.structural_risk_diagnosis_primary_risk),
-      personal_exposure_line: valueOrFallback(internal.strainLine || flat.internal_structural_snapshot_strain_line),
-      assessment_basis_line: valueOrFallback(buildAssessmentBasisLine(completenessScore)),
+      verdict_line: withFallback(executive.overviewLine || flat.executive_overview_overview_line),
+      structural_outlook_line: withFallback(executive.readingLine || flat.executive_overview_reading_line),
+      structural_risk_line: withFallback(risk.primaryRisk || flat.structural_risk_diagnosis_primary_risk),
+      personal_exposure_line: withFallback(internal.strainLine || flat.internal_structural_snapshot_strain_line),
+      assessment_basis_line: withFallback(buildAssessmentBasisLine(completenessScore, strings)),
     },
     external_snapshot: {
-      title: valueOrFallback(external.title || flat.external_snapshot_title),
-      market_direction: valueOrFallback(external.marketLine || flat.external_snapshot_market_line),
-      competition_pressure: valueOrFallback(external.positionLine || flat.external_snapshot_position_line),
-      economic_pressure: valueOrFallback(external.signalLine || flat.external_snapshot_signal_line),
-      transition_friction: valueOrFallback(external.frictionLine || flat.external_snapshot_friction_line),
+      title: withFallback(external.title || flat.external_snapshot_title),
+      market_direction: withFallback(external.marketLine || flat.external_snapshot_market_line),
+      competition_pressure: withFallback(external.positionLine || flat.external_snapshot_position_line),
+      economic_pressure: withFallback(external.signalLine || flat.external_snapshot_signal_line),
+      transition_friction: withFallback(external.frictionLine || flat.external_snapshot_friction_line),
     },
     comparative_snapshot: {
       option_a: {
-        market_status: valueOrFallback(nativeComparativeStatus?.optionA?.marketStatus || "◆ Mixed"),
-        competition_status: valueOrFallback(nativeComparativeStatus?.optionA?.competitionStatus || "◐ Moderate"),
-        economic_status: valueOrFallback(nativeComparativeStatus?.optionA?.economicStatus || "◐ Moderate"),
-        transition_status: valueOrFallback(nativeComparativeStatus?.optionA?.transitionStatus || "◐ Moderate"),
+        market_status: withFallback(nativeComparativeStatus?.optionA?.marketStatus || strings.defaultMarketStatus),
+        competition_status: withFallback(
+          nativeComparativeStatus?.optionA?.competitionStatus || strings.defaultPressureStatus,
+        ),
+        economic_status: withFallback(nativeComparativeStatus?.optionA?.economicStatus || strings.defaultPressureStatus),
+        transition_status: withFallback(
+          nativeComparativeStatus?.optionA?.transitionStatus || strings.defaultPressureStatus,
+        ),
       },
       option_b: {
-        market_status: valueOrFallback(nativeComparativeStatus?.optionB?.marketStatus || "◆ Mixed"),
-        competition_status: valueOrFallback(nativeComparativeStatus?.optionB?.competitionStatus || "◐ Moderate"),
-        economic_status: valueOrFallback(nativeComparativeStatus?.optionB?.economicStatus || "◐ Moderate"),
-        transition_status: valueOrFallback(nativeComparativeStatus?.optionB?.transitionStatus || "● Elevated"),
+        market_status: withFallback(nativeComparativeStatus?.optionB?.marketStatus || strings.defaultMarketStatus),
+        competition_status: withFallback(
+          nativeComparativeStatus?.optionB?.competitionStatus || strings.defaultPressureStatus,
+        ),
+        economic_status: withFallback(nativeComparativeStatus?.optionB?.economicStatus || strings.defaultPressureStatus),
+        transition_status: withFallback(
+          nativeComparativeStatus?.optionB?.transitionStatus || strings.defaultElevatedPressureStatus,
+        ),
       },
-      reading: valueOrFallback(external.comparativeReading || flat.external_snapshot_comparative_reading),
-      implication: valueOrFallback(conditions.comparativeReading || flat.decision_conditions_comparative_reading),
+      reading: withFallback(external.comparativeReading || flat.external_snapshot_comparative_reading),
+      implication: withFallback(conditions.comparativeReading || flat.decision_conditions_comparative_reading),
     },
     matrix,
     diagnosis: {
       market_outlook: {
-        read: valueOrFallback(external.marketLine || flat.external_snapshot_market_line),
-        risk: valueOrFallback(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk),
-        condition: valueOrFallback(risk.handlingLine || flat.structural_risk_diagnosis_handling_line),
+        read: withFallback(external.marketLine || flat.external_snapshot_market_line),
+        risk: withFallback(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk),
+        condition: withFallback(risk.handlingLine || flat.structural_risk_diagnosis_handling_line),
       },
       company_stability: {
-        read: valueOrFallback(internal.supportLine || flat.internal_structural_snapshot_support_line),
-        risk: valueOrFallback(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk),
-        condition: valueOrFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
+        read: withFallback(internal.supportLine || flat.internal_structural_snapshot_support_line),
+        risk: withFallback(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk),
+        condition: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
       },
       fifwm_risk: {
-        read: valueOrFallback(risk.primaryRisk || flat.structural_risk_diagnosis_primary_risk),
-        risk: valueOrFallback(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk),
-        condition: valueOrFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
+        read: withFallback(risk.primaryRisk || flat.structural_risk_diagnosis_primary_risk),
+        risk: withFallback(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk),
+        condition: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
       },
       personal_fit: {
-        read: valueOrFallback(internal.clarityLine || flat.internal_structural_snapshot_clarity_line),
-        risk: valueOrFallback(value.tensionLine || flat.career_value_structure_tension_line),
-        condition: valueOrFallback(value.alignmentLine || flat.career_value_structure_alignment_line),
+        read: withFallback(internal.clarityLine || flat.internal_structural_snapshot_clarity_line),
+        risk: withFallback(value.tensionLine || flat.career_value_structure_tension_line),
+        condition: withFallback(value.alignmentLine || flat.career_value_structure_alignment_line),
       },
       upside_downside: {
-        read: valueOrFallback(mobility.mobilityLine || flat.career_mobility_structure_mobility_line),
-        risk: valueOrFallback(mobility.burdenLine || flat.career_mobility_structure_burden_line),
-        condition: valueOrFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        read: withFallback(mobility.mobilityLine || flat.career_mobility_structure_mobility_line),
+        risk: withFallback(mobility.burdenLine || flat.career_mobility_structure_burden_line),
+        condition: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
     },
     exploration_plan: {
       experiment_1: {
-        timeline: "Weeks 1–6",
-        objective: valueOrFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
-        design: valueOrFallback("Run structured market and portability checks against target path assumptions."),
-        validation_signal: valueOrFallback(external.marketLine || flat.external_snapshot_market_line),
-        stop_or_scale_rule: valueOrFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        timeline: strings.experimentTimeline1,
+        objective: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
+        design: withFallback(strings.experimentDesign1),
+        validation_signal: withFallback(external.marketLine || flat.external_snapshot_market_line),
+        stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
       experiment_2: {
-        timeline: "Weeks 3–8",
-        objective: valueOrFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
-        design: valueOrFallback("Test execution readiness under explicit workload, pace, and sequencing constraints."),
-        validation_signal: valueOrFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
-        stop_or_scale_rule: valueOrFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        timeline: strings.experimentTimeline2,
+        objective: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
+        design: withFallback(strings.experimentDesign2),
+        validation_signal: withFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
+        stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
       experiment_3: {
-        timeline: "Weeks 6–12",
-        objective: valueOrFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
-        design: valueOrFallback("Validate sponsor, fallback, and support durability before commitment."),
-        validation_signal: valueOrFallback(temperament.disciplineLine || flat.strategic_temperament_discipline_line),
-        stop_or_scale_rule: valueOrFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        timeline: strings.experimentTimeline3,
+        objective: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
+        design: withFallback(strings.experimentDesign3),
+        validation_signal: withFallback(temperament.disciplineLine || flat.strategic_temperament_discipline_line),
+        stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
     },
     execution_map: {
       phase_1: {
-        priority_action: valueOrFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
-        success_signal: valueOrFallback(external.marketLine || flat.external_snapshot_market_line),
+        priority_action: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
+        success_signal: withFallback(external.marketLine || flat.external_snapshot_market_line),
       },
       phase_2: {
-        priority_action: valueOrFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
-        success_signal: valueOrFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
+        priority_action: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
+        success_signal: withFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
       },
       phase_3: {
-        priority_action: valueOrFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
-        success_signal: valueOrFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        priority_action: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
+        success_signal: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
     },
     assumptions_watchlist: {
       assumption_1: {
-        statement: valueOrFallback(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk),
-        break_signal: valueOrFallback(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk),
+        statement: withFallback(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk),
+        break_signal: withFallback(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk),
       },
       assumption_2: {
-        statement: valueOrFallback(internal.strainLine || flat.internal_structural_snapshot_strain_line),
-        break_signal: valueOrFallback(mobility.burdenLine || flat.career_mobility_structure_burden_line),
+        statement: withFallback(internal.strainLine || flat.internal_structural_snapshot_strain_line),
+        break_signal: withFallback(mobility.burdenLine || flat.career_mobility_structure_burden_line),
       },
       assumption_3: {
-        statement: valueOrFallback(value.tensionLine || flat.career_value_structure_tension_line),
-        break_signal: valueOrFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
+        statement: withFallback(value.tensionLine || flat.career_value_structure_tension_line),
+        break_signal: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
       },
     },
     commitment: {
-      validation_condition: valueOrFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
-      readiness_condition: valueOrFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
-      support_condition: valueOrFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
-      commitment_condition: valueOrFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
-      reassessment_trigger: valueOrFallback(
-        "Reassessment is required if key structural signals deteriorate before commitment conditions close.",
-      ),
+      validation_condition: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
+      readiness_condition: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
+      support_condition: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
+      commitment_condition: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+      reassessment_trigger: withFallback(strings.reassessmentTrigger),
     },
   };
 
-  return applyNullFallbacks(nested);
+  return applyNullFallbacks(nested, strings.notApplicable);
 }
 
-function valueOrFallback(value: unknown): string {
+function valueOrFallback(value: unknown, fallbackText: string): string {
   if (value === null || value === undefined) {
-    return "[Not applicable]";
+    return fallbackText;
   }
   const text = String(value).trim();
-  return text ? text : "[Not applicable]";
+  return text ? text : fallbackText;
 }
 
-function applyNullFallbacks(value: any): any {
+function applyNullFallbacks(value: any, fallbackText: string): any {
   if (value === null || value === undefined) {
-    return "[Not applicable]";
+    return fallbackText;
   }
   if (Array.isArray(value)) {
-    return value.map((item) => applyNullFallbacks(item));
+    return value.map((item) => applyNullFallbacks(item, fallbackText));
   }
   if (typeof value === "object") {
     const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(value)) {
-      out[k] = applyNullFallbacks(v);
+      out[k] = applyNullFallbacks(v, fallbackText);
     }
     return out;
   }
   if (typeof value === "string") {
-    return value.trim() ? value : "[Not applicable]";
+    return value.trim() ? value : fallbackText;
   }
   return value;
 }
 
-function deriveVerdictLabel(executive: Record<string, unknown>, flat: Record<string, string>) {
+function deriveVerdictLabel(
+  executive: Record<string, unknown>,
+  flat: Record<string, string>,
+  strings: { verdictLabelComparative: string; verdictLabelSingle: string },
+) {
   const overview = String(executive.overviewLine || flat.executive_overview_overview_line || "").toLowerCase();
   if (overview.includes("comparative") || overview.includes("comparison")) {
-    return "Comparative Structural Reading";
+    return strings.verdictLabelComparative;
   }
-  return "Structural Reading";
+  return strings.verdictLabelSingle;
 }
 
 function pickBand(strong: unknown, weak: unknown): "strong" | "partial" | "weak" {
@@ -285,20 +311,26 @@ function pickBand(strong: unknown, weak: unknown): "strong" | "partial" | "weak"
   return "partial";
 }
 
-function visualFromBand(band: "strong" | "partial" | "weak"): string {
+function visualFromBand(
+  band: "strong" | "partial" | "weak",
+  strings: { matrixVisualStrong: string; matrixVisualPartial: string; matrixVisualWeak: string },
+): string {
   if (band === "strong") {
-    return "▲ Supportive";
+    return strings.matrixVisualStrong;
   }
   if (band === "weak") {
-    return "▼ Constrained";
+    return strings.matrixVisualWeak;
   }
-  return "◆ Mixed";
+  return strings.matrixVisualPartial;
 }
 
-function extractOptionLabels(rawIntake: any): { optionA: string; optionB: string } {
+function extractOptionLabels(
+  rawIntake: any,
+  strings: { optionALabel: string; optionBLabel: string },
+): { optionA: string; optionB: string } {
   const optionsText = String(rawIntake?.optionsUnderConsideration || "");
-  const optionA = extractLabeledOption(optionsText, "A") || "Option A";
-  const optionB = extractLabeledOption(optionsText, "B") || "Option B";
+  const optionA = extractLabeledOption(optionsText, "A") || strings.optionALabel;
+  const optionB = extractLabeledOption(optionsText, "B") || strings.optionBLabel;
   return { optionA, optionB };
 }
 
@@ -382,9 +414,12 @@ function computeIntakeCompletenessScore(normalized: Record<string, unknown>): nu
   return present / fields.length;
 }
 
-function buildAssessmentBasisLine(completenessScore: number): string {
+function buildAssessmentBasisLine(
+  completenessScore: number,
+  strings: { assessmentBasisHigh: string; assessmentBasisLow: string },
+): string {
   if (completenessScore >= 0.85) {
-    return "Assessment basis: Qualitative structural signals with sufficient input depth for decision framing.";
+    return strings.assessmentBasisHigh;
   }
-  return "Assessment basis: Qualitative structural signals available; quantitative depth limited - interpretation reflects available input.";
+  return strings.assessmentBasisLow;
 }

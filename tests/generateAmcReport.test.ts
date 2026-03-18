@@ -41,6 +41,25 @@ test("AMC raw intake can flow to render-ready handoff", () => {
   assert.ok(Object.prototype.hasOwnProperty.call(result.mergePayload, "executive_summary"));
 });
 
+test("locale option localizes fixed fallback strings without changing payload shape", () => {
+  const result = buildAmcRenderInput(
+    {
+      ...makeRawIntake("single"),
+      optionsUnderConsideration: "",
+    },
+    { now: () => new Date("2026-03-15T18:00:00.000Z"), locale: "ko" },
+  );
+
+  assert.equal(result.mergePayload.mode, "single");
+  assert.equal(result.mergePayload.case.case_type, "single_path");
+  assert.equal(result.mergePayload.case.option_a_label, "[해당 없음]");
+  assert.equal(result.mergePayload.case.option_b_label, "[해당 없음]");
+  assert.equal(
+    result.mergePayload.executive_summary.assessment_basis_line.startsWith("평가 근거:"),
+    true,
+  );
+});
+
 test("existing merge path is invoked and output docx is generated", () => {
   const td = fs.mkdtempSync(path.join(os.tmpdir(), "amc-docx-"));
   const templatePath = path.join(td, "template.docx");
