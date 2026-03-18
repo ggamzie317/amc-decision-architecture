@@ -105,6 +105,26 @@ test("comparative case can include comparativeReading", () => {
   assert.ok((result.comparativeReading || "").length > 0);
 });
 
+test("comparative case emits native comparative status signals", () => {
+  const args = makeBaseArgs();
+  const result = buildExternalSnapshot(args as any);
+
+  assert.equal(result.caseType, "comparative");
+  assert.ok(result.comparativeStatus);
+
+  const marketAllowed = new Set(["▲ Supportive", "◆ Mixed", "▼ Constrained"]);
+  const pressureAllowed = new Set(["○ Contained", "◐ Moderate", "● Elevated"]);
+
+  assert.ok(marketAllowed.has(result.comparativeStatus!.optionA.marketStatus));
+  assert.ok(marketAllowed.has(result.comparativeStatus!.optionB.marketStatus));
+  assert.ok(pressureAllowed.has(result.comparativeStatus!.optionA.competitionStatus));
+  assert.ok(pressureAllowed.has(result.comparativeStatus!.optionB.competitionStatus));
+  assert.ok(pressureAllowed.has(result.comparativeStatus!.optionA.economicStatus));
+  assert.ok(pressureAllowed.has(result.comparativeStatus!.optionB.economicStatus));
+  assert.ok(pressureAllowed.has(result.comparativeStatus!.optionA.transitionStatus));
+  assert.ok(pressureAllowed.has(result.comparativeStatus!.optionB.transitionStatus));
+});
+
 test("wording remains recommendation-free", () => {
   const args = makeBaseArgs();
   const result = buildExternalSnapshot(args as any);

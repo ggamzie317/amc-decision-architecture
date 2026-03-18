@@ -11,6 +11,21 @@ export interface ExternalSnapshotOutput {
   frictionLine: string;
   signalLine: string;
   comparativeReading?: string;
+  comparativeStatus?: {
+    optionA: ComparativeStatusSet;
+    optionB: ComparativeStatusSet;
+    source: "native_bucket";
+  };
+}
+
+type MarketStatus = "▲ Supportive" | "◆ Mixed" | "▼ Constrained";
+type PressureStatus = "○ Contained" | "◐ Moderate" | "● Elevated";
+
+interface ComparativeStatusSet {
+  marketStatus: MarketStatus;
+  competitionStatus: PressureStatus;
+  economicStatus: PressureStatus;
+  transitionStatus: PressureStatus;
 }
 
 export function buildExternalSnapshot(args: {
@@ -40,6 +55,7 @@ export function buildExternalSnapshot(args: {
     if (caseType === "comparative") {
       fallback.comparativeReading =
         "The comparison appears shaped by asymmetric external visibility rather than by a simple quality ranking.";
+      fallback.comparativeStatus = buildComparativeStatus("mixed", "partial", "moderate", "fragmented");
     }
     return fallback;
   }
@@ -61,6 +77,7 @@ export function buildExternalSnapshot(args: {
 
   if (caseType === "comparative") {
     output.comparativeReading = buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+    output.comparativeStatus = buildComparativeStatus(demandBucket, portabilityBucket, frictionBucket, signalBucket);
   }
 
   return output;
@@ -235,4 +252,65 @@ function buildComparativeReading(
     return "The comparison indicates a continuity-versus-repositioning contrast, with different external exposures across otherwise credible paths.";
   }
   return "The comparison appears shaped by uneven visibility, portability, and transition friction, not by a simple winner-loser split.";
+}
+
+function buildComparativeStatus(
+  demand: DemandBucket,
+  portability: PortabilityBucket,
+  friction: FrictionBucket,
+  signal: SignalBucket,
+): {
+  optionA: ComparativeStatusSet;
+  optionB: ComparativeStatusSet;
+  source: "native_bucket";
+} {
+  const optionA: ComparativeStatusSet = {
+    marketStatus: "◆ Mixed",
+    competitionStatus: "◐ Moderate",
+    economicStatus: "◐ Moderate",
+    transitionStatus: "◐ Moderate",
+  };
+  const optionB: ComparativeStatusSet = {
+    marketStatus: "◆ Mixed",
+    competitionStatus: "◐ Moderate",
+    economicStatus: "◐ Moderate",
+    transitionStatus: "● Elevated",
+  };
+
+  if (demand === "clear") {
+    optionA.marketStatus = "▲ Supportive";
+    optionB.marketStatus = "◆ Mixed";
+  } else if (demand === "weak") {
+    optionA.marketStatus = "◆ Mixed";
+    optionB.marketStatus = "▼ Constrained";
+  }
+
+  if (portability === "strong") {
+    optionA.competitionStatus = "○ Contained";
+    optionB.competitionStatus = "◐ Moderate";
+  } else if (portability === "constrained") {
+    optionA.competitionStatus = "◐ Moderate";
+    optionB.competitionStatus = "● Elevated";
+  }
+
+  if (signal === "visible") {
+    optionA.economicStatus = "○ Contained";
+    optionB.economicStatus = "◐ Moderate";
+  } else if (signal === "fragmented") {
+    optionA.economicStatus = "◐ Moderate";
+    optionB.economicStatus = "● Elevated";
+  }
+
+  if (friction === "low") {
+    optionA.transitionStatus = "○ Contained";
+    optionB.transitionStatus = "◐ Moderate";
+  } else if (friction === "moderate") {
+    optionA.transitionStatus = "◐ Moderate";
+    optionB.transitionStatus = "● Elevated";
+  } else {
+    optionA.transitionStatus = "● Elevated";
+    optionB.transitionStatus = "● Elevated";
+  }
+
+  return { optionA, optionB, source: "native_bucket" };
 }

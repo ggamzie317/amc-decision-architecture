@@ -81,6 +81,7 @@ function buildNestedTemplateContext(rawIntake: any, docxPayload: ReturnType<type
   const completenessScore = computeIntakeCompletenessScore(normalized);
 
   const labels = extractOptionLabels(rawIntake);
+  const nativeComparativeStatus = external.comparativeStatus || {};
 
   const matrix = {
     market_outlook: { visual: visualFromBand(pickBand(flags.growingMarketOutlook, flags.decliningMarketOutlook)) },
@@ -130,16 +131,16 @@ function buildNestedTemplateContext(rawIntake: any, docxPayload: ReturnType<type
     },
     comparative_snapshot: {
       option_a: {
-        market_status: "◆ Mixed",
-        competition_status: "◐ Moderate",
-        economic_status: "◐ Moderate",
-        transition_status: "◐ Moderate",
+        market_status: valueOrFallback(nativeComparativeStatus?.optionA?.marketStatus || "◆ Mixed"),
+        competition_status: valueOrFallback(nativeComparativeStatus?.optionA?.competitionStatus || "◐ Moderate"),
+        economic_status: valueOrFallback(nativeComparativeStatus?.optionA?.economicStatus || "◐ Moderate"),
+        transition_status: valueOrFallback(nativeComparativeStatus?.optionA?.transitionStatus || "◐ Moderate"),
       },
       option_b: {
-        market_status: "◆ Mixed",
-        competition_status: "◐ Moderate",
-        economic_status: "◐ Moderate",
-        transition_status: "● Elevated",
+        market_status: valueOrFallback(nativeComparativeStatus?.optionB?.marketStatus || "◆ Mixed"),
+        competition_status: valueOrFallback(nativeComparativeStatus?.optionB?.competitionStatus || "◐ Moderate"),
+        economic_status: valueOrFallback(nativeComparativeStatus?.optionB?.economicStatus || "◐ Moderate"),
+        transition_status: valueOrFallback(nativeComparativeStatus?.optionB?.transitionStatus || "● Elevated"),
       },
       reading: valueOrFallback(external.comparativeReading || flat.external_snapshot_comparative_reading),
       implication: valueOrFallback(conditions.comparativeReading || flat.decision_conditions_comparative_reading),
