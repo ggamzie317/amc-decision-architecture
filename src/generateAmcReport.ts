@@ -11,6 +11,7 @@ export interface GenerateAmcReportOptions {
   payloadPath?: string;
   pythonBin?: string;
   now?: () => Date;
+  strictUndeclared?: boolean;
 }
 
 export interface AmcRenderInput {
@@ -49,6 +50,7 @@ export function generateAmcReport(rawIntake: any, options: GenerateAmcReportOpti
       payloadPath,
       "--out",
       options.outPath,
+      ...(options.strictUndeclared ? ["--strict-undeclared"] : []),
     ],
     { stdio: "pipe" },
   );

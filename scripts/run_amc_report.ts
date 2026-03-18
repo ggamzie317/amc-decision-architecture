@@ -10,12 +10,14 @@ type CliArgs = {
   out: string;
   payload: string;
   python: string;
+  strictUndeclared: boolean;
 };
 
 function parseArgs(argv: string[]): CliArgs {
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const defaultTemplate =
     process.env.AMC_TEMPLATE_PATH ||
-    "/Users/kwonkibum/Downloads/AMC_Strategic_Career_Decision_Template_v3_3.docx";
+    path.resolve(scriptDir, "..", "templates", "AMC_Strategic_Career_Decision_Template_v3_3.docx");
 
   const args: CliArgs = {
     intake: "examples/amc_sample_single.json",
@@ -23,6 +25,7 @@ function parseArgs(argv: string[]): CliArgs {
     out: "output/AMC_Report_Runner.docx",
     payload: "output/amc_docx_payload_latest.json",
     python: "python3",
+    strictUndeclared: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -54,6 +57,10 @@ function parseArgs(argv: string[]): CliArgs {
       i += 1;
       continue;
     }
+    if (token === "--strict-undeclared") {
+      args.strictUndeclared = true;
+      continue;
+    }
     if (token === "-h" || token === "--help") {
       printHelp();
       process.exit(0);
@@ -69,10 +76,11 @@ function printHelp(): void {
   console.log("  pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts [options]");
   console.log("Options:");
   console.log("  --intake <path>    Raw intake JSON path (default: examples/amc_sample_single.json)");
-  console.log("  --template <path>  DOCX template path (default: $AMC_TEMPLATE_PATH or v3_3 Downloads path)");
+  console.log("  --template <path>  DOCX template path (default: $AMC_TEMPLATE_PATH or repo templates/v3_3 path)");
   console.log("  --out <path>       Output DOCX path (default: output/AMC_Report_Runner.docx)");
   console.log("  --payload <path>   Intermediate flat payload JSON path (default: output/amc_docx_payload_latest.json)");
   console.log("  --python <bin>     Python executable for merge_docx.py (default: python3)");
+  console.log("  --strict-undeclared  Fail render if undeclared template variables remain");
 }
 
 function readJson(filePath: string): any {
@@ -100,6 +108,7 @@ function main(): number {
       outPath: args.out,
       payloadPath: args.payload,
       pythonBin: args.python,
+      strictUndeclared: args.strictUndeclared,
     });
 
     const summary = {

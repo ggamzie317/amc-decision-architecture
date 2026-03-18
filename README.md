@@ -40,8 +40,8 @@ Current AMC pipeline is deterministic and section-based:
 - `src/assembleAmcReportPayload.ts`: orchestrates normalized intake + flags + summary + sections
 - `src/buildAmcTemplatePayload.ts`: template-ready flat placeholder payload
 - `src/buildAmcDocxPayload.ts`: bridge payload (`meta` + `reportPayload` + `templatePayload`)
-- `src/generateAmcReport.ts`: AMC integration entrypoint to existing merge path
-- `src/merge_docx.py`: current placeholder merge implementation for DOCX templates
+- `src/generateAmcReport.ts`: AMC integration entrypoint to production DOCX render path
+- `src/merge_docx.py`: `docxtpl`-based nested render + undeclared-variable audit
 
 ## Generation Flow
 
@@ -107,9 +107,32 @@ pnpm --dir manus-ui exec tsx ../tests/generateAmcReport.test.ts
 ## Current Assumptions / Limitations
 
 - Comparative detection is text-signal based (`optionsUnderConsideration` markers).
-- Template path and output path are caller-provided in `generateAmcReport`.
+- Production template defaults to repo-local path:
+  `templates/AMC_Strategic_Career_Decision_Template_v3_3.docx`
 - Upstream validation is intentionally lightweight; builders fail transparently on missing required data.
-- Template payload is explicit flat key-value mapping for placeholder replacement.
+- Render context is nested and aligned to dotted DOCX placeholders.
+
+## Canonical Production Render Commands
+
+Single-path render (strict undeclared check):
+
+```bash
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts \
+  --intake ../examples/amc_sample_single.json \
+  --strict-undeclared \
+  --out ../output/AMC_Report_prod_single.docx \
+  --payload ../output/amc_docx_payload_prod_single.json
+```
+
+Comparative render (strict undeclared check):
+
+```bash
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts \
+  --intake ../examples/amc_sample_comparative.json \
+  --strict-undeclared \
+  --out ../output/AMC_Report_prod_comparative.docx \
+  --payload ../output/amc_docx_payload_prod_comparative.json
+```
 
 ## Immediate Next Recommended Cleanup
 
