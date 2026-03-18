@@ -21,6 +21,14 @@ export interface AmcRenderInput {
   mergePayload: Record<string, unknown>;
 }
 
+export function resolveRenderLocale(
+  args: { locale?: AmcRenderLocale | string },
+  rawIntake: any,
+): AmcRenderLocale {
+  // Precedence: CLI/options override -> intake.lang -> default locale ("en").
+  return resolveAmcRenderLocale(args.locale ?? rawIntake?.lang);
+}
+
 export function buildAmcRenderInput(
   rawIntake: any,
   options: { now?: () => Date; locale?: AmcRenderLocale | string } = {},
@@ -73,7 +81,7 @@ function buildNestedTemplateContext(
   docxPayload: ReturnType<typeof buildAmcDocxPayload>,
   localeInput?: AmcRenderLocale | string,
 ) {
-  const locale = resolveAmcRenderLocale(localeInput || rawIntake?.lang);
+  const locale = resolveRenderLocale({ locale: localeInput }, rawIntake);
   const strings = getAmcRenderStrings(locale);
   const withFallback = (value: unknown) => valueOrFallback(value, strings.notApplicable);
   const flat = docxPayload.templatePayload || {};

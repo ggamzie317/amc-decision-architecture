@@ -8,6 +8,7 @@
     {"id": "comparative_degree_gate", "type": "comparative", "path": "fixtures/golden/comparative_degree_gate.json"},
     {"id": "comparative_relocation_friction", "type": "comparative", "path": "fixtures/golden/comparative_relocation_friction.json"},
     {"id": "edge_sparse_single", "type": "edge", "path": "fixtures/golden/edge_sparse_single.json"},
-    {"id": "edge_sparse_comparative", "type": "edge", "path": "fixtures/golden/edge_sparse_comparative.json"}
+    {"id": "edge_sparse_comparative", "type": "edge", "path": "fixtures/golden/edge_sparse_comparative.json"},
+    {"id": "edge_sparse_single_ko", "type": "edge", "path": "fixtures/golden/edge_sparse_single_ko.json"}
   ]
 }

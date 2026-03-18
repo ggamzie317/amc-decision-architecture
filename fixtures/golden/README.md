@@ -5,7 +5,7 @@ Canonical semantic review fixture set for AMC render pipeline.
 ## Coverage
 - Single cases: 3
 - Comparative cases: 3
-- Edge/fallback-heavy cases: 2
+- Edge/fallback-heavy cases: 3
 
 ## Files
 - `manifest.json`: fixture manifest with IDs and intake paths.

@@ -14,6 +14,14 @@ Option B migration baseline commit: `1af07b1`.
 
 Unless explicitly approved as a contract update, changes should preserve compatibility with the behavior established at this baseline.
 
+## Locale Resolution Rule
+Render locale precedence is stable and must remain:
+1. CLI/options override (`--lang` / `locale`)
+2. `intake.lang`
+3. default locale (`en`)
+
+This locale layer currently applies to render-owned fixed strings only, not dynamic Step 4 prose or DOCX heading localization.
+
 ## Stable Render Contract (Section-Level)
 The production template expects a stable nested context with these top-level namespaces:
 - `meta`

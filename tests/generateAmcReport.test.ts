@@ -5,7 +5,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
 
-import { buildAmcRenderInput, generateAmcReport } from "../src/generateAmcReport";
+import { buildAmcRenderInput, generateAmcReport, resolveRenderLocale } from "../src/generateAmcReport";
 
 function makeRawIntake(caseMode: "single" | "comparative" = "single") {
   return {
@@ -58,6 +58,12 @@ test("locale option localizes fixed fallback strings without changing payload sh
     result.mergePayload.executive_summary.assessment_basis_line.startsWith("평가 근거:"),
     true,
   );
+});
+
+test("locale precedence is explicit: cli override > intake.lang > default", () => {
+  assert.equal(resolveRenderLocale({ locale: "zh" }, { lang: "ko" }), "zh");
+  assert.equal(resolveRenderLocale({}, { lang: "ko" }), "ko");
+  assert.equal(resolveRenderLocale({}, {}), "en");
 });
 
 test("existing merge path is invoked and output docx is generated", () => {

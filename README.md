@@ -132,6 +132,11 @@ Optional language layer for fixed render strings (`ko|en|zh`, default `en` or `i
 pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared --lang ko
 ```
 
+Locale resolution precedence:
+- `--lang` (CLI override) wins when provided.
+- Otherwise `intake.lang` is used when present.
+- Otherwise render defaults to `en`.
+
 ## Immediate Next Recommended Cleanup
 
 - Refine README and developer docs around end-to-end AMC invocation examples.
