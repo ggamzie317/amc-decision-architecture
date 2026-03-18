@@ -9,6 +9,11 @@ The AMC render pipeline exists to produce stable DOCX outputs from AMC intake da
 
 This document defines what is considered stable contract behavior and how changes are governed.
 
+## Contract Baseline
+Option B migration baseline commit: `1af07b1`.
+
+Unless explicitly approved as a contract update, changes should preserve compatibility with the behavior established at this baseline.
+
 ## Stable Render Contract (Section-Level)
 The production template expects a stable nested context with these top-level namespaces:
 - `meta`
@@ -74,6 +79,7 @@ Any of the following is contract-breaking:
 - changing renderer behavior so strict undeclared checks no longer enforce missing-variable failures
 - changing paths/entrypoints so canonical render commands no longer reproduce outputs
 - altering comparative visibility behavior in single/comparative modes without explicit governance update
+- editing the production template without passing `--strict-undeclared` renders for both `examples/amc_sample_single.json` and `examples/amc_sample_comparative.json`
 
 ## Safe Data-Layer Refinement Definition
 Typically safe (with validation):
