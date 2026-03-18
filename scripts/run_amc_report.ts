@@ -15,15 +15,16 @@ type CliArgs = {
 
 function parseArgs(argv: string[]): CliArgs {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+  const repoRoot = path.resolve(scriptDir, "..");
   const defaultTemplate =
     process.env.AMC_TEMPLATE_PATH ||
-    path.resolve(scriptDir, "..", "templates", "AMC_Strategic_Career_Decision_Template_v3_3.docx");
+    path.resolve(repoRoot, "templates", "AMC_Strategic_Career_Decision_Template_v3_3.docx");
 
   const args: CliArgs = {
-    intake: "examples/amc_sample_single.json",
+    intake: path.resolve(repoRoot, "examples", "amc_sample_single.json"),
     template: defaultTemplate,
-    out: "output/AMC_Report_Runner.docx",
-    payload: "output/amc_docx_payload_latest.json",
+    out: path.resolve(repoRoot, "output", "AMC_Report_Runner.docx"),
+    payload: path.resolve(repoRoot, "output", "amc_docx_payload_latest.json"),
     python: "python3",
     strictUndeclared: false,
   };
@@ -35,6 +36,10 @@ function parseArgs(argv: string[]): CliArgs {
     if (token === "--intake" && next) {
       args.intake = next;
       i += 1;
+      continue;
+    }
+    if (token === "--comparative") {
+      args.intake = path.resolve(repoRoot, "examples", "amc_sample_comparative.json");
       continue;
     }
     if (token === "--template" && next) {
@@ -75,10 +80,11 @@ function printHelp(): void {
   console.log("Usage:");
   console.log("  pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts [options]");
   console.log("Options:");
-  console.log("  --intake <path>    Raw intake JSON path (default: examples/amc_sample_single.json)");
+  console.log("  --intake <path>    Raw intake JSON path (default: repo examples/amc_sample_single.json)");
+  console.log("  --comparative      Use repo examples/amc_sample_comparative.json");
   console.log("  --template <path>  DOCX template path (default: $AMC_TEMPLATE_PATH or repo templates/v3_3 path)");
-  console.log("  --out <path>       Output DOCX path (default: output/AMC_Report_Runner.docx)");
-  console.log("  --payload <path>   Intermediate flat payload JSON path (default: output/amc_docx_payload_latest.json)");
+  console.log("  --out <path>       Output DOCX path (default: repo output/AMC_Report_Runner.docx)");
+  console.log("  --payload <path>   Intermediate payload JSON path (default: repo output/amc_docx_payload_latest.json)");
   console.log("  --python <bin>     Python executable for merge_docx.py (default: python3)");
   console.log("  --strict-undeclared  Fail render if undeclared template variables remain");
 }

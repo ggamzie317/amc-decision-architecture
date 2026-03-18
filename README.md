@@ -117,21 +117,13 @@ pnpm --dir manus-ui exec tsx ../tests/generateAmcReport.test.ts
 Single-path render (strict undeclared check):
 
 ```bash
-pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts \
-  --intake ../examples/amc_sample_single.json \
-  --strict-undeclared \
-  --out ../output/AMC_Report_prod_single.docx \
-  --payload ../output/amc_docx_payload_prod_single.json
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared
 ```
 
 Comparative render (strict undeclared check):
 
 ```bash
-pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts \
-  --intake ../examples/amc_sample_comparative.json \
-  --strict-undeclared \
-  --out ../output/AMC_Report_prod_comparative.docx \
-  --payload ../output/amc_docx_payload_prod_comparative.json
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared
 ```
 
 ## Immediate Next Recommended Cleanup

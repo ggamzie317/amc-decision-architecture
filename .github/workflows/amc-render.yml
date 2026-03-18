@@ -1,0 +1,44 @@
+name: AMC Strict Render
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  amc-render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (with Git LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: manus-ui/pnpm-lock.yaml
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install JS dependencies
+        run: pnpm --dir manus-ui install --frozen-lockfile
+
+      - name: Install docxtpl
+        run: python -m pip install --upgrade pip docxtpl
+
+      - name: Strict render (single)
+        run: pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared
+
+      - name: Strict render (comparative)
+        run: pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared
