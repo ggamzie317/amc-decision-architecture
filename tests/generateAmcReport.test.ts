@@ -204,3 +204,40 @@ test("unsupported explorationDesignHints emits warning and keeps design fallback
   assert.ok(context.exploration_plan.experiment_2.design.length > 0);
   assert.ok(context.exploration_plan.experiment_3.design.length > 0);
 });
+
+test("duplicate explorationDesignHints are deterministically diversified when possible", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  const decisionSection = docxPayload.reportPayload.sections.find(
+    (s: any) => s.section === "decision_conditions",
+  );
+
+  decisionSection.nativeMetadata.explorationDesignHints = {
+    experiment1: "Duplicate upstream hint.",
+    experiment2: "Duplicate upstream hint.",
+    experiment3: "Duplicate upstream hint.",
+  };
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings as string[];
+
+  assert.ok(context.exploration_plan.experiment_1.design.length > 0);
+  assert.ok(context.exploration_plan.experiment_2.design.length > 0);
+  assert.ok(context.exploration_plan.experiment_3.design.length > 0);
+
+  // Distinctness should be preserved when defaults permit diversification.
+  const designs = [
+    context.exploration_plan.experiment_1.design,
+    context.exploration_plan.experiment_2.design,
+    context.exploration_plan.experiment_3.design,
+  ];
+  assert.equal(new Set(designs).size, 3);
+
+  // This case is valid and deduplication is expected behavior, not a warning case.
+  assert.equal(
+    warnings.some((w) => w.includes("explorationDesignHints")),
+    false,
+  );
+});
