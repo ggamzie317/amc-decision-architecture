@@ -241,3 +241,28 @@ test("duplicate explorationDesignHints are deterministically diversified when po
     false,
   );
 });
+
+test("missing decision nativeMetadata keeps safe fallback outputs populated", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  const decisionSection = docxPayload.reportPayload.sections.find(
+    (s: any) => s.section === "decision_conditions",
+  );
+  delete decisionSection.nativeMetadata;
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings as string[];
+
+  assert.ok(Array.isArray(warnings));
+  // Missing native metadata is an allowed fallback path; warning is optional by design.
+  assert.ok(context.exploration_plan.experiment_1.design.length > 0);
+  assert.ok(context.exploration_plan.experiment_2.design.length > 0);
+  assert.ok(context.exploration_plan.experiment_3.design.length > 0);
+  assert.ok(context.commitment.reassessment_trigger.length > 0);
+  assert.equal(
+    context.commitment.reassessment_trigger,
+    "Reassessment is required if key structural signals deteriorate before commitment conditions close.",
+  );
+});
