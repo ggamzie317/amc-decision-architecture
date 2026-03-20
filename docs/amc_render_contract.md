@@ -37,6 +37,7 @@ This locale layer currently applies to render-owned fixed strings only, not dyna
 - Any future section cue must explicitly choose one model before implementation:
   - quality-sensitive, or
   - absence-only.
+- If a proposed cue does not clearly fit either model, it is a contract decision item and must be resolved explicitly before implementation; do not silently default to absence-only.
 
 ## Stable Render Contract (Section-Level)
 The production template expects a stable nested context with these top-level namespaces:
