@@ -296,3 +296,72 @@ test("upstream matrix bands and option labels are consumed when provided", () =>
   assert.equal(context.matrix.personal_fit.visual, "▲ Supportive");
   assert.equal(context.matrix.upside_downside.visual, "▼ Constrained");
 });
+
+test("missing native matrixBands falls back to derived band mapping safely", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  delete docxPayload.reportPayload.inputs.nativeMetadata.matrixBands;
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings as string[];
+
+  assert.ok(context.matrix.market_outlook.visual.length > 0);
+  assert.ok(context.matrix.company_stability.visual.length > 0);
+  assert.ok(context.matrix.fifwm_risk.visual.length > 0);
+  assert.ok(context.matrix.personal_fit.visual.length > 0);
+  assert.ok(context.matrix.upside_downside.visual.length > 0);
+  assert.equal(
+    warnings.some((w) => w.includes("matrixBands")),
+    false,
+  );
+});
+
+test("native optionLabels with source parsed are consumed directly", () => {
+  const raw = makeRawIntake("comparative");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  docxPayload.reportPayload.inputs.nativeMetadata.optionLabels = {
+    optionA: "Upstream Parsed A",
+    optionB: "Upstream Parsed B",
+    source: "parsed",
+  };
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings as string[];
+
+  assert.equal(context.case.option_a_label, "Upstream Parsed A");
+  assert.equal(context.case.option_b_label, "Upstream Parsed B");
+  assert.equal(
+    warnings.some((w) => w.includes("optionLabels")),
+    false,
+  );
+});
+
+test("native optionLabels with source missing falls back safely to default labels when raw labels are unavailable", () => {
+  const raw = {
+    ...makeRawIntake("comparative"),
+    optionsUnderConsideration: "Compare internal path versus external path under current constraints.",
+  };
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  docxPayload.reportPayload.inputs.nativeMetadata.optionLabels = {
+    optionA: "",
+    optionB: "",
+    source: "missing",
+  };
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings as string[];
+
+  assert.equal(context.mode, "comparative");
+  assert.equal(context.case.option_a_label, "Option A");
+  assert.equal(context.case.option_b_label, "Option B");
+  assert.equal(
+    warnings.some((w) => w.includes("optionLabels")),
+    false,
+  );
+});
