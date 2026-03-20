@@ -113,6 +113,7 @@ export function buildNestedTemplateContextFromDocxPayload(
   const nativeComparativeStatus =
     external.comparativeOptionSignals || external.comparativeStatus || {};
   const upstreamMatrixBands = upstreamNative.matrixBands || {};
+  const externalCue = buildExternalReadingCue(external.nativeMetadata, strings, warnings);
   const nativeConditionMetadata = conditions.nativeMetadata || {};
   const explorationDesignResolution = resolveExplorationDesigns(
     nativeConditionMetadata.explorationDesignHints,
@@ -202,6 +203,7 @@ export function buildNestedTemplateContextFromDocxPayload(
       competition_pressure: withFallback(external.positionLine || flat.external_snapshot_position_line),
       economic_pressure: withFallback(external.signalLine || flat.external_snapshot_signal_line),
       transition_friction: withFallback(external.frictionLine || flat.external_snapshot_friction_line),
+      reading_cue: withFallback(externalCue),
     },
     comparative_snapshot: {
       option_a: {
@@ -518,6 +520,107 @@ function resolveMatrixBand(
   }
   warnings.push(`native_metadata.matrixBands.${field} unsupported value '${raw}'; fallback band applied.`);
   return fallbackBand;
+}
+
+function buildExternalReadingCue(
+  nativeMetadata: unknown,
+  strings: {
+    externalCueFallback: string;
+    externalCueWeakEvidence: string;
+    externalCuePrefix: string;
+    externalCueDemandClear: string;
+    externalCueDemandMixed: string;
+    externalCueDemandWeak: string;
+    externalCuePortabilityStrong: string;
+    externalCuePortabilityPartial: string;
+    externalCuePortabilityConstrained: string;
+    externalCueFrictionLow: string;
+    externalCueFrictionModerate: string;
+    externalCueFrictionHigh: string;
+    externalCueSignalVisible: string;
+    externalCueSignalPartial: string;
+    externalCueSignalFragmented: string;
+  },
+  warnings: string[],
+): string {
+  if (!nativeMetadata || typeof nativeMetadata !== "object") {
+    return strings.externalCueFallback;
+  }
+
+  const weakEvidence = Boolean((nativeMetadata as any).weakEvidence);
+  if (weakEvidence) {
+    return strings.externalCueWeakEvidence;
+  }
+
+  const demand = normalizeBucket(
+    (nativeMetadata as any).demandBucket,
+    ["clear", "mixed", "weak"],
+    "mixed",
+    "external_snapshot.nativeMetadata.demandBucket",
+    warnings,
+  );
+  const portability = normalizeBucket(
+    (nativeMetadata as any).portabilityBucket,
+    ["strong", "partial", "constrained"],
+    "partial",
+    "external_snapshot.nativeMetadata.portabilityBucket",
+    warnings,
+  );
+  const friction = normalizeBucket(
+    (nativeMetadata as any).frictionBucket,
+    ["low", "moderate", "high"],
+    "moderate",
+    "external_snapshot.nativeMetadata.frictionBucket",
+    warnings,
+  );
+  const signal = normalizeBucket(
+    (nativeMetadata as any).signalBucket,
+    ["visible", "partial", "fragmented"],
+    "partial",
+    "external_snapshot.nativeMetadata.signalBucket",
+    warnings,
+  );
+
+  const demandText =
+    demand === "clear" ? strings.externalCueDemandClear : demand === "weak" ? strings.externalCueDemandWeak : strings.externalCueDemandMixed;
+  const portabilityText =
+    portability === "strong"
+      ? strings.externalCuePortabilityStrong
+      : portability === "constrained"
+        ? strings.externalCuePortabilityConstrained
+        : strings.externalCuePortabilityPartial;
+  const frictionText =
+    friction === "low"
+      ? strings.externalCueFrictionLow
+      : friction === "high"
+        ? strings.externalCueFrictionHigh
+        : strings.externalCueFrictionModerate;
+  const signalText =
+    signal === "visible"
+      ? strings.externalCueSignalVisible
+      : signal === "fragmented"
+        ? strings.externalCueSignalFragmented
+        : strings.externalCueSignalPartial;
+
+  return `${strings.externalCuePrefix}: ${demandText}; ${portabilityText}; ${frictionText}; ${signalText}.`;
+}
+
+function normalizeBucket(
+  value: unknown,
+  allowed: string[],
+  fallbackValue: string,
+  fieldName: string,
+  warnings: string[],
+): string {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) {
+    return fallbackValue;
+  }
+  if (allowed.includes(raw)) {
+    return raw;
+  }
+  warnings.push(`${fieldName} unsupported value '${raw}'; fallback bucket applied.`);
+  return fallbackValue;
 }
 
 function resolveExplorationDesigns(

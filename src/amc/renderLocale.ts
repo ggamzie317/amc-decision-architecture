@@ -25,6 +25,21 @@ export interface AmcRenderStrings {
   reassessmentTriggerRiskDeterioration: string;
   assessmentBasisHigh: string;
   assessmentBasisLow: string;
+  externalCueFallback: string;
+  externalCueWeakEvidence: string;
+  externalCuePrefix: string;
+  externalCueDemandClear: string;
+  externalCueDemandMixed: string;
+  externalCueDemandWeak: string;
+  externalCuePortabilityStrong: string;
+  externalCuePortabilityPartial: string;
+  externalCuePortabilityConstrained: string;
+  externalCueFrictionLow: string;
+  externalCueFrictionModerate: string;
+  externalCueFrictionHigh: string;
+  externalCueSignalVisible: string;
+  externalCueSignalPartial: string;
+  externalCueSignalFragmented: string;
 }
 
 const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
@@ -53,6 +68,21 @@ const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
     reassessmentTriggerRiskDeterioration: "핵심 구조 리스크가 상승하면, 커밋 이전에 재평가가 필요합니다.",
     assessmentBasisHigh: "평가 근거: 의사결정 프레이밍에 충분한 입력 깊이를 바탕으로 한 정성적 구조 신호.",
     assessmentBasisLow: "평가 근거: 활용 가능한 정성적 구조 신호를 기반으로 하며, 정량적 깊이는 제한되어 있어 해석은 가용 입력 범위를 반영합니다.",
+    externalCueFallback: "외부 해석 큐: 핵심 외부 신호는 부분적으로만 정렬되어 있습니다.",
+    externalCueWeakEvidence: "외부 해석 큐: 외부 신호는 확인되나, 아직 충분히 통합되지는 않았습니다.",
+    externalCuePrefix: "외부 해석 큐",
+    externalCueDemandClear: "수요 가시성 높음",
+    externalCueDemandMixed: "수요 가시성 혼재",
+    externalCueDemandWeak: "수요 가시성 제약",
+    externalCuePortabilityStrong: "이동가능성 높음",
+    externalCuePortabilityPartial: "이동가능성 부분적",
+    externalCuePortabilityConstrained: "이동가능성 제약",
+    externalCueFrictionLow: "전환 마찰 낮음",
+    externalCueFrictionModerate: "전환 마찰 보통",
+    externalCueFrictionHigh: "전환 마찰 높음",
+    externalCueSignalVisible: "신호 정합도 높음",
+    externalCueSignalPartial: "신호 정합도 부분적",
+    externalCueSignalFragmented: "신호 정합도 분절",
   },
   en: {
     notApplicable: "[Not applicable]",
@@ -84,6 +114,21 @@ const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
       "Reassessment is required if structural risk exposure rises before commitment conditions close.",
     assessmentBasisHigh: "Assessment basis: Qualitative structural signals with sufficient input depth for decision framing.",
     assessmentBasisLow: "Assessment basis: Qualitative structural signals available; quantitative depth limited - interpretation reflects available input.",
+    externalCueFallback: "External reading cue: core external signals remain only partially consolidated.",
+    externalCueWeakEvidence: "External reading cue: signal visibility is present, but not yet fully consolidated.",
+    externalCuePrefix: "External reading cue",
+    externalCueDemandClear: "demand visibility clear",
+    externalCueDemandMixed: "demand visibility mixed",
+    externalCueDemandWeak: "demand visibility constrained",
+    externalCuePortabilityStrong: "portability broad",
+    externalCuePortabilityPartial: "portability partial",
+    externalCuePortabilityConstrained: "portability constrained",
+    externalCueFrictionLow: "transition friction contained",
+    externalCueFrictionModerate: "transition friction moderate",
+    externalCueFrictionHigh: "transition friction elevated",
+    externalCueSignalVisible: "signal consolidation strong",
+    externalCueSignalPartial: "signal consolidation partial",
+    externalCueSignalFragmented: "signal consolidation fragmented",
   },
   zh: {
     notApplicable: "[不适用]",
@@ -110,6 +155,21 @@ const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
     reassessmentTriggerRiskDeterioration: "若结构性风险暴露上升，应在更强承诺前进行再评估。",
     assessmentBasisHigh: "评估依据：基于足够输入深度的定性结构信号，用于决策框架判断。",
     assessmentBasisLow: "评估依据：可用定性结构信号已纳入，但定量深度有限，解读反映当前可用输入。",
+    externalCueFallback: "外部解读提示：核心外部信号仍处于部分整合状态。",
+    externalCueWeakEvidence: "外部解读提示：外部信号可见，但尚未充分收敛。",
+    externalCuePrefix: "外部解读提示",
+    externalCueDemandClear: "需求可见性清晰",
+    externalCueDemandMixed: "需求可见性混合",
+    externalCueDemandWeak: "需求可见性受限",
+    externalCuePortabilityStrong: "可迁移性较强",
+    externalCuePortabilityPartial: "可迁移性部分成立",
+    externalCuePortabilityConstrained: "可迁移性受限",
+    externalCueFrictionLow: "转移摩擦较低",
+    externalCueFrictionModerate: "转移摩擦中等",
+    externalCueFrictionHigh: "转移摩擦偏高",
+    externalCueSignalVisible: "信号收敛较强",
+    externalCueSignalPartial: "信号收敛部分成立",
+    externalCueSignalFragmented: "信号收敛分散",
   },
 };
 

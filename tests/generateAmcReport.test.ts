@@ -155,6 +155,15 @@ test("native decision metadata is consumed for exploration design and reassessme
   );
 });
 
+test("external snapshot native metadata is consumed into reading cue", () => {
+  const result = buildAmcRenderInput(makeRawIntake("single"), {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  const cue = result.mergePayload.external_snapshot.reading_cue as string;
+  assert.ok(cue.length > 0);
+  assert.equal(cue.toLowerCase().includes("external reading cue"), true);
+});
+
 test("unknown reassessmentTriggerType emits warning and keeps safe fallback", () => {
   const raw = makeRawIntake("single");
   const docxPayload = buildAmcDocxPayload(raw, {
@@ -265,6 +274,22 @@ test("missing decision nativeMetadata keeps safe fallback outputs populated", ()
     context.commitment.reassessment_trigger,
     "Reassessment is required if key structural signals deteriorate before commitment conditions close.",
   );
+});
+
+test("missing external snapshot native metadata keeps reading cue fallback populated", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  const externalSection = docxPayload.reportPayload.sections.find(
+    (s: any) => s.section === "external_snapshot",
+  );
+  delete externalSection.nativeMetadata;
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const cue = context.external_snapshot.reading_cue as string;
+  assert.ok(cue.length > 0);
+  assert.equal(cue.toLowerCase().includes("external reading cue"), true);
 });
 
 test("upstream matrix bands and option labels are consumed when provided", () => {
