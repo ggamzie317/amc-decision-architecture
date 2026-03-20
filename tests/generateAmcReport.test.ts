@@ -365,3 +365,70 @@ test("native optionLabels with source missing falls back safely to default label
     false,
   );
 });
+
+test("invalid matrixBands enum values emit warnings and keep safe visual fallbacks", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  docxPayload.reportPayload.inputs.nativeMetadata.matrixBands = {
+    marketOutlook: "invalid_band",
+    companyStability: "unknown_value",
+    fifwmRisk: "bad",
+    personalFit: "unsupported",
+    upsideDownside: "n/a",
+  };
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings as string[];
+
+  assert.ok(context.matrix.market_outlook.visual.length > 0);
+  assert.ok(context.matrix.company_stability.visual.length > 0);
+  assert.ok(context.matrix.fifwm_risk.visual.length > 0);
+  assert.ok(context.matrix.personal_fit.visual.length > 0);
+  assert.ok(context.matrix.upside_downside.visual.length > 0);
+
+  assert.equal(
+    warnings.some((w) => w.includes("native_metadata.matrixBands.marketOutlook unsupported value")),
+    true,
+  );
+  assert.equal(
+    warnings.some((w) => w.includes("native_metadata.matrixBands.companyStability unsupported value")),
+    true,
+  );
+  assert.equal(
+    warnings.some((w) => w.includes("native_metadata.matrixBands.fifwmRisk unsupported value")),
+    true,
+  );
+  assert.equal(
+    warnings.some((w) => w.includes("native_metadata.matrixBands.personalFit unsupported value")),
+    true,
+  );
+  assert.equal(
+    warnings.some((w) => w.includes("native_metadata.matrixBands.upsideDownside unsupported value")),
+    true,
+  );
+});
+
+test("unsupported matrixBands shape keeps safe visual fallbacks", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  docxPayload.reportPayload.inputs.nativeMetadata.matrixBands = "invalid_shape";
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings as string[];
+
+  assert.ok(context.matrix.market_outlook.visual.length > 0);
+  assert.ok(context.matrix.company_stability.visual.length > 0);
+  assert.ok(context.matrix.fifwm_risk.visual.length > 0);
+  assert.ok(context.matrix.personal_fit.visual.length > 0);
+  assert.ok(context.matrix.upside_downside.visual.length > 0);
+
+  // Current implementation tolerates invalid matrixBands shape by falling back silently.
+  assert.equal(
+    warnings.some((w) => w.includes("native_metadata.matrixBands")),
+    false,
+  );
+});
