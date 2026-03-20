@@ -155,7 +155,7 @@ test("native decision metadata is consumed for exploration design and reassessme
   );
 });
 
-test("unknown native metadata values are observable via non-blocking warnings", () => {
+test("unknown reassessmentTriggerType emits warning and keeps safe fallback", () => {
   const raw = makeRawIntake("single");
   const docxPayload = buildAmcDocxPayload(raw, {
     now: () => new Date("2026-03-15T18:00:00.000Z"),
@@ -164,21 +164,43 @@ test("unknown native metadata values are observable via non-blocking warnings", 
     (s: any) => s.section === "decision_conditions",
   );
   decisionSection.nativeMetadata.reassessmentTriggerType = "unsupported_trigger";
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings;
+
+  assert.ok(Array.isArray(warnings));
+  assert.equal(warnings.length >= 1, true);
+  assert.equal(
+    warnings.some((w: string) => w.includes("reassessmentTriggerType unsupported value")),
+    true,
+  );
+  assert.ok(context.commitment.reassessment_trigger.length > 0);
+  assert.equal(
+    context.commitment.reassessment_trigger,
+    "Reassessment is required if key structural signals deteriorate before commitment conditions close.",
+  );
+});
+
+test("unsupported explorationDesignHints emits warning and keeps design fallbacks populated", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  const decisionSection = docxPayload.reportPayload.sections.find(
+    (s: any) => s.section === "decision_conditions",
+  );
   decisionSection.nativeMetadata.explorationDesignHints = "invalid_hints_shape";
 
   const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
   const warnings = context.meta.native_mapping_warnings;
 
   assert.ok(Array.isArray(warnings));
-  assert.equal(warnings.length > 0, true);
-  assert.equal(
-    warnings.some((w: string) => w.includes("reassessmentTriggerType unsupported value")),
-    true,
-  );
+  assert.equal(warnings.length >= 1, true);
   assert.equal(
     warnings.some((w: string) => w.includes("explorationDesignHints expected object")),
     true,
   );
   assert.ok(context.exploration_plan.experiment_1.design.length > 0);
-  assert.ok(context.commitment.reassessment_trigger.length > 0);
+  assert.ok(context.exploration_plan.experiment_2.design.length > 0);
+  assert.ok(context.exploration_plan.experiment_3.design.length > 0);
 });
