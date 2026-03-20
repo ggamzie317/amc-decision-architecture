@@ -29,6 +29,15 @@ This locale layer currently applies to render-owned fixed strings only, not dyna
   - `decision_conditions.nativeMetadata.reassessmentTriggerType`
 - Timeline ownership is intentionally not upstream-native yet; moving timelines upstream would be a deliberate future contract decision.
 
+## Cue Pattern Rule (v1)
+- `external_snapshot.reading_cue` uses a **quality-sensitive cue model**.
+  - It mixes heterogeneous upstream fields and includes a weak-evidence hedge branch.
+- `matrix.reading_cue` uses an **absence-only cue model**.
+  - It consumes homogeneous `matrixBands` inputs and falls back when metadata is absent/invalid.
+- Any future section cue must explicitly choose one model before implementation:
+  - quality-sensitive, or
+  - absence-only.
+
 ## Stable Render Contract (Section-Level)
 The production template expects a stable nested context with these top-level namespaces:
 - `meta`
