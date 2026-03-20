@@ -5,7 +5,13 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
 
-import { buildAmcRenderInput, generateAmcReport, resolveRenderLocale } from "../src/generateAmcReport";
+import {
+  buildAmcRenderInput,
+  buildNestedTemplateContextFromDocxPayload,
+  generateAmcReport,
+  resolveRenderLocale,
+} from "../src/generateAmcReport";
+import { buildAmcDocxPayload } from "../src/buildAmcDocxPayload";
 
 function makeRawIntake(caseMode: "single" | "comparative" = "single") {
   return {
@@ -147,4 +153,32 @@ test("native decision metadata is consumed for exploration design and reassessme
     result.mergePayload.commitment.reassessment_trigger,
     expectedByType[triggerType] || "Reassessment is required if key structural signals deteriorate before commitment conditions close.",
   );
+});
+
+test("unknown native metadata values are observable via non-blocking warnings", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  const decisionSection = docxPayload.reportPayload.sections.find(
+    (s: any) => s.section === "decision_conditions",
+  );
+  decisionSection.nativeMetadata.reassessmentTriggerType = "unsupported_trigger";
+  decisionSection.nativeMetadata.explorationDesignHints = "invalid_hints_shape";
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+  const warnings = context.meta.native_mapping_warnings;
+
+  assert.ok(Array.isArray(warnings));
+  assert.equal(warnings.length > 0, true);
+  assert.equal(
+    warnings.some((w: string) => w.includes("reassessmentTriggerType unsupported value")),
+    true,
+  );
+  assert.equal(
+    warnings.some((w: string) => w.includes("explorationDesignHints expected object")),
+    true,
+  );
+  assert.ok(context.exploration_plan.experiment_1.design.length > 0);
+  assert.ok(context.commitment.reassessment_trigger.length > 0);
 });

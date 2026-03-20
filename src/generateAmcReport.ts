@@ -34,7 +34,7 @@ export function buildAmcRenderInput(
   options: { now?: () => Date; locale?: AmcRenderLocale | string } = {},
 ): AmcRenderInput {
   const docxPayload = buildAmcDocxPayload(rawIntake, options);
-  const mergePayload = buildNestedTemplateContext(rawIntake, docxPayload, options.locale);
+  const mergePayload = buildNestedTemplateContextFromDocxPayload(rawIntake, docxPayload, options.locale);
   return { docxPayload, mergePayload };
 }
 
@@ -73,14 +73,18 @@ export function generateAmcReport(rawIntake: any, options: GenerateAmcReportOpti
     payloadPath,
     outPath: options.outPath,
     docxPayload,
+    renderWarnings: Array.isArray((mergePayload as any)?.meta?.native_mapping_warnings)
+      ? ((mergePayload as any).meta.native_mapping_warnings as string[])
+      : [],
   };
 }
 
-function buildNestedTemplateContext(
+export function buildNestedTemplateContextFromDocxPayload(
   rawIntake: any,
   docxPayload: ReturnType<typeof buildAmcDocxPayload>,
   localeInput?: AmcRenderLocale | string,
 ) {
+  const warnings: string[] = [];
   const locale = resolveRenderLocale({ locale: localeInput }, rawIntake);
   const strings = getAmcRenderStrings(locale);
   const withFallback = (value: unknown) => valueOrFallback(value, strings.notApplicable);
@@ -109,14 +113,16 @@ function buildNestedTemplateContext(
   const nativeComparativeStatus =
     external.comparativeOptionSignals || external.comparativeStatus || {};
   const nativeConditionMetadata = conditions.nativeMetadata || {};
-  const explorationDesigns = resolveExplorationDesigns(
+  const explorationDesignResolution = resolveExplorationDesigns(
     nativeConditionMetadata.explorationDesignHints,
     strings,
   );
-  const reassessmentTrigger = resolveReassessmentTrigger(
+  warnings.push(...explorationDesignResolution.warnings);
+  const reassessmentTriggerResolution = resolveReassessmentTrigger(
     nativeConditionMetadata.reassessmentTriggerType,
     strings,
   );
+  warnings.push(...reassessmentTriggerResolution.warnings);
 
   const matrix = {
     market_outlook: {
@@ -145,6 +151,7 @@ function buildNestedTemplateContext(
       report_type: withFallback(docxPayload?.meta?.reportType),
       version: withFallback(docxPayload?.meta?.version),
       generated_at: withFallback(docxPayload?.meta?.generatedAt),
+      native_mapping_warnings: warnings,
     },
     mode,
     case: {
@@ -223,21 +230,21 @@ function buildNestedTemplateContext(
       experiment_1: {
         timeline: strings.experimentTimeline1,
         objective: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
-        design: withFallback(explorationDesigns.experiment1),
+        design: withFallback(explorationDesignResolution.designs.experiment1),
         validation_signal: withFallback(external.marketLine || flat.external_snapshot_market_line),
         stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
       experiment_2: {
         timeline: strings.experimentTimeline2,
         objective: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
-        design: withFallback(explorationDesigns.experiment2),
+        design: withFallback(explorationDesignResolution.designs.experiment2),
         validation_signal: withFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
         stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
       experiment_3: {
         timeline: strings.experimentTimeline3,
         objective: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
-        design: withFallback(explorationDesigns.experiment3),
+        design: withFallback(explorationDesignResolution.designs.experiment3),
         validation_signal: withFallback(temperament.disciplineLine || flat.strategic_temperament_discipline_line),
         stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
@@ -275,7 +282,7 @@ function buildNestedTemplateContext(
       readiness_condition: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
       support_condition: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
       commitment_condition: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
-      reassessment_trigger: withFallback(reassessmentTrigger),
+      reassessment_trigger: withFallback(reassessmentTriggerResolution.value),
     },
   };
 
@@ -452,23 +459,43 @@ function resolveExplorationDesigns(
     experimentDesign2: string;
     experimentDesign3: string;
   },
-): { experiment1: string; experiment2: string; experiment3: string } {
+): { designs: { experiment1: string; experiment2: string; experiment3: string }; warnings: string[] } {
+  const warnings: string[] = [];
+  if (hints !== null && hints !== undefined && typeof hints !== "object") {
+    warnings.push(
+      `native_metadata.explorationDesignHints expected object, received ${typeof hints}; defaults/deterministic fallbacks applied.`,
+    );
+  }
   const defaults = [strings.experimentDesign1, strings.experimentDesign2, strings.experimentDesign3];
   const raw = {
     experiment1: cleanHint((hints as any)?.experiment1),
     experiment2: cleanHint((hints as any)?.experiment2),
     experiment3: cleanHint((hints as any)?.experiment3),
   };
+  if (!raw.experiment1 || !raw.experiment2 || !raw.experiment3) {
+    warnings.push(
+      "native_metadata.explorationDesignHints missing one or more experiment hints; deterministic defaults/deduplication applied.",
+    );
+  }
 
   const used = new Set<string>();
   const e1 = pickDistinctHint(raw.experiment1, 0, defaults, used);
   const e2 = pickDistinctHint(raw.experiment2, 1, defaults, used);
   const e3 = pickDistinctHint(raw.experiment3, 2, defaults, used);
 
+  if (new Set([e1, e2, e3]).size < 3) {
+    warnings.push(
+      "native_metadata.explorationDesignHints produced duplicate designs after fallback resolution; output kept deterministic.",
+    );
+  }
+
   return {
-    experiment1: e1,
-    experiment2: e2,
-    experiment3: e3,
+    designs: {
+      experiment1: e1,
+      experiment2: e2,
+      experiment3: e3,
+    },
+    warnings,
   };
 }
 
@@ -517,19 +544,27 @@ function resolveReassessmentTrigger(
     reassessmentTriggerSupportErosion: string;
     reassessmentTriggerRiskDeterioration: string;
   },
-): string {
+): { value: string; warnings: string[] } {
+  const warnings: string[] = [];
   const key = String(triggerType || "").trim();
   if (key === "signal_instability") {
-    return strings.reassessmentTriggerSignalInstability;
+    return { value: strings.reassessmentTriggerSignalInstability, warnings };
   }
   if (key === "timing_misalignment") {
-    return strings.reassessmentTriggerTimingMisalignment;
+    return { value: strings.reassessmentTriggerTimingMisalignment, warnings };
   }
   if (key === "support_erosion") {
-    return strings.reassessmentTriggerSupportErosion;
+    return { value: strings.reassessmentTriggerSupportErosion, warnings };
   }
   if (key === "risk_deterioration") {
-    return strings.reassessmentTriggerRiskDeterioration;
+    return { value: strings.reassessmentTriggerRiskDeterioration, warnings };
   }
-  return strings.reassessmentTriggerDefault;
+  if (key) {
+    warnings.push(
+      `native_metadata.reassessmentTriggerType unsupported value '${key}'; default reassessment trigger applied.`,
+    );
+  } else {
+    warnings.push("native_metadata.reassessmentTriggerType missing; default reassessment trigger applied.");
+  }
+  return { value: strings.reassessmentTriggerDefault, warnings };
 }

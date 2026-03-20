@@ -130,6 +130,7 @@ function main(): number {
       generatedAt: result.docxPayload.meta.generatedAt,
       caseType: result.docxPayload.meta.caseType,
       sectionCount: result.docxPayload.reportPayload.sections.length,
+      nativeMappingWarnings: Array.isArray(result.renderWarnings) ? result.renderWarnings.length : 0,
     };
 
     console.log("AMC report generation succeeded.");
@@ -138,6 +139,11 @@ function main(): number {
     console.log(`PAYLOAD: ${result.payloadPath}`);
     console.log(`DOCX: ${result.outPath}`);
     console.log(`SUMMARY: ${JSON.stringify(summary)}`);
+    if (!process.env.CI && Array.isArray(result.renderWarnings) && result.renderWarnings.length > 0) {
+      for (const warning of result.renderWarnings) {
+        console.warn(`WARN: ${warning}`);
+      }
+    }
     return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -22,6 +22,13 @@ Render locale precedence is stable and must remain:
 
 This locale layer currently applies to render-owned fixed strings only, not dynamic Step 4 prose or DOCX heading localization.
 
+## Render-Owned Boundary (Current)
+- `exploration_plan.experiment_1/2/3.timeline` remains render-owned.
+- Upstream native metadata currently covers:
+  - `decision_conditions.nativeMetadata.explorationDesignHints`
+  - `decision_conditions.nativeMetadata.reassessmentTriggerType`
+- Timeline ownership is intentionally not upstream-native yet; moving timelines upstream would be a deliberate future contract decision.
+
 ## Stable Render Contract (Section-Level)
 The production template expects a stable nested context with these top-level namespaces:
 - `meta`
