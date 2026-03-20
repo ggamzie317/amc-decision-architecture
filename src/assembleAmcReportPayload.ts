@@ -1,7 +1,7 @@
 import { normalizeIntake } from "./amc/normalizeIntake";
 import { deriveFlags } from "./amc/deriveFlags";
 import { buildInputSummary } from "./amc/buildInputSummary";
-import { computeInputCompletenessMetadata } from "./amc/inputCompleteness";
+import { buildInputNativeMetadata } from "./amc/nativeMetadata";
 
 import { buildExecutiveOverview } from "./buildExecutiveOverview";
 import { buildExternalSnapshot } from "./buildExternalSnapshot";
@@ -25,7 +25,7 @@ export function assembleAmcReportPayload(rawIntake: any, options: AssemblerOptio
   const normalized = normalizeAmcIntake(rawIntake || {});
   const structuralFlags = deriveStructuralFlags(normalized);
   const inputSummary = buildInputSummary(normalized, structuralFlags);
-  const nativeMetadata = computeInputCompletenessMetadata(normalized);
+  const nativeMetadata = buildInputNativeMetadata(normalized, structuralFlags);
 
   const builderArgs = {
     normalized,

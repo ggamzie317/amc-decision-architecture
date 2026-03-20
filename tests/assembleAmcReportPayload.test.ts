@@ -47,6 +47,10 @@ test("assembler returns meta, inputs, and sections", () => {
   assert.ok(result.inputs.inputSummary);
   assert.ok(result.inputs.nativeMetadata);
   assert.equal(typeof result.inputs.nativeMetadata.inputCompletenessScore, "number");
+  assert.ok(result.inputs.nativeMetadata.matrixBands);
+  assert.equal(typeof result.inputs.nativeMetadata.matrixBands.marketOutlook, "string");
+  assert.ok(result.inputs.nativeMetadata.optionLabels);
+  assert.equal(typeof result.inputs.nativeMetadata.optionLabels.optionA, "string");
   assert.ok(Array.isArray(result.sections));
 });
 

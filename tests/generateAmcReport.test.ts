@@ -266,3 +266,33 @@ test("missing decision nativeMetadata keeps safe fallback outputs populated", ()
     "Reassessment is required if key structural signals deteriorate before commitment conditions close.",
   );
 });
+
+test("upstream matrix bands and option labels are consumed when provided", () => {
+  const raw = makeRawIntake("comparative");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+
+  docxPayload.reportPayload.inputs.nativeMetadata.matrixBands = {
+    marketOutlook: "weak",
+    companyStability: "strong",
+    fifwmRisk: "partial",
+    personalFit: "strong",
+    upsideDownside: "weak",
+  };
+  docxPayload.reportPayload.inputs.nativeMetadata.optionLabels = {
+    optionA: "Native Label A",
+    optionB: "Native Label B",
+    source: "parsed",
+  };
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload);
+
+  assert.equal(context.case.option_a_label, "Native Label A");
+  assert.equal(context.case.option_b_label, "Native Label B");
+  assert.equal(context.matrix.market_outlook.visual, "▼ Constrained");
+  assert.equal(context.matrix.company_stability.visual, "▲ Supportive");
+  assert.equal(context.matrix.fifwm_risk.visual, "◆ Mixed");
+  assert.equal(context.matrix.personal_fit.visual, "▲ Supportive");
+  assert.equal(context.matrix.upside_downside.visual, "▼ Constrained");
+});

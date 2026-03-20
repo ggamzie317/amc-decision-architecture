@@ -109,9 +109,10 @@ export function buildNestedTemplateContextFromDocxPayload(
       ? upstreamNative.inputCompletenessScore
       : computeIntakeCompletenessScore(normalized);
 
-  const labels = extractOptionLabels(rawIntake, strings);
+  const labels = resolveOptionLabels(upstreamNative.optionLabels, rawIntake, strings, warnings);
   const nativeComparativeStatus =
     external.comparativeOptionSignals || external.comparativeStatus || {};
+  const upstreamMatrixBands = upstreamNative.matrixBands || {};
   const nativeConditionMetadata = conditions.nativeMetadata || {};
   const explorationDesignResolution = resolveExplorationDesigns(
     nativeConditionMetadata.explorationDesignHints,
@@ -124,25 +125,53 @@ export function buildNestedTemplateContextFromDocxPayload(
   );
   warnings.push(...reassessmentTriggerResolution.warnings);
 
+  const marketBand = resolveMatrixBand(
+    upstreamMatrixBands.marketOutlook,
+    pickBand(flags.growingMarketOutlook, flags.decliningMarketOutlook),
+    "marketOutlook",
+    warnings,
+  );
+  const companyBand = resolveMatrixBand(
+    upstreamMatrixBands.companyStability,
+    pickBand(flags.highCompanyStability, flags.lowCompanyStability),
+    "companyStability",
+    warnings,
+  );
+  const fifwmBand = resolveMatrixBand(
+    upstreamMatrixBands.fifwmRisk,
+    pickBand(flags.strongSafetyNet, flags.weakSafetyNet),
+    "fifwmRisk",
+    warnings,
+  );
+  const personalBand = resolveMatrixBand(
+    upstreamMatrixBands.personalFit,
+    pickBand(
+      !!flags.highDecisionClarity && !!flags.highRiskComfort,
+      !!flags.lowDecisionClarity || !!flags.lowRiskComfort,
+    ),
+    "personalFit",
+    warnings,
+  );
+  const upsideBand = resolveMatrixBand(
+    upstreamMatrixBands.upsideDownside,
+    pickBand(flags.structurallySupportedMove, flags.structurallyFragileMove),
+    "upsideDownside",
+    warnings,
+  );
+
   const matrix = {
     market_outlook: {
-      visual: visualFromBand(pickBand(flags.growingMarketOutlook, flags.decliningMarketOutlook), strings),
+      visual: visualFromBand(marketBand, strings),
     },
     company_stability: {
-      visual: visualFromBand(pickBand(flags.highCompanyStability, flags.lowCompanyStability), strings),
+      visual: visualFromBand(companyBand, strings),
     },
-    fifwm_risk: { visual: visualFromBand(pickBand(flags.strongSafetyNet, flags.weakSafetyNet), strings) },
+    fifwm_risk: { visual: visualFromBand(fifwmBand, strings) },
     personal_fit: {
-      visual: visualFromBand(
-        pickBand(
-          !!flags.highDecisionClarity && !!flags.highRiskComfort,
-          !!flags.lowDecisionClarity || !!flags.lowRiskComfort,
-        ),
-        strings,
-      ),
+      visual: visualFromBand(personalBand, strings),
     },
     upside_downside: {
-      visual: visualFromBand(pickBand(flags.structurallySupportedMove, flags.structurallyFragileMove), strings),
+      visual: visualFromBand(upsideBand, strings),
     },
   };
 
@@ -352,7 +381,29 @@ function visualFromBand(
   return strings.matrixVisualPartial;
 }
 
-function extractOptionLabels(
+function resolveOptionLabels(
+  nativeOptionLabels: unknown,
+  rawIntake: any,
+  strings: { optionALabel: string; optionBLabel: string },
+  warnings: string[],
+): { optionA: string; optionB: string } {
+  if (nativeOptionLabels !== null && nativeOptionLabels !== undefined && typeof nativeOptionLabels !== "object") {
+    warnings.push("native_metadata.optionLabels expected object; fallback option label parsing applied.");
+  }
+  if (nativeOptionLabels && typeof nativeOptionLabels === "object") {
+    const optionA = String((nativeOptionLabels as any).optionA || "").trim();
+    const optionB = String((nativeOptionLabels as any).optionB || "").trim();
+    if (optionA && optionB) {
+      return { optionA, optionB };
+    }
+    if (optionA || optionB) {
+      warnings.push("native_metadata.optionLabels partially populated; fallback option label parsing applied.");
+    }
+  }
+  return extractOptionLabelsFromRaw(rawIntake, strings);
+}
+
+function extractOptionLabelsFromRaw(
   rawIntake: any,
   strings: { optionALabel: string; optionBLabel: string },
 ): { optionA: string; optionB: string } {
@@ -450,6 +501,23 @@ function buildAssessmentBasisLine(
     return strings.assessmentBasisHigh;
   }
   return strings.assessmentBasisLow;
+}
+
+function resolveMatrixBand(
+  value: unknown,
+  fallbackBand: "strong" | "partial" | "weak",
+  field: string,
+  warnings: string[],
+): "strong" | "partial" | "weak" {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return fallbackBand;
+  }
+  if (raw === "strong" || raw === "partial" || raw === "weak") {
+    return raw;
+  }
+  warnings.push(`native_metadata.matrixBands.${field} unsupported value '${raw}'; fallback band applied.`);
+  return fallbackBand;
 }
 
 function resolveExplorationDesigns(
