@@ -164,6 +164,57 @@ test("external snapshot native metadata is consumed into reading cue", () => {
   assert.equal(cue.toLowerCase().includes("external reading cue"), true);
 });
 
+test("external snapshot reading cue resolves deterministic normal-evidence text", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  const externalSection = docxPayload.reportPayload.sections.find(
+    (s: any) => s.section === "external_snapshot",
+  );
+  externalSection.nativeMetadata = {
+    weakEvidence: false,
+    demandBucket: "clear",
+    portabilityBucket: "strong",
+    frictionBucket: "low",
+    signalBucket: "visible",
+  };
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload, "en");
+  assert.equal(
+    context.external_snapshot.reading_cue,
+    "External reading cue: demand visibility clear; portability broad; transition friction contained; signal consolidation strong.",
+  );
+});
+
+test("external snapshot reading cue weakEvidence branch is locale-consistent (en/ko/zh)", () => {
+  const localeCases = [
+    { locale: "en", expected: "External reading cue: signal visibility is present, but not yet fully consolidated." },
+    { locale: "ko", expected: "외부 해석 큐: 외부 신호는 확인되나, 아직 충분히 통합되지는 않았습니다." },
+    { locale: "zh", expected: "外部解读提示：外部信号可见，但尚未充分收敛。" },
+  ] as const;
+
+  for (const { locale, expected } of localeCases) {
+    const raw = makeRawIntake("single");
+    const docxPayload = buildAmcDocxPayload(raw, {
+      now: () => new Date("2026-03-15T18:00:00.000Z"),
+    });
+    const externalSection = docxPayload.reportPayload.sections.find(
+      (s: any) => s.section === "external_snapshot",
+    );
+    externalSection.nativeMetadata = {
+      weakEvidence: true,
+      demandBucket: "mixed",
+      portabilityBucket: "partial",
+      frictionBucket: "moderate",
+      signalBucket: "fragmented",
+    };
+
+    const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload, locale);
+    assert.equal(context.external_snapshot.reading_cue, expected);
+  }
+});
+
 test("unknown reassessmentTriggerType emits warning and keeps safe fallback", () => {
   const raw = makeRawIntake("single");
   const docxPayload = buildAmcDocxPayload(raw, {
