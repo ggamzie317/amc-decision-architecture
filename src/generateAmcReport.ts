@@ -108,6 +108,15 @@ function buildNestedTemplateContext(
   const labels = extractOptionLabels(rawIntake, strings);
   const nativeComparativeStatus =
     external.comparativeOptionSignals || external.comparativeStatus || {};
+  const nativeConditionMetadata = conditions.nativeMetadata || {};
+  const explorationDesigns = resolveExplorationDesigns(
+    nativeConditionMetadata.explorationDesignHints,
+    strings,
+  );
+  const reassessmentTrigger = resolveReassessmentTrigger(
+    nativeConditionMetadata.reassessmentTriggerType,
+    strings,
+  );
 
   const matrix = {
     market_outlook: {
@@ -214,21 +223,21 @@ function buildNestedTemplateContext(
       experiment_1: {
         timeline: strings.experimentTimeline1,
         objective: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
-        design: withFallback(strings.experimentDesign1),
+        design: withFallback(explorationDesigns.experiment1),
         validation_signal: withFallback(external.marketLine || flat.external_snapshot_market_line),
         stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
       experiment_2: {
         timeline: strings.experimentTimeline2,
         objective: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
-        design: withFallback(strings.experimentDesign2),
+        design: withFallback(explorationDesigns.experiment2),
         validation_signal: withFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
         stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
       experiment_3: {
         timeline: strings.experimentTimeline3,
         objective: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
-        design: withFallback(strings.experimentDesign3),
+        design: withFallback(explorationDesigns.experiment3),
         validation_signal: withFallback(temperament.disciplineLine || flat.strategic_temperament_discipline_line),
         stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
@@ -266,7 +275,7 @@ function buildNestedTemplateContext(
       readiness_condition: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
       support_condition: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
       commitment_condition: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
-      reassessment_trigger: withFallback(strings.reassessmentTrigger),
+      reassessment_trigger: withFallback(reassessmentTrigger),
     },
   };
 
@@ -434,4 +443,93 @@ function buildAssessmentBasisLine(
     return strings.assessmentBasisHigh;
   }
   return strings.assessmentBasisLow;
+}
+
+function resolveExplorationDesigns(
+  hints: unknown,
+  strings: {
+    experimentDesign1: string;
+    experimentDesign2: string;
+    experimentDesign3: string;
+  },
+): { experiment1: string; experiment2: string; experiment3: string } {
+  const defaults = [strings.experimentDesign1, strings.experimentDesign2, strings.experimentDesign3];
+  const raw = {
+    experiment1: cleanHint((hints as any)?.experiment1),
+    experiment2: cleanHint((hints as any)?.experiment2),
+    experiment3: cleanHint((hints as any)?.experiment3),
+  };
+
+  const used = new Set<string>();
+  const e1 = pickDistinctHint(raw.experiment1, 0, defaults, used);
+  const e2 = pickDistinctHint(raw.experiment2, 1, defaults, used);
+  const e3 = pickDistinctHint(raw.experiment3, 2, defaults, used);
+
+  return {
+    experiment1: e1,
+    experiment2: e2,
+    experiment3: e3,
+  };
+}
+
+function cleanHint(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return String(value).trim();
+}
+
+function pickDistinctHint(
+  candidate: string,
+  index: 0 | 1 | 2,
+  defaults: [string, string, string] | string[],
+  used: Set<string>,
+): string {
+  const fallbackOrder = [
+    candidate,
+    defaults[index],
+    defaults[(index + 1) % 3],
+    defaults[(index + 2) % 3],
+  ]
+    .map((x) => (x || "").trim())
+    .filter(Boolean);
+
+  for (const option of fallbackOrder) {
+    if (!used.has(option)) {
+      used.add(option);
+      return option;
+    }
+  }
+  const finalFallback = (defaults[index] || "").trim();
+  if (finalFallback) {
+    used.add(finalFallback);
+    return finalFallback;
+  }
+  return candidate || "";
+}
+
+function resolveReassessmentTrigger(
+  triggerType: unknown,
+  strings: {
+    reassessmentTriggerDefault: string;
+    reassessmentTriggerSignalInstability: string;
+    reassessmentTriggerTimingMisalignment: string;
+    reassessmentTriggerSupportErosion: string;
+    reassessmentTriggerRiskDeterioration: string;
+  },
+): string {
+  const key = String(triggerType || "").trim();
+  if (key === "signal_instability") {
+    return strings.reassessmentTriggerSignalInstability;
+  }
+  if (key === "timing_misalignment") {
+    return strings.reassessmentTriggerTimingMisalignment;
+  }
+  if (key === "support_erosion") {
+    return strings.reassessmentTriggerSupportErosion;
+  }
+  if (key === "risk_deterioration") {
+    return strings.reassessmentTriggerRiskDeterioration;
+  }
+  return strings.reassessmentTriggerDefault;
 }

@@ -116,3 +116,35 @@ test("existing merge path is invoked and output docx is generated", () => {
   assert.equal(mergedText.includes("Header:"), true);
   assert.equal(mergedText.toLowerCase().includes("comparative"), true);
 });
+
+test("native decision metadata is consumed for exploration design and reassessment trigger", () => {
+  const result = buildAmcRenderInput(makeRawIntake("single"), {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+
+  const decisionSection = result.docxPayload.reportPayload.sections.find(
+    (s: any) => s.section === "decision_conditions",
+  );
+  assert.ok(decisionSection);
+  assert.ok(decisionSection.nativeMetadata);
+
+  const hints = decisionSection.nativeMetadata.explorationDesignHints;
+  assert.equal(result.mergePayload.exploration_plan.experiment_1.design, hints.experiment1);
+  assert.equal(result.mergePayload.exploration_plan.experiment_2.design, hints.experiment2);
+  assert.equal(result.mergePayload.exploration_plan.experiment_3.design, hints.experiment3);
+
+  const triggerType = decisionSection.nativeMetadata.reassessmentTriggerType;
+  const expectedByType: Record<string, string> = {
+    signal_instability:
+      "Reassessment is required if core structural signals become less stable before conditions are consolidated.",
+    timing_misalignment: "Reassessment is required if decision pace and execution readiness become misaligned.",
+    support_erosion: "Reassessment is required if sponsor, safety-net, or stability support conditions weaken.",
+    risk_deterioration:
+      "Reassessment is required if structural risk exposure rises before commitment conditions close.",
+  };
+
+  assert.equal(
+    result.mergePayload.commitment.reassessment_trigger,
+    expectedByType[triggerType] || "Reassessment is required if key structural signals deteriorate before commitment conditions close.",
+  );
+});
