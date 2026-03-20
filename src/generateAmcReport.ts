@@ -174,6 +174,16 @@ export function buildNestedTemplateContextFromDocxPayload(
     upside_downside: {
       visual: visualFromBand(upsideBand, strings),
     },
+    reading_cue: buildMatrixReadingCue(
+      {
+        marketOutlook: marketBand,
+        companyStability: companyBand,
+        fifwmRisk: fifwmBand,
+        personalFit: personalBand,
+        upsideDownside: upsideBand,
+      },
+      strings,
+    ),
   };
 
   const nested = {
@@ -603,6 +613,41 @@ function buildExternalReadingCue(
         : strings.externalCueSignalPartial;
 
   return `${strings.externalCuePrefix}: ${demandText}; ${portabilityText}; ${frictionText}; ${signalText}.`;
+}
+
+function buildMatrixReadingCue(
+  bands: {
+    marketOutlook: "strong" | "partial" | "weak";
+    companyStability: "strong" | "partial" | "weak";
+    fifwmRisk: "strong" | "partial" | "weak";
+    personalFit: "strong" | "partial" | "weak";
+    upsideDownside: "strong" | "partial" | "weak";
+  },
+  strings: {
+    matrixCueFallback: string;
+    matrixCuePrefix: string;
+    matrixCueSupportive: string;
+    matrixCueMixed: string;
+    matrixCueConstrained: string;
+    matrixCueOverallSupportive: string;
+    matrixCueOverallMixed: string;
+    matrixCueOverallConstrained: string;
+  },
+): string {
+  const values = Object.values(bands);
+  if (values.length === 0) {
+    return strings.matrixCueFallback;
+  }
+
+  const strongCount = values.filter((v) => v === "strong").length;
+  const weakCount = values.filter((v) => v === "weak").length;
+  const overall =
+    strongCount >= 3 ? strings.matrixCueOverallSupportive : weakCount >= 3 ? strings.matrixCueOverallConstrained : strings.matrixCueOverallMixed;
+
+  const token = (band: "strong" | "partial" | "weak") =>
+    band === "strong" ? strings.matrixCueSupportive : band === "weak" ? strings.matrixCueConstrained : strings.matrixCueMixed;
+
+  return `${strings.matrixCuePrefix}: MKT ${token(bands.marketOutlook)}; STB ${token(bands.companyStability)}; RSK ${token(bands.fifwmRisk)}; FIT ${token(bands.personalFit)}; U/D ${token(bands.upsideDownside)}. ${overall}`;
 }
 
 function normalizeBucket(

@@ -40,6 +40,14 @@ export interface AmcRenderStrings {
   externalCueSignalVisible: string;
   externalCueSignalPartial: string;
   externalCueSignalFragmented: string;
+  matrixCueFallback: string;
+  matrixCuePrefix: string;
+  matrixCueSupportive: string;
+  matrixCueMixed: string;
+  matrixCueConstrained: string;
+  matrixCueOverallSupportive: string;
+  matrixCueOverallMixed: string;
+  matrixCueOverallConstrained: string;
 }
 
 const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
@@ -83,6 +91,14 @@ const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
     externalCueSignalVisible: "신호 정합도 높음",
     externalCueSignalPartial: "신호 정합도 부분적",
     externalCueSignalFragmented: "신호 정합도 분절",
+    matrixCueFallback: "매트릭스 해석 큐: 구조 신호는 전반적으로 혼재되어 있습니다.",
+    matrixCuePrefix: "매트릭스 해석 큐",
+    matrixCueSupportive: "우호적",
+    matrixCueMixed: "혼재",
+    matrixCueConstrained: "제약",
+    matrixCueOverallSupportive: "전체 정렬은 비교적 우호적입니다.",
+    matrixCueOverallMixed: "전체 정렬은 혼재되어 있습니다.",
+    matrixCueOverallConstrained: "전체 정렬은 제약이 큽니다.",
   },
   en: {
     notApplicable: "[Not applicable]",
@@ -129,6 +145,14 @@ const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
     externalCueSignalVisible: "signal consolidation strong",
     externalCueSignalPartial: "signal consolidation partial",
     externalCueSignalFragmented: "signal consolidation fragmented",
+    matrixCueFallback: "Matrix reading cue: structural signals are mixed overall.",
+    matrixCuePrefix: "Matrix reading cue",
+    matrixCueSupportive: "supportive",
+    matrixCueMixed: "mixed",
+    matrixCueConstrained: "constrained",
+    matrixCueOverallSupportive: "overall alignment is relatively supportive.",
+    matrixCueOverallMixed: "overall alignment remains mixed.",
+    matrixCueOverallConstrained: "overall alignment remains constrained.",
   },
   zh: {
     notApplicable: "[不适用]",
@@ -170,6 +194,14 @@ const STRINGS_BY_LOCALE: Record<AmcRenderLocale, AmcRenderStrings> = {
     externalCueSignalVisible: "信号收敛较强",
     externalCueSignalPartial: "信号收敛部分成立",
     externalCueSignalFragmented: "信号收敛分散",
+    matrixCueFallback: "矩阵解读提示：结构信号整体呈混合状态。",
+    matrixCuePrefix: "矩阵解读提示",
+    matrixCueSupportive: "支持性",
+    matrixCueMixed: "混合",
+    matrixCueConstrained: "受限",
+    matrixCueOverallSupportive: "整体对齐相对支持。",
+    matrixCueOverallMixed: "整体对齐仍呈混合。",
+    matrixCueOverallConstrained: "整体对齐仍受限。",
   },
 };
 

@@ -373,6 +373,27 @@ test("upstream matrix bands and option labels are consumed when provided", () =>
   assert.equal(context.matrix.upside_downside.visual, "▼ Constrained");
 });
 
+test("matrix reading cue is populated from matrix band signals", () => {
+  const raw = makeRawIntake("single");
+  const docxPayload = buildAmcDocxPayload(raw, {
+    now: () => new Date("2026-03-15T18:00:00.000Z"),
+  });
+  docxPayload.reportPayload.inputs.nativeMetadata.matrixBands = {
+    marketOutlook: "strong",
+    companyStability: "strong",
+    fifwmRisk: "partial",
+    personalFit: "weak",
+    upsideDownside: "partial",
+  };
+
+  const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload, "en");
+  const cue = context.matrix.reading_cue as string;
+  assert.ok(cue.length > 0);
+  assert.equal(cue.includes("Matrix reading cue"), true);
+  assert.equal(cue.includes("MKT supportive"), true);
+  assert.equal(cue.includes("FIT constrained"), true);
+});
+
 test("missing native matrixBands falls back to derived band mapping safely", () => {
   const raw = makeRawIntake("single");
   const docxPayload = buildAmcDocxPayload(raw, {
@@ -388,10 +409,30 @@ test("missing native matrixBands falls back to derived band mapping safely", () 
   assert.ok(context.matrix.fifwm_risk.visual.length > 0);
   assert.ok(context.matrix.personal_fit.visual.length > 0);
   assert.ok(context.matrix.upside_downside.visual.length > 0);
+  assert.ok((context.matrix.reading_cue as string).length > 0);
   assert.equal(
     warnings.some((w) => w.includes("matrixBands")),
     false,
   );
+});
+
+test("matrix reading cue locale parity is stable across en/ko/zh", () => {
+  const cases = [
+    { locale: "en", startsWith: "Matrix reading cue:" },
+    { locale: "ko", startsWith: "매트릭스 해석 큐:" },
+    { locale: "zh", startsWith: "矩阵解读提示:" },
+  ] as const;
+
+  for (const c of cases) {
+    const raw = makeRawIntake("single");
+    const docxPayload = buildAmcDocxPayload(raw, {
+      now: () => new Date("2026-03-15T18:00:00.000Z"),
+    });
+    const context = buildNestedTemplateContextFromDocxPayload(raw, docxPayload, c.locale);
+    const cue = context.matrix.reading_cue as string;
+    assert.equal(cue.startsWith(c.startsWith), true);
+    assert.ok(cue.length > 0);
+  }
 });
 
 test("native optionLabels with source parsed are consumed directly", () => {
