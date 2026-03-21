@@ -27,6 +27,10 @@ Use this quick path for failures in `.github/workflows/amc-render.yml`.
 3. Strict render step failures (`single`, `comparative`, `golden`).
 4. Artifact upload failures (only after upstream steps are clean).
 
+## Known Non-Blocking Warnings
+- Node deprecation warnings in logs (for example around `url.parse()` or JavaScript action runtime migration) are warning-only unless a step exits non-zero.
+- Treat the run as failed only when a workflow step status is failed/cancelled or strict render checks return an error.
+
 ## Local Reproduction
 ```bash
 pnpm --dir manus-ui install --frozen-lockfile
