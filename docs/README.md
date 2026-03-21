@@ -10,3 +10,4 @@ Operational entry point for AMC governance, metadata, and review documents.
 - `amc_render_ci_troubleshooting.md`: Quick first checks for AMC render CI failures (includes `scripts/run_amc_render_smoke.sh`).
 - `amc_render_stabilization_note.md`: Snapshot note of recent AMC render stabilization and verification status.
 - `amc_dry_run_checklist.md`: Minimal end-to-end checklist for one-case launch readiness verification.
+- `amc_delivery_readiness_checklist.md`: Minimal operator checklist before sending one generated report.
