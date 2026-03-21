@@ -210,3 +210,5 @@ __marimo__/
 manus-ui/output/AMC_Report_ci_*.docx
 manus-ui/output/amc_docx_payload_ci_*.json
 output/golden/
+output/AMC_Report_ci_*.docx
+output/amc_docx_payload_ci_*.json
