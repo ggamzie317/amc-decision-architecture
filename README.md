@@ -23,6 +23,10 @@ Current AMC pipeline is deterministic and section-based:
 - template payload adaptation
 - DOCX bridge + existing merge path handoff
 
+AMC governance docs:
+- `docs/amc_render_contract.md`
+- `docs/amc_document_drift_policy.md`
+
 ## Core AMC Modules
 
 - `src/amc/normalizeIntake.ts`: raw intake normalization (`normalizeIntake`)
