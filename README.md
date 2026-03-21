@@ -24,6 +24,7 @@ Current AMC pipeline is deterministic and section-based:
 - DOCX bridge + existing merge path handoff
 
 AMC governance docs:
+- `docs/README.md` (AMC docs index)
 - `docs/amc_render_contract.md`
 - `docs/amc_document_drift_policy.md`
 
