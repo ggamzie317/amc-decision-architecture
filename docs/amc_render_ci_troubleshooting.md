@@ -36,8 +36,8 @@ Use this quick path for failures in `.github/workflows/amc-render.yml`.
 ## Local Reproduction
 ```bash
 pnpm --dir manus-ui install --frozen-lockfile
-pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared --out output/AMC_Report_ci_single.docx --payload output/amc_docx_payload_ci_single.json
-pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared --out output/AMC_Report_ci_comparative.docx --payload output/amc_docx_payload_ci_comparative.json
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared --out "$PWD/output/AMC_Report_ci_single.docx" --payload "$PWD/output/amc_docx_payload_ci_single.json"
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared --out "$PWD/output/AMC_Report_ci_comparative.docx" --payload "$PWD/output/amc_docx_payload_ci_comparative.json"
 bash scripts/render_golden_fixtures.sh
 ```
 
