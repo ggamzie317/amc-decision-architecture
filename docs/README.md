@@ -8,3 +8,4 @@ Operational entry point for AMC governance, metadata, and review documents.
 - `amc_golden_fixture_runbook.md`: How to run and review the golden fixture render set.
 - `amc_golden_review_rubric.md`: Human review rubric for semantic plausibility and tone.
 - `amc_render_ci_troubleshooting.md`: Quick first checks for AMC render CI failures.
+- `amc_render_stabilization_note.md`: Snapshot note of recent AMC render stabilization and verification status.
