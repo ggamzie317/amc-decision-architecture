@@ -66,3 +66,4 @@ Notes:
 - `docs/amc_document_drift_policy.md`
 - `docs/amc_golden_fixture_runbook.md`
 - `docs/amc_golden_review_rubric.md`
+- `docs/amc_render_ci_troubleshooting.md`

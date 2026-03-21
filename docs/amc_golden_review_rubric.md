@@ -35,3 +35,4 @@ Use this rubric for semantic regression review after rendering the golden fixtur
 - `docs/amc_render_contract.md`
 - `docs/amc_document_drift_policy.md`
 - `docs/amc_native_metadata_inventory.md`
+- `docs/amc_render_ci_troubleshooting.md`
