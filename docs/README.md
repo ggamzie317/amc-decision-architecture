@@ -7,3 +7,4 @@ Operational entry point for AMC governance, metadata, and review documents.
 - `amc_native_metadata_inventory.md`: Current native metadata fields, owners, consumers, fallbacks, and warning behavior.
 - `amc_golden_fixture_runbook.md`: How to run and review the golden fixture render set.
 - `amc_golden_review_rubric.md`: Human review rubric for semantic plausibility and tone.
+- `amc_render_ci_troubleshooting.md`: Quick first checks for AMC render CI failures.
