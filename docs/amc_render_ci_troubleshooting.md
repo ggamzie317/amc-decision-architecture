@@ -46,3 +46,5 @@ bash scripts/render_golden_fixtures.sh
 - Strict comparative render completes and writes `output/AMC_Report_ci_comparative.docx` + `output/amc_docx_payload_ci_comparative.json`.
 - Golden fixture run creates `output/golden/` with `review_summary.json` and `review_summary.md`.
 - `leftover_placeholders` remains `0` for all fixtures in `output/golden/review_summary.json`.
+
+See also: `docs/amc_render_stabilization_note.md` for the latest stabilization snapshot.

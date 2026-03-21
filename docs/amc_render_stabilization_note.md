@@ -10,3 +10,5 @@
   - golden fixture render succeeds
   - `leftover_placeholders = 0` for all fixtures in `output/golden/review_summary.json`
 - Generated render outputs are ignored via `.gitignore`.
+
+See also: `docs/amc_render_ci_troubleshooting.md` for current triage and local reproduction commands.
