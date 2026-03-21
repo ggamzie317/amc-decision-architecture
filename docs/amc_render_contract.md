@@ -1,5 +1,7 @@
 # AMC Render Contract and Quality Governance
 
+Use this doc when you need contract boundaries, change classification, or required validation gates.
+
 ## Purpose
 The AMC render pipeline exists to produce stable DOCX outputs from AMC intake data using:
 - deterministic section builders,

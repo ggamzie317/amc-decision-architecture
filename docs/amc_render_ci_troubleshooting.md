@@ -1,5 +1,7 @@
 # AMC Render CI Troubleshooting (Minimal)
 
+Use this doc when CI/local renders fail and you need first-pass triage plus smoke verification.
+
 Use this quick path for failures in `.github/workflows/amc-render.yml`.
 
 ## First Step To Check

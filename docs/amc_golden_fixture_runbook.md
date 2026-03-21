@@ -1,5 +1,7 @@
 # AMC Golden Fixture Runbook
 
+Use this doc when you need to run the golden fixture set and review semantic regression outputs.
+
 ## Purpose
 Provide a stable representative set of AMC cases to evaluate semantic regressions without changing render architecture.
 
