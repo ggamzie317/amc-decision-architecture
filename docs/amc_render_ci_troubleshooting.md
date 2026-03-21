@@ -34,6 +34,14 @@ Use this quick path for failures in `.github/workflows/amc-render.yml`.
 - Treat the run as failed only when a workflow step status is failed/cancelled or strict render checks return an error.
 
 ## Local Reproduction
+Run all core checks in one step:
+
+```bash
+bash scripts/run_amc_render_smoke.sh
+```
+
+Or run each command directly:
+
 ```bash
 pnpm --dir manus-ui install --frozen-lockfile
 pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared --out "$PWD/output/AMC_Report_ci_single.docx" --payload "$PWD/output/amc_docx_payload_ci_single.json"
