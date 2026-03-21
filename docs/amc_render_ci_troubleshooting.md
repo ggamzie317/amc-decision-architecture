@@ -38,3 +38,9 @@ pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared --
 pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared --out output/AMC_Report_ci_comparative.docx --payload output/amc_docx_payload_ci_comparative.json
 bash scripts/render_golden_fixtures.sh
 ```
+
+## Smoke Check
+- Strict single render completes and writes `output/AMC_Report_ci_single.docx` + `output/amc_docx_payload_ci_single.json`.
+- Strict comparative render completes and writes `output/AMC_Report_ci_comparative.docx` + `output/amc_docx_payload_ci_comparative.json`.
+- Golden fixture run creates `output/golden/` with `review_summary.json` and `review_summary.md`.
+- `leftover_placeholders` remains `0` for all fixtures in `output/golden/review_summary.json`.
