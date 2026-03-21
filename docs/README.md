@@ -12,3 +12,4 @@ Operational entry point for AMC governance, metadata, and review documents.
 - `amc_dry_run_checklist.md`: Minimal end-to-end checklist for one-case launch readiness verification.
 - `amc_delivery_readiness_checklist.md`: Minimal operator checklist before sending one generated report.
 - `amc_operator_handoff_template.md`: Minimal operator handoff template for final report delivery packaging.
+- `amc_operator_run_sequence.md`: Minimal recommended order from dry run through final report delivery.
