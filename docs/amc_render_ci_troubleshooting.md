@@ -26,3 +26,11 @@ Use this quick path for failures in `.github/workflows/amc-render.yml`.
 2. `Install JS dependencies` error details.
 3. Strict render step failures (`single`, `comparative`, `golden`).
 4. Artifact upload failures (only after upstream steps are clean).
+
+## Local Reproduction
+```bash
+pnpm --dir manus-ui install --frozen-lockfile
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --strict-undeclared
+pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared
+bash scripts/render_golden_fixtures.sh
+```
