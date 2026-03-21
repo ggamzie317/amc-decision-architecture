@@ -60,3 +60,9 @@ Notes:
 - Native metadata is additive and non-blocking for rendering.
 - `meta.native_mapping_warnings` is the observability surface for unsupported native values.
 - Render-owned timeline fields (`exploration_plan.experiment_*.timeline`) remain outside native metadata ownership by contract.
+
+## Related Docs
+- `docs/amc_render_contract.md`
+- `docs/amc_document_drift_policy.md`
+- `docs/amc_golden_fixture_runbook.md`
+- `docs/amc_golden_review_rubric.md`

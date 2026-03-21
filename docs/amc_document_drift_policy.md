@@ -42,3 +42,9 @@ If a PR touches any trigger above, it must include one of the following:
 ## Review preference
 Prefer small documentation updates in the same PR that changes architecture or output behavior.
 Do not defer doc-sync work to a later PR unless there is a clear reason.
+
+## Related Docs
+- `docs/amc_render_contract.md`
+- `docs/amc_native_metadata_inventory.md`
+- `docs/amc_golden_fixture_runbook.md`
+- `docs/amc_golden_review_rubric.md`

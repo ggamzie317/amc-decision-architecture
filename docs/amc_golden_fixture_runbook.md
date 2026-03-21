@@ -39,3 +39,9 @@ Provide a stable representative set of AMC cases to evaluate semantic regression
 ## Known Gaps
 - Tone/semantic plausibility still requires human review.
 - Comparative per-option statuses are signal-driven but may fallback to bucket-level inference when option text is weak.
+
+## Related Docs
+- `docs/amc_golden_review_rubric.md`
+- `docs/amc_render_contract.md`
+- `docs/amc_document_drift_policy.md`
+- `docs/amc_native_metadata_inventory.md`

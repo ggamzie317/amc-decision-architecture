@@ -29,3 +29,9 @@ Use this rubric for semantic regression review after rendering the golden fixtur
 - Placeholder leakage = 0 for all fixtures.
 - Strict render succeeds for all fixtures.
 - Comparative visibility behavior matches case type.
+
+## Related Docs
+- `docs/amc_golden_fixture_runbook.md`
+- `docs/amc_render_contract.md`
+- `docs/amc_document_drift_policy.md`
+- `docs/amc_native_metadata_inventory.md`

@@ -152,3 +152,9 @@ Golden fixture run:
 ```bash
 bash scripts/render_golden_fixtures.sh
 ```
+
+## Related Docs
+- `docs/amc_document_drift_policy.md`
+- `docs/amc_native_metadata_inventory.md`
+- `docs/amc_golden_fixture_runbook.md`
+- `docs/amc_golden_review_rubric.md`
