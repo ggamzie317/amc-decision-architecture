@@ -131,6 +131,12 @@ Comparative render (strict undeclared check):
 pnpm --dir manus-ui exec tsx ../scripts/run_amc_report.ts --comparative --strict-undeclared
 ```
 
+One-step local smoke check:
+
+```bash
+bash scripts/run_amc_render_smoke.sh
+```
+
 Optional language layer for fixed render strings (`ko|en|zh`, default `en` or `intake.lang`):
 
 ```bash
