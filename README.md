@@ -175,7 +175,6 @@ python3 src/run_latest.py --xlsx "/Users/kwonkibum/Downloads/AMC – Strategic C
 python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json
 python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json
 python3 src/generate_email_draft.py
-python3 src/generate_audio_summary.py
 cd manus-ui && pnpm dev
 ```
 
@@ -225,34 +224,11 @@ Optional path from Perplexity-style raw text:
    `python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json`
    `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
 
-### Audio summary + TTS file generation
+### Tier and Delivery Note
 
-1. Generate the narration-ready AMC audio summary script:
-
-`python3 src/generate_audio_summary.py`
-
-2. Generate a playable audio file (v1 provider: OpenAI TTS):
-
-`python3 src/generate_audio_tts.py --provider openai --infile output/audio_summary_script_latest.txt --outfile output/audio_summary_latest.mp3`
-
-Required environment variables:
-
-- `OPENAI_API_KEY` for `--provider openai`
-- `GEMINI_API_KEY` reserved for future `--provider gemini` support
-
-Outputs:
-
-- Script: `output/audio_summary_script_latest.txt`
-- Audio: `output/audio_summary_latest.mp3`
-
-Tier note:
-
-- Essential tier includes report + audio summary.
-- Executive tier includes report + audio summary + chatbot layer.
-
-Language note:
-
-- AMC delivery is currently English-first, with language-toggle readiness maintained for Korean / English / Chinese in future phases.
+- Essential tier includes report only.
+- Executive tier includes report + chatbot access valid for 7 days.
+- AMC delivery maintains Korean / English / Chinese language-toggle readiness.
 
 ### AMC chatbot scaffold (report interpreter layer)
 
