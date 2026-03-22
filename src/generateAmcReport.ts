@@ -110,10 +110,12 @@ export function buildNestedTemplateContextFromDocxPayload(
       : computeIntakeCompletenessScore(normalized);
 
   const labels = resolveOptionLabels(upstreamNative.optionLabels, rawIntake, strings, warnings);
+  const displayLabels = resolveComparativeDisplayLabels(labels, rawIntake, mode);
   const nativeComparativeStatus =
     external.comparativeOptionSignals || external.comparativeStatus || {};
   const upstreamMatrixBands = upstreamNative.matrixBands || {};
   const externalCue = buildExternalReadingCue(external.nativeMetadata, strings, warnings);
+  const externalDisplay = buildExternalSnapshotDisplay(mode, external, flat, externalCue);
   const nativeConditionMetadata = conditions.nativeMetadata || {};
   const explorationDesignResolution = resolveExplorationDesigns(
     nativeConditionMetadata.explorationDesignHints,
@@ -162,16 +164,23 @@ export function buildNestedTemplateContextFromDocxPayload(
 
   const matrix = {
     market_outlook: {
+      score: scoreFromBand(marketBand),
       visual: visualFromBand(marketBand, strings),
     },
     company_stability: {
+      score: scoreFromBand(companyBand),
       visual: visualFromBand(companyBand, strings),
     },
-    fifwm_risk: { visual: visualFromBand(fifwmBand, strings) },
+    fifwm_risk: {
+      score: scoreFromBand(fifwmBand),
+      visual: visualFromBand(fifwmBand, strings),
+    },
     personal_fit: {
+      score: scoreFromBand(personalBand),
       visual: visualFromBand(personalBand, strings),
     },
     upside_downside: {
+      score: scoreFromBand(upsideBand),
       visual: visualFromBand(upsideBand, strings),
     },
     reading_cue: buildMatrixReadingCue(
@@ -197,8 +206,8 @@ export function buildNestedTemplateContextFromDocxPayload(
     case: {
       case_type: caseType,
       verdict_label: withFallback(deriveVerdictLabel(executive, flat, strings)),
-      option_a_label: mode === "comparative" ? withFallback(labels.optionA) : "",
-      option_b_label: mode === "comparative" ? withFallback(labels.optionB) : "",
+      option_a_label: mode === "comparative" ? withFallback(displayLabels.optionA) : "",
+      option_b_label: mode === "comparative" ? withFallback(displayLabels.optionB) : "",
     },
     executive_summary: {
       verdict_line: withFallback(executive.overviewLine || flat.executive_overview_overview_line),
@@ -208,12 +217,12 @@ export function buildNestedTemplateContextFromDocxPayload(
       assessment_basis_line: withFallback(buildAssessmentBasisLine(completenessScore, strings)),
     },
     external_snapshot: {
-      title: withFallback(external.title || flat.external_snapshot_title),
-      market_direction: withFallback(external.marketLine || flat.external_snapshot_market_line),
-      competition_pressure: withFallback(external.positionLine || flat.external_snapshot_position_line),
-      economic_pressure: withFallback(external.signalLine || flat.external_snapshot_signal_line),
-      transition_friction: withFallback(external.frictionLine || flat.external_snapshot_friction_line),
-      reading_cue: withFallback(externalCue),
+      title: withFallback(externalDisplay.title),
+      market_direction: withFallback(externalDisplay.marketDirection),
+      competition_pressure: withFallback(externalDisplay.competitionPressure),
+      economic_pressure: withFallback(externalDisplay.economicPressure),
+      transition_friction: withFallback(externalDisplay.transitionFriction),
+      reading_cue: withFallback(externalDisplay.readingCue),
     },
     comparative_snapshot: {
       option_a: {
@@ -270,52 +279,84 @@ export function buildNestedTemplateContextFromDocxPayload(
     exploration_plan: {
       experiment_1: {
         timeline: strings.experimentTimeline1,
-        objective: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
-        design: withFallback(explorationDesignResolution.designs.experiment1),
-        validation_signal: withFallback(external.marketLine || flat.external_snapshot_market_line),
-        stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        objective: withFallback(
+          compactScaffoldingText(conditions.validationCondition || flat.decision_conditions_validation_condition, strings),
+        ),
+        design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment1, strings)),
+        validation_signal: withFallback(compactScaffoldingText(external.marketLine || flat.external_snapshot_market_line, strings)),
+        stop_or_scale_rule: withFallback(
+          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+        ),
       },
       experiment_2: {
         timeline: strings.experimentTimeline2,
-        objective: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
-        design: withFallback(explorationDesignResolution.designs.experiment2),
-        validation_signal: withFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
-        stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        objective: withFallback(
+          compactScaffoldingText(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
+        ),
+        design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment2, strings)),
+        validation_signal: withFallback(
+          compactScaffoldingText(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
+        ),
+        stop_or_scale_rule: withFallback(
+          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+        ),
       },
       experiment_3: {
         timeline: strings.experimentTimeline3,
-        objective: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
-        design: withFallback(explorationDesignResolution.designs.experiment3),
-        validation_signal: withFallback(temperament.disciplineLine || flat.strategic_temperament_discipline_line),
-        stop_or_scale_rule: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        objective: withFallback(
+          compactScaffoldingText(conditions.supportCondition || flat.decision_conditions_support_condition, strings),
+        ),
+        design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment3, strings)),
+        validation_signal: withFallback(
+          compactScaffoldingText(temperament.disciplineLine || flat.strategic_temperament_discipline_line, strings),
+        ),
+        stop_or_scale_rule: withFallback(
+          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+        ),
       },
     },
     execution_map: {
       phase_1: {
-        priority_action: withFallback(conditions.validationCondition || flat.decision_conditions_validation_condition),
-        success_signal: withFallback(external.marketLine || flat.external_snapshot_market_line),
+        priority_action: withFallback(
+          compactScaffoldingText(conditions.validationCondition || flat.decision_conditions_validation_condition, strings),
+        ),
+        success_signal: withFallback(compactScaffoldingText(external.marketLine || flat.external_snapshot_market_line, strings)),
       },
       phase_2: {
-        priority_action: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
-        success_signal: withFallback(internal.readinessLine || flat.internal_structural_snapshot_readiness_line),
+        priority_action: withFallback(
+          compactScaffoldingText(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
+        ),
+        success_signal: withFallback(
+          compactScaffoldingText(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
+        ),
       },
       phase_3: {
-        priority_action: withFallback(conditions.supportCondition || flat.decision_conditions_support_condition),
-        success_signal: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
+        priority_action: withFallback(
+          compactScaffoldingText(conditions.supportCondition || flat.decision_conditions_support_condition, strings),
+        ),
+        success_signal: withFallback(
+          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+        ),
       },
     },
     assumptions_watchlist: {
       assumption_1: {
-        statement: withFallback(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk),
-        break_signal: withFallback(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk),
+        statement: withFallback(compactScaffoldingText(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk, strings)),
+        break_signal: withFallback(
+          compactScaffoldingText(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk, strings),
+        ),
       },
       assumption_2: {
-        statement: withFallback(internal.strainLine || flat.internal_structural_snapshot_strain_line),
-        break_signal: withFallback(mobility.burdenLine || flat.career_mobility_structure_burden_line),
+        statement: withFallback(
+          compactScaffoldingText(internal.strainLine || flat.internal_structural_snapshot_strain_line, strings),
+        ),
+        break_signal: withFallback(compactScaffoldingText(mobility.burdenLine || flat.career_mobility_structure_burden_line, strings)),
       },
       assumption_3: {
-        statement: withFallback(value.tensionLine || flat.career_value_structure_tension_line),
-        break_signal: withFallback(conditions.readinessCondition || flat.decision_conditions_readiness_condition),
+        statement: withFallback(compactScaffoldingText(value.tensionLine || flat.career_value_structure_tension_line, strings)),
+        break_signal: withFallback(
+          compactScaffoldingText(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
+        ),
       },
     },
     commitment: {
@@ -393,6 +434,16 @@ function visualFromBand(
   return strings.matrixVisualPartial;
 }
 
+function scoreFromBand(band: "strong" | "partial" | "weak"): number {
+  if (band === "strong") {
+    return 2;
+  }
+  if (band === "weak") {
+    return 0;
+  }
+  return 1;
+}
+
 function resolveOptionLabels(
   nativeOptionLabels: unknown,
   rawIntake: any,
@@ -432,6 +483,122 @@ function extractLabeledOption(source: string, label: "A" | "B"): string | null {
   }
   const value = m[1].trim();
   return value || null;
+}
+
+function resolveComparativeDisplayLabels(
+  labels: { optionA: string; optionB: string },
+  rawIntake: any,
+  mode: "single" | "comparative",
+): { optionA: string; optionB: string } {
+  if (mode !== "comparative") {
+    return labels;
+  }
+
+  const source = `${labels.optionA} ${labels.optionB} ${rawIntake?.optionsUnderConsideration || ""} ${rawIntake?.mainDecision || ""}`.toLowerCase();
+  const hasPhdSignal = /(phd|doctoral|doctorate|academia|academic)/.test(source);
+  const hasCorporateSignal = /(corporate|company|current role|stay|internal|continue)/.test(source);
+  if (hasPhdSignal && hasCorporateSignal) {
+    return { optionA: "PhD path", optionB: "Continue corporate path" };
+  }
+
+  const normalizeSingle = (label: string): string => {
+    const text = String(label || "").trim();
+    if (!text) {
+      return "";
+    }
+    const lower = text.toLowerCase();
+    if (/(phd|doctoral|doctorate|academia|academic)/.test(lower)) {
+      return "PhD path";
+    }
+    if (/(corporate|company|current role|stay|internal|continue)/.test(lower)) {
+      return "Continue corporate path";
+    }
+    return text.split(/\s+/).slice(0, 4).join(" ");
+  };
+
+  const optionA = normalizeSingle(labels.optionA) || "Option A";
+  const optionB = normalizeSingle(labels.optionB) || "Option B";
+  return { optionA, optionB };
+}
+
+function compactSentence(text: unknown, maxWords: number): string {
+  const cleaned = String(text || "").replace(/\s+/g, " ").trim();
+  if (!cleaned) {
+    return "";
+  }
+  const words = cleaned.split(" ");
+  if (words.length <= maxWords) {
+    return cleaned;
+  }
+  return `${words.slice(0, maxWords).join(" ").replace(/[,.]$/, "")}.`;
+}
+
+function buildExternalSnapshotDisplay(
+  mode: "single" | "comparative",
+  external: Record<string, unknown>,
+  flat: Record<string, unknown>,
+  cue: string,
+): {
+  title: string;
+  marketDirection: string;
+  competitionPressure: string;
+  economicPressure: string;
+  transitionFriction: string;
+  readingCue: string;
+} {
+  const titleRaw = String(external.title || flat.external_snapshot_title || "External Snapshot");
+  const marketRaw = String(external.marketLine || flat.external_snapshot_market_line || "");
+  const competitionRaw = String(external.positionLine || flat.external_snapshot_position_line || "");
+  const economicRaw = String(external.signalLine || flat.external_snapshot_signal_line || "");
+  const transitionRaw = String(external.frictionLine || flat.external_snapshot_friction_line || "");
+  const cueRaw = String(cue || "");
+
+  if (mode === "comparative") {
+    return {
+      title: "External Snapshot (Context)",
+      marketDirection: compactSentence(marketRaw, 16),
+      competitionPressure: compactSentence(competitionRaw, 16),
+      economicPressure: compactSentence(economicRaw, 16),
+      transitionFriction: compactSentence(transitionRaw, 16),
+      readingCue: compactSentence(cueRaw, 18),
+    };
+  }
+
+  return {
+    title: titleRaw,
+    marketDirection: marketRaw,
+    competitionPressure: competitionRaw,
+    economicPressure: economicRaw,
+    transitionFriction: transitionRaw,
+    readingCue: cueRaw,
+  };
+}
+
+function compactScaffoldingText(
+  value: unknown,
+  strings: { notApplicable: string },
+): string {
+  const text = String(value || "").trim();
+  if (!text) {
+    return "—";
+  }
+  const lower = text.toLowerCase();
+  const notApplicable = String(strings.notApplicable || "").trim().toLowerCase();
+  if (notApplicable && lower === notApplicable) {
+    return "—";
+  }
+  const scaffoldingMarkers = [
+    "not yet specified",
+    "pending",
+    "to_be_replaced",
+    "tbd",
+    "placeholder",
+    "default",
+  ];
+  if (scaffoldingMarkers.some((marker) => lower.includes(marker))) {
+    return "—";
+  }
+  return text;
 }
 
 function indexSections(sections: any[] | undefined): Record<string, any> {
