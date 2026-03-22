@@ -40,19 +40,6 @@
     "reflective_followup": "Would a section-by-section recap help isolate where uncertainty remains highest?"
   },
   {
-    "id": "faq_whole_audio_vs_written_v1",
-    "category": "whole_report_recap",
-    "scope": "in-report",
-    "user_question": "How is the audio summary different from the written report?",
-    "answer_intent": "Differentiate concise narrative recap from full report detail.",
-    "response_structure": [
-      "Explain that audio is a compressed structural recap.",
-      "Clarify that written report contains fuller section-level detail.",
-      "Note that both maintain the same structural framing and non-recommendation stance."
-    ],
-    "reflective_followup": null
-  },
-  {
     "id": "faq_section_structural_reading_v1",
     "category": "section_definition",
     "scope": "in-report",
@@ -287,4 +274,3 @@
     "reflective_followup": "Which uncertainty would most improve decision clarity if reduced first?"
   }
 ]
-
