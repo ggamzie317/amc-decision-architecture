@@ -118,7 +118,6 @@ _MANDATORY_TEMPLATE_KEYS = [
     "Worst_Case",
     "Safety_Nets",
     "Decision_Gate_Rule",
-    "Audio_Link",
     "Strength_1",
     "Strength_2",
     "Weakness_1",
@@ -655,24 +654,31 @@ def _build_external_comparative_fields(payload: Dict[str, object], fixed_externa
 
 
 def _infer_external_mode(payload: Dict[str, object]) -> str:
-    comparative_keys = (
-        "External_OptionA_Market_Direction",
-        "External_OptionA_Competition_Pressure",
-        "External_OptionA_Economic_Pressure",
-        "External_OptionA_Transition_Friction",
-        "External_OptionB_Market_Direction",
-        "External_OptionB_Competition_Pressure",
-        "External_OptionB_Economic_Pressure",
-        "External_OptionB_Transition_Friction",
-        "External_Comparative_Reading",
-        "External_Comparative_Implication",
+    explicit = str(payload.get("External_Mode", "") or "").strip().lower()
+    if explicit in {"single", "comparative"}:
+        return explicit
+
+    external_inputs = payload.get("external_inputs", {})
+    decision_text = ""
+    options_text = ""
+    if isinstance(external_inputs, dict):
+        decision_text = str(external_inputs.get("decision_text", "") or "")
+        options_text = str(external_inputs.get("options_text", "") or "")
+
+    corpus = f"{decision_text} {options_text}".lower()
+    comparative_signals = (
+        "option a",
+        "option b",
+        "option 1",
+        "option 2",
+        " vs ",
+        "versus",
+        "compared",
+        "compare",
     )
-    populated = 0
-    for key in comparative_keys:
-        value = str(payload.get(key, "") or "").strip()
-        if value:
-            populated += 1
-    return "comparative" if populated >= 6 else "single"
+    if any(signal in corpus for signal in comparative_signals):
+        return "comparative"
+    return "single"
 
 
 def _infer_market_status(sentence: str) -> str:
@@ -879,6 +885,8 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     for key in _MANDATORY_TEMPLATE_KEYS:
         if key not in payload or payload[key] is None:
             payload[key] = ""
+    # Audio output is retired in current AMC product policy.
+    payload.pop("Audio_Link", None)
 
     payload["Entity_Type"] = entity["entity_type"]
     payload["Entity_Label"] = entity["entity_label"]

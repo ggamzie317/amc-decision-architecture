@@ -601,6 +601,17 @@ class PipelineTests(unittest.TestCase):
         payload = build_report_payload(self._base_row(), "en")
         self.assertTrue(str(payload.get("External_Comparative_Reading", "")).strip())
         self.assertTrue(str(payload.get("External_OptionA_Market_Direction", "")).strip())
+        self.assertEqual(payload["External_Mode"], "single")
+
+    def test_external_mode_comparative_when_input_case_is_comparative(self):
+        row = self._base_row()
+        q8_options_key = (
+            "8. What career options are you currently considering?\n"
+            "Please briefly describe each option in 2–3 sentences.\n"
+            "You may list them as Option 1, Option 2, etc."
+        )
+        row[q8_options_key] = "Option A: Stay in current role. Option B: Move to a new company."
+        payload = build_report_payload(row, "en")
         self.assertEqual(payload["External_Mode"], "comparative")
 
     def test_external_comparative_status_fields_exist_and_valid_enums(self):
