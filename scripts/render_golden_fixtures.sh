@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 MANIFEST="$ROOT_DIR/fixtures/golden/manifest.json"
 OUT_DIR="$ROOT_DIR/output/golden"
-TEMPLATE="$ROOT_DIR/templates/AMC_Strategic_Career_Decision_Template_v3_3.docx"
+TEMPLATE="$ROOT_DIR/templates/AMC_Strategic_Career_Decision_Template_v3_4_working.docx"
 
 mkdir -p "$OUT_DIR"
 

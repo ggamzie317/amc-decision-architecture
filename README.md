@@ -113,7 +113,7 @@ pnpm --dir manus-ui exec tsx ../tests/generateAmcReport.test.ts
 
 - Comparative detection is text-signal based (`optionsUnderConsideration` markers).
 - Production template defaults to repo-local path:
-  `templates/AMC_Strategic_Career_Decision_Template_v3_3.docx`
+  `templates/AMC_Strategic_Career_Decision_Template_v3_4_working.docx`
 - Upstream validation is intentionally lightweight; builders fail transparently on missing required data.
 - Render context is nested and aligned to dotted DOCX placeholders.
 

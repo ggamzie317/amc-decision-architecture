@@ -19,7 +19,7 @@ function parseArgs(argv: string[]): CliArgs {
   const repoRoot = path.resolve(scriptDir, "..");
   const defaultTemplate =
     process.env.AMC_TEMPLATE_PATH ||
-    path.resolve(repoRoot, "templates", "AMC_Strategic_Career_Decision_Template_v3_3.docx");
+    path.resolve(repoRoot, "templates", "AMC_Strategic_Career_Decision_Template_v3_4_working.docx");
 
   const args: CliArgs = {
     intake: path.resolve(repoRoot, "examples", "amc_sample_single.json"),
@@ -88,7 +88,7 @@ function printHelp(): void {
   console.log("Options:");
   console.log("  --intake <path>    Raw intake JSON path (default: repo examples/amc_sample_single.json)");
   console.log("  --comparative      Use repo examples/amc_sample_comparative.json");
-  console.log("  --template <path>  DOCX template path (default: $AMC_TEMPLATE_PATH or repo templates/v3_3 path)");
+  console.log("  --template <path>  DOCX template path (default: $AMC_TEMPLATE_PATH or repo templates/v3_4 working path)");
   console.log("  --out <path>       Output DOCX path (default: repo output/AMC_Report_Runner.docx)");
   console.log("  --payload <path>   Intermediate payload JSON path (default: repo output/amc_docx_payload_latest.json)");
   console.log("  --python <bin>     Python executable for merge_docx.py (default: python3)");
