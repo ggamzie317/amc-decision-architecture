@@ -1,6 +1,7 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
 import type { AmcInputSummary } from "./amc/buildInputSummary";
+import { isWeakEvidence } from "./amc/weakEvidence";
 import { inferCaseType } from "./amc/inferCaseType";
 
 export interface DecisionConditionsOutput {
@@ -108,18 +109,6 @@ export function buildDecisionConditions(args: {
 }
 
 
-function isWeakEvidence(
-  normalized: AmcNormalizedIntake,
-  flags: AmcDerivedFlags,
-  summary: AmcInputSummary,
-): boolean {
-  const hasDecisionText =
-    (normalized.mainDecision || "").trim().length > 0 ||
-    (normalized.optionsUnderConsideration || "").trim().length > 0 ||
-    (summary.decisionSnapshot.optionsUnderConsideration || "").trim().length > 0;
-
-  return !hasDecisionText && flags.highInterpretiveNeed;
-}
 
 type ValidationBucket = "proof_gap" | "comparison_clarity" | "transferability_validation" | "signal_consolidation";
 type ReadinessBucket = "execution_alignment" | "timing_sync" | "threshold_definition" | "interest_vs_readiness_gap";
