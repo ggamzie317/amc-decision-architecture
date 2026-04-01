@@ -1,6 +1,7 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
 import type { AmcInputSummary } from "./amc/buildInputSummary";
+import { isWeakEvidence } from "./amc/weakEvidence";
 import { inferCaseType } from "./amc/inferCaseType";
 
 export interface CareerValueStructureOutput {
@@ -22,7 +23,7 @@ export function buildCareerValueStructure(args: {
   const { normalized, structuralFlags, inputSummary } = args;
 
   const caseType = inferCaseType(normalized, inputSummary);
-  const weakEvidence = isWeakEvidence(normalized, structuralFlags, inputSummary);
+  const weakEvidence = isWeakEvidenceForValueStructure(normalized, structuralFlags, inputSummary);
 
   if (weakEvidence) {
     const fallback: CareerValueStructureOutput = {
@@ -70,21 +71,16 @@ export function buildCareerValueStructure(args: {
 }
 
 
-function isWeakEvidence(
+function isWeakEvidenceForValueStructure(
   normalized: AmcNormalizedIntake,
   flags: AmcDerivedFlags,
   summary: AmcInputSummary,
 ): boolean {
-  const hasDecisionText =
-    (normalized.mainDecision || "").trim().length > 0 ||
-    (normalized.optionsUnderConsideration || "").trim().length > 0 ||
-    (summary.decisionSnapshot.optionsUnderConsideration || "").trim().length > 0;
-
   const hasPriorityText =
     Array.isArray(normalized.topPriorities) &&
     normalized.topPriorities.some((x) => (x || "").trim().length > 0);
 
-  return !hasDecisionText && !hasPriorityText && flags.highInterpretiveNeed;
+  return isWeakEvidence(normalized, flags, summary, { hasAdditionalEvidence: hasPriorityText });
 }
 
 type ValueBucket =

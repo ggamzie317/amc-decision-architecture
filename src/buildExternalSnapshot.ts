@@ -1,6 +1,7 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
 import type { AmcInputSummary } from "./amc/buildInputSummary";
+import { isWeakEvidence } from "./amc/weakEvidence";
 import { inferCaseType } from "./amc/inferCaseType";
 
 export interface ExternalSnapshotOutput {
@@ -142,18 +143,6 @@ export function buildExternalSnapshot(args: {
 }
 
 
-function isWeakEvidence(
-  normalized: AmcNormalizedIntake,
-  flags: AmcDerivedFlags,
-  summary: AmcInputSummary,
-): boolean {
-  const hasDecisionText =
-    (normalized.mainDecision || "").trim().length > 0 ||
-    (normalized.optionsUnderConsideration || "").trim().length > 0 ||
-    (summary.decisionSnapshot.optionsUnderConsideration || "").trim().length > 0;
-
-  return !hasDecisionText && flags.highInterpretiveNeed;
-}
 
 type DemandBucket = "clear" | "mixed" | "weak";
 type PortabilityBucket = "strong" | "partial" | "constrained";
