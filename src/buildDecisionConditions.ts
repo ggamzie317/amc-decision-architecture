@@ -1,6 +1,7 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
 import type { AmcInputSummary } from "./amc/buildInputSummary";
+import { inferCaseType } from "./amc/inferCaseType";
 
 export interface DecisionConditionsOutput {
   section: "decision_conditions";
@@ -106,17 +107,6 @@ export function buildDecisionConditions(args: {
   return output;
 }
 
-function inferCaseType(normalized: AmcNormalizedIntake, summary: AmcInputSummary): "single" | "comparative" {
-  const text = [normalized.optionsUnderConsideration, summary.decisionSnapshot.optionsUnderConsideration]
-    .join(" ")
-    .toLowerCase();
-
-  const comparativeSignals = ["option a", "option b", "option 1", "option 2", " vs ", "versus", "compared"];
-  if (comparativeSignals.some((signal) => text.includes(signal))) {
-    return "comparative";
-  }
-  return "single";
-}
 
 function isWeakEvidence(
   normalized: AmcNormalizedIntake,
