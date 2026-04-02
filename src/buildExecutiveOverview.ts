@@ -1,6 +1,6 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
-import type { AmcInputSummary } from "./amc/buildInputSummary";
+import type { AmcSectionBuilderArgs } from "./amc/builderArgs";
 import { inferCaseType } from "./amc/inferCaseType";
 
 export interface ExecutiveOverviewOutput {
@@ -13,11 +13,7 @@ export interface ExecutiveOverviewOutput {
   implicationLine: string;
 }
 
-export function buildExecutiveOverview(args: {
-  normalized: AmcNormalizedIntake;
-  structuralFlags: AmcDerivedFlags;
-  inputSummary: AmcInputSummary;
-}): ExecutiveOverviewOutput {
+export function buildExecutiveOverview(args: AmcSectionBuilderArgs): ExecutiveOverviewOutput {
   const { normalized, structuralFlags, inputSummary } = args;
 
   const caseType = inferCaseType(normalized, inputSummary);
