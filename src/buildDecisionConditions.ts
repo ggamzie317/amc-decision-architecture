@@ -1,6 +1,6 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
-import type { AmcInputSummary } from "./amc/buildInputSummary";
+import type { AmcSectionBuilderArgs } from "./amc/builderArgs";
 import { isWeakEvidence } from "./amc/weakEvidence";
 import { inferCaseType } from "./amc/inferCaseType";
 
@@ -28,11 +28,7 @@ export interface DecisionConditionsOutput {
   };
 }
 
-export function buildDecisionConditions(args: {
-  normalized: AmcNormalizedIntake;
-  structuralFlags: AmcDerivedFlags;
-  inputSummary: AmcInputSummary;
-}): DecisionConditionsOutput {
+export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionConditionsOutput {
   const { normalized, structuralFlags, inputSummary } = args;
 
   const caseType = inferCaseType(normalized, inputSummary);

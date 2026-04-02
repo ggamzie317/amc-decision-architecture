@@ -1,6 +1,6 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
-import type { AmcInputSummary } from "./amc/buildInputSummary";
+import type { AmcSectionBuilderArgs } from "./amc/builderArgs";
 import { isWeakEvidence } from "./amc/weakEvidence";
 import { inferCaseType } from "./amc/inferCaseType";
 
@@ -15,11 +15,7 @@ export interface CareerValueStructureOutput {
   comparativeReading?: string;
 }
 
-export function buildCareerValueStructure(args: {
-  normalized: AmcNormalizedIntake;
-  structuralFlags: AmcDerivedFlags;
-  inputSummary: AmcInputSummary;
-}): CareerValueStructureOutput {
+export function buildCareerValueStructure(args: AmcSectionBuilderArgs): CareerValueStructureOutput {
   const { normalized, structuralFlags, inputSummary } = args;
 
   const caseType = inferCaseType(normalized, inputSummary);
