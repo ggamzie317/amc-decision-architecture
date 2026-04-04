@@ -77,7 +77,7 @@ test("single-case output returns expected shape", () => {
   const result = buildDecisionConditions(args as any);
 
   assert.equal(result.section, "decision_conditions");
-  assert.equal(result.title, "Decision Conditions");
+  assert.equal(result.title, "결정이 가능한 조건");
   assert.equal(result.caseType, "single");
   assert.ok(result.validationCondition.length > 0);
   assert.ok(result.readinessCondition.length > 0);

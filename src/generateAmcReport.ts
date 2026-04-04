@@ -513,7 +513,7 @@ function resolveComparativeDisplayLabels(
     if (/(corporate|company|current role|stay|internal|continue)/.test(lower)) {
       return "Continue corporate path";
     }
-    return text.split(/\s+/).slice(0, 4).join(" ");
+    return text.replace(/^option\s+[ab]\s*:\s*/i, "").trim();
   };
 
   const optionA = normalizeSingle(labels.optionA) || "Option A";

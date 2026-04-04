@@ -31,6 +31,7 @@ export function assembleAmcReportPayload(rawIntake: any, options: AssemblerOptio
     normalized,
     structuralFlags,
     inputSummary,
+    nativeMetadata,
   };
 
   const sections = [

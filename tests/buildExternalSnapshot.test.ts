@@ -77,7 +77,7 @@ test("single-case output returns expected shape", () => {
   const result = buildExternalSnapshot(args as any);
 
   assert.equal(result.section, "external_snapshot");
-  assert.equal(result.title, "External Snapshot");
+  assert.equal(result.title, "외부 환경 요약");
   assert.equal(result.caseType, "single");
   assert.ok(result.marketLine.length > 0);
   assert.ok(result.positionLine.length > 0);
