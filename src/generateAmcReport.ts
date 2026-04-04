@@ -275,6 +275,9 @@ export function buildNestedTemplateContextFromDocxPayload(
         risk: withFallback(mobility.burdenLine || flat.career_mobility_structure_burden_line),
         condition: withFallback(conditions.commitmentCondition || flat.decision_conditions_commitment_condition),
       },
+      comparative_reading: withFallback(
+        risk.comparativeReading || flat.structural_risk_diagnosis_comparative_reading
+      ),
     },
     exploration_plan: {
       experiment_1: {

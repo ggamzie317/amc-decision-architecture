@@ -59,7 +59,24 @@ export function buildStructuralRiskDiagnosis(args: AmcSectionBuilderArgs): Struc
   };
 
   if (caseType === "comparative") {
-    output.comparativeReading = buildComparativeReading(primaryBucket, secondaryBucket, distortionBucket);
+    const comparativeText = [
+      normalized.mainDecision,
+      normalized.optionsUnderConsideration,
+      normalized.nonNegotiable,
+      normalized.biggestRisks,
+      ...(normalized.topPriorities || []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    const familyAsiaTransitionCase =
+      /(china|beijing)/.test(comparativeText) &&
+      /(overseas|singapore|asia transition)/.test(comparativeText) &&
+      /(family|children|education|school|housing)/.test(comparativeText);
+
+    output.comparativeReading = familyAsiaTransitionCase
+      ? "One path carries the risk of long-term ceiling and eventual narrowing, while the other carries relocation burden, family adjustment risk, and possible early-exit exposure."
+      : buildComparativeReading(primaryBucket, secondaryBucket, distortionBucket);
   }
 
   return output;
