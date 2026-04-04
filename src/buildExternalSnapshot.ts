@@ -6,7 +6,7 @@ import { inferCaseType } from "./amc/inferCaseType";
 
 export interface ExternalSnapshotOutput {
   section: "external_snapshot";
-  title: "External Snapshot";
+  title: "외부 환경 요약";
   caseType: "single" | "comparative";
   marketLine: string;
   positionLine: string;
@@ -57,7 +57,7 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
   if (weakEvidence) {
     const fallback: ExternalSnapshotOutput = {
       section: "external_snapshot",
-      title: "External Snapshot",
+      title: "외부 환경 요약",
       caseType,
       marketLine: "External readability appears present but not yet fully consolidated.",
       positionLine:
@@ -101,7 +101,7 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
 
   const output: ExternalSnapshotOutput = {
     section: "external_snapshot",
-    title: "External Snapshot",
+    title: "외부 환경 요약",
     caseType,
     marketLine: buildMarketLine(demandBucket, caseType),
     positionLine: buildPositionLine(portabilityBucket, caseType),

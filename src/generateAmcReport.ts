@@ -546,7 +546,7 @@ function buildExternalSnapshotDisplay(
   transitionFriction: string;
   readingCue: string;
 } {
-  const titleRaw = String(external.title || flat.external_snapshot_title || "External Snapshot");
+  const titleRaw = String(external.title || flat.external_snapshot_title || "외부 환경 요약");
   const marketRaw = String(external.marketLine || flat.external_snapshot_market_line || "");
   const competitionRaw = String(external.positionLine || flat.external_snapshot_position_line || "");
   const economicRaw = String(external.signalLine || flat.external_snapshot_signal_line || "");
@@ -555,7 +555,7 @@ function buildExternalSnapshotDisplay(
 
   if (mode === "comparative") {
     return {
-      title: "External Snapshot (Context)",
+      title: "외부 환경 요약",
       marketDirection: compactSentence(marketRaw, 16),
       competitionPressure: compactSentence(competitionRaw, 16),
       economicPressure: compactSentence(economicRaw, 16),
