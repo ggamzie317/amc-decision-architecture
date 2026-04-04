@@ -6,7 +6,7 @@ import { inferCaseType } from "./amc/inferCaseType";
 
 export interface DecisionConditionsOutput {
   section: "decision_conditions";
-  title: "Decision Conditions";
+  title: "결정이 가능한 조건";
   caseType: "single" | "comparative";
   validationCondition: string;
   readinessCondition: string;
@@ -37,7 +37,7 @@ export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionCo
   if (weakEvidence) {
     const fallback: DecisionConditionsOutput = {
       section: "decision_conditions",
-      title: "Decision Conditions",
+      title: "결정이 가능한 조건",
       caseType,
       validationCondition: "Clearer validation would improve the defensibility of the broader decision structure.",
       readinessCondition:
@@ -76,7 +76,7 @@ export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionCo
 
   const output: DecisionConditionsOutput = {
     section: "decision_conditions",
-    title: "Decision Conditions",
+    title: "결정이 가능한 조건",
     caseType,
     validationCondition: buildValidationCondition(validation, caseType),
     readinessCondition: buildReadinessCondition(readiness, caseType),
