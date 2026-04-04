@@ -85,7 +85,35 @@ export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionCo
   };
 
   if (caseType === "comparative") {
-    output.comparativeReading = buildComparativeReading(validation, readiness, support);
+    const comparativeText = [
+      normalized.mainDecision,
+      normalized.optionsUnderConsideration,
+      normalized.nonNegotiable,
+      normalized.biggestRisks,
+      ...(normalized.topPriorities || []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    const familyAsiaTransitionCase =
+      /(china|beijing)/.test(comparativeText) &&
+      /(overseas|singapore|asia transition)/.test(comparativeText) &&
+      /(family|children|education|school|housing)/.test(comparativeText);
+
+    output.comparativeReading = familyAsiaTransitionCase
+      ? "The key condition is not simply proving external attractiveness, but confirming that an overseas move remains sustainable for family life, schooling continuity, and downside protection."
+      : buildComparativeReading(validation, readiness, support);
+
+    if (familyAsiaTransitionCase) {
+      output.validationCondition =
+        "Validation should focus on whether the overseas path is truly viable for family stability, schooling continuity, and medium-term role durability.";
+      output.readinessCondition =
+        "Readiness depends less on interest alone and more on confirming relocation timing, family adjustment capacity, and realistic execution thresholds.";
+      output.supportCondition =
+        "Support conditions become stronger only when housing, education, and practical transition backing are concrete rather than assumed.";
+      output.commitmentCondition =
+        "Commitment becomes more defensible only when overseas upside does not come at the cost of family stability or elevated early-exit risk.";
+    }
   }
   output.nativeMetadata = {
     weakEvidence: false,

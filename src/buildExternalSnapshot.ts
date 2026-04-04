@@ -110,7 +110,25 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
   };
 
   if (caseType === "comparative") {
-    output.comparativeReading = buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+    const comparativeText = [
+      normalized.mainDecision,
+      normalized.optionsUnderConsideration,
+      normalized.nonNegotiable,
+      normalized.biggestRisks,
+      ...(normalized.topPriorities || []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    const familyAsiaTransitionCase =
+      /(china|beijing)/.test(comparativeText) &&
+      /(overseas|singapore|asia transition)/.test(comparativeText) &&
+      /(family|children|education|school|housing)/.test(comparativeText);
+
+    output.comparativeReading = familyAsiaTransitionCase
+      ? "The comparison is less about a simple stronger path and more about whether an overseas move can reopen long-term mobility without breaking family stability."
+      : buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+
     const baseStatus = buildComparativeStatus(demandBucket, portabilityBucket, frictionBucket, signalBucket);
     const optionSignals = buildPerOptionComparativeSignals(normalized, inputSummary, baseStatus);
     output.comparativeStatus = {
