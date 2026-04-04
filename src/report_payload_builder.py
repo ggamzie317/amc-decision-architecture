@@ -1094,11 +1094,11 @@ def fill_defaults(payload: Dict[str, object], row: Dict[str, object]) -> Dict[st
     snapshot_block = build_external_snapshot_by_type(snapshot_type, payload.get("external_structural_tags", {}))
     payload["External_Snapshot_Type"] = snapshot_type
     if snapshot_type == "academic_transition":
-        payload["External_Snapshot_Title"] = "External Snapshot — Academic Transition"
+        payload["External_Snapshot_Title"] = "외부 환경 요약 — 학업 전환"
     elif snapshot_type == "industry_transition":
-        payload["External_Snapshot_Title"] = "External Snapshot — Industry Transition"
+        payload["External_Snapshot_Title"] = "외부 환경 요약 — 산업 전환"
     else:
-        payload["External_Snapshot_Title"] = "External Snapshot"
+        payload["External_Snapshot_Title"] = "외부 환경 요약"
     payload.update(_build_dashboard_block(payload))
     ordered_snapshot_lines = []
     if isinstance(snapshot_block, dict):

@@ -33,7 +33,7 @@ def _external_line(payload: dict) -> str:
     mode = _normalize_text(payload.get("External_Mode")).lower()
     if mode == "comparative":
         return "- Comparative Analysis included"
-    return "- External Snapshot included"
+    return "- 외부 환경 요약 포함"
 
 
 def build_email_draft(payload: dict) -> str:
@@ -47,11 +47,11 @@ def build_email_draft(payload: dict) -> str:
         "Your AMC report is now ready.",
         "",
         "This report includes:",
-        "- Executive Dashboard",
-        "- Structural Risk Diagnosis",
-        "- External Snapshot",
+        "- 결정 한눈에 보기",
+        "- 리스크 구조 진단",
+        "- 외부 환경 요약",
         external_line,
-        "- Decision Conditions",
+        "- 결정이 가능한 조건",
         "",
         "It is designed to clarify structural trade-offs, risk concentration, and commitment conditions surrounding the current career decision context.",
         "",
