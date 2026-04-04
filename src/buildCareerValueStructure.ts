@@ -6,7 +6,7 @@ import { inferCaseType } from "./amc/inferCaseType";
 
 export interface CareerValueStructureOutput {
   section: "career_value_structure";
-  title: "Career Value Structure";
+  title: "가치 구조 비교";
   caseType: "single" | "comparative";
   primaryValueLine: string;
   secondaryValueLine: string;
@@ -24,7 +24,7 @@ export function buildCareerValueStructure(args: AmcSectionBuilderArgs): CareerVa
   if (weakEvidence) {
     const fallback: CareerValueStructureOutput = {
       section: "career_value_structure",
-      title: "Career Value Structure",
+      title: "가치 구조 비교",
       caseType,
       primaryValueLine:
         "The case appears to be organized around a mixed value structure rather than a single dominant criterion.",
@@ -51,7 +51,7 @@ export function buildCareerValueStructure(args: AmcSectionBuilderArgs): CareerVa
 
   const output: CareerValueStructureOutput = {
     section: "career_value_structure",
-    title: "Career Value Structure",
+    title: "가치 구조 비교",
     caseType,
     primaryValueLine: buildPrimaryValueLine(primary),
     secondaryValueLine: buildSecondaryValueLine(secondary),

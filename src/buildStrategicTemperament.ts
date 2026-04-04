@@ -6,7 +6,7 @@ import { inferCaseType } from "./amc/inferCaseType";
 
 export interface StrategicTemperamentOutput {
   section: "strategic_temperament";
-  title: "Strategic Temperament";
+  title: "성향과 선택의 적합성";
   caseType: "single" | "comparative";
   postureLine: string;
   evidenceLine: string;
@@ -24,7 +24,7 @@ export function buildStrategicTemperament(args: AmcSectionBuilderArgs): Strategi
   if (weakEvidence) {
     const fallback: StrategicTemperamentOutput = {
       section: "strategic_temperament",
-      title: "Strategic Temperament",
+      title: "성향과 선택의 적합성",
       caseType,
       postureLine: "The case appears to carry a cautious but not inactive decision posture.",
       evidenceLine:
@@ -49,7 +49,7 @@ export function buildStrategicTemperament(args: AmcSectionBuilderArgs): Strategi
 
   const output: StrategicTemperamentOutput = {
     section: "strategic_temperament",
-    title: "Strategic Temperament",
+    title: "성향과 선택의 적합성",
     caseType,
     postureLine: buildPostureLine(posture, caseType),
     evidenceLine: buildEvidenceLine(evidence, caseType),

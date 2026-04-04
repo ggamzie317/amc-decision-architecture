@@ -5,7 +5,7 @@ import { inferCaseType } from "./amc/inferCaseType";
 
 export interface ExecutiveOverviewOutput {
   section: "executive_overview";
-  title: "Executive Overview";
+  title: "이번 결정의 핵심 구조";
   caseType: "single" | "comparative";
   overviewLine: string;
   structuralTension: string;
@@ -21,7 +21,7 @@ export function buildExecutiveOverview(args: AmcSectionBuilderArgs): ExecutiveOv
 
   return {
     section: "executive_overview",
-    title: "Executive Overview",
+    title: "이번 결정의 핵심 구조",
     caseType,
     overviewLine: buildOverviewLine(normalized, caseType),
     structuralTension: tension,

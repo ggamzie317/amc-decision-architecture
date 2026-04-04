@@ -6,7 +6,7 @@ import { inferCaseType } from "./amc/inferCaseType";
 
 export interface CareerMobilityStructureOutput {
   section: "career_mobility_structure";
-  title: "Career Mobility Structure";
+  title: "이동 가능성";
   caseType: "single" | "comparative";
   mobilityLine: string;
   portabilityLine: string;
@@ -24,7 +24,7 @@ export function buildCareerMobilityStructure(args: AmcSectionBuilderArgs): Caree
   if (weakEvidence) {
     const fallback: CareerMobilityStructureOutput = {
       section: "career_mobility_structure",
-      title: "Career Mobility Structure",
+      title: "이동 가능성",
       caseType,
       mobilityLine:
         "Mobility appears directionally present, though not yet fully consolidated across the broader decision structure.",
@@ -50,7 +50,7 @@ export function buildCareerMobilityStructure(args: AmcSectionBuilderArgs): Caree
 
   const output: CareerMobilityStructureOutput = {
     section: "career_mobility_structure",
-    title: "Career Mobility Structure",
+    title: "이동 가능성",
     caseType,
     mobilityLine: buildMobilityLine(mobility, caseType),
     portabilityLine: buildPortabilityLine(portability, caseType),

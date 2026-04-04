@@ -6,7 +6,7 @@ import { inferCaseType } from "./amc/inferCaseType";
 
 export interface InternalStructuralSnapshotOutput {
   section: "internal_structural_snapshot";
-  title: "Internal Structural Snapshot";
+  title: "현재 나의 준비 상태";
   caseType: "single" | "comparative";
   clarityLine: string;
   readinessLine: string;
@@ -24,7 +24,7 @@ export function buildInternalStructuralSnapshot(args: AmcSectionBuilderArgs): In
   if (weakEvidence) {
     const fallback: InternalStructuralSnapshotOutput = {
       section: "internal_structural_snapshot",
-      title: "Internal Structural Snapshot",
+      title: "현재 나의 준비 상태",
       caseType,
       clarityLine: "Internal direction appears present, though decision clarity is not yet fully consolidated.",
       readinessLine: "Readiness appears partial, with movement logic ahead of full execution proof.",
@@ -49,7 +49,7 @@ export function buildInternalStructuralSnapshot(args: AmcSectionBuilderArgs): In
 
   const output: InternalStructuralSnapshotOutput = {
     section: "internal_structural_snapshot",
-    title: "Internal Structural Snapshot",
+    title: "현재 나의 준비 상태",
     caseType,
     clarityLine: buildClarityLine(clarity, caseType),
     readinessLine: buildReadinessLine(readiness, caseType),
