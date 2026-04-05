@@ -80,7 +80,7 @@ test("single-case output returns expected shape", () => {
   const result = buildCareerValueStructure(args as any);
 
   assert.equal(result.section, "career_value_structure");
-  assert.equal(result.title, "Career Value Structure");
+  assert.equal(result.title, "가치 구조 비교");
   assert.equal(result.caseType, "single");
   assert.ok(result.primaryValueLine.length > 0);
   assert.ok(result.secondaryValueLine.length > 0);

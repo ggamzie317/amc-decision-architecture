@@ -367,6 +367,8 @@ function buildSecondaryValueLine(bucket: ValueBucket, context: ValueContext): st
   if (bucket === "financial_logic") {
     return context.reemploymentVsSearchSignal
       ? "A secondary value priority appears in avoiding a weak early lock-in that undermines medium-term compensation recovery."
+      : context.optionValueSignal
+        ? "A secondary value priority appears in preserving option value so downside control does not foreclose higher-quality later positioning."
       : "A secondary value priority appears in compensation continuity and practical downside containment.";
   }
   return "Optionality and future flexibility remain materially relevant as secondary criteria.";
@@ -395,7 +397,9 @@ function buildTensionLine(
       ? context.relocationTransitionSignal
         ? "The value structure appears split between continuity preservation and cross-market repositioning across paths."
         : "The value structure appears split between continuity preservation and mobility-oriented repositioning across paths."
-      : "The value structure appears split between continuity preservation and mobility upside.";
+      : context.optionValueSignal
+        ? "The value structure appears split between continuity preservation now and preserving option value for stronger later repositioning."
+        : "The value structure appears split between continuity preservation and mobility upside.";
   }
   return "The core value tension appears to lie between current stability logic and longer-horizon optionality logic.";
 }
@@ -413,7 +417,9 @@ function buildAlignmentLine(
   if (bucket === "misaligned") {
     return context.reemploymentVsSearchSignal
       ? "Current structure appears to reward short-term relief while straining medium-term value recovery and role quality."
-      : "Current structure appears to reward continuity but strain the stated value direction under present conditions.";
+      : context.optionValueSignal
+        ? "Current structure appears to reward immediate stability but strain the stated option-value and future-positioning logic."
+        : "Current structure appears to reward continuity but strain the stated value direction under present conditions.";
   }
   return caseType === "comparative"
     ? context.exitPackageVsStaySignal

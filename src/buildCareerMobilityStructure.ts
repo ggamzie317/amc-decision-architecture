@@ -77,6 +77,7 @@ type MobilityContext = {
   industryConversionSignal: boolean;
   marketTransferSignal: boolean;
   familyLoadSignal: boolean;
+  runwaySignal: boolean;
 };
 
 function inferMobilityBucket(flags: AmcDerivedFlags): MobilityBucket {
@@ -146,6 +147,7 @@ function buildMobilityContext(normalized: AmcNormalizedIntake, flags: AmcDerived
     marketTransferSignal:
       flags.highExternalExposure || /(market transfer|market readability|portability|external role|hiring selectivity)/.test(text),
     familyLoadSignal: /(family|children|education|school|housing|household)/.test(text),
+    runwaySignal: /(runway|cash burn|buffer|income continuity|benefits end|monthly burn)/.test(text),
   };
 }
 
@@ -162,7 +164,9 @@ function buildMobilityLine(
   if (bucket === "constrained") {
     return caseType === "comparative"
       ? "Mobility structure is constrained in parts of the comparison, with conversion burden exceeding directional pull across paths."
-      : "Mobility structure is constrained more by conversion conditions than by directional interest.";
+      : context.runwaySignal
+        ? "Mobility structure is constrained by conversion conditions and runway-sensitive timing pressure rather than directional interest."
+        : "Mobility structure is constrained more by conversion conditions than by directional interest.";
   }
   return context.industryConversionSignal
     ? "Movement remains structurally possible, though industry and role-conversion pathways are not yet fully consolidated."
@@ -183,7 +187,7 @@ function buildPortabilityLine(
     return caseType === "comparative"
       ? "Portability is uneven across paths, with selective transferability by sector, geography, and role framing."
       : context.marketTransferSignal
-        ? "The profile remains internally credible, though market-transfer readability is externally selective."
+        ? "The profile remains internally credible, though external readability is selective across target markets and role frames."
         : "The current profile remains internally credible, though externally transferable only in selective contexts.";
   }
   return context.relocationSignal
@@ -197,7 +201,9 @@ function buildBurdenLine(
   context: MobilityContext,
 ): string {
   if (bucket === "manageable") {
-    return "Conversion burden remains moderate and manageable under disciplined sequencing.";
+    return caseType === "single" && context.runwaySignal
+      ? "Conversion burden remains moderate and manageable if sequencing protects runway continuity during transition."
+      : "Conversion burden remains moderate and manageable under disciplined sequencing.";
   }
   if (bucket === "elevated") {
     return caseType === "comparative"
@@ -208,7 +214,9 @@ function buildBurdenLine(
   }
   return context.relocationSignal
     ? "The move carries meaningful repositioning, relocation, and proof burden, though not necessarily prohibitive."
-    : "The move carries meaningful repositioning and proof burden, though not necessarily prohibitive.";
+    : context.runwaySignal
+      ? "The move carries meaningful repositioning and proof burden, with downside sensitivity to runway erosion."
+      : "The move carries meaningful repositioning and proof burden, though not necessarily prohibitive.";
 }
 
 function buildTimingLine(
@@ -217,7 +225,9 @@ function buildTimingLine(
   context: MobilityContext,
 ): string {
   if (bucket === "open") {
-    return "Timing window appears open, while stronger validation would improve mobility defensibility.";
+    return caseType === "single" && context.runwaySignal
+      ? "Timing window appears open only conditionally, and remains dependent on runway-stable validation progress."
+      : "Timing window appears open, while stronger validation would improve mobility defensibility.";
   }
   if (bucket === "compressed") {
     return caseType === "comparative"

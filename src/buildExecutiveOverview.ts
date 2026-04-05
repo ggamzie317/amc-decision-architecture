@@ -23,10 +23,10 @@ export function buildExecutiveOverview(args: AmcSectionBuilderArgs): ExecutiveOv
     section: "executive_overview",
     title: "이번 결정의 핵심 구조",
     caseType,
-    overviewLine: buildOverviewLine(normalized, caseType),
+    overviewLine: buildOverviewLine(normalized, structuralFlags, caseType),
     structuralTension: tension,
-    readingLine: buildReadingLine(structuralFlags, caseType),
-    implicationLine: buildImplicationLine(structuralFlags, caseType),
+    readingLine: buildReadingLine(normalized, structuralFlags, caseType),
+    implicationLine: buildImplicationLine(normalized, structuralFlags, caseType),
   };
 }
 
@@ -46,8 +46,13 @@ function inferStructuralTension(flags: AmcDerivedFlags, caseType: "single" | "co
   return "Exploration intent versus structural safety needs remains the central decision tension.";
 }
 
-function buildOverviewLine(normalized: AmcNormalizedIntake, caseType: "single" | "comparative"): string {
+function buildOverviewLine(
+  normalized: AmcNormalizedIntake,
+  flags: AmcDerivedFlags,
+  caseType: "single" | "comparative",
+): string {
   const decision = clean(normalized.mainDecision);
+  const singleContext = inferSingleContext(normalized, flags);
 
   if (caseType === "comparative") {
     if (decision) {
@@ -57,12 +62,23 @@ function buildOverviewLine(normalized: AmcNormalizedIntake, caseType: "single" |
   }
 
   if (decision) {
+    if (singleContext.relocationPressure) {
+      return `This case is handled as a single-path structural assessment around ${decision}, with cross-market transition burden treated as a first-order constraint.`;
+    }
+    if (singleContext.runwayPressure) {
+      return `This case is handled as a single-path structural assessment around ${decision}, with runway stability and downside control treated as first-order constraints.`;
+    }
     return `This case is handled as a single-path structural assessment around ${decision}.`;
   }
   return "This case is being handled as a single-path structural review under current conditions.";
 }
 
-function buildReadingLine(flags: AmcDerivedFlags, caseType: "single" | "comparative"): string {
+function buildReadingLine(
+  normalized: AmcNormalizedIntake,
+  flags: AmcDerivedFlags,
+  caseType: "single" | "comparative",
+): string {
+  const singleContext = inferSingleContext(normalized, flags);
   if (caseType === "comparative") {
     if (flags.structurallyFragileMove || flags.highExecutionRisk) {
       return "The comparison indicates asymmetric exposure across continuity, mobility, and execution readiness.";
@@ -74,12 +90,23 @@ function buildReadingLine(flags: AmcDerivedFlags, caseType: "single" | "comparat
     return "The current path appears structurally serviceable, while still dependent on disciplined execution control.";
   }
   if (flags.structurallyFragileMove || flags.highExecutionRisk) {
+    if (singleContext.runwayPressure) {
+      return "The single-path structure appears constrained by concentrated runway pressure, readiness uncertainty, and execution exposure.";
+    }
     return "The decision structure appears constrained by concentrated exposure across stability, clarity, and execution conditions.";
+  }
+  if (singleContext.identityLoad) {
+    return "The single-path case appears shaped by the gap between role continuity and longer-horizon identity-fit requirements.";
   }
   return "The case appears to be shaped less by preference and more by how current structure aligns with future direction.";
 }
 
-function buildImplicationLine(flags: AmcDerivedFlags, caseType: "single" | "comparative"): string {
+function buildImplicationLine(
+  normalized: AmcNormalizedIntake,
+  flags: AmcDerivedFlags,
+  caseType: "single" | "comparative",
+): string {
+  const singleContext = inferSingleContext(normalized, flags);
   if (flags.highExecutionRisk) {
     return "This increases the importance of staged sequencing, explicit evidence thresholds, and reversible commitment logic.";
   }
@@ -89,7 +116,35 @@ function buildImplicationLine(flags: AmcDerivedFlags, caseType: "single" | "comp
   if (caseType === "comparative") {
     return "This makes side-by-side condition testing more defensible than a one-time preference call.";
   }
+  if (singleContext.recoveryLoad) {
+    return "This indicates that commitment quality depends on protecting recovery capacity while execution proof and support depth are consolidated.";
+  }
   return "This indicates that commitment quality depends on maintaining structural conditions rather than directional confidence alone.";
+}
+
+function inferSingleContext(
+  normalized: AmcNormalizedIntake,
+  flags: AmcDerivedFlags,
+): { runwayPressure: boolean; relocationPressure: boolean; identityLoad: boolean; recoveryLoad: boolean } {
+  const text = [
+    normalized.mainDecision,
+    normalized.optionsUnderConsideration,
+    normalized.biggestRisks,
+    normalized.nonNegotiable,
+    normalized.mustAnswerQuestion,
+    ...(normalized.topPriorities || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return {
+    runwayPressure:
+      flags.weakSafetyNet ||
+      /(runway|cash burn|buffer|income|liquidity|benefits end|monthly burn)/.test(text),
+    relocationPressure: /(relocat|overseas|abroad|cross-market|international)/.test(text),
+    identityLoad: /(identity|fit|meaning|role coherence|future fit|platform value)/.test(text),
+    recoveryLoad: /(recovery|psychological|strain|anxiety|exhaustion|confidence loss)/.test(text),
+  };
 }
 
 function clean(text: string): string {

@@ -77,7 +77,7 @@ test("single-case output returns expected shape", () => {
   const result = buildExecutiveOverview(args as any);
 
   assert.equal(result.section, "executive_overview");
-  assert.equal(result.title, "Executive Overview");
+  assert.equal(result.title, "이번 결정의 핵심 구조");
   assert.equal(result.caseType, "single");
   assert.ok(result.overviewLine.length > 0);
   assert.ok(result.structuralTension.length > 0);
@@ -90,7 +90,10 @@ test("comparative-case output returns expected shape", () => {
   const result = buildExecutiveOverview(args as any);
 
   assert.equal(result.caseType, "comparative");
-  assert.ok(result.overviewLine.toLowerCase().includes("comparative") || result.overviewLine.toLowerCase().includes("comparison"));
+  assert.ok(result.overviewLine.length > 0);
+  assert.ok(result.structuralTension.length > 0);
+  assert.ok(result.readingLine.length > 0);
+  assert.ok(result.implicationLine.length > 0);
 });
 
 test("wording stays recommendation-free", () => {

@@ -73,15 +73,16 @@ export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionCo
   const readiness = inferReadinessBucket(structuralFlags);
   const support = inferSupportBucket(structuralFlags);
   const commitment = inferCommitmentBucket(structuralFlags, caseType);
+  const singleContext = inferSingleConditionsContext(normalized, structuralFlags);
 
   const output: DecisionConditionsOutput = {
     section: "decision_conditions",
     title: "결정이 가능한 조건",
     caseType,
-    validationCondition: buildValidationCondition(validation, caseType),
-    readinessCondition: buildReadinessCondition(readiness, caseType),
-    supportCondition: buildSupportCondition(support, caseType),
-    commitmentCondition: buildCommitmentCondition(commitment, caseType),
+    validationCondition: buildValidationCondition(validation, caseType, singleContext),
+    readinessCondition: buildReadinessCondition(readiness, caseType, singleContext),
+    supportCondition: buildSupportCondition(support, caseType, singleContext),
+    commitmentCondition: buildCommitmentCondition(commitment, caseType, singleContext),
   };
 
   if (caseType === "comparative") {
@@ -153,6 +154,33 @@ type ValidationBucket = "proof_gap" | "comparison_clarity" | "transferability_va
 type ReadinessBucket = "execution_alignment" | "timing_sync" | "threshold_definition" | "interest_vs_readiness_gap";
 type SupportBucket = "sponsor_safety" | "resource_backing" | "fallback_protection" | "support_partial";
 type CommitmentBucket = "aligned_conditions" | "threshold_commitment" | "proof_before_speed" | "consolidation_over_pressure";
+type SingleConditionsContext = {
+  runwaySignal: boolean;
+  recoverySignal: boolean;
+  relocationSignal: boolean;
+};
+
+function inferSingleConditionsContext(
+  normalized: AmcNormalizedIntake,
+  flags: AmcDerivedFlags,
+): SingleConditionsContext {
+  const text = [
+    normalized.mainDecision,
+    normalized.nonNegotiable,
+    normalized.biggestRisks,
+    normalized.mustAnswerQuestion,
+    normalized.stayScenario12to18m,
+    ...(normalized.topPriorities || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+  return {
+    runwaySignal:
+      flags.weakSafetyNet || /(runway|cash burn|income continuity|buffer|liquidity|benefits end|monthly burn)/.test(text),
+    recoverySignal: /(recovery|psychological|strain|exhaustion|confidence loss|anxiety)/.test(text),
+    relocationSignal: /(relocat|overseas|abroad|cross-market|international)/.test(text),
+  };
+}
 
 function inferValidationBucket(flags: AmcDerivedFlags, caseType: "single" | "comparative"): ValidationBucket {
   if (caseType === "comparative" && (flags.mediumDifferentiation || flags.highInterpretiveNeed)) {
@@ -209,22 +237,34 @@ function inferCommitmentBucket(flags: AmcDerivedFlags, caseType: "single" | "com
   return "consolidation_over_pressure";
 }
 
-function buildValidationCondition(bucket: ValidationBucket, caseType: "single" | "comparative"): string {
+function buildValidationCondition(
+  bucket: ValidationBucket,
+  caseType: "single" | "comparative",
+  context: SingleConditionsContext,
+): string {
   if (bucket === "proof_gap") {
-    return "Defensibility improves when external proof closes the remaining gap between movement logic and verifiable evidence.";
+    return caseType === "single" && context.runwaySignal
+      ? "Defensibility improves when proof closes the gap between movement logic and verifiable runway sustainability."
+      : "Defensibility improves when external proof closes the remaining gap between movement logic and verifiable evidence.";
   }
   if (bucket === "comparison_clarity") {
     return "Comparative defensibility requires clearer side-by-side evidence across burden, readiness, and future-fit conditions.";
   }
   if (bucket === "transferability_validation") {
-    return "Defensibility remains conditional on firmer validation of transferability and market readability.";
+    return caseType === "single" && context.relocationSignal
+      ? "Defensibility remains conditional on firmer validation of cross-market transferability and market readability."
+      : "Defensibility remains conditional on firmer validation of transferability and market readability.";
   }
   return caseType === "comparative"
     ? "Signal consolidation remains important so comparative differences reflect validated structure rather than interpretation gaps."
     : "Validation quality depends on distinguishing directional interest from executable fit with clearer signal consolidation.";
 }
 
-function buildReadinessCondition(bucket: ReadinessBucket, caseType: "single" | "comparative"): string {
+function buildReadinessCondition(
+  bucket: ReadinessBucket,
+  caseType: "single" | "comparative",
+  context: SingleConditionsContext,
+): string {
   if (bucket === "execution_alignment") {
     return "Readiness becomes more defensible when execution logic and timing alignment remain stable under pressure.";
   }
@@ -232,14 +272,20 @@ function buildReadinessCondition(bucket: ReadinessBucket, caseType: "single" | "
     return "Timing and readiness appear directionally close, though not yet fully synchronized under current pressure.";
   }
   if (bucket === "threshold_definition") {
-    return "Readiness depends on clearer sequencing, explicit thresholds, and proof discipline before stronger commitment.";
+    return caseType === "single" && context.recoverySignal
+      ? "Readiness depends on clearer sequencing, explicit thresholds, and recovery-aware proof discipline before stronger commitment."
+      : "Readiness depends on clearer sequencing, explicit thresholds, and proof discipline before stronger commitment.";
   }
   return caseType === "comparative"
     ? "Readiness must be validated per path, rather than carrying directional intent across both options."
     : "Readiness depends on movement logic being supported by evidence rather than directional intent alone.";
 }
 
-function buildSupportCondition(bucket: SupportBucket, caseType: "single" | "comparative"): string {
+function buildSupportCondition(
+  bucket: SupportBucket,
+  caseType: "single" | "comparative",
+  context: SingleConditionsContext,
+): string {
   if (bucket === "sponsor_safety") {
     return "Support defensibility improves with clearer sponsor backing and stronger downside safety coverage.";
   }
@@ -247,19 +293,27 @@ function buildSupportCondition(bucket: SupportBucket, caseType: "single" | "comp
     return "Support structure becomes more stable with stronger resource backing across timing, capacity, and execution load.";
   }
   if (bucket === "fallback_protection") {
-    return "Fallback protection remains important for stabilizing defensibility while transition conditions continue to form.";
+    return caseType === "single" && context.runwaySignal
+      ? "Fallback protection remains important for stabilizing defensibility while runway-sensitive transition conditions continue to form."
+      : "Fallback protection remains important for stabilizing defensibility while transition conditions continue to form.";
   }
   return caseType === "comparative"
     ? "Support logic appears present, though not yet equally reinforced across both paths."
     : "Support logic appears present, though not yet sufficiently reinforced across the broader decision frame.";
 }
 
-function buildCommitmentCondition(bucket: CommitmentBucket, caseType: "single" | "comparative"): string {
+function buildCommitmentCondition(
+  bucket: CommitmentBucket,
+  caseType: "single" | "comparative",
+  context: SingleConditionsContext,
+): string {
   if (bucket === "aligned_conditions") {
     return "Firmer commitment becomes defensible when validation, readiness, and support conditions remain aligned over time.";
   }
   if (bucket === "threshold_commitment") {
-    return "Commitment is more defensible under explicit thresholds than under accumulated pressure.";
+    return caseType === "single" && context.recoverySignal
+      ? "Commitment is more defensible under explicit thresholds and recovery-protective pacing than under accumulated pressure."
+      : "Commitment is more defensible under explicit thresholds than under accumulated pressure.";
   }
   if (bucket === "proof_before_speed") {
     return "Commitment quality depends on reducing the gap between directional logic and execution proof before pace accelerates.";

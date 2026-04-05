@@ -47,15 +47,16 @@ export function buildStructuralRiskDiagnosis(args: AmcSectionBuilderArgs): Struc
   const secondaryBucket = inferSecondaryRiskBucket(structuralFlags, caseType);
   const distortionBucket = inferDistortionBucket(structuralFlags);
   const handlingBucket = inferHandlingBucket(structuralFlags, caseType);
+  const singleContext = inferSingleRiskContext(normalized, structuralFlags);
 
   const output: StructuralRiskDiagnosisOutput = {
     section: "structural_risk_diagnosis",
     title: "Structural Risk Diagnosis",
     caseType,
-    primaryRisk: buildPrimaryRisk(primaryBucket, caseType),
-    secondaryRisk: buildSecondaryRisk(secondaryBucket, caseType),
-    distortionRisk: buildDistortionRisk(distortionBucket, caseType),
-    handlingLine: buildHandlingLine(handlingBucket, caseType),
+    primaryRisk: buildPrimaryRisk(primaryBucket, caseType, singleContext),
+    secondaryRisk: buildSecondaryRisk(secondaryBucket, caseType, singleContext),
+    distortionRisk: buildDistortionRisk(distortionBucket, caseType, singleContext),
+    handlingLine: buildHandlingLine(handlingBucket, caseType, singleContext),
   };
 
   if (caseType === "comparative") {
@@ -116,6 +117,31 @@ type HandlingBucket =
   | "threshold_staged"
   | "evidence_sequencing"
   | "separate_interest_readiness";
+type SingleRiskContext = {
+  runwayExposure: boolean;
+  recoveryExposure: boolean;
+  reentryExposure: boolean;
+};
+
+function inferSingleRiskContext(normalized: AmcNormalizedIntake, flags: AmcDerivedFlags): SingleRiskContext {
+  const text = [
+    normalized.mainDecision,
+    normalized.biggestRisks,
+    normalized.nonNegotiable,
+    normalized.mustAnswerQuestion,
+    normalized.stayScenario12to18m,
+    ...(normalized.topPriorities || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return {
+    runwayExposure:
+      flags.weakSafetyNet || /(runway|cash burn|income cliff|liquidity|buffer|monthly burn|benefits end)/.test(text),
+    recoveryExposure: /(psychological|recovery|exhaustion|strain|anxiety|confidence loss)/.test(text),
+    reentryExposure: /(re-entry|search|conversion|market readability|weak early lock-in|lower-paid)/.test(text),
+  };
+}
 
 function inferPrimaryRiskBucket(flags: AmcDerivedFlags): PrimaryRiskBucket {
   if (flags.highExecutionRisk && (flags.allInCommitmentStyle || flags.lowDecisionClarity)) {
@@ -178,27 +204,43 @@ function inferHandlingBucket(flags: AmcDerivedFlags, caseType: "single" | "compa
   return "separate_interest_readiness";
 }
 
-function buildPrimaryRisk(bucket: PrimaryRiskBucket, caseType: "single" | "comparative"): string {
+function buildPrimaryRisk(
+  bucket: PrimaryRiskBucket,
+  caseType: "single" | "comparative",
+  context: SingleRiskContext,
+): string {
   if (bucket === "readiness_ahead") {
-    return "The main risk appears to be movement logic running ahead of execution proof and internal consolidation.";
+    return caseType === "single" && context.reentryExposure
+      ? "The main risk appears to be single-path movement logic running ahead of re-entry proof and internal consolidation."
+      : "The main risk appears to be movement logic running ahead of execution proof and internal consolidation.";
   }
   if (bucket === "ambiguity_timing") {
     return "The main risk appears to be prolonged ambiguity under rising timing pressure and incomplete decision consolidation.";
   }
   if (bucket === "fragile_support") {
-    return "The main risk appears to be a fragile move structure carried by uneven support and constrained downside protection.";
+    return caseType === "single" && context.runwayExposure
+      ? "The main risk appears to be a fragile single-path structure carried by uneven support and runway-sensitive downside exposure."
+      : "The main risk appears to be a fragile move structure carried by uneven support and constrained downside protection.";
   }
   if (bucket === "external_overread") {
     return "The main risk appears to be over-reading external upside before transition infrastructure is sufficiently reinforced.";
   }
   return caseType === "comparative"
     ? "The main risk appears to be carrying a two-path frame without sufficiently differentiated internal risk evidence."
-    : "The main risk appears to be remaining in a weakening internal structure without clarified repositioning logic.";
+    : context.reentryExposure
+      ? "The main risk appears to be maintaining the current path while re-entry viability and repositioning logic remain under-validated."
+      : "The main risk appears to be remaining in a weakening internal structure without clarified repositioning logic.";
 }
 
-function buildSecondaryRisk(bucket: SecondaryRiskBucket, caseType: "single" | "comparative"): string {
+function buildSecondaryRisk(
+  bucket: SecondaryRiskBucket,
+  caseType: "single" | "comparative",
+  context: SingleRiskContext,
+): string {
   if (bucket === "uneven_support") {
-    return "A secondary risk lies in uneven support conditions across sponsor backing, safety coverage, and timing resilience.";
+    return caseType === "single" && context.recoveryExposure
+      ? "A secondary risk lies in uneven support depth across sponsor backing, safety coverage, and recovery capacity."
+      : "A secondary risk lies in uneven support conditions across sponsor backing, safety coverage, and timing resilience.";
   }
   if (bucket === "fragmented_signals") {
     return "A secondary risk appears in fragmented signal visibility and partial narrative transferability across decision conditions.";
@@ -211,15 +253,21 @@ function buildSecondaryRisk(bucket: SecondaryRiskBucket, caseType: "single" | "c
   }
   return caseType === "comparative"
     ? "A secondary risk remains in background restructuring instability that may shift comparative assumptions over time."
-    : "A secondary risk remains in restructuring-related instability that can weaken planning reliability.";
+    : "A secondary risk remains in restructuring-related instability that can weaken single-path planning reliability.";
 }
 
-function buildDistortionRisk(bucket: DistortionBucket, caseType: "single" | "comparative"): string {
+function buildDistortionRisk(
+  bucket: DistortionBucket,
+  caseType: "single" | "comparative",
+  context: SingleRiskContext,
+): string {
   if (bucket === "urgency_compression") {
     return "Urgency may compress judgment before the underlying structure is sufficiently validated.";
   }
   if (bucket === "interest_vs_readiness") {
-    return "Directional interest may be mistaken for executable readiness while key conditions remain uneven.";
+    return caseType === "single" && context.reentryExposure
+      ? "Directional interest may be mistaken for executable readiness while key re-entry conditions remain uneven."
+      : "Directional interest may be mistaken for executable readiness while key conditions remain uneven.";
   }
   if (bucket === "upside_bias") {
     return "External attractiveness may be overweighted relative to the burden of conversion and execution.";
@@ -232,19 +280,25 @@ function buildDistortionRisk(bucket: DistortionBucket, caseType: "single" | "com
   return "Mixed signals may distort the process by generating either false confidence or false paralysis.";
 }
 
-function buildHandlingLine(bucket: HandlingBucket, caseType: "single" | "comparative"): string {
+function buildHandlingLine(
+  bucket: HandlingBucket,
+  caseType: "single" | "comparative",
+  context: SingleRiskContext,
+): string {
   if (bucket === "condition_based") {
     return "Risk handling quality depends on condition-based evaluation and disciplined side-by-side thresholding.";
   }
   if (bucket === "threshold_staged") {
-    return "Risk control depends on explicit thresholds, staged validation, and sequencing discipline.";
+    return caseType === "single" && context.runwayExposure
+      ? "Risk control depends on explicit thresholds, staged validation, and runway-aware sequencing discipline."
+      : "Risk control depends on explicit thresholds, staged validation, and sequencing discipline.";
   }
   if (bucket === "evidence_sequencing") {
     return "Risk defensibility improves when evidence strengthening and sequence control precede commitment tightening.";
   }
   return caseType === "comparative"
     ? "Risk handling requires separating directional preference from path-specific readiness conditions."
-    : "Risk handling requires separating directional interest from executable readiness.";
+    : "Risk handling requires separating single-path directional interest from executable readiness.";
 }
 
 function buildComparativeReading(

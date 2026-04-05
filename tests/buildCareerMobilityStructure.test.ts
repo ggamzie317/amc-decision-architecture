@@ -77,7 +77,7 @@ test("single-case output returns expected shape", () => {
   const result = buildCareerMobilityStructure(args as any);
 
   assert.equal(result.section, "career_mobility_structure");
-  assert.equal(result.title, "Career Mobility Structure");
+  assert.equal(result.title, "이동 가능성");
   assert.equal(result.caseType, "single");
   assert.ok(result.mobilityLine.length > 0);
   assert.ok(result.portabilityLine.length > 0);

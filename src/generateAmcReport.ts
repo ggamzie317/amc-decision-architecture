@@ -286,6 +286,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toExplorationObjective(
             conditions.validationCondition || flat.decision_conditions_validation_condition,
             "validation",
+            mode,
             strings,
           ),
         ),
@@ -294,7 +295,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toValidationSignal(external.marketLine || flat.external_snapshot_market_line, strings),
         ),
         stop_or_scale_rule: withFallback(
-          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, mode, strings),
         ),
       },
       experiment_2: {
@@ -303,6 +304,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toExplorationObjective(
             conditions.readinessCondition || flat.decision_conditions_readiness_condition,
             "readiness",
+            mode,
             strings,
           ),
         ),
@@ -311,7 +313,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toValidationSignal(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
         ),
         stop_or_scale_rule: withFallback(
-          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, mode, strings),
         ),
       },
       experiment_3: {
@@ -320,6 +322,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toExplorationObjective(
             conditions.supportCondition || flat.decision_conditions_support_condition,
             "support",
+            mode,
             strings,
           ),
         ),
@@ -328,7 +331,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toValidationSignal(temperament.disciplineLine || flat.strategic_temperament_discipline_line, strings),
         ),
         stop_or_scale_rule: withFallback(
-          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, mode, strings),
         ),
       },
     },
@@ -338,6 +341,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toExecutionPriorityAction(
             conditions.validationCondition || flat.decision_conditions_validation_condition,
             "phase_1",
+            mode,
             strings,
           ),
         ),
@@ -348,6 +352,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toExecutionPriorityAction(
             conditions.readinessCondition || flat.decision_conditions_readiness_condition,
             "phase_2",
+            mode,
             strings,
           ),
         ),
@@ -360,6 +365,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           toExecutionPriorityAction(
             conditions.supportCondition || flat.decision_conditions_support_condition,
             "phase_3",
+            mode,
             strings,
           ),
         ),
@@ -637,11 +643,21 @@ function compactScaffoldingText(
 function toExplorationObjective(
   source: unknown,
   lens: "validation" | "readiness" | "support",
+  mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
   const base = compactScaffoldingText(source, strings);
   if (base === "—") {
     return base;
+  }
+  if (mode === "single") {
+    if (lens === "validation") {
+      return `Single-path validation objective: confirm the active path remains structurally defensible under current constraints. ${base}`;
+    }
+    if (lens === "readiness") {
+      return `Single-path readiness objective: confirm execution readiness is stable enough for one-path commitment logic. ${base}`;
+    }
+    return `Single-path support objective: confirm backing depth can sustain the active path without fragile assumptions. ${base}`;
   }
   if (lens === "validation") {
     return `Test whether validation conditions are materially closing: ${base}`;
@@ -665,11 +681,15 @@ function toValidationSignal(
 
 function toStopOrScaleRule(
   source: unknown,
+  mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
   const base = compactScaffoldingText(source, strings);
   if (base === "—") {
     return base;
+  }
+  if (mode === "single") {
+    return `Single-path scale rule: deepen commitment only when condition closure stays stable; pause if deterioration appears. ${base}`;
   }
   return `Scale only if condition closure remains stable; pause if deterioration appears: ${base}`;
 }
@@ -677,11 +697,21 @@ function toStopOrScaleRule(
 function toExecutionPriorityAction(
   source: unknown,
   phase: "phase_1" | "phase_2" | "phase_3",
+  mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
   const base = compactScaffoldingText(source, strings);
   if (base === "—") {
     return base;
+  }
+  if (mode === "single") {
+    if (phase === "phase_1") {
+      return `Single-path priority: establish validation discipline before increasing path commitment. ${base}`;
+    }
+    if (phase === "phase_2") {
+      return `Single-path priority: convert readiness assumptions into executable proof for the active path. ${base}`;
+    }
+    return `Single-path priority: reinforce support and commitment controls before deeper lock-in. ${base}`;
   }
   if (phase === "phase_1") {
     return `Priority focus: establish validation discipline before acceleration. ${base}`;

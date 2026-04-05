@@ -164,7 +164,9 @@ function buildPostureLine(
   if (bucket === "pressure_shaped") {
     return context.highPsychLoadSignal
       ? "Decision posture is materially shaped by timing pressure, constrained readiness, and elevated psychological load."
-      : "Decision posture is materially shaped by timing pressure and constrained readiness conditions.";
+      : caseType === "single"
+        ? "Decision posture is materially shaped by timing pressure and constrained readiness in a one-path commitment frame."
+        : "Decision posture is materially shaped by timing pressure and constrained readiness conditions.";
   }
   return caseType === "comparative"
     ? context.highPsychLoadSignal
@@ -197,7 +199,9 @@ function buildPaceLine(
   context: TemperamentContext,
 ): string {
   if (bucket === "measured") {
-    return "Commitment pace appears measured and deliberate rather than impulsive.";
+    return caseType === "single" && context.reversibleStyle
+      ? "Commitment pace appears measured and deliberately reversible rather than impulsive."
+      : "Commitment pace appears measured and deliberate rather than impulsive.";
   }
   if (bucket === "compressed") {
     return caseType === "comparative"
@@ -206,7 +210,9 @@ function buildPaceLine(
   }
   return caseType === "comparative"
     ? "Pacing remains uneven between reflection, evidence gathering, and comparative commitment pressure."
-    : context.mixedPaceSignal
+    : context.mixedPaceSignal && context.highPsychLoadSignal
+      ? "Pacing remains mixed between reflection and execution, while elevated load narrows reliable commitment tempo."
+      : context.mixedPaceSignal
       ? "Pacing remains mixed between reflection and execution, with timing pressure still influencing commitment tempo."
       : "Pacing remains measured, though not fully detached from timing pressure and ambiguity.";
 }
@@ -217,7 +223,9 @@ function buildDisciplineLine(
   context: TemperamentContext,
 ): string {
   if (bucket === "thresholds") {
-    return "Posture control requires explicit thresholds and staged validation discipline.";
+    return caseType === "single" && context.reversibleStyle
+      ? "Posture control requires explicit thresholds, staged validation, and reversible commitment guardrails."
+      : "Posture control requires explicit thresholds and staged validation discipline.";
   }
   if (bucket === "sequencing") {
     return context.highPsychLoadSignal
@@ -236,7 +244,9 @@ function buildDisciplineLine(
   }
   return caseType === "comparative"
     ? "This posture is best sustained by clear evidence rules and pace control across both paths."
-    : "This posture is best sustained by clear evidence rules and steady pace control.";
+    : context.highPsychLoadSignal
+      ? "This posture is best sustained by clear evidence rules, steady pace control, and explicit recovery-aware decision cadence."
+      : "This posture is best sustained by clear evidence rules and steady pace control.";
 }
 
 function buildComparativeReading(
