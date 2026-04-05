@@ -45,11 +45,11 @@ export function buildCareerValueStructure(args: AmcSectionBuilderArgs): CareerVa
     return fallback;
   }
 
-  const primary = inferPrimaryValueBucket(normalized, structuralFlags);
-  const secondary = inferSecondaryValueBucket(normalized, structuralFlags, primary);
+  const context = buildValueContext(normalized, structuralFlags);
+  const primary = inferPrimaryValueBucket(normalized, structuralFlags, context);
+  const secondary = inferSecondaryValueBucket(normalized, structuralFlags, primary, context);
   const tension = inferTensionBucket(primary, secondary, structuralFlags, caseType);
   const alignment = inferAlignmentBucket(primary, structuralFlags);
-  const context = buildValueContext(normalized, structuralFlags);
 
   const output: CareerValueStructureOutput = {
     section: "career_value_structure",
@@ -104,57 +104,125 @@ type ValueContext = {
   identityLifestyleSignal: boolean;
   familyStabilitySignal: boolean;
   relocationTransitionSignal: boolean;
+  optionValueSignal: boolean;
+  reemploymentVsSearchSignal: boolean;
+  exitPackageVsStaySignal: boolean;
 };
 
-function inferPrimaryValueBucket(normalized: AmcNormalizedIntake, flags: AmcDerivedFlags): ValueBucket {
+function inferPrimaryValueBucket(
+  normalized: AmcNormalizedIntake,
+  flags: AmcDerivedFlags,
+  context: ValueContext,
+): ValueBucket {
   const text = [normalized.mainDecision, normalized.nonNegotiable, normalized.biggestRisks, ...(normalized.topPriorities || [])]
     .join(" ")
     .toLowerCase();
 
-  if (flags.weakSafetyNet || text.includes("income") || text.includes("salary") || text.includes("financial")) {
-    return "financial_logic";
-  }
-  if (flags.downsideProtectiveStyle || text.includes("stability") || text.includes("security") || text.includes("family")) {
-    return "stability_safety";
-  }
-  if (flags.upsideMaximizingStyle || text.includes("growth") || text.includes("upside") || text.includes("expand")) {
-    return "growth_upside";
-  }
+  const score: Record<ValueBucket, number> = {
+    stability_safety: 0,
+    growth_upside: 0,
+    autonomy_ownership: 0,
+    identity_fit: 0,
+    optionality_flexibility: 0,
+    financial_logic: 0,
+  };
+
+  if (context.compensationSignal) score.financial_logic += 2;
+  if (flags.weakSafetyNet) score.financial_logic += 2;
+  if (flags.highUrgency) score.financial_logic += 1;
+  if (context.reemploymentVsSearchSignal) score.financial_logic += 1;
+
+  if (context.continuitySignal) score.stability_safety += 2;
+  if (context.familyStabilitySignal) score.stability_safety += 2;
+  if (flags.downsideProtectiveStyle || flags.lowRiskComfort) score.stability_safety += 1;
+
+  if (context.growthSignal) score.growth_upside += 2;
+  if (flags.upsideMaximizingStyle) score.growth_upside += 2;
+  if (flags.highDifferentiation || flags.mediumDifferentiation) score.growth_upside += 1;
+
+  if (context.identityLifestyleSignal) score.identity_fit += 2;
+  if (flags.highDifferentiation) score.identity_fit += 1;
+  if (text.includes("meaning") || text.includes("fit") || text.includes("identity")) score.identity_fit += 1;
+
+  if (context.optionValueSignal) score.optionality_flexibility += 2;
+  if (flags.reversibleCommitmentStyle || flags.gradualCommitmentStyle) score.optionality_flexibility += 1;
+  if (flags.strongSafetyNet) score.optionality_flexibility += 1;
+
   if (text.includes("autonomy") || text.includes("ownership") || text.includes("independent")) {
-    return "autonomy_ownership";
+    score.autonomy_ownership += 3;
   }
-  if (text.includes("fit") || text.includes("meaning") || text.includes("identity")) {
-    return "identity_fit";
+  if (flags.highRiskComfort && flags.upsideMaximizingStyle) {
+    score.autonomy_ownership += 1;
   }
-  return "optionality_flexibility";
+
+  if (context.relocationTransitionSignal && context.familyStabilitySignal) {
+    score.stability_safety += 1;
+    score.identity_fit += 1;
+    score.growth_upside += 1;
+  }
+  if (context.exitPackageVsStaySignal) {
+    score.financial_logic += 1;
+    score.optionality_flexibility += 1;
+  }
+
+  const tieOrder: ValueBucket[] = [
+    "identity_fit",
+    "growth_upside",
+    "stability_safety",
+    "financial_logic",
+    "optionality_flexibility",
+    "autonomy_ownership",
+  ];
+
+  let best = tieOrder[0];
+  for (const bucket of tieOrder) {
+    if (score[bucket] > score[best]) {
+      best = bucket;
+    }
+  }
+
+  if (score[best] === 0) {
+    return "optionality_flexibility";
+  }
+  return best;
 }
 
 function inferSecondaryValueBucket(
   normalized: AmcNormalizedIntake,
   flags: AmcDerivedFlags,
   primary: ValueBucket,
+  context: ValueContext,
 ): ValueBucket {
   const text = [normalized.mainDecision, normalized.nonNegotiable, normalized.biggestRisks, ...(normalized.topPriorities || [])]
     .join(" ")
     .toLowerCase();
 
   const candidates: ValueBucket[] = [];
-  if (flags.highUrgency || text.includes("timing") || text.includes("family") || text.includes("location")) {
+  if (context.familyStabilitySignal || flags.highUrgency || text.includes("timing")) {
     candidates.push("stability_safety");
   }
-  if (flags.strongSafetyNet || text.includes("option") || text.includes("optional") || text.includes("flexib")) {
+  if (context.optionValueSignal || flags.strongSafetyNet || text.includes("flexib")) {
     candidates.push("optionality_flexibility");
   }
-  if (flags.mediumDifferentiation || flags.highDifferentiation || text.includes("credibility") || text.includes("status")) {
+  if (
+    context.identityLifestyleSignal ||
+    flags.mediumDifferentiation ||
+    flags.highDifferentiation ||
+    text.includes("credibility") ||
+    text.includes("status")
+  ) {
     candidates.push("identity_fit");
+  }
+  if (context.growthSignal || flags.upsideMaximizingStyle) {
+    candidates.push("growth_upside");
+  }
+  if (context.compensationSignal || flags.moderateSafetyNet) {
+    candidates.push("financial_logic");
   }
   if (text.includes("autonomy") || text.includes("ownership")) {
     candidates.push("autonomy_ownership");
   }
-  if (flags.moderateSafetyNet || text.includes("income") || text.includes("compensation")) {
-    candidates.push("financial_logic");
-  }
-  candidates.push("growth_upside", "optionality_flexibility", "stability_safety");
+  candidates.push("identity_fit", "growth_upside", "optionality_flexibility", "stability_safety", "financial_logic");
 
   for (const candidate of candidates) {
     if (candidate !== primary) {
@@ -243,6 +311,12 @@ function buildValueContext(normalized: AmcNormalizedIntake, flags: AmcDerivedFla
       /(identity|fit|meaning|role coherence|credibility|lifestyle|family|children|education|housing)/.test(text),
     familyStabilitySignal: /(family|children|education|school|housing|household)/.test(text),
     relocationTransitionSignal: /(overseas|abroad|singapore|china|relocat|international)/.test(text),
+    optionValueSignal:
+      /(optionality|optional|option value|preserve optionality|search window|continued search|runway extension)/.test(text),
+    reemploymentVsSearchSignal:
+      /(lower-paid|lower paid|unemployment benefits|continued search|reemployment|benefits end)/.test(text),
+    exitPackageVsStaySignal:
+      /(retirement package|package|stay in role|staying in role|accept package|exit package)/.test(text),
   };
 }
 
@@ -266,7 +340,9 @@ function buildPrimaryValueLine(bucket: ValueBucket, context: ValueContext): stri
       : "The value hierarchy is anchored in identity fit, role coherence, and credibility continuity.";
   }
   if (bucket === "financial_logic") {
-    return "The value hierarchy is anchored in compensation continuity, downside protection, and liquidity resilience.";
+    return context.exitPackageVsStaySignal
+      ? "The value hierarchy is anchored in package-adjusted runway protection, compensation continuity, and downside containment."
+      : "The value hierarchy is anchored in compensation continuity, downside protection, and liquidity resilience.";
   }
   return "The value hierarchy is anchored in optionality, flexibility, and longer-horizon adaptability.";
 }
@@ -289,7 +365,9 @@ function buildSecondaryValueLine(bucket: ValueBucket, context: ValueContext): st
     return "A secondary value priority appears in status continuity and externally legible professional identity.";
   }
   if (bucket === "financial_logic") {
-    return "A secondary value priority appears in compensation continuity and practical downside containment.";
+    return context.reemploymentVsSearchSignal
+      ? "A secondary value priority appears in avoiding a weak early lock-in that undermines medium-term compensation recovery."
+      : "A secondary value priority appears in compensation continuity and practical downside containment.";
   }
   return "Optionality and future flexibility remain materially relevant as secondary criteria.";
 }
@@ -300,6 +378,9 @@ function buildTensionLine(
   context: ValueContext,
 ): string {
   if (bucket === "security_vs_expansion") {
+    if (context.reemploymentVsSearchSignal) {
+      return "The core tension sits between immediate income relief and preserving option value for a structurally stronger re-entry.";
+    }
     return context.compensationSignal
       ? "The main value tension sits between compensation/runway protection and expansion-oriented upside."
       : "The main value tension appears to lie between security preservation and expansion-oriented upside.";
@@ -330,10 +411,14 @@ function buildAlignmentLine(
       : "Current structure appears broadly aligned with the active value logic, while still requiring disciplined maintenance.";
   }
   if (bucket === "misaligned") {
-    return "Stated direction and lived structure do not yet appear fully aligned under present conditions.";
+    return context.reemploymentVsSearchSignal
+      ? "Current structure appears to reward short-term relief while straining medium-term value recovery and role quality."
+      : "Current structure appears to reward continuity but strain the stated value direction under present conditions.";
   }
   return caseType === "comparative"
-    ? "Alignment appears partial, with each path protecting different value sets rather than one integrated value profile."
+    ? context.exitPackageVsStaySignal
+      ? "Alignment appears partial, with one path protecting near-term runway while the other protects continuity credibility and deferred upside."
+      : "Alignment appears partial, with each path protecting different value sets rather than one integrated value profile."
     : context.continuitySignal
       ? "Alignment appears partial, with continuity and compensation priorities better protected than expansion-oriented value expression."
       : "Alignment appears partial, with continuity supported more clearly than expansion-oriented value expression.";
@@ -345,10 +430,16 @@ function buildComparativeReading(
   tension: TensionBucket,
   context: ValueContext,
 ): string {
+  if (context.relocationTransitionSignal && context.familyStabilitySignal) {
+    return "One path appears to protect household continuity value, while the other expresses cross-border growth value with higher adjustment burden.";
+  }
+  if (context.reemploymentVsSearchSignal) {
+    return "One path appears to secure immediate relief, while the other protects search optionality and medium-term value recovery.";
+  }
+  if (context.exitPackageVsStaySignal) {
+    return "One path appears to crystallize package-linked runway value, while the other preserves continuity credibility and longer-horizon platform value.";
+  }
   if (tension === "continuity_vs_mobility" || tension === "security_vs_expansion") {
-    if (context.relocationTransitionSignal && context.familyStabilitySignal) {
-      return "One path appears to protect household continuity value, while the other expresses cross-border growth value with higher adjustment burden.";
-    }
     return context.compensationSignal
       ? "One path appears to protect compensation and continuity value, while the other expresses growth and repositioning value more directly."
       : "One path appears to protect continuity-based values, while the other expresses growth and repositioning values more directly.";
