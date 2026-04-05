@@ -234,17 +234,17 @@ function buildDistortionRisk(bucket: DistortionBucket, caseType: "single" | "com
 
 function buildHandlingLine(bucket: HandlingBucket, caseType: "single" | "comparative"): string {
   if (bucket === "condition_based") {
-    return "This increases the importance of condition-based evaluation and disciplined side-by-side thresholding.";
+    return "Risk handling quality depends on condition-based evaluation and disciplined side-by-side thresholding.";
   }
   if (bucket === "threshold_staged") {
-    return "This suggests handling the case through explicit thresholds, staged validation, and sequencing discipline.";
+    return "Risk control depends on explicit thresholds, staged validation, and sequencing discipline.";
   }
   if (bucket === "evidence_sequencing") {
-    return "This increases the value of evidence strengthening and sequence control before commitment logic is tightened.";
+    return "Risk defensibility improves when evidence strengthening and sequence control precede commitment tightening.";
   }
   return caseType === "comparative"
-    ? "This indicates that handling quality depends on separating directional preference from path-specific readiness conditions."
-    : "This indicates that handling quality depends on separating directional interest from executable readiness.";
+    ? "Risk handling requires separating directional preference from path-specific readiness conditions."
+    : "Risk handling requires separating directional interest from executable readiness.";
 }
 
 function buildComparativeReading(

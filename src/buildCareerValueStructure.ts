@@ -206,40 +206,40 @@ function inferAlignmentBucket(primary: ValueBucket, flags: AmcDerivedFlags): Ali
 
 function buildPrimaryValueLine(bucket: ValueBucket): string {
   if (bucket === "stability_safety") {
-    return "The case appears primarily organized around continuity, safety, and reputational stability.";
+    return "The value hierarchy is anchored in continuity, safety, and reputational stability.";
   }
   if (bucket === "growth_upside") {
-    return "The value structure appears primarily shaped by growth, expansion, and longer-horizon upside logic.";
+    return "The value hierarchy is anchored in growth, expansion, and longer-horizon upside logic.";
   }
   if (bucket === "autonomy_ownership") {
-    return "The case appears centrally organized around autonomy, ownership, and directional control.";
+    return "The value hierarchy is anchored in autonomy, ownership, and directional control.";
   }
   if (bucket === "identity_fit") {
-    return "The value logic appears centered on identity fit, role coherence, and credibility continuity.";
+    return "The value hierarchy is anchored in identity fit, role coherence, and credibility continuity.";
   }
   if (bucket === "financial_logic") {
-    return "The decision appears primarily shaped by financial logic, downside protection, and compensation stability.";
+    return "The value hierarchy is anchored in financial logic, downside protection, and compensation stability.";
   }
-  return "The case appears primarily organized around optionality, flexibility, and longer-horizon adaptability.";
+  return "The value hierarchy is anchored in optionality, flexibility, and longer-horizon adaptability.";
 }
 
 function buildSecondaryValueLine(bucket: ValueBucket): string {
   if (bucket === "stability_safety") {
-    return "A secondary value driver appears in family stability and execution manageability under current constraints.";
+    return "A secondary value priority appears in family stability and execution manageability under current constraints.";
   }
   if (bucket === "growth_upside") {
-    return "A secondary value driver appears in longer-term expansion and directional development capacity.";
+    return "A secondary value priority appears in longer-term expansion and directional development capacity.";
   }
   if (bucket === "autonomy_ownership") {
-    return "A secondary value driver appears in ownership intensity and decision-making latitude.";
+    return "A secondary value priority appears in ownership intensity and decision-making latitude.";
   }
   if (bucket === "identity_fit") {
-    return "A secondary value driver appears in status continuity and externally legible professional identity.";
+    return "A secondary value priority appears in status continuity and externally legible professional identity.";
   }
   if (bucket === "financial_logic") {
-    return "A secondary value driver appears in compensation continuity and practical downside containment.";
+    return "A secondary value priority appears in compensation continuity and practical downside containment.";
   }
-  return "Optionality and future flexibility appear to remain materially relevant as a secondary criterion.";
+  return "Optionality and future flexibility remain materially relevant as secondary criteria.";
 }
 
 function buildTensionLine(bucket: TensionBucket, caseType: "single" | "comparative"): string {
@@ -262,11 +262,11 @@ function buildAlignmentLine(bucket: AlignmentBucket, caseType: "single" | "compa
     return "Current structure appears broadly aligned with the active value logic, while still requiring disciplined maintenance.";
   }
   if (bucket === "misaligned") {
-    return "The case suggests that stated direction and lived structure are not yet fully aligned under present conditions.";
+    return "Stated direction and lived structure do not yet appear fully aligned under present conditions.";
   }
   return caseType === "comparative"
-    ? "Alignment appears partial, with different paths protecting different value sets rather than one integrated value profile."
-    : "Current alignment appears partial, with continuity supported more clearly than expansion-oriented value expression.";
+    ? "Alignment appears partial, with each path protecting different value sets rather than one integrated value profile."
+    : "Alignment appears partial, with continuity supported more clearly than expansion-oriented value expression.";
 }
 
 function buildComparativeReading(primary: ValueBucket, secondary: ValueBucket, tension: TensionBucket): string {

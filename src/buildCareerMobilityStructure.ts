@@ -122,54 +122,54 @@ function inferTimingBucket(flags: AmcDerivedFlags): TimingBucket {
 
 function buildMobilityLine(bucket: MobilityBucket, caseType: "single" | "comparative"): string {
   if (bucket === "supported") {
-    return "Mobility appears structurally supported, with movement logic backed by relatively coherent transition conditions.";
+    return "Movement structure appears serviceable, with transition channels that are materially usable under current conditions.";
   }
   if (bucket === "constrained") {
     return caseType === "comparative"
-      ? "Mobility appears constrained in parts of the comparison, with structure carrying more burden than directional interest."
-      : "Mobility appears constrained more by structural conditions than by directional interest.";
+      ? "Mobility structure is constrained in parts of the comparison, with conversion burden exceeding directional pull."
+      : "Mobility structure is constrained more by conversion conditions than by directional interest.";
   }
-  return "Mobility appears structurally possible, though not yet fully consolidated at the current stage.";
+  return "Movement remains structurally possible, though conversion pathways are not yet fully consolidated.";
 }
 
 function buildPortabilityLine(bucket: PortabilityBucket, caseType: "single" | "comparative"): string {
   if (bucket === "strong") {
     return caseType === "comparative"
-      ? "Profile portability appears strong in at least one path, with manageable translation effort across contexts."
-      : "The profile appears externally portable, with translation effort that remains manageable in principle.";
+      ? "Portability is strong in at least one path, with manageable translation effort across role and context boundaries."
+      : "The profile is externally portable, with translation effort that remains manageable in practice.";
   }
   if (bucket === "limited") {
     return caseType === "comparative"
-      ? "Portability appears uneven across paths, with selective transferability across sector, geography, and role logic."
-      : "The current profile appears credible internally, though only selectively transferable externally.";
+      ? "Portability is uneven across paths, with selective transferability by sector, geography, and role framing."
+      : "The current profile remains internally credible, though externally transferable only in selective contexts.";
   }
-  return "Portability appears partial and depends on clearer narrative packaging and stronger proof signals.";
+  return "Portability remains partial and still depends on clearer packaging and stronger market-legibility proof.";
 }
 
 function buildBurdenLine(bucket: BurdenBucket, caseType: "single" | "comparative"): string {
   if (bucket === "manageable") {
-    return "Transition burden appears moderate and manageable under disciplined signal formation and sequencing.";
+    return "Conversion burden remains moderate and manageable under disciplined sequencing.";
   }
   if (bucket === "elevated") {
     return caseType === "comparative"
-      ? "Transition burden appears elevated, with asymmetry in repositioning effort and proof requirements across paths."
-      : "Transition burden remains elevated due to timing, evidence, and support gaps.";
+      ? "Conversion burden is elevated, with asymmetric repositioning effort and proof demand across paths."
+      : "Conversion burden remains elevated due to timing, evidence, and support gaps.";
   }
-  return "The move appears to carry meaningful repositioning and proof burden, though not necessarily prohibitive.";
+  return "The move carries meaningful repositioning and proof burden, though not necessarily prohibitive.";
 }
 
 function buildTimingLine(bucket: TimingBucket, caseType: "single" | "comparative"): string {
   if (bucket === "open") {
-    return "Timing appears open, though stronger validation would improve movement defensibility.";
+    return "Timing window appears open, while stronger validation would improve mobility defensibility.";
   }
   if (bucket === "compressed") {
     return caseType === "comparative"
-      ? "Timing appears compressed relative to current readiness, especially where mobility friction is more concentrated."
-      : "Timing appears somewhat compressed relative to current readiness and support depth.";
+      ? "Timing window is compressed relative to readiness depth, especially where mobility friction is concentrated."
+      : "Timing window appears somewhat compressed relative to readiness and support depth.";
   }
   return caseType === "comparative"
-    ? "Timing remains conditionally viable, with commitment quality depending on path-specific validation discipline."
-    : "Timing appears conditionally favorable rather than clearly mature under current evidence conditions.";
+    ? "Timing remains conditionally viable, with mobility quality tied to path-specific validation discipline."
+    : "Timing remains conditionally viable rather than fully mature under current evidence.";
 }
 
 function buildComparativeReading(

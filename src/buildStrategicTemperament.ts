@@ -119,58 +119,58 @@ function inferDisciplineBucket(flags: AmcDerivedFlags, caseType: "single" | "com
 
 function buildPostureLine(bucket: PostureBucket, caseType: "single" | "comparative"): string {
   if (bucket === "cautious") {
-    return "The case appears to show a cautious but directionally serious decision posture.";
+    return "Decision posture is cautious but directionally serious, with protective bias still active.";
   }
   if (bucket === "exploratory") {
-    return "The decision posture appears exploratory, though not yet fully consolidated into execution logic.";
+    return "Decision posture is exploratory, though not yet consolidated into stable execution posture.";
   }
   if (bucket === "pressure_shaped") {
-    return "The posture appears meaningfully shaped by timing pressure and constrained readiness conditions.";
+    return "Decision posture is materially shaped by timing pressure and constrained readiness conditions.";
   }
   return caseType === "comparative"
-    ? "The posture appears pulled between movement interest and preservation logic across the two paths."
-    : "The case suggests a serious but split posture, with directional intent moderated by structural caution.";
+    ? "Posture is split across the two paths, with movement interest and preservation logic pulling in different directions."
+    : "Posture remains serious but split, with directional intent moderated by structural caution.";
 }
 
 function buildEvidenceLine(bucket: EvidenceBucket, caseType: "single" | "comparative"): string {
   if (bucket === "validated") {
-    return "Judgment appears evidence-aware with a relatively stable proof base supporting directional assessment.";
+    return "Judgment discipline appears evidence-aware, with a relatively stable proof base supporting directional assessment.";
   }
   if (bucket === "interpretation_exposed") {
     return caseType === "comparative"
-      ? "The current posture suggests directional interest is exposed to interpretation gaps across the comparative frame."
-      : "The current posture suggests directional interest is running ahead of fully validated evidence.";
+      ? "Directional pull remains exposed to interpretation gaps across the comparative frame."
+      : "Directional pull appears to be running ahead of fully validated evidence.";
   }
-  return "The case appears to rely on emerging evidence rather than fully consolidated proof.";
+  return "Current judgment relies on emerging evidence rather than fully consolidated proof.";
 }
 
 function buildPaceLine(bucket: PaceBucket, caseType: "single" | "comparative"): string {
   if (bucket === "measured") {
-    return "Movement pace appears measured and generally deliberate rather than impulsive.";
+    return "Commitment pace appears measured and deliberate rather than impulsive.";
   }
   if (bucket === "compressed") {
     return caseType === "comparative"
-      ? "Decision tempo appears compressed in parts of the comparison relative to current readiness depth."
-      : "Decision tempo appears somewhat compressed relative to current readiness.";
+      ? "Commitment tempo appears compressed in parts of the comparison relative to readiness depth."
+      : "Commitment tempo appears somewhat compressed relative to current readiness.";
   }
   return caseType === "comparative"
-    ? "The case suggests uneven pacing between reflection, evidence gathering, and comparative commitment pressure."
-    : "Pace appears measured, though not fully detached from timing pressure and ambiguity.";
+    ? "Pacing remains uneven between reflection, evidence gathering, and comparative commitment pressure."
+    : "Pacing remains measured, though not fully detached from timing pressure and ambiguity.";
 }
 
 function buildDisciplineLine(bucket: DisciplineBucket, caseType: "single" | "comparative"): string {
   if (bucket === "thresholds") {
-    return "This posture increases the importance of explicit thresholds and staged validation discipline.";
+    return "Posture control requires explicit thresholds and staged validation discipline.";
   }
   if (bucket === "sequencing") {
-    return "This case appears better suited to sequencing discipline than to rapid commitment logic.";
+    return "Behavioral control is better served by sequencing discipline than by rapid commitment logic.";
   }
   if (bucket === "separation") {
-    return "The current posture suggests that separating exploration from commitment remains structurally important.";
+    return "Posture governance requires clear separation between exploration mode and commitment mode.";
   }
   return caseType === "comparative"
-    ? "This increases the value of clearer evidence rules and pace control across both paths."
-    : "This increases the value of clearer evidence rules and steady pace control.";
+    ? "This posture is best sustained by clear evidence rules and pace control across both paths."
+    : "This posture is best sustained by clear evidence rules and steady pace control.";
 }
 
 function buildComparativeReading(

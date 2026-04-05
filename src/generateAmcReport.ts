@@ -283,82 +283,112 @@ export function buildNestedTemplateContextFromDocxPayload(
       experiment_1: {
         timeline: strings.experimentTimeline1,
         objective: withFallback(
-          compactScaffoldingText(conditions.validationCondition || flat.decision_conditions_validation_condition, strings),
+          toExplorationObjective(
+            conditions.validationCondition || flat.decision_conditions_validation_condition,
+            "validation",
+            strings,
+          ),
         ),
         design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment1, strings)),
-        validation_signal: withFallback(compactScaffoldingText(external.marketLine || flat.external_snapshot_market_line, strings)),
+        validation_signal: withFallback(
+          toValidationSignal(external.marketLine || flat.external_snapshot_market_line, strings),
+        ),
         stop_or_scale_rule: withFallback(
-          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
         ),
       },
       experiment_2: {
         timeline: strings.experimentTimeline2,
         objective: withFallback(
-          compactScaffoldingText(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
+          toExplorationObjective(
+            conditions.readinessCondition || flat.decision_conditions_readiness_condition,
+            "readiness",
+            strings,
+          ),
         ),
         design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment2, strings)),
         validation_signal: withFallback(
-          compactScaffoldingText(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
+          toValidationSignal(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
         ),
         stop_or_scale_rule: withFallback(
-          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
         ),
       },
       experiment_3: {
         timeline: strings.experimentTimeline3,
         objective: withFallback(
-          compactScaffoldingText(conditions.supportCondition || flat.decision_conditions_support_condition, strings),
+          toExplorationObjective(
+            conditions.supportCondition || flat.decision_conditions_support_condition,
+            "support",
+            strings,
+          ),
         ),
         design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment3, strings)),
         validation_signal: withFallback(
-          compactScaffoldingText(temperament.disciplineLine || flat.strategic_temperament_discipline_line, strings),
+          toValidationSignal(temperament.disciplineLine || flat.strategic_temperament_discipline_line, strings),
         ),
         stop_or_scale_rule: withFallback(
-          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
         ),
       },
     },
     execution_map: {
       phase_1: {
         priority_action: withFallback(
-          compactScaffoldingText(conditions.validationCondition || flat.decision_conditions_validation_condition, strings),
+          toExecutionPriorityAction(
+            conditions.validationCondition || flat.decision_conditions_validation_condition,
+            "phase_1",
+            strings,
+          ),
         ),
-        success_signal: withFallback(compactScaffoldingText(external.marketLine || flat.external_snapshot_market_line, strings)),
+        success_signal: withFallback(toExecutionSuccessSignal(external.marketLine || flat.external_snapshot_market_line, strings)),
       },
       phase_2: {
         priority_action: withFallback(
-          compactScaffoldingText(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
+          toExecutionPriorityAction(
+            conditions.readinessCondition || flat.decision_conditions_readiness_condition,
+            "phase_2",
+            strings,
+          ),
         ),
         success_signal: withFallback(
-          compactScaffoldingText(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
+          toExecutionSuccessSignal(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
         ),
       },
       phase_3: {
         priority_action: withFallback(
-          compactScaffoldingText(conditions.supportCondition || flat.decision_conditions_support_condition, strings),
+          toExecutionPriorityAction(
+            conditions.supportCondition || flat.decision_conditions_support_condition,
+            "phase_3",
+            strings,
+          ),
         ),
         success_signal: withFallback(
-          compactScaffoldingText(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toExecutionSuccessSignal(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
         ),
       },
     },
     assumptions_watchlist: {
       assumption_1: {
-        statement: withFallback(compactScaffoldingText(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk, strings)),
+        statement: withFallback(
+          toWatchlistStatement(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk, strings),
+        ),
         break_signal: withFallback(
-          compactScaffoldingText(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk, strings),
+          toWatchlistBreakSignal(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk, strings),
         ),
       },
       assumption_2: {
         statement: withFallback(
-          compactScaffoldingText(internal.strainLine || flat.internal_structural_snapshot_strain_line, strings),
+          toWatchlistStatement(internal.strainLine || flat.internal_structural_snapshot_strain_line, strings),
         ),
-        break_signal: withFallback(compactScaffoldingText(mobility.burdenLine || flat.career_mobility_structure_burden_line, strings)),
+        break_signal: withFallback(
+          toWatchlistBreakSignal(mobility.burdenLine || flat.career_mobility_structure_burden_line, strings),
+        ),
       },
       assumption_3: {
-        statement: withFallback(compactScaffoldingText(value.tensionLine || flat.career_value_structure_tension_line, strings)),
+        statement: withFallback(toWatchlistStatement(value.tensionLine || flat.career_value_structure_tension_line, strings)),
         break_signal: withFallback(
-          compactScaffoldingText(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
+          toWatchlistBreakSignal(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
         ),
       },
     },
@@ -602,6 +632,97 @@ function compactScaffoldingText(
     return "—";
   }
   return text;
+}
+
+function toExplorationObjective(
+  source: unknown,
+  lens: "validation" | "readiness" | "support",
+  strings: { notApplicable: string },
+): string {
+  const base = compactScaffoldingText(source, strings);
+  if (base === "—") {
+    return base;
+  }
+  if (lens === "validation") {
+    return `Test whether validation conditions are materially closing: ${base}`;
+  }
+  if (lens === "readiness") {
+    return `Test whether execution readiness is becoming operationally reliable: ${base}`;
+  }
+  return `Test whether support conditions are durable enough for sustained execution: ${base}`;
+}
+
+function toValidationSignal(
+  source: unknown,
+  strings: { notApplicable: string },
+): string {
+  const base = compactScaffoldingText(source, strings);
+  if (base === "—") {
+    return base;
+  }
+  return `Validation signal to monitor: ${base}`;
+}
+
+function toStopOrScaleRule(
+  source: unknown,
+  strings: { notApplicable: string },
+): string {
+  const base = compactScaffoldingText(source, strings);
+  if (base === "—") {
+    return base;
+  }
+  return `Scale only if condition closure remains stable; pause if deterioration appears: ${base}`;
+}
+
+function toExecutionPriorityAction(
+  source: unknown,
+  phase: "phase_1" | "phase_2" | "phase_3",
+  strings: { notApplicable: string },
+): string {
+  const base = compactScaffoldingText(source, strings);
+  if (base === "—") {
+    return base;
+  }
+  if (phase === "phase_1") {
+    return `Priority focus: establish validation discipline before acceleration. ${base}`;
+  }
+  if (phase === "phase_2") {
+    return `Priority focus: convert readiness assumptions into executable evidence. ${base}`;
+  }
+  return `Priority focus: stabilize support and commitment controls before deeper lock-in. ${base}`;
+}
+
+function toExecutionSuccessSignal(
+  source: unknown,
+  strings: { notApplicable: string },
+): string {
+  const base = compactScaffoldingText(source, strings);
+  if (base === "—") {
+    return base;
+  }
+  return `Success signal: ${base}`;
+}
+
+function toWatchlistStatement(
+  source: unknown,
+  strings: { notApplicable: string },
+): string {
+  const base = compactScaffoldingText(source, strings);
+  if (base === "—") {
+    return base;
+  }
+  return `Assumption under monitoring: ${base}`;
+}
+
+function toWatchlistBreakSignal(
+  source: unknown,
+  strings: { notApplicable: string },
+): string {
+  const base = compactScaffoldingText(source, strings);
+  if (base === "—") {
+    return base;
+  }
+  return `Break signal requiring reassessment: ${base}`;
 }
 
 function indexSections(sections: any[] | undefined): Record<string, any> {

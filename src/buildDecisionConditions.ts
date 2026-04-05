@@ -211,62 +211,62 @@ function inferCommitmentBucket(flags: AmcDerivedFlags, caseType: "single" | "com
 
 function buildValidationCondition(bucket: ValidationBucket, caseType: "single" | "comparative"): string {
   if (bucket === "proof_gap") {
-    return "Clearer external proof would improve the defensibility of movement logic under the current structure.";
+    return "Defensibility improves when external proof closes the remaining gap between movement logic and verifiable evidence.";
   }
   if (bucket === "comparison_clarity") {
-    return "The case would benefit from more explicit comparison evidence across risk burden, readiness, and future-fit logic.";
+    return "Comparative defensibility requires clearer side-by-side evidence across burden, readiness, and future-fit conditions.";
   }
   if (bucket === "transferability_validation") {
-    return "Firmer validation of transferability and market readability would strengthen structural defensibility.";
+    return "Defensibility remains conditional on firmer validation of transferability and market readability.";
   }
   return caseType === "comparative"
-    ? "Signal consolidation remains important so that comparative differences reflect validated structure rather than interpretation gaps."
-    : "Stronger differentiation between directional interest and executable fit remains important for validation quality.";
+    ? "Signal consolidation remains important so comparative differences reflect validated structure rather than interpretation gaps."
+    : "Validation quality depends on distinguishing directional interest from executable fit with clearer signal consolidation.";
 }
 
 function buildReadinessCondition(bucket: ReadinessBucket, caseType: "single" | "comparative"): string {
   if (bucket === "execution_alignment") {
-    return "Readiness would become more defensible with clearer execution logic and stable timing alignment.";
+    return "Readiness becomes more defensible when execution logic and timing alignment remain stable under pressure.";
   }
   if (bucket === "timing_sync") {
-    return "Timing and readiness appear directionally close, though not yet fully synchronized under current pressure conditions.";
+    return "Timing and readiness appear directionally close, though not yet fully synchronized under current pressure.";
   }
   if (bucket === "threshold_definition") {
-    return "Execution readiness would benefit from clearer sequencing, threshold definition, and proof discipline.";
+    return "Readiness depends on clearer sequencing, explicit thresholds, and proof discipline before stronger commitment.";
   }
   return caseType === "comparative"
-    ? "Stronger readiness depends on path-specific evidence rather than directional intent carried across both options."
-    : "Stronger readiness depends on movement logic being supported by evidence rather than directional intent alone.";
+    ? "Readiness must be validated per path, rather than carrying directional intent across both options."
+    : "Readiness depends on movement logic being supported by evidence rather than directional intent alone.";
 }
 
 function buildSupportCondition(bucket: SupportBucket, caseType: "single" | "comparative"): string {
   if (bucket === "sponsor_safety") {
-    return "Support conditions would strengthen with clearer sponsor backing and stronger downside safety logic.";
+    return "Support defensibility improves with clearer sponsor backing and stronger downside safety coverage.";
   }
   if (bucket === "resource_backing") {
-    return "The structure would become more stable with stronger practical support across timing, resources, and execution capacity.";
+    return "Support structure becomes more stable with stronger resource backing across timing, capacity, and execution load.";
   }
   if (bucket === "fallback_protection") {
-    return "Fallback protection remains important for stabilizing defensibility while transition conditions are still forming.";
+    return "Fallback protection remains important for stabilizing defensibility while transition conditions continue to form.";
   }
   return caseType === "comparative"
-    ? "Support logic appears present, though not yet equally reinforced across the two paths."
+    ? "Support logic appears present, though not yet equally reinforced across both paths."
     : "Support logic appears present, though not yet sufficiently reinforced across the broader decision frame.";
 }
 
 function buildCommitmentCondition(bucket: CommitmentBucket, caseType: "single" | "comparative"): string {
   if (bucket === "aligned_conditions") {
-    return "Firmer commitment becomes more defensible once validation, readiness, and support conditions remain aligned over time.";
+    return "Firmer commitment becomes defensible when validation, readiness, and support conditions remain aligned over time.";
   }
   if (bucket === "threshold_commitment") {
-    return "Commitment appears more defensible under explicit thresholds rather than under accumulated pressure.";
+    return "Commitment is more defensible under explicit thresholds than under accumulated pressure.";
   }
   if (bucket === "proof_before_speed") {
-    return "Stronger commitment depends on reducing the gap between directional logic and execution proof before pace accelerates.";
+    return "Commitment quality depends on reducing the gap between directional logic and execution proof before pace accelerates.";
   }
   return caseType === "comparative"
     ? "Commitment quality depends less on speed and more on condition consolidation across both paths."
-    : "This suggests that commitment quality depends less on speed than on condition consolidation.";
+    : "Commitment quality depends less on speed than on condition consolidation.";
 }
 
 function buildComparativeReading(

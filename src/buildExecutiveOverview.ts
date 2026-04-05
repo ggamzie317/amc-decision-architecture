@@ -51,45 +51,45 @@ function buildOverviewLine(normalized: AmcNormalizedIntake, caseType: "single" |
 
   if (caseType === "comparative") {
     if (decision) {
-      return `The case is framed as a comparative decision around ${decision}, with explicit trade-offs across two paths.`;
+      return `This case is structured as a two-path decision around ${decision}, with exposure distributed differently across each path.`;
     }
-    return "The case is framed as an explicit two-path comparison rather than a single-path reflection.";
+    return "This case is framed as an explicit two-path comparison rather than a single-path reflection.";
   }
 
   if (decision) {
-    return `The case centers on ${decision}, evaluated as a single-path structural decision under present constraints.`;
+    return `This case is handled as a single-path structural assessment around ${decision}.`;
   }
-  return "The case is being handled as a single-path structural review under current conditions.";
+  return "This case is being handled as a single-path structural review under current conditions.";
 }
 
 function buildReadingLine(flags: AmcDerivedFlags, caseType: "single" | "comparative"): string {
   if (caseType === "comparative") {
     if (flags.structurallyFragileMove || flags.highExecutionRisk) {
-      return "The comparison suggests that exposure is asymmetrically distributed across continuity, mobility, and execution readiness.";
+      return "The comparison indicates asymmetric exposure across continuity, mobility, and execution readiness.";
     }
-    return "The comparison indicates that preference alone is insufficient, with decision quality shaped by uneven structural exposure.";
+    return "The comparison indicates that preference alone is insufficient because structural exposure remains uneven across paths.";
   }
 
   if (flags.structurallySupportedMove && !flags.highExecutionRisk) {
-    return "The case appears to be supported by continuity conditions, while remaining sensitive to execution discipline.";
+    return "The current path appears structurally serviceable, while still dependent on disciplined execution control.";
   }
   if (flags.structurallyFragileMove || flags.highExecutionRisk) {
     return "The decision structure appears constrained by concentrated exposure across stability, clarity, and execution conditions.";
   }
-  return "The case appears to be driven less by preference and more by how current structure aligns with future direction.";
+  return "The case appears to be shaped less by preference and more by how current structure aligns with future direction.";
 }
 
 function buildImplicationLine(flags: AmcDerivedFlags, caseType: "single" | "comparative"): string {
   if (flags.highExecutionRisk) {
-    return "This increases the importance of sequencing, evidence gathering, and condition-based commitment before irreversible steps.";
+    return "This increases the importance of staged sequencing, explicit evidence thresholds, and reversible commitment logic.";
   }
   if (flags.highInterpretiveNeed) {
-    return "This suggests handling the decision as a staged structural evaluation while unresolved signals are clarified.";
+    return "This indicates that unresolved signals should be handled through staged structural evaluation rather than accelerated commitment.";
   }
   if (caseType === "comparative") {
-    return "This makes disciplined side-by-side condition testing more defensible than a one-time preference decision.";
+    return "This makes side-by-side condition testing more defensible than a one-time preference call.";
   }
-  return "This indicates that commitment quality depends on maintaining structural conditions rather than relying on directional confidence alone.";
+  return "This indicates that commitment quality depends on maintaining structural conditions rather than directional confidence alone.";
 }
 
 function clean(text: string): string {
