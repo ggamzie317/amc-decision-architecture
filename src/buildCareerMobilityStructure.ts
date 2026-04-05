@@ -47,19 +47,20 @@ export function buildCareerMobilityStructure(args: AmcSectionBuilderArgs): Caree
   const portability = inferPortabilityBucket(structuralFlags);
   const burden = inferBurdenBucket(structuralFlags);
   const timing = inferTimingBucket(structuralFlags);
+  const context = buildMobilityContext(normalized, structuralFlags);
 
   const output: CareerMobilityStructureOutput = {
     section: "career_mobility_structure",
     title: "이동 가능성",
     caseType,
-    mobilityLine: buildMobilityLine(mobility, caseType),
-    portabilityLine: buildPortabilityLine(portability, caseType),
-    burdenLine: buildBurdenLine(burden, caseType),
-    timingLine: buildTimingLine(timing, caseType),
+    mobilityLine: buildMobilityLine(mobility, caseType, context),
+    portabilityLine: buildPortabilityLine(portability, caseType, context),
+    burdenLine: buildBurdenLine(burden, caseType, context),
+    timingLine: buildTimingLine(timing, caseType, context),
   };
 
   if (caseType === "comparative") {
-    output.comparativeReading = buildComparativeReading(mobility, portability, burden, timing);
+    output.comparativeReading = buildComparativeReading(mobility, portability, burden, timing, context);
   }
 
   return output;
@@ -71,6 +72,12 @@ type MobilityBucket = "supported" | "partial" | "constrained";
 type PortabilityBucket = "strong" | "partial" | "limited";
 type BurdenBucket = "manageable" | "meaningful" | "elevated";
 type TimingBucket = "open" | "conditional" | "compressed";
+type MobilityContext = {
+  relocationSignal: boolean;
+  industryConversionSignal: boolean;
+  marketTransferSignal: boolean;
+  familyLoadSignal: boolean;
+};
 
 function inferMobilityBucket(flags: AmcDerivedFlags): MobilityBucket {
   if (flags.structurallySupportedMove && !flags.highExecutionRisk && !flags.highExternalExposure) {
@@ -120,45 +127,95 @@ function inferTimingBucket(flags: AmcDerivedFlags): TimingBucket {
   return "open";
 }
 
-function buildMobilityLine(bucket: MobilityBucket, caseType: "single" | "comparative"): string {
+function buildMobilityContext(normalized: AmcNormalizedIntake, flags: AmcDerivedFlags): MobilityContext {
+  const text = [
+    normalized.mainDecision,
+    normalized.optionsUnderConsideration,
+    normalized.biggestRisks,
+    normalized.marketDemandReason,
+    normalized.stayScenario12to18m,
+    normalized.mustAnswerQuestion,
+    ...(normalized.topPriorities || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return {
+    relocationSignal: /(relocat|overseas|abroad|singapore|china|move country|international)/.test(text),
+    industryConversionSignal: /(industry|sector|startup|domain|role conversion|re-entry|conversion)/.test(text),
+    marketTransferSignal:
+      flags.highExternalExposure || /(market transfer|market readability|portability|external role|hiring selectivity)/.test(text),
+    familyLoadSignal: /(family|children|education|school|housing|household)/.test(text),
+  };
+}
+
+function buildMobilityLine(
+  bucket: MobilityBucket,
+  caseType: "single" | "comparative",
+  context: MobilityContext,
+): string {
   if (bucket === "supported") {
-    return "Movement structure appears serviceable, with transition channels that are materially usable under current conditions.";
+    return context.relocationSignal
+      ? "Movement structure appears serviceable, including relocation channels that are materially usable under current constraints."
+      : "Movement structure appears serviceable, with transition channels that are materially usable under current conditions.";
   }
   if (bucket === "constrained") {
     return caseType === "comparative"
-      ? "Mobility structure is constrained in parts of the comparison, with conversion burden exceeding directional pull."
+      ? "Mobility structure is constrained in parts of the comparison, with conversion burden exceeding directional pull across paths."
       : "Mobility structure is constrained more by conversion conditions than by directional interest.";
   }
-  return "Movement remains structurally possible, though conversion pathways are not yet fully consolidated.";
+  return context.industryConversionSignal
+    ? "Movement remains structurally possible, though industry and role-conversion pathways are not yet fully consolidated."
+    : "Movement remains structurally possible, though conversion pathways are not yet fully consolidated.";
 }
 
-function buildPortabilityLine(bucket: PortabilityBucket, caseType: "single" | "comparative"): string {
+function buildPortabilityLine(
+  bucket: PortabilityBucket,
+  caseType: "single" | "comparative",
+  context: MobilityContext,
+): string {
   if (bucket === "strong") {
     return caseType === "comparative"
-      ? "Portability is strong in at least one path, with manageable translation effort across role and context boundaries."
+      ? "Portability is strong in at least one path, with manageable translation effort across role, market, and context boundaries."
       : "The profile is externally portable, with translation effort that remains manageable in practice.";
   }
   if (bucket === "limited") {
     return caseType === "comparative"
       ? "Portability is uneven across paths, with selective transferability by sector, geography, and role framing."
-      : "The current profile remains internally credible, though externally transferable only in selective contexts.";
+      : context.marketTransferSignal
+        ? "The profile remains internally credible, though market-transfer readability is externally selective."
+        : "The current profile remains internally credible, though externally transferable only in selective contexts.";
   }
-  return "Portability remains partial and still depends on clearer packaging and stronger market-legibility proof.";
+  return context.relocationSignal
+    ? "Portability remains partial and depends on clearer cross-market packaging and stronger legibility proof."
+    : "Portability remains partial and still depends on clearer packaging and stronger market-legibility proof.";
 }
 
-function buildBurdenLine(bucket: BurdenBucket, caseType: "single" | "comparative"): string {
+function buildBurdenLine(
+  bucket: BurdenBucket,
+  caseType: "single" | "comparative",
+  context: MobilityContext,
+): string {
   if (bucket === "manageable") {
     return "Conversion burden remains moderate and manageable under disciplined sequencing.";
   }
   if (bucket === "elevated") {
     return caseType === "comparative"
       ? "Conversion burden is elevated, with asymmetric repositioning effort and proof demand across paths."
-      : "Conversion burden remains elevated due to timing, evidence, and support gaps.";
+      : context.familyLoadSignal
+        ? "Conversion burden remains elevated due to timing, support, and family-adjustment load."
+        : "Conversion burden remains elevated due to timing, evidence, and support gaps.";
   }
-  return "The move carries meaningful repositioning and proof burden, though not necessarily prohibitive.";
+  return context.relocationSignal
+    ? "The move carries meaningful repositioning, relocation, and proof burden, though not necessarily prohibitive."
+    : "The move carries meaningful repositioning and proof burden, though not necessarily prohibitive.";
 }
 
-function buildTimingLine(bucket: TimingBucket, caseType: "single" | "comparative"): string {
+function buildTimingLine(
+  bucket: TimingBucket,
+  caseType: "single" | "comparative",
+  context: MobilityContext,
+): string {
   if (bucket === "open") {
     return "Timing window appears open, while stronger validation would improve mobility defensibility.";
   }
@@ -169,7 +226,9 @@ function buildTimingLine(bucket: TimingBucket, caseType: "single" | "comparative
   }
   return caseType === "comparative"
     ? "Timing remains conditionally viable, with mobility quality tied to path-specific validation discipline."
-    : "Timing remains conditionally viable rather than fully mature under current evidence.";
+    : context.marketTransferSignal
+      ? "Timing remains conditionally viable, with transfer-readiness still maturing under current evidence."
+      : "Timing remains conditionally viable rather than fully mature under current evidence.";
 }
 
 function buildComparativeReading(
@@ -177,9 +236,12 @@ function buildComparativeReading(
   portability: PortabilityBucket,
   burden: BurdenBucket,
   timing: TimingBucket,
+  context: MobilityContext,
 ): string {
   if (burden === "elevated" || timing === "compressed") {
-    return "One path may offer lower transition burden, while the other offers broader upside with heavier mobility friction.";
+    return context.relocationSignal
+      ? "One path appears to offer lower relocation burden, while the other carries broader upside with heavier mobility friction."
+      : "One path may offer lower transition burden, while the other offers broader upside with heavier mobility friction.";
   }
   if (portability === "limited") {
     return "The key contrast appears to lie in portability, timing, and burden distribution rather than in absolute feasibility.";

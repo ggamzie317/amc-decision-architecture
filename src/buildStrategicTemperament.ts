@@ -46,15 +46,16 @@ export function buildStrategicTemperament(args: AmcSectionBuilderArgs): Strategi
   const evidence = inferEvidenceBucket(structuralFlags);
   const pace = inferPaceBucket(structuralFlags);
   const discipline = inferDisciplineBucket(structuralFlags, caseType);
+  const context = buildTemperamentContext(normalized, structuralFlags);
 
   const output: StrategicTemperamentOutput = {
     section: "strategic_temperament",
     title: "성향과 선택의 적합성",
     caseType,
-    postureLine: buildPostureLine(posture, caseType),
-    evidenceLine: buildEvidenceLine(evidence, caseType),
-    paceLine: buildPaceLine(pace, caseType),
-    disciplineLine: buildDisciplineLine(discipline, caseType),
+    postureLine: buildPostureLine(posture, caseType, context),
+    evidenceLine: buildEvidenceLine(evidence, caseType, context),
+    paceLine: buildPaceLine(pace, caseType, context),
+    disciplineLine: buildDisciplineLine(discipline, caseType, context),
   };
 
   if (caseType === "comparative") {
@@ -70,6 +71,14 @@ type PostureBucket = "cautious" | "exploratory" | "serious_but_split" | "pressur
 type EvidenceBucket = "validated" | "emerging" | "interpretation_exposed";
 type PaceBucket = "measured" | "uneven" | "compressed";
 type DisciplineBucket = "thresholds" | "sequencing" | "separation" | "pace_control";
+type TemperamentContext = {
+  reversibleStyle: boolean;
+  allInStyle: boolean;
+  lowRiskTolerance: boolean;
+  highPsychLoadSignal: boolean;
+  mixedPaceSignal: boolean;
+  relocationSignal: boolean;
+};
 
 function inferPostureBucket(flags: AmcDerivedFlags): PostureBucket {
   if (flags.highUrgency && (flags.highExecutionRisk || flags.lowDecisionClarity)) {
@@ -117,34 +126,76 @@ function inferDisciplineBucket(flags: AmcDerivedFlags, caseType: "single" | "com
   return "pace_control";
 }
 
-function buildPostureLine(bucket: PostureBucket, caseType: "single" | "comparative"): string {
+function buildTemperamentContext(normalized: AmcNormalizedIntake, flags: AmcDerivedFlags): TemperamentContext {
+  const text = [
+    normalized.mainDecision,
+    normalized.biggestRisks,
+    normalized.mustAnswerQuestion,
+    normalized.forcedChoiceToday,
+    normalized.stayScenario12to18m,
+    ...(normalized.topPriorities || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return {
+    reversibleStyle: flags.reversibleCommitmentStyle,
+    allInStyle: flags.allInCommitmentStyle,
+    lowRiskTolerance: flags.lowRiskComfort || flags.downsideProtectiveStyle,
+    highPsychLoadSignal: /(stress|strain|anxiety|confidence loss|exhaustion|recovery|burnout|psychological)/.test(text),
+    mixedPaceSignal: normalized.workflowPace === "mixed",
+    relocationSignal: /(overseas|abroad|relocat|international|cross-market|cross border)/.test(text),
+  };
+}
+
+function buildPostureLine(
+  bucket: PostureBucket,
+  caseType: "single" | "comparative",
+  context: TemperamentContext,
+): string {
   if (bucket === "cautious") {
-    return "Decision posture is cautious but directionally serious, with protective bias still active.";
+    return context.reversibleStyle
+      ? "Decision posture is cautious and test-oriented, with protective bias and reversible commitment logic active."
+      : "Decision posture is cautious but directionally serious, with protective bias still active.";
   }
   if (bucket === "exploratory") {
     return "Decision posture is exploratory, though not yet consolidated into stable execution posture.";
   }
   if (bucket === "pressure_shaped") {
-    return "Decision posture is materially shaped by timing pressure and constrained readiness conditions.";
+    return context.highPsychLoadSignal
+      ? "Decision posture is materially shaped by timing pressure, constrained readiness, and elevated psychological load."
+      : "Decision posture is materially shaped by timing pressure and constrained readiness conditions.";
   }
   return caseType === "comparative"
-    ? "Posture is split across the two paths, with movement interest and preservation logic pulling in different directions."
+    ? context.highPsychLoadSignal
+      ? "Posture is split across the two paths, with movement interest and preservation logic diverging under elevated psychological load."
+      : "Posture is split across the two paths, with movement interest and preservation logic pulling in different directions."
     : "Posture remains serious but split, with directional intent moderated by structural caution.";
 }
 
-function buildEvidenceLine(bucket: EvidenceBucket, caseType: "single" | "comparative"): string {
+function buildEvidenceLine(
+  bucket: EvidenceBucket,
+  caseType: "single" | "comparative",
+  context: TemperamentContext,
+): string {
   if (bucket === "validated") {
     return "Judgment discipline appears evidence-aware, with a relatively stable proof base supporting directional assessment.";
   }
   if (bucket === "interpretation_exposed") {
     return caseType === "comparative"
       ? "Directional pull remains exposed to interpretation gaps across the comparative frame."
-      : "Directional pull appears to be running ahead of fully validated evidence.";
+      : context.lowRiskTolerance
+        ? "Directional pull appears to be running ahead of fully validated evidence under a low-risk-tolerance posture."
+        : "Directional pull appears to be running ahead of fully validated evidence.";
   }
   return "Current judgment relies on emerging evidence rather than fully consolidated proof.";
 }
 
-function buildPaceLine(bucket: PaceBucket, caseType: "single" | "comparative"): string {
+function buildPaceLine(
+  bucket: PaceBucket,
+  caseType: "single" | "comparative",
+  context: TemperamentContext,
+): string {
   if (bucket === "measured") {
     return "Commitment pace appears measured and deliberate rather than impulsive.";
   }
@@ -155,18 +206,33 @@ function buildPaceLine(bucket: PaceBucket, caseType: "single" | "comparative"): 
   }
   return caseType === "comparative"
     ? "Pacing remains uneven between reflection, evidence gathering, and comparative commitment pressure."
-    : "Pacing remains measured, though not fully detached from timing pressure and ambiguity.";
+    : context.mixedPaceSignal
+      ? "Pacing remains mixed between reflection and execution, with timing pressure still influencing commitment tempo."
+      : "Pacing remains measured, though not fully detached from timing pressure and ambiguity.";
 }
 
-function buildDisciplineLine(bucket: DisciplineBucket, caseType: "single" | "comparative"): string {
+function buildDisciplineLine(
+  bucket: DisciplineBucket,
+  caseType: "single" | "comparative",
+  context: TemperamentContext,
+): string {
   if (bucket === "thresholds") {
     return "Posture control requires explicit thresholds and staged validation discipline.";
   }
   if (bucket === "sequencing") {
-    return "Behavioral control is better served by sequencing discipline than by rapid commitment logic.";
+    return context.highPsychLoadSignal
+      ? "Behavioral control is better served by sequencing discipline, giving recovery capacity time to stabilize."
+      : "Behavioral control is better served by sequencing discipline than by rapid commitment logic.";
   }
   if (bucket === "separation") {
-    return "Posture governance requires clear separation between exploration mode and commitment mode.";
+    return context.relocationSignal
+      ? "Posture governance requires clear separation between exploration mode and commitment mode, especially under cross-market transition pressure."
+      : "Posture governance requires clear separation between exploration mode and commitment mode.";
+  }
+  if (context.allInStyle) {
+    return caseType === "comparative"
+      ? "High-intensity commitment style requires explicit evidence gates and pace control across both paths."
+      : "High-intensity commitment style requires explicit evidence gates and steady pace control.";
   }
   return caseType === "comparative"
     ? "This posture is best sustained by clear evidence rules and pace control across both paths."
