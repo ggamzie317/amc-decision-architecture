@@ -100,9 +100,15 @@ export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionCo
       /(overseas|singapore|asia transition)/.test(comparativeText) &&
       /(family|children|education|school|housing)/.test(comparativeText);
 
+    const reemploymentVsSearchCase =
+      /(job offer|reemployment|lower-paid|startup|unemployment benefits|continued search|benefits)/.test(comparativeText) &&
+      /(income stability|company stability|psychological recovery)/.test(comparativeText);
+
     output.comparativeReading = familyAsiaTransitionCase
       ? "The key condition is not simply proving external attractiveness, but confirming that an overseas move remains sustainable for family life, schooling continuity, and downside protection."
-      : buildComparativeReading(validation, readiness, support);
+      : reemploymentVsSearchCase
+        ? "The key condition is not simply whether income resumes quickly, but whether short-term relief justifies the risk of entering a weaker and less stable role too early."
+        : buildComparativeReading(validation, readiness, support);
 
     if (familyAsiaTransitionCase) {
       output.validationCondition =
@@ -113,6 +119,15 @@ export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionCo
         "Support conditions become stronger only when housing, education, and practical transition backing are concrete rather than assumed.";
       output.commitmentCondition =
         "Commitment becomes more defensible only when overseas upside does not come at the cost of family stability or elevated early-exit risk.";
+    } else if (reemploymentVsSearchCase) {
+      output.validationCondition =
+        "Validation should focus on whether the current offer is merely relieving short-term anxiety or genuinely providing a stable and defensible next step.";
+      output.readinessCondition =
+        "Readiness depends on distinguishing emotional relief from structural fit, especially under recent exhaustion, urgency, and confidence loss.";
+      output.supportCondition =
+        "Support conditions become stronger only when the downside of accepting a weaker company and lower pay is clearly outweighed by near-term stability needs.";
+      output.commitmentCondition =
+        "Commitment becomes more defensible only when immediate reemployment does not materially weaken longer-term positioning or close off better search options too early.";
     }
   }
   output.nativeMetadata = {

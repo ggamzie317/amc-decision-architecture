@@ -125,9 +125,15 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
       /(overseas|singapore|asia transition)/.test(comparativeText) &&
       /(family|children|education|school|housing)/.test(comparativeText);
 
+    const reemploymentVsSearchCase =
+      /(job offer|reemployment|lower-paid|startup|unemployment benefits|continued search|benefits)/.test(comparativeText) &&
+      /(income stability|company stability|psychological recovery)/.test(comparativeText);
+
     output.comparativeReading = familyAsiaTransitionCase
       ? "The comparison is less about a simple stronger path and more about whether an overseas move can reopen long-term mobility without breaking family stability."
-      : buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+      : reemploymentVsSearchCase
+        ? "The comparison is less about which option feels safer today and more about whether immediate income security outweighs the risk of locking into a weaker long-term position."
+        : buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
 
     const baseStatus = buildComparativeStatus(demandBucket, portabilityBucket, frictionBucket, signalBucket);
     const optionSignals = buildPerOptionComparativeSignals(normalized, inputSummary, baseStatus);

@@ -74,9 +74,15 @@ export function buildStructuralRiskDiagnosis(args: AmcSectionBuilderArgs): Struc
       /(overseas|singapore|asia transition)/.test(comparativeText) &&
       /(family|children|education|school|housing)/.test(comparativeText);
 
+    const reemploymentVsSearchCase =
+      /(job offer|reemployment|lower-paid|startup|unemployment benefits|continued search|benefits)/.test(comparativeText) &&
+      /(income stability|company stability|psychological recovery)/.test(comparativeText);
+
     output.comparativeReading = familyAsiaTransitionCase
       ? "One path carries the risk of long-term ceiling and eventual narrowing, while the other carries relocation burden, family adjustment risk, and possible early-exit exposure."
-      : buildComparativeReading(primaryBucket, secondaryBucket, distortionBucket);
+      : reemploymentVsSearchCase
+        ? "One path reduces immediate income anxiety but may lock in weaker pay and company stability, while the other preserves search optionality but extends uncertainty and psychological strain."
+        : buildComparativeReading(primaryBucket, secondaryBucket, distortionBucket);
   }
 
   return output;
