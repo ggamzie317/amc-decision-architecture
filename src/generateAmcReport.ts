@@ -279,6 +279,31 @@ export function buildNestedTemplateContextFromDocxPayload(
         risk.comparativeReading || flat.structural_risk_diagnosis_comparative_reading
       ),
     },
+    career_value_structure: {
+      primary_value_line: withFallback(value.primaryValueLine || flat.career_value_structure_primary_value_line),
+      secondary_value_line: withFallback(value.secondaryValueLine || flat.career_value_structure_secondary_value_line),
+      tension_line: withFallback(value.tensionLine || flat.career_value_structure_tension_line),
+      alignment_line: withFallback(value.alignmentLine || flat.career_value_structure_alignment_line),
+      comparative_reading: withFallback(value.comparativeReading || flat.career_value_structure_comparative_reading),
+    },
+    career_mobility_structure: {
+      mobility_line: withFallback(mobility.mobilityLine || flat.career_mobility_structure_mobility_line),
+      portability_line: withFallback(mobility.portabilityLine || flat.career_mobility_structure_portability_line),
+      burden_line: withFallback(mobility.burdenLine || flat.career_mobility_structure_burden_line),
+      timing_line: withFallback(mobility.timingLine || flat.career_mobility_structure_timing_line),
+      comparative_reading: withFallback(
+        mobility.comparativeReading || flat.career_mobility_structure_comparative_reading
+      ),
+    },
+    strategic_temperament: {
+      posture_line: withFallback(temperament.postureLine || flat.strategic_temperament_posture_line),
+      evidence_line: withFallback(temperament.evidenceLine || flat.strategic_temperament_evidence_line),
+      pace_line: withFallback(temperament.paceLine || flat.strategic_temperament_pace_line),
+      discipline_line: withFallback(temperament.disciplineLine || flat.strategic_temperament_discipline_line),
+      comparative_reading: withFallback(
+        temperament.comparativeReading || flat.strategic_temperament_comparative_reading
+      ),
+    },
     exploration_plan: {
       experiment_1: {
         timeline: strings.experimentTimeline1,
