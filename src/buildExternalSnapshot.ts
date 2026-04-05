@@ -71,7 +71,7 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
     if (caseType === "comparative") {
       fallback.comparativeReading =
         "The comparison appears shaped by asymmetric external visibility rather than by a simple quality ranking.";
-      fallback.comparativeStatus = buildComparativeStatus("mixed", "partial", "moderate", "fragmented");
+      fallback.comparativeStatus = buildComparativeStatus("mixed", "partial", "moderate", "fragmented", "general");
       fallback.comparativeOptionSignals = {
         optionA: fallback.comparativeStatus.optionA,
         optionB: fallback.comparativeStatus.optionB,
@@ -94,10 +94,10 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
     return fallback;
   }
 
-  const demandBucket = inferDemandBucket(structuralFlags);
-  const portabilityBucket = inferPortabilityBucket(structuralFlags, caseType);
-  const frictionBucket = inferFrictionBucket(structuralFlags);
-  const signalBucket = inferSignalBucket(structuralFlags);
+  const demandBucket = inferDemandBucket(structuralFlags, normalized);
+  const portabilityBucket = inferPortabilityBucket(structuralFlags, caseType, normalized);
+  const frictionBucket = inferFrictionBucket(structuralFlags, normalized);
+  const signalBucket = inferSignalBucket(structuralFlags, normalized);
 
   const output: ExternalSnapshotOutput = {
     section: "external_snapshot",
@@ -135,7 +135,14 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
         ? "The comparison is less about which option feels safer today and more about whether immediate income security outweighs the risk of locking into a weaker long-term position."
         : buildComparativeReading(demandBucket, portabilityBucket, frictionBucket, signalBucket);
 
-    const baseStatus = buildComparativeStatus(demandBucket, portabilityBucket, frictionBucket, signalBucket);
+    const comparativeProfile = inferComparativeProfile(normalized);
+    const baseStatus = buildComparativeStatus(
+      demandBucket,
+      portabilityBucket,
+      frictionBucket,
+      signalBucket,
+      comparativeProfile,
+    );
     const optionSignals = buildPerOptionComparativeSignals(normalized, inputSummary, baseStatus);
     output.comparativeStatus = {
       optionA: optionSignals.optionA,
@@ -168,22 +175,48 @@ type DemandBucket = "clear" | "mixed" | "weak";
 type PortabilityBucket = "strong" | "partial" | "constrained";
 type FrictionBucket = "low" | "moderate" | "high";
 type SignalBucket = "visible" | "partial" | "fragmented";
+type ComparativeProfile = "general" | "family_relocation" | "exit_package_vs_stay" | "reemployment_vs_search";
 
-function inferDemandBucket(flags: AmcDerivedFlags): DemandBucket {
+function inferDemandBucket(flags: AmcDerivedFlags, normalized: AmcNormalizedIntake): DemandBucket {
+  const reason = String(normalized.marketDemandReason || "").toLowerCase();
   if (flags.growingMarketOutlook && !flags.highExternalExposure) {
     return "clear";
   }
   if (flags.decliningMarketOutlook || flags.highExternalExposure) {
     return "weak";
   }
+  if (/(struggl|selective|tight|lower[- ]paid|uncertain|hard to secure)/.test(reason)) {
+    return "weak";
+  }
+  if (/(opportunity|in demand|offer in hand|broad demand)/.test(reason) && !flags.lowDifferentiation) {
+    return "clear";
+  }
   return "mixed";
 }
 
-function inferPortabilityBucket(flags: AmcDerivedFlags, caseType: "single" | "comparative"): PortabilityBucket {
+function inferPortabilityBucket(
+  flags: AmcDerivedFlags,
+  caseType: "single" | "comparative",
+  normalized: AmcNormalizedIntake,
+): PortabilityBucket {
+  const combined = [
+    normalized.mainDecision,
+    normalized.optionsUnderConsideration,
+    normalized.marketDemandReason,
+    ...(normalized.topPriorities || []),
+  ]
+    .join(" ")
+    .toLowerCase();
   if (flags.highDifferentiation && !flags.lowDecisionClarity && !flags.lowSponsorSupport) {
     return "strong";
   }
+  if (/(cross-market|overseas|international|regional roles|korean-english-chinese)/.test(combined) && flags.highDifferentiation) {
+    return "strong";
+  }
   if (flags.lowDifferentiation || flags.lowDecisionClarity || flags.lowSponsorSupport) {
+    return "constrained";
+  }
+  if (/(career switch|re-entry|lower-paid|startup)/.test(combined)) {
     return "constrained";
   }
   if (caseType === "comparative" && flags.mediumDifferentiation) {
@@ -192,7 +225,16 @@ function inferPortabilityBucket(flags: AmcDerivedFlags, caseType: "single" | "co
   return "partial";
 }
 
-function inferFrictionBucket(flags: AmcDerivedFlags): FrictionBucket {
+function inferFrictionBucket(flags: AmcDerivedFlags, normalized: AmcNormalizedIntake): FrictionBucket {
+  const combined = [
+    normalized.mainDecision,
+    normalized.optionsUnderConsideration,
+    normalized.biggestRisks,
+    normalized.nonNegotiable,
+    normalized.forcedChoiceToday,
+  ]
+    .join(" ")
+    .toLowerCase();
   const frictionSignals = [
     flags.weakSafetyNet,
     flags.lowDecisionClarity,
@@ -207,10 +249,16 @@ function inferFrictionBucket(flags: AmcDerivedFlags): FrictionBucket {
   if (frictionSignals >= 1) {
     return "moderate";
   }
+  if (/(relocation|cross-border|family adjustment|schooling|housing)/.test(combined)) {
+    return "moderate";
+  }
   return "low";
 }
 
-function inferSignalBucket(flags: AmcDerivedFlags): SignalBucket {
+function inferSignalBucket(flags: AmcDerivedFlags, normalized: AmcNormalizedIntake): SignalBucket {
+  const text = [normalized.marketDemandReason, normalized.biggestRisks, normalized.mustAnswerQuestion]
+    .join(" ")
+    .toLowerCase();
   if (
     flags.highInterpretiveNeed ||
     flags.urgencyUnclear ||
@@ -220,10 +268,41 @@ function inferSignalBucket(flags: AmcDerivedFlags): SignalBucket {
   ) {
     return "fragmented";
   }
+  if (/(mixed|varies|uncertain|depends|not sure)/.test(text)) {
+    return "fragmented";
+  }
   if (flags.structurallySupportedMove && flags.strongSponsorSupport && !flags.highExternalExposure) {
     return "visible";
   }
   return "partial";
+}
+
+function inferComparativeProfile(normalized: AmcNormalizedIntake): ComparativeProfile {
+  const text = [
+    normalized.mainDecision,
+    normalized.optionsUnderConsideration,
+    normalized.nonNegotiable,
+    normalized.biggestRisks,
+    normalized.marketDemandReason,
+    ...(normalized.topPriorities || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    /(china|beijing)/.test(text) &&
+    /(overseas|abroad|singapore|asia transition|international)/.test(text) &&
+    /(family|children|education|school|housing)/.test(text)
+  ) {
+    return "family_relocation";
+  }
+  if (/(retirement package|exit package|package)/.test(text) && /(stay|continue in role|current path)/.test(text)) {
+    return "exit_package_vs_stay";
+  }
+  if (/(job offer|reemployment|unemployment benefits|continued search|lower-paid)/.test(text)) {
+    return "reemployment_vs_search";
+  }
+  return "general";
 }
 
 function buildMarketLine(bucket: DemandBucket, caseType: "single" | "comparative"): string {
@@ -314,6 +393,7 @@ function buildComparativeStatus(
   portability: PortabilityBucket,
   friction: FrictionBucket,
   signal: SignalBucket,
+  profile: ComparativeProfile,
 ): {
   optionA: ComparativeStatusSet;
   optionB: ComparativeStatusSet;
@@ -365,6 +445,35 @@ function buildComparativeStatus(
   } else {
     optionA.transitionStatus = "● Elevated";
     optionB.transitionStatus = "● Elevated";
+  }
+
+  if (profile === "family_relocation") {
+    optionA.marketStatus = "◆ Mixed";
+    optionA.competitionStatus = "◐ Moderate";
+    optionA.economicStatus = "◐ Moderate";
+    optionA.transitionStatus = "○ Contained";
+    optionB.marketStatus = "▲ Supportive";
+    optionB.competitionStatus = "● Elevated";
+    optionB.economicStatus = "◐ Moderate";
+    optionB.transitionStatus = "● Elevated";
+  } else if (profile === "exit_package_vs_stay") {
+    optionA.marketStatus = "▼ Constrained";
+    optionA.competitionStatus = "● Elevated";
+    optionA.economicStatus = "◐ Moderate";
+    optionA.transitionStatus = "● Elevated";
+    optionB.marketStatus = "◆ Mixed";
+    optionB.competitionStatus = "◐ Moderate";
+    optionB.economicStatus = "○ Contained";
+    optionB.transitionStatus = "○ Contained";
+  } else if (profile === "reemployment_vs_search") {
+    optionA.marketStatus = "▲ Supportive";
+    optionA.competitionStatus = "◐ Moderate";
+    optionA.economicStatus = "◐ Moderate";
+    optionA.transitionStatus = "○ Contained";
+    optionB.marketStatus = "▼ Constrained";
+    optionB.competitionStatus = "● Elevated";
+    optionB.economicStatus = "● Elevated";
+    optionB.transitionStatus = "◐ Moderate";
   }
 
   return { optionA, optionB, source: "native_bucket" };
