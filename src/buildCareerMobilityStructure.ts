@@ -27,12 +27,12 @@ export function buildCareerMobilityStructure(args: AmcSectionBuilderArgs): Caree
       title: "이동 가능성",
       caseType,
       mobilityLine:
-        "Mobility appears directionally present, though not yet fully consolidated across the broader decision structure.",
+        "Movement architecture is directionally present, but not yet consolidated across the full decision frame.",
       portabilityLine:
-        "Profile portability appears partial, with external transferability depending on clearer articulation and proof.",
+        "Portability is partial; external transferability still needs clearer packaging and proof.",
       burdenLine:
-        "Transition burden appears meaningful but not necessarily prohibitive, provided supporting conditions become clearer.",
-      timingLine: "Timing appears conditionally viable, though stronger validation would improve decision defensibility.",
+        "Transition burden is meaningful but not prohibitive if support conditions are reinforced.",
+      timingLine: "Timing is conditionally usable; stronger validation would raise execution defensibility.",
     };
 
     if (caseType === "comparative") {
@@ -158,19 +158,19 @@ function buildMobilityLine(
 ): string {
   if (bucket === "supported") {
     return context.relocationSignal
-      ? "Movement structure appears serviceable, including relocation channels that are materially usable under current constraints."
-      : "Movement structure appears serviceable, with transition channels that are materially usable under current conditions.";
+      ? "Movement architecture is serviceable, including relocation channels that remain usable under current constraints."
+      : "Movement architecture is serviceable, with transition channels usable under current conditions.";
   }
   if (bucket === "constrained") {
     return caseType === "comparative"
-      ? "Mobility structure is constrained in parts of the comparison, with conversion burden exceeding directional pull across paths."
+      ? "Mobility architecture is constrained in parts of the comparison, where conversion burden outweighs directional pull."
       : context.runwaySignal
-        ? "Mobility structure is constrained by conversion conditions and runway-sensitive timing pressure rather than directional interest."
-        : "Mobility structure is constrained more by conversion conditions than by directional interest.";
+        ? "Mobility architecture is constrained by conversion conditions and runway-sensitive timing pressure."
+        : "Mobility architecture is constrained more by conversion conditions than by directional interest.";
   }
   return context.industryConversionSignal
-    ? "Movement remains structurally possible, though industry and role-conversion pathways are not yet fully consolidated."
-    : "Movement remains structurally possible, though conversion pathways are not yet fully consolidated.";
+    ? "Movement is structurally possible, but industry and role-conversion pathways are not yet consolidated."
+    : "Movement is structurally possible, but conversion pathways are not yet consolidated.";
 }
 
 function buildPortabilityLine(
@@ -187,12 +187,12 @@ function buildPortabilityLine(
     return caseType === "comparative"
       ? "Portability is uneven across paths, with selective transferability by sector, geography, and role framing."
       : context.marketTransferSignal
-        ? "The profile remains internally credible, though external readability is selective across target markets and role frames."
+        ? "The profile stays internally credible, while external readability remains selective across target markets and role frames."
         : "The current profile remains internally credible, though externally transferable only in selective contexts.";
   }
   return context.relocationSignal
-    ? "Portability remains partial and depends on clearer cross-market packaging and stronger legibility proof."
-    : "Portability remains partial and still depends on clearer packaging and stronger market-legibility proof.";
+    ? "Portability is partial and depends on clearer cross-market packaging plus stronger legibility proof."
+    : "Portability is partial and depends on clearer packaging plus stronger market-legibility proof.";
 }
 
 function buildBurdenLine(
@@ -203,14 +203,14 @@ function buildBurdenLine(
   if (bucket === "manageable") {
     return caseType === "single" && context.runwaySignal
       ? "Conversion burden remains moderate and manageable if sequencing protects runway continuity during transition."
-      : "Conversion burden remains moderate and manageable under disciplined sequencing.";
+      : "Conversion burden stays moderate and manageable under disciplined sequencing.";
   }
   if (bucket === "elevated") {
     return caseType === "comparative"
       ? "Conversion burden is elevated, with asymmetric repositioning effort and proof demand across paths."
       : context.familyLoadSignal
-        ? "Conversion burden remains elevated due to timing, support, and family-adjustment load."
-        : "Conversion burden remains elevated due to timing, evidence, and support gaps.";
+        ? "Conversion burden is elevated due to timing, support, and family-adjustment load."
+        : "Conversion burden is elevated due to timing, evidence, and support gaps.";
   }
   return context.relocationSignal
     ? "The move carries meaningful repositioning, relocation, and proof burden, though not necessarily prohibitive."
@@ -227,7 +227,7 @@ function buildTimingLine(
   if (bucket === "open") {
     return caseType === "single" && context.runwaySignal
       ? "Timing window appears open only conditionally, and remains dependent on runway-stable validation progress."
-      : "Timing window appears open, while stronger validation would improve mobility defensibility.";
+      : "Timing window is open, while stronger validation would improve mobility defensibility.";
   }
   if (bucket === "compressed") {
     return caseType === "comparative"
@@ -235,10 +235,10 @@ function buildTimingLine(
       : "Timing window appears somewhat compressed relative to readiness and support depth.";
   }
   return caseType === "comparative"
-    ? "Timing remains conditionally viable, with mobility quality tied to path-specific validation discipline."
+    ? "Timing stays conditionally viable, with mobility quality tied to path-specific validation discipline."
     : context.marketTransferSignal
-      ? "Timing remains conditionally viable, with transfer-readiness still maturing under current evidence."
-      : "Timing remains conditionally viable rather than fully mature under current evidence.";
+      ? "Timing is conditionally viable, with transfer-readiness still maturing under current evidence."
+      : "Timing is conditionally viable rather than fully mature under current evidence.";
 }
 
 function buildComparativeReading(

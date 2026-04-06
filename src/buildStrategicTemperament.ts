@@ -26,12 +26,12 @@ export function buildStrategicTemperament(args: AmcSectionBuilderArgs): Strategi
       section: "strategic_temperament",
       title: "성향과 선택의 적합성",
       caseType,
-      postureLine: "The case appears to carry a cautious but not inactive decision posture.",
+      postureLine: "Decision posture is cautious, but not inactive.",
       evidenceLine:
-        "Evidence appears present in part, though not yet fully consolidated into a stable validation base.",
-      paceLine: "Pace appears generally measured, though not entirely free from ambiguity or timing pressure.",
+        "Evidence is partially present, though not yet consolidated into a stable validation base.",
+      paceLine: "Pace is generally measured, though still exposed to ambiguity and timing pressure.",
       disciplineLine:
-        "This increases the importance of clearer thresholds, staged validation, and disciplined pace control.",
+        "Governance priority: clearer thresholds, staged validation, and disciplined pace control.",
     };
 
     if (caseType === "comparative") {
@@ -159,7 +159,7 @@ function buildPostureLine(
       : "Decision posture is cautious but directionally serious, with protective bias still active.";
   }
   if (bucket === "exploratory") {
-    return "Decision posture is exploratory, though not yet consolidated into stable execution posture.";
+    return "Decision posture is exploratory, though not yet consolidated into stable execution governance.";
   }
   if (bucket === "pressure_shaped") {
     return context.highPsychLoadSignal
@@ -181,16 +181,16 @@ function buildEvidenceLine(
   context: TemperamentContext,
 ): string {
   if (bucket === "validated") {
-    return "Judgment discipline appears evidence-aware, with a relatively stable proof base supporting directional assessment.";
+    return "Evidence governance is stable, with a proof base that supports directional assessment.";
   }
   if (bucket === "interpretation_exposed") {
     return caseType === "comparative"
-      ? "Directional pull remains exposed to interpretation gaps across the comparative frame."
+      ? "Directional pull is exposed to interpretation gaps across the comparative frame."
       : context.lowRiskTolerance
-        ? "Directional pull appears to be running ahead of fully validated evidence under a low-risk-tolerance posture."
-        : "Directional pull appears to be running ahead of fully validated evidence.";
+        ? "Directional pull is running ahead of fully validated evidence under a low-risk-tolerance posture."
+        : "Directional pull is running ahead of fully validated evidence.";
   }
-  return "Current judgment relies on emerging evidence rather than fully consolidated proof.";
+  return "Current judgment relies on emerging evidence, not fully consolidated proof.";
 }
 
 function buildPaceLine(
@@ -205,16 +205,16 @@ function buildPaceLine(
   }
   if (bucket === "compressed") {
     return caseType === "comparative"
-      ? "Commitment tempo appears compressed in parts of the comparison relative to readiness depth."
-      : "Commitment tempo appears somewhat compressed relative to current readiness.";
+      ? "Commitment tempo is compressed in parts of the comparison relative to readiness depth."
+      : "Commitment tempo is somewhat compressed relative to current readiness.";
   }
   return caseType === "comparative"
-    ? "Pacing remains uneven between reflection, evidence gathering, and comparative commitment pressure."
+    ? "Pacing is uneven between reflection, evidence gathering, and comparative commitment pressure."
     : context.mixedPaceSignal && context.highPsychLoadSignal
-      ? "Pacing remains mixed between reflection and execution, while elevated load narrows reliable commitment tempo."
+      ? "Pacing is mixed between reflection and execution, while elevated load narrows reliable commitment tempo."
       : context.mixedPaceSignal
-      ? "Pacing remains mixed between reflection and execution, with timing pressure still influencing commitment tempo."
-      : "Pacing remains measured, though not fully detached from timing pressure and ambiguity.";
+      ? "Pacing is mixed between reflection and execution, with timing pressure still influencing commitment tempo."
+      : "Pacing is measured, though not fully detached from timing pressure and ambiguity.";
 }
 
 function buildDisciplineLine(
@@ -224,13 +224,13 @@ function buildDisciplineLine(
 ): string {
   if (bucket === "thresholds") {
     return caseType === "single" && context.reversibleStyle
-      ? "Posture control requires explicit thresholds, staged validation, and reversible commitment guardrails."
-      : "Posture control requires explicit thresholds and staged validation discipline.";
+      ? "Governance requires explicit thresholds, staged validation, and reversible commitment guardrails."
+      : "Governance requires explicit thresholds and staged validation discipline.";
   }
   if (bucket === "sequencing") {
     return context.highPsychLoadSignal
-      ? "Behavioral control is better served by sequencing discipline, giving recovery capacity time to stabilize."
-      : "Behavioral control is better served by sequencing discipline than by rapid commitment logic.";
+      ? "Behavioral governance is better served by sequencing discipline, giving recovery capacity time to stabilize."
+      : "Behavioral governance is better served by sequencing discipline than by rapid commitment logic.";
   }
   if (bucket === "separation") {
     return context.relocationSignal
@@ -243,10 +243,10 @@ function buildDisciplineLine(
       : "High-intensity commitment style requires explicit evidence gates and steady pace control.";
   }
   return caseType === "comparative"
-    ? "This posture is best sustained by clear evidence rules and pace control across both paths."
+    ? "Sustainability requires clear evidence rules and pace control across both paths."
     : context.highPsychLoadSignal
-      ? "This posture is best sustained by clear evidence rules, steady pace control, and explicit recovery-aware decision cadence."
-      : "This posture is best sustained by clear evidence rules and steady pace control.";
+      ? "Sustainability requires clear evidence rules, steady pace control, and recovery-aware decision cadence."
+      : "Sustainability requires clear evidence rules and steady pace control.";
 }
 
 function buildComparativeReading(

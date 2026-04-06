@@ -32,18 +32,18 @@ export function buildExecutiveOverview(args: AmcSectionBuilderArgs): ExecutiveOv
 
 function inferStructuralTension(flags: AmcDerivedFlags, caseType: "single" | "comparative"): string {
   if (flags.highUrgency && (flags.weakSafetyNet || flags.lowDecisionClarity)) {
-    return "Timing pressure versus readiness gap remains the central structural tension.";
+    return "The core tension is timing pressure against readiness depth.";
   }
   if (flags.weakSafetyNet || flags.highExternalExposure) {
-    return "Stability versus upside remains the key tension in the current decision structure.";
+    return "The core tension is downside stability versus upside pursuit.";
   }
   if (flags.lowDecisionClarity || flags.uncertainSponsorSupport || flags.someRestructuringRisk) {
-    return "Credibility versus transition friction appears to be the defining structural tension.";
+    return "The defining tension is credibility continuity versus transition friction.";
   }
   if (caseType === "comparative") {
-    return "Internal continuity versus external repositioning remains the core comparative tension.";
+    return "The comparative tension is internal continuity versus external repositioning.";
   }
-  return "Exploration intent versus structural safety needs remains the central decision tension.";
+  return "The central tension is exploration intent against structural safety requirements.";
 }
 
 function buildOverviewLine(
@@ -56,21 +56,21 @@ function buildOverviewLine(
 
   if (caseType === "comparative") {
     if (decision) {
-      return `This case is structured as a two-path decision around ${decision}, with exposure distributed differently across each path.`;
+      return `The case is framed as a two-path decision around ${decision}, with exposure concentrated in different places by path.`;
     }
-    return "This case is framed as an explicit two-path comparison rather than a single-path reflection.";
+    return "The case is framed as an explicit two-path comparison, not a single-path reflection.";
   }
 
   if (decision) {
     if (singleContext.relocationPressure) {
-      return `This case is handled as a single-path structural assessment around ${decision}, with cross-market transition burden treated as a first-order constraint.`;
+      return `The case is handled as a single-path structural assessment around ${decision}, with cross-market transition burden treated as first-order.`;
     }
     if (singleContext.runwayPressure) {
-      return `This case is handled as a single-path structural assessment around ${decision}, with runway stability and downside control treated as first-order constraints.`;
+      return `The case is handled as a single-path structural assessment around ${decision}, with runway stability and downside control treated as first-order.`;
     }
-    return `This case is handled as a single-path structural assessment around ${decision}.`;
+    return `The case is handled as a single-path structural assessment around ${decision}.`;
   }
-  return "This case is being handled as a single-path structural review under current conditions.";
+  return "The case is being handled as a single-path structural review under current conditions.";
 }
 
 function buildReadingLine(
@@ -81,24 +81,24 @@ function buildReadingLine(
   const singleContext = inferSingleContext(normalized, flags);
   if (caseType === "comparative") {
     if (flags.structurallyFragileMove || flags.highExecutionRisk) {
-      return "The comparison indicates asymmetric exposure across continuity, mobility, and execution readiness.";
+      return "At comparison level, exposure is asymmetric across continuity, mobility, and execution readiness.";
     }
-    return "The comparison indicates that preference alone is insufficient because structural exposure remains uneven across paths.";
+    return "Preference alone is insufficient; structural exposure is uneven across paths.";
   }
 
   if (flags.structurallySupportedMove && !flags.highExecutionRisk) {
-    return "The current path appears structurally serviceable, while still dependent on disciplined execution control.";
+    return "The active path is structurally serviceable, but still contingent on disciplined execution control.";
   }
   if (flags.structurallyFragileMove || flags.highExecutionRisk) {
     if (singleContext.runwayPressure) {
-      return "The single-path structure appears constrained by concentrated runway pressure, readiness uncertainty, and execution exposure.";
+      return "Single-path exposure is concentrated in runway pressure, readiness uncertainty, and execution load.";
     }
-    return "The decision structure appears constrained by concentrated exposure across stability, clarity, and execution conditions.";
+    return "Decision exposure is concentrated across stability, clarity, and execution conditions.";
   }
   if (singleContext.identityLoad) {
-    return "The single-path case appears shaped by the gap between role continuity and longer-horizon identity-fit requirements.";
+    return "The single-path frame is shaped by a gap between role continuity and longer-horizon identity fit.";
   }
-  return "The case appears to be shaped less by preference and more by how current structure aligns with future direction.";
+  return "The case is shaped less by preference and more by structural alignment with future direction.";
 }
 
 function buildImplicationLine(
@@ -108,18 +108,18 @@ function buildImplicationLine(
 ): string {
   const singleContext = inferSingleContext(normalized, flags);
   if (flags.highExecutionRisk) {
-    return "This increases the importance of staged sequencing, explicit evidence thresholds, and reversible commitment logic.";
+    return "Implication: sequence in stages, hold explicit evidence gates, and keep commitment reversible.";
   }
   if (flags.highInterpretiveNeed) {
-    return "This indicates that unresolved signals should be handled through staged structural evaluation rather than accelerated commitment.";
+    return "Implication: resolve signal gaps through staged structural evaluation, not accelerated commitment.";
   }
   if (caseType === "comparative") {
-    return "This makes side-by-side condition testing more defensible than a one-time preference call.";
+    return "Implication: side-by-side condition testing is more defensible than a one-time preference call.";
   }
   if (singleContext.recoveryLoad) {
-    return "This indicates that commitment quality depends on protecting recovery capacity while execution proof and support depth are consolidated.";
+    return "Implication: protect recovery capacity while execution proof and support depth are consolidated.";
   }
-  return "This indicates that commitment quality depends on maintaining structural conditions rather than directional confidence alone.";
+  return "Implication: commitment quality follows structural conditions, not directional confidence alone.";
 }
 
 function inferSingleContext(
