@@ -39,13 +39,13 @@ export function buildDecisionConditions(args: AmcSectionBuilderArgs): DecisionCo
       section: "decision_conditions",
       title: "결정이 가능한 조건",
       caseType,
-      validationCondition: "Clearer validation would improve the defensibility of the broader decision structure.",
+      validationCondition: "Validation gate: improve proof quality before treating the structure as commitment-ready.",
       readinessCondition:
-        "Readiness appears directionally present, though further consolidation would strengthen timing and execution alignment.",
+        "Readiness gate: consolidate timing and execution alignment before raising commitment intensity.",
       supportCondition:
-        "Support conditions appear partially present, but stronger reinforcement would improve structural stability.",
+        "Support gate: reinforce sponsor and safety coverage before relying on the current structure.",
       commitmentCondition:
-        "Firmer commitment becomes more defensible when validation, readiness, and support conditions are more clearly aligned.",
+        "Commitment gate: escalate only when validation, readiness, and support gates hold together.",
     };
 
     if (caseType === "comparative") {
@@ -244,20 +244,20 @@ function buildValidationCondition(
 ): string {
   if (bucket === "proof_gap") {
     return caseType === "single" && context.runwaySignal
-      ? "Defensibility improves when proof closes the gap between movement logic and verifiable runway sustainability."
-      : "Defensibility improves when external proof closes the remaining gap between movement logic and verifiable evidence.";
+      ? "Validation gate: close the gap between movement logic and verifiable runway sustainability before stronger commitment."
+      : "Validation gate: close the remaining gap between movement logic and verifiable external proof before stronger commitment.";
   }
   if (bucket === "comparison_clarity") {
-    return "Comparative defensibility requires clearer side-by-side evidence across burden, readiness, and future-fit conditions.";
+    return "Validation gate: require clearer side-by-side evidence across burden, readiness, and future-fit conditions.";
   }
   if (bucket === "transferability_validation") {
     return caseType === "single" && context.relocationSignal
-      ? "Defensibility remains conditional on firmer validation of cross-market transferability and market readability."
-      : "Defensibility remains conditional on firmer validation of transferability and market readability.";
+      ? "Validation gate: confirm cross-market transferability and market readability before stronger commitment."
+      : "Validation gate: confirm transferability and market readability before stronger commitment.";
   }
   return caseType === "comparative"
-    ? "Signal consolidation remains important so comparative differences reflect validated structure rather than interpretation gaps."
-    : "Validation quality depends on distinguishing directional interest from executable fit with clearer signal consolidation.";
+    ? "Validation gate: consolidate signals so comparative differences reflect validated structure rather than interpretation gaps."
+    : "Validation gate: separate directional interest from executable fit through clearer signal consolidation.";
 }
 
 function buildReadinessCondition(
@@ -266,19 +266,19 @@ function buildReadinessCondition(
   context: SingleConditionsContext,
 ): string {
   if (bucket === "execution_alignment") {
-    return "Readiness becomes more defensible when execution logic and timing alignment remain stable under pressure.";
+    return "Readiness gate: confirm execution logic and timing alignment remain stable under pressure.";
   }
   if (bucket === "timing_sync") {
-    return "Timing and readiness appear directionally close, though not yet fully synchronized under current pressure.";
+    return "Readiness gate: synchronize timing and readiness before raising commitment intensity.";
   }
   if (bucket === "threshold_definition") {
     return caseType === "single" && context.recoverySignal
-      ? "Readiness depends on clearer sequencing, explicit thresholds, and recovery-aware proof discipline before stronger commitment."
-      : "Readiness depends on clearer sequencing, explicit thresholds, and proof discipline before stronger commitment.";
+      ? "Readiness gate: hold clearer sequencing, explicit thresholds, and recovery-aware proof discipline before stronger commitment."
+      : "Readiness gate: hold clearer sequencing, explicit thresholds, and proof discipline before stronger commitment.";
   }
   return caseType === "comparative"
-    ? "Readiness must be validated per path, rather than carrying directional intent across both options."
-    : "Readiness depends on movement logic being supported by evidence rather than directional intent alone.";
+    ? "Readiness gate: validate each path independently rather than carrying directional intent across both options."
+    : "Readiness gate: require movement logic to be evidence-supported, not directional-intent-led.";
 }
 
 function buildSupportCondition(
@@ -287,19 +287,19 @@ function buildSupportCondition(
   context: SingleConditionsContext,
 ): string {
   if (bucket === "sponsor_safety") {
-    return "Support defensibility improves with clearer sponsor backing and stronger downside safety coverage.";
+    return "Support gate: require clearer sponsor backing and stronger downside safety coverage.";
   }
   if (bucket === "resource_backing") {
-    return "Support structure becomes more stable with stronger resource backing across timing, capacity, and execution load.";
+    return "Support gate: require stronger resource backing across timing, capacity, and execution load.";
   }
   if (bucket === "fallback_protection") {
     return caseType === "single" && context.runwaySignal
-      ? "Fallback protection remains important for stabilizing defensibility while runway-sensitive transition conditions continue to form."
-      : "Fallback protection remains important for stabilizing defensibility while transition conditions continue to form.";
+      ? "Support gate: hold fallback protection while runway-sensitive transition conditions continue to form."
+      : "Support gate: hold fallback protection while transition conditions continue to form.";
   }
   return caseType === "comparative"
-    ? "Support logic appears present, though not yet equally reinforced across both paths."
-    : "Support logic appears present, though not yet sufficiently reinforced across the broader decision frame.";
+    ? "Support gate: require equal reinforcement quality across both paths."
+    : "Support gate: reinforce support depth before treating the broader frame as commitment-ready.";
 }
 
 function buildCommitmentCondition(
@@ -308,19 +308,19 @@ function buildCommitmentCondition(
   context: SingleConditionsContext,
 ): string {
   if (bucket === "aligned_conditions") {
-    return "Firmer commitment becomes defensible when validation, readiness, and support conditions remain aligned over time.";
+    return "Commitment gate: escalate only when validation, readiness, and support remain aligned over time.";
   }
   if (bucket === "threshold_commitment") {
     return caseType === "single" && context.recoverySignal
-      ? "Commitment is more defensible under explicit thresholds and recovery-protective pacing than under accumulated pressure."
-      : "Commitment is more defensible under explicit thresholds than under accumulated pressure.";
+      ? "Commitment gate: enforce explicit thresholds and recovery-protective pacing instead of pressure-led escalation."
+      : "Commitment gate: enforce explicit thresholds instead of pressure-led escalation.";
   }
   if (bucket === "proof_before_speed") {
-    return "Commitment quality depends on reducing the gap between directional logic and execution proof before pace accelerates.";
+    return "Commitment gate: reduce the gap between directional logic and execution proof before pace accelerates.";
   }
   return caseType === "comparative"
-    ? "Commitment quality depends less on speed and more on condition consolidation across both paths."
-    : "Commitment quality depends less on speed than on condition consolidation.";
+    ? "Commitment gate: prioritize condition consolidation over speed across both paths."
+    : "Commitment gate: prioritize condition consolidation over speed.";
 }
 
 function buildComparativeReading(

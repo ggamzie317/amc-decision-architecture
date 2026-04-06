@@ -27,13 +27,13 @@ export function buildStructuralRiskDiagnosis(args: AmcSectionBuilderArgs): Struc
       title: "Structural Risk Diagnosis",
       caseType,
       primaryRisk:
-        "The main structural risk appears to lie in incomplete consolidation between direction, readiness, and timing.",
+        "Risk concentration is centered on incomplete consolidation between direction, readiness, and timing.",
       secondaryRisk:
-        "A secondary risk remains in uneven support and signal conditions across the broader decision structure.",
+        "A secondary exposure cluster sits in uneven support depth and fragmented signal quality.",
       distortionRisk:
-        "Mixed evidence may distort the case by blurring the line between directional interest and executable readiness.",
+        "Distortion risk sits in signal mixing, where directional pull and executable readiness are not cleanly separated.",
       handlingLine:
-        "This increases the importance of staged evaluation, stronger validation, and disciplined threshold setting.",
+        "Risk posture is best managed through staged evaluation, stronger validation depth, and explicit thresholds.",
     };
 
     if (caseType === "comparative") {
@@ -211,25 +211,25 @@ function buildPrimaryRisk(
 ): string {
   if (bucket === "readiness_ahead") {
     return caseType === "single" && context.reentryExposure
-      ? "The main risk appears to be single-path movement logic running ahead of re-entry proof and internal consolidation."
-      : "The main risk appears to be movement logic running ahead of execution proof and internal consolidation.";
+      ? "Primary exposure sits in single-path movement logic running ahead of re-entry proof and internal consolidation."
+      : "Primary exposure sits in movement logic running ahead of execution proof and internal consolidation.";
   }
   if (bucket === "ambiguity_timing") {
-    return "The main risk appears to be prolonged ambiguity under rising timing pressure and incomplete decision consolidation.";
+    return "Primary exposure sits in prolonged ambiguity under rising timing pressure and incomplete decision consolidation.";
   }
   if (bucket === "fragile_support") {
     return caseType === "single" && context.runwayExposure
-      ? "The main risk appears to be a fragile single-path structure carried by uneven support and runway-sensitive downside exposure."
-      : "The main risk appears to be a fragile move structure carried by uneven support and constrained downside protection.";
+      ? "Primary exposure sits in a fragile single-path structure carried by uneven support and runway-sensitive downside risk."
+      : "Primary exposure sits in a fragile move structure carried by uneven support and constrained downside protection.";
   }
   if (bucket === "external_overread") {
-    return "The main risk appears to be over-reading external upside before transition infrastructure is sufficiently reinforced.";
+    return "Primary exposure sits in over-reading external upside before transition infrastructure is sufficiently reinforced.";
   }
   return caseType === "comparative"
-    ? "The main risk appears to be carrying a two-path frame without sufficiently differentiated internal risk evidence."
+    ? "Primary exposure sits in carrying a two-path frame without sufficiently differentiated internal risk evidence."
     : context.reentryExposure
-      ? "The main risk appears to be maintaining the current path while re-entry viability and repositioning logic remain under-validated."
-      : "The main risk appears to be remaining in a weakening internal structure without clarified repositioning logic.";
+      ? "Primary exposure sits in maintaining the current path while re-entry viability and repositioning logic remain under-validated."
+      : "Primary exposure sits in remaining within a weakening internal structure without clarified repositioning logic.";
 }
 
 function buildSecondaryRisk(
@@ -239,21 +239,21 @@ function buildSecondaryRisk(
 ): string {
   if (bucket === "uneven_support") {
     return caseType === "single" && context.recoveryExposure
-      ? "A secondary risk lies in uneven support depth across sponsor backing, safety coverage, and recovery capacity."
-      : "A secondary risk lies in uneven support conditions across sponsor backing, safety coverage, and timing resilience.";
+      ? "Secondary exposure clusters in uneven support depth across sponsor backing, safety coverage, and recovery capacity."
+      : "Secondary exposure clusters in uneven support conditions across sponsor backing, safety coverage, and timing resilience.";
   }
   if (bucket === "fragmented_signals") {
-    return "A secondary risk appears in fragmented signal visibility and partial narrative transferability across decision conditions.";
+    return "Secondary exposure clusters in fragmented signal visibility and partial narrative transferability across decision conditions.";
   }
   if (bucket === "comparison_overload") {
-    return "A secondary risk lies in carrying a high-burden comparison without sufficiently separated evidence thresholds.";
+    return "Secondary exposure clusters in high-burden comparison handling without sufficiently separated evidence thresholds.";
   }
   if (bucket === "translation_difficulty") {
-    return "A secondary risk appears in translation difficulty, where directional intent remains stronger than external legibility.";
+    return "Secondary exposure clusters in translation difficulty, where directional intent remains stronger than external legibility.";
   }
   return caseType === "comparative"
-    ? "A secondary risk remains in background restructuring instability that may shift comparative assumptions over time."
-    : "A secondary risk remains in restructuring-related instability that can weaken single-path planning reliability.";
+    ? "Secondary exposure clusters in background restructuring instability that may shift comparative assumptions over time."
+    : "Secondary exposure clusters in restructuring-related instability that can weaken single-path planning reliability.";
 }
 
 function buildDistortionRisk(
@@ -262,22 +262,22 @@ function buildDistortionRisk(
   context: SingleRiskContext,
 ): string {
   if (bucket === "urgency_compression") {
-    return "Urgency may compress judgment before the underlying structure is sufficiently validated.";
+    return "Distortion pressure is urgency compression before the underlying structure is sufficiently validated.";
   }
   if (bucket === "interest_vs_readiness") {
     return caseType === "single" && context.reentryExposure
-      ? "Directional interest may be mistaken for executable readiness while key re-entry conditions remain uneven."
-      : "Directional interest may be mistaken for executable readiness while key conditions remain uneven.";
+      ? "Distortion pressure is conflating directional interest with executable readiness while key re-entry conditions remain uneven."
+      : "Distortion pressure is conflating directional interest with executable readiness while key conditions remain uneven.";
   }
   if (bucket === "upside_bias") {
-    return "External attractiveness may be overweighted relative to the burden of conversion and execution.";
+    return "Distortion pressure is upside overweighting relative to conversion and execution burden.";
   }
   if (bucket === "familiarity_bias") {
     return caseType === "comparative"
-      ? "Internal familiarity may be overweighted relative to future-fit requirements in the comparative frame."
-      : "Internal familiarity may be overweighted relative to longer-horizon fit and adaptability.";
+      ? "Distortion pressure is familiarity overweighting relative to future-fit requirements in the comparative frame."
+      : "Distortion pressure is familiarity overweighting relative to longer-horizon fit and adaptability.";
   }
-  return "Mixed signals may distort the process by generating either false confidence or false paralysis.";
+  return "Distortion pressure is mixed-signal loading, generating false confidence or false paralysis.";
 }
 
 function buildHandlingLine(
@@ -286,15 +286,15 @@ function buildHandlingLine(
   context: SingleRiskContext,
 ): string {
   if (bucket === "condition_based") {
-    return "Risk handling quality depends on condition-based evaluation and disciplined side-by-side thresholding.";
+    return "Risk management quality is highest under condition-based evaluation and disciplined side-by-side thresholding.";
   }
   if (bucket === "threshold_staged") {
     return caseType === "single" && context.runwayExposure
-      ? "Risk control depends on explicit thresholds, staged validation, and runway-aware sequencing discipline."
-      : "Risk control depends on explicit thresholds, staged validation, and sequencing discipline.";
+      ? "Risk control is strongest with explicit thresholds, staged validation, and runway-aware sequencing discipline."
+      : "Risk control is strongest with explicit thresholds, staged validation, and sequencing discipline.";
   }
   if (bucket === "evidence_sequencing") {
-    return "Risk defensibility improves when evidence strengthening and sequence control precede commitment tightening.";
+    return "Risk defensibility rises when evidence strengthening and sequence control precede commitment tightening.";
   }
   return caseType === "comparative"
     ? "Risk handling requires separating directional preference from path-specific readiness conditions."
