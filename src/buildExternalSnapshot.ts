@@ -1,6 +1,7 @@
 import type { AmcNormalizedIntake } from "./amc/normalizeIntake";
 import type { AmcDerivedFlags } from "./amc/deriveFlags";
 import type { AmcSectionBuilderArgs } from "./amc/builderArgs";
+import type { AmcExternalSnapshotOverride } from "./amc/externalSnapshotOverride";
 import { isWeakEvidence } from "./amc/weakEvidence";
 import { inferCaseType } from "./amc/inferCaseType";
 
@@ -35,6 +36,9 @@ export interface ExternalSnapshotOutput {
     portabilityBucket: PortabilityBucket;
     frictionBucket: FrictionBucket;
     signalBucket: SignalBucket;
+    source?: "perplexity_sonar";
+    sourceNotes?: string[];
+    marketDataDate?: string;
   };
 }
 
@@ -49,9 +53,13 @@ interface ComparativeStatusSet {
 }
 
 export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnapshotOutput {
-  const { normalized, structuralFlags, inputSummary } = args;
+  const { normalized, structuralFlags, inputSummary, externalSnapshotOverride } = args;
 
   const caseType = inferCaseType(normalized, inputSummary);
+  if (externalSnapshotOverride) {
+    return buildExternalSnapshotFromOverride(caseType, externalSnapshotOverride);
+  }
+
   const weakEvidence = isWeakEvidence(normalized, structuralFlags, inputSummary);
 
   if (weakEvidence) {
@@ -167,6 +175,126 @@ export function buildExternalSnapshot(args: AmcSectionBuilderArgs): ExternalSnap
   };
 
   return output;
+}
+
+function buildExternalSnapshotFromOverride(
+  caseType: "single" | "comparative",
+  override: AmcExternalSnapshotOverride,
+): ExternalSnapshotOutput {
+  const marketBucket = toDemandBucket(override.marketDirection.status);
+  const competitionBucket = toPortabilityBucket(override.competitionPressure.status);
+  const frictionBucket = toFrictionBucket(override.transitionFriction.status);
+  const signalBucket = toSignalBucket(override.economicPressure.status);
+
+  const output: ExternalSnapshotOutput = {
+    section: "external_snapshot",
+    title: "외부 환경 요약",
+    caseType,
+    marketLine: override.marketDirection.summary,
+    positionLine: override.competitionPressure.summary,
+    frictionLine: override.transitionFriction.summary,
+    signalLine: override.economicPressure.summary,
+    nativeMetadata: {
+      weakEvidence: false,
+      demandBucket: marketBucket,
+      portabilityBucket: competitionBucket,
+      frictionBucket,
+      signalBucket,
+      source: override.source,
+      sourceNotes: override.sourceNotes,
+      marketDataDate: override.marketDataDate,
+    },
+  };
+
+  if (caseType === "comparative") {
+    const statusSet: ComparativeStatusSet = {
+      marketStatus: toMarketStatusSymbol(override.marketDirection.status),
+      competitionStatus: toPressureStatusSymbol(override.competitionPressure.status),
+      economicStatus: toPressureStatusSymbol(override.economicPressure.status),
+      transitionStatus: toPressureStatusSymbol(override.transitionFriction.status),
+    };
+
+    output.comparativeReading = buildOverrideComparativeReading(override);
+    output.comparativeStatus = {
+      optionA: statusSet,
+      optionB: statusSet,
+      source: "native_bucket",
+    };
+  }
+
+  return output;
+}
+
+function buildOverrideComparativeReading(override: AmcExternalSnapshotOverride): string {
+  return [
+    override.marketDirection.summary,
+    override.transitionFriction.summary,
+    override.economicPressure.summary,
+  ]
+    .map((line) => String(line || "").trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(" ");
+}
+
+function toMarketStatusSymbol(status: "supportive" | "mixed" | "constrained"): MarketStatus {
+  if (status === "supportive") {
+    return "▲ Supportive";
+  }
+  if (status === "constrained") {
+    return "▼ Constrained";
+  }
+  return "◆ Mixed";
+}
+
+function toPressureStatusSymbol(status: "contained" | "moderate" | "elevated"): PressureStatus {
+  if (status === "contained") {
+    return "○ Contained";
+  }
+  if (status === "elevated") {
+    return "● Elevated";
+  }
+  return "◐ Moderate";
+}
+
+function toDemandBucket(status: "supportive" | "mixed" | "constrained"): DemandBucket {
+  if (status === "supportive") {
+    return "clear";
+  }
+  if (status === "constrained") {
+    return "weak";
+  }
+  return "mixed";
+}
+
+function toPortabilityBucket(status: "contained" | "moderate" | "elevated"): PortabilityBucket {
+  if (status === "contained") {
+    return "strong";
+  }
+  if (status === "elevated") {
+    return "constrained";
+  }
+  return "partial";
+}
+
+function toFrictionBucket(status: "contained" | "moderate" | "elevated"): FrictionBucket {
+  if (status === "contained") {
+    return "low";
+  }
+  if (status === "elevated") {
+    return "high";
+  }
+  return "moderate";
+}
+
+function toSignalBucket(status: "contained" | "moderate" | "elevated"): SignalBucket {
+  if (status === "contained") {
+    return "visible";
+  }
+  if (status === "elevated") {
+    return "fragmented";
+  }
+  return "partial";
 }
 
 

@@ -11,12 +11,14 @@ import { buildCareerValueStructure } from "./buildCareerValueStructure";
 import { buildCareerMobilityStructure } from "./buildCareerMobilityStructure";
 import { buildStrategicTemperament } from "./buildStrategicTemperament";
 import { buildDecisionConditions } from "./buildDecisionConditions";
+import type { AmcExternalSnapshotOverride } from "./amc/externalSnapshotOverride";
 
 const normalizeAmcIntake = normalizeIntake;
 const deriveStructuralFlags = deriveFlags;
 
 type AssemblerOptions = {
   now?: () => Date;
+  externalSnapshotOverride?: AmcExternalSnapshotOverride;
 };
 
 export function assembleAmcReportPayload(rawIntake: any, options: AssemblerOptions = {}) {
@@ -32,6 +34,7 @@ export function assembleAmcReportPayload(rawIntake: any, options: AssemblerOptio
     structuralFlags,
     inputSummary,
     nativeMetadata,
+    externalSnapshotOverride: options.externalSnapshotOverride,
   };
 
   const sections = [

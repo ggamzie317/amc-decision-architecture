@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { generateAmcReport } from "../src/generateAmcReport";
+import { resolvePerplexityExternalSnapshot } from "../src/perplexity/resolveAmcExternalSnapshot";
 
 type CliArgs = {
   intake: string;
@@ -94,6 +95,12 @@ function printHelp(): void {
   console.log("  --python <bin>     Python executable for merge_docx.py (default: python3)");
   console.log("  --strict-undeclared  Fail render if undeclared template variables remain");
   console.log("  --lang <ko|en|zh>  Locale for fixed render strings (default: intake.lang or en)");
+  console.log("Environment (optional external intelligence):");
+  console.log("  AMC_ENABLE_PERPLEXITY_EXTERNAL=1    Enable Perplexity external snapshot override");
+  console.log("  PERPLEXITY_API_KEY=<key>            Required when external override is enabled");
+  console.log("  AMC_PERPLEXITY_DOMAIN_FILTER=<csv>  Optional domain filter (e.g. reuters.com,bloomberg.com)");
+  console.log("  AMC_PERPLEXITY_LANG=<ko|en|zh>      Optional language hint for Perplexity summaries");
+  console.log("  PERPLEXITY_MODEL=<name>             Optional model override (default: sonar)");
 }
 
 function readJson(filePath: string): any {
@@ -107,7 +114,7 @@ function assertPathExists(filePath: string, label: string): void {
   }
 }
 
-function main(): number {
+async function main(): Promise<number> {
   try {
     const args = parseArgs(process.argv.slice(2));
 
@@ -115,6 +122,7 @@ function main(): number {
     assertPathExists(args.template, "Template file");
 
     const rawIntake = readJson(args.intake);
+    const perplexityExternal = await resolvePerplexityExternalSnapshot(rawIntake, {});
 
     const result = generateAmcReport(rawIntake, {
       templatePath: args.template,
@@ -123,6 +131,8 @@ function main(): number {
       pythonBin: args.python,
       strictUndeclared: args.strictUndeclared,
       locale: args.lang,
+      externalSnapshotOverride: perplexityExternal.override,
+      integrationWarnings: perplexityExternal.warnings,
     });
 
     const summary = {
@@ -144,6 +154,9 @@ function main(): number {
         console.warn(`WARN: ${warning}`);
       }
     }
+    if (!process.env.CI && perplexityExternal.used) {
+      console.log("INFO: Perplexity external snapshot override applied.");
+    }
     return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -160,5 +173,5 @@ const isDirectRun = (() => {
 })();
 
 if (isDirectRun) {
-  process.exit(main());
+  main().then((code) => process.exit(code));
 }

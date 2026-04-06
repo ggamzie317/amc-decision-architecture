@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { buildAmcDocxPayload } from "./buildAmcDocxPayload";
 import { getAmcRenderStrings, resolveAmcRenderLocale, type AmcRenderLocale } from "./amc/renderLocale";
+import type { AmcExternalSnapshotOverride } from "./amc/externalSnapshotOverride";
 
 export interface GenerateAmcReportOptions {
   templatePath: string;
@@ -14,6 +15,8 @@ export interface GenerateAmcReportOptions {
   now?: () => Date;
   strictUndeclared?: boolean;
   locale?: AmcRenderLocale | string;
+  externalSnapshotOverride?: AmcExternalSnapshotOverride;
+  integrationWarnings?: string[];
 }
 
 export interface AmcRenderInput {
@@ -31,7 +34,11 @@ export function resolveRenderLocale(
 
 export function buildAmcRenderInput(
   rawIntake: any,
-  options: { now?: () => Date; locale?: AmcRenderLocale | string } = {},
+  options: {
+    now?: () => Date;
+    locale?: AmcRenderLocale | string;
+    externalSnapshotOverride?: AmcExternalSnapshotOverride;
+  } = {},
 ): AmcRenderInput {
   const docxPayload = buildAmcDocxPayload(rawIntake, options);
   const mergePayload = buildNestedTemplateContextFromDocxPayload(rawIntake, docxPayload, options.locale);
@@ -48,6 +55,7 @@ export function generateAmcReport(rawIntake: any, options: GenerateAmcReportOpti
   const { docxPayload, mergePayload } = buildAmcRenderInput(rawIntake, {
     now: options.now,
     locale: options.locale,
+    externalSnapshotOverride: options.externalSnapshotOverride,
   });
 
   fs.mkdirSync(path.dirname(payloadPath), { recursive: true });
@@ -73,9 +81,12 @@ export function generateAmcReport(rawIntake: any, options: GenerateAmcReportOpti
     payloadPath,
     outPath: options.outPath,
     docxPayload,
-    renderWarnings: Array.isArray((mergePayload as any)?.meta?.native_mapping_warnings)
-      ? ((mergePayload as any).meta.native_mapping_warnings as string[])
-      : [],
+    renderWarnings: [
+      ...(Array.isArray((mergePayload as any)?.meta?.native_mapping_warnings)
+        ? ((mergePayload as any).meta.native_mapping_warnings as string[])
+        : []),
+      ...(Array.isArray(options.integrationWarnings) ? options.integrationWarnings : []),
+    ],
   };
 }
 

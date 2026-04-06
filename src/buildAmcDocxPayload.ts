@@ -1,8 +1,10 @@
 import { assembleAmcReportPayload } from "./assembleAmcReportPayload";
 import { buildAmcTemplatePayload } from "./buildAmcTemplatePayload";
+import type { AmcExternalSnapshotOverride } from "./amc/externalSnapshotOverride";
 
 type DocxOptions = {
   now?: () => Date;
+  externalSnapshotOverride?: AmcExternalSnapshotOverride;
 };
 
 export function buildAmcDocxPayload(rawIntake: any, options: DocxOptions = {}) {
