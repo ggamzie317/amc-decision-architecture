@@ -328,7 +328,7 @@ export function buildNestedTemplateContextFromDocxPayload(
         ),
         design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment1, strings)),
         validation_signal: withFallback(
-          toValidationSignal(external.marketLine || flat.external_snapshot_market_line, strings),
+          toValidationSignal(external.marketLine || flat.external_snapshot_market_line, mode, strings),
         ),
         stop_or_scale_rule: withFallback(
           toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, mode, strings),
@@ -346,7 +346,7 @@ export function buildNestedTemplateContextFromDocxPayload(
         ),
         design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment2, strings)),
         validation_signal: withFallback(
-          toValidationSignal(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
+          toValidationSignal(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, mode, strings),
         ),
         stop_or_scale_rule: withFallback(
           toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, mode, strings),
@@ -364,7 +364,7 @@ export function buildNestedTemplateContextFromDocxPayload(
         ),
         design: withFallback(compactScaffoldingText(explorationDesignResolution.designs.experiment3, strings)),
         validation_signal: withFallback(
-          toValidationSignal(temperament.disciplineLine || flat.strategic_temperament_discipline_line, strings),
+          toValidationSignal(temperament.disciplineLine || flat.strategic_temperament_discipline_line, mode, strings),
         ),
         stop_or_scale_rule: withFallback(
           toStopOrScaleRule(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, mode, strings),
@@ -381,7 +381,9 @@ export function buildNestedTemplateContextFromDocxPayload(
             strings,
           ),
         ),
-        success_signal: withFallback(toExecutionSuccessSignal(external.marketLine || flat.external_snapshot_market_line, strings)),
+        success_signal: withFallback(
+          toExecutionSuccessSignal(external.marketLine || flat.external_snapshot_market_line, mode, strings),
+        ),
       },
       phase_2: {
         priority_action: withFallback(
@@ -393,7 +395,7 @@ export function buildNestedTemplateContextFromDocxPayload(
           ),
         ),
         success_signal: withFallback(
-          toExecutionSuccessSignal(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, strings),
+          toExecutionSuccessSignal(internal.readinessLine || flat.internal_structural_snapshot_readiness_line, mode, strings),
         ),
       },
       phase_3: {
@@ -406,31 +408,41 @@ export function buildNestedTemplateContextFromDocxPayload(
           ),
         ),
         success_signal: withFallback(
-          toExecutionSuccessSignal(conditions.commitmentCondition || flat.decision_conditions_commitment_condition, strings),
+          toExecutionSuccessSignal(
+            conditions.commitmentCondition || flat.decision_conditions_commitment_condition,
+            mode,
+            strings,
+          ),
         ),
       },
     },
     assumptions_watchlist: {
       assumption_1: {
         statement: withFallback(
-          toWatchlistStatement(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk, strings),
+          toWatchlistStatement(risk.secondaryRisk || flat.structural_risk_diagnosis_secondary_risk, mode, strings),
         ),
         break_signal: withFallback(
-          toWatchlistBreakSignal(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk, strings),
+          toWatchlistBreakSignal(risk.distortionRisk || flat.structural_risk_diagnosis_distortion_risk, mode, strings),
         ),
       },
       assumption_2: {
         statement: withFallback(
-          toWatchlistStatement(internal.strainLine || flat.internal_structural_snapshot_strain_line, strings),
+          toWatchlistStatement(internal.strainLine || flat.internal_structural_snapshot_strain_line, mode, strings),
         ),
         break_signal: withFallback(
-          toWatchlistBreakSignal(mobility.burdenLine || flat.career_mobility_structure_burden_line, strings),
+          toWatchlistBreakSignal(mobility.burdenLine || flat.career_mobility_structure_burden_line, mode, strings),
         ),
       },
       assumption_3: {
-        statement: withFallback(toWatchlistStatement(value.tensionLine || flat.career_value_structure_tension_line, strings)),
+        statement: withFallback(
+          toWatchlistStatement(value.tensionLine || flat.career_value_structure_tension_line, mode, strings),
+        ),
         break_signal: withFallback(
-          toWatchlistBreakSignal(conditions.readinessCondition || flat.decision_conditions_readiness_condition, strings),
+          toWatchlistBreakSignal(
+            conditions.readinessCondition || flat.decision_conditions_readiness_condition,
+            mode,
+            strings,
+          ),
         ),
       },
     },
@@ -676,24 +688,56 @@ function compactScaffoldingText(
   return text;
 }
 
+function stripGateLead(text: string): string {
+  const cleaned = String(text || "").trim();
+  if (!cleaned) {
+    return cleaned;
+  }
+  return cleaned
+    .replace(/^(Validation|Readiness|Support|Commitment)\s+gate:\s*/i, "")
+    .replace(/^(Validation|Readiness|Support|Commitment)\s+condition:\s*/i, "")
+    .trim();
+}
+
+function sentenceStart(text: string): string {
+  const cleaned = String(text || "").trim();
+  if (!cleaned) {
+    return cleaned;
+  }
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function softenSingleOperationalPhrase(text: string): string {
+  return String(text || "")
+    .replace(/^Before commitment depth increases,\s*/i, "As exploration advances, ")
+    .replace(/\bbefore commitment depth increases,\s*/gi, "as exploration advances, ")
+    .replace(/\bbefore stronger commitment\b/gi, "as evidence quality improves")
+    .replace(
+      /^Enforce explicit thresholds instead of pressure-led escalation\.?$/i,
+      "Maintain explicit thresholds and avoid pressure-led escalation.",
+    )
+    .trim();
+}
+
 function toExplorationObjective(
   source: unknown,
   lens: "validation" | "readiness" | "support",
   mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
-  const base = compactScaffoldingText(source, strings);
+  const baseRaw = sentenceStart(stripGateLead(compactScaffoldingText(source, strings)));
+  const base = mode === "single" ? softenSingleOperationalPhrase(baseRaw) : baseRaw;
   if (base === "—") {
     return base;
   }
   if (mode === "single") {
     if (lens === "validation") {
-      return `Single-path validation objective: confirm the active path remains structurally defensible under current constraints. ${base}`;
+      return `Single-path validation objective: test whether the active path remains structurally defensible under current constraints. Working hypothesis: ${base}`;
     }
     if (lens === "readiness") {
-      return `Single-path readiness objective: confirm execution readiness is stable enough for one-path commitment logic. ${base}`;
+      return `Single-path readiness objective: test whether execution reliability is stable enough for one-path commitment logic. Working hypothesis: ${base}`;
     }
-    return `Single-path support objective: confirm backing depth can sustain the active path without fragile assumptions. ${base}`;
+    return `Single-path support objective: test whether backing depth can sustain the active path without fragile assumptions. Working hypothesis: ${base}`;
   }
   if (lens === "validation") {
     return `Test whether validation conditions are materially closing: ${base}`;
@@ -706,11 +750,16 @@ function toExplorationObjective(
 
 function toValidationSignal(
   source: unknown,
+  mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
-  const base = compactScaffoldingText(source, strings);
+  const baseRaw = sentenceStart(stripGateLead(compactScaffoldingText(source, strings)));
+  const base = mode === "single" ? softenSingleOperationalPhrase(baseRaw) : baseRaw;
   if (base === "—") {
     return base;
+  }
+  if (mode === "single") {
+    return `Observable signal: ${base}`;
   }
   return `Validation signal to monitor: ${base}`;
 }
@@ -720,12 +769,13 @@ function toStopOrScaleRule(
   mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
-  const base = compactScaffoldingText(source, strings);
+  const baseRaw = sentenceStart(stripGateLead(compactScaffoldingText(source, strings)));
+  const base = mode === "single" ? softenSingleOperationalPhrase(baseRaw) : baseRaw;
   if (base === "—") {
     return base;
   }
   if (mode === "single") {
-    return `Single-path scale rule: deepen commitment only when condition closure stays stable; pause if deterioration appears. ${base}`;
+    return `Single-path reversible rule: keep exploration depth bounded while signal trajectory remains stable; hold or pause on adverse drift. Boundary condition: ${base}`;
   }
   return `Scale only if condition closure remains stable; pause if deterioration appears: ${base}`;
 }
@@ -736,18 +786,19 @@ function toExecutionPriorityAction(
   mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
-  const base = compactScaffoldingText(source, strings);
+  const baseRaw = sentenceStart(stripGateLead(compactScaffoldingText(source, strings)));
+  const base = mode === "single" ? softenSingleOperationalPhrase(baseRaw) : baseRaw;
   if (base === "—") {
     return base;
   }
   if (mode === "single") {
     if (phase === "phase_1") {
-      return `Single-path priority: establish validation discipline before increasing path commitment. ${base}`;
+      return `Single-path priority: establish a low-regret validation architecture for the active path. Focus condition: ${base}`;
     }
     if (phase === "phase_2") {
-      return `Single-path priority: convert readiness assumptions into executable proof for the active path. ${base}`;
+      return `Single-path priority: convert readiness assumptions into executable proof for the active path. Focus condition: ${base}`;
     }
-    return `Single-path priority: reinforce support and commitment controls before deeper lock-in. ${base}`;
+    return `Single-path priority: reinforce support resilience and preserve reversibility while lock-in pressure rises. Focus condition: ${base}`;
   }
   if (phase === "phase_1") {
     return `Priority focus: establish validation discipline before acceleration. ${base}`;
@@ -760,33 +811,48 @@ function toExecutionPriorityAction(
 
 function toExecutionSuccessSignal(
   source: unknown,
+  mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
-  const base = compactScaffoldingText(source, strings);
+  const baseRaw = sentenceStart(stripGateLead(compactScaffoldingText(source, strings)));
+  const base = mode === "single" ? softenSingleOperationalPhrase(baseRaw) : baseRaw;
   if (base === "—") {
     return base;
+  }
+  if (mode === "single") {
+    return `Confirmation pattern: ${base}`;
   }
   return `Success signal: ${base}`;
 }
 
 function toWatchlistStatement(
   source: unknown,
+  mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
-  const base = compactScaffoldingText(source, strings);
+  const baseRaw = sentenceStart(stripGateLead(compactScaffoldingText(source, strings)));
+  const base = mode === "single" ? softenSingleOperationalPhrase(baseRaw) : baseRaw;
   if (base === "—") {
     return base;
+  }
+  if (mode === "single") {
+    return `Working assumption: ${base}`;
   }
   return `Assumption under monitoring: ${base}`;
 }
 
 function toWatchlistBreakSignal(
   source: unknown,
+  mode: "single" | "comparative",
   strings: { notApplicable: string },
 ): string {
-  const base = compactScaffoldingText(source, strings);
+  const baseRaw = sentenceStart(stripGateLead(compactScaffoldingText(source, strings)));
+  const base = mode === "single" ? softenSingleOperationalPhrase(baseRaw) : baseRaw;
   if (base === "—") {
     return base;
+  }
+  if (mode === "single") {
+    return `Invalidation pattern: ${base}`;
   }
   return `Break signal requiring reassessment: ${base}`;
 }

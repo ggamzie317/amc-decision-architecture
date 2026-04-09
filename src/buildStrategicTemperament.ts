@@ -187,7 +187,7 @@ function buildEvidenceLine(
     return caseType === "comparative"
       ? "Directional pull is exposed to interpretation gaps across the comparative frame."
       : context.lowRiskTolerance
-        ? "Directional pull is running ahead of fully validated evidence under a low-risk-tolerance posture."
+        ? "Directional pull is running ahead of fully validated evidence under a low-risk-tolerance operating posture."
         : "Directional pull is running ahead of fully validated evidence.";
   }
   return "Current judgment relies on emerging evidence, not fully consolidated proof.";
@@ -206,7 +206,7 @@ function buildPaceLine(
   if (bucket === "compressed") {
     return caseType === "comparative"
       ? "Commitment tempo is compressed in parts of the comparison relative to readiness depth."
-      : "Commitment tempo is somewhat compressed relative to current readiness.";
+      : "Commitment tempo is somewhat compressed relative to current readiness depth.";
   }
   return caseType === "comparative"
     ? "Pacing is uneven between reflection, evidence gathering, and comparative commitment pressure."
@@ -224,13 +224,13 @@ function buildDisciplineLine(
 ): string {
   if (bucket === "thresholds") {
     return caseType === "single" && context.reversibleStyle
-      ? "Governance requires explicit thresholds, staged validation, and reversible commitment guardrails."
-      : "Governance requires explicit thresholds and staged validation discipline.";
+      ? "Operating discipline requires explicit thresholds, staged validation, and reversible commitment guardrails."
+      : "Operating discipline requires explicit thresholds and staged validation.";
   }
   if (bucket === "sequencing") {
     return context.highPsychLoadSignal
-      ? "Behavioral governance is better served by sequencing discipline, giving recovery capacity time to stabilize."
-      : "Behavioral governance is better served by sequencing discipline than by rapid commitment logic.";
+      ? "Behavioral discipline is better served by sequencing, giving recovery capacity room to stabilize."
+      : "Behavioral discipline is better served by sequencing than by rapid commitment logic.";
   }
   if (bucket === "separation") {
     return context.relocationSignal
@@ -245,8 +245,8 @@ function buildDisciplineLine(
   return caseType === "comparative"
     ? "Sustainability requires clear evidence rules and pace control across both paths."
     : context.highPsychLoadSignal
-      ? "Sustainability requires clear evidence rules, steady pace control, and recovery-aware decision cadence."
-      : "Sustainability requires clear evidence rules and steady pace control.";
+      ? "Sustainability depends on clear evidence rules, steady pace control, and recovery-aware cadence."
+      : "Sustainability depends on clear evidence rules and steady pace control.";
 }
 
 function buildComparativeReading(

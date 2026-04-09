@@ -63,14 +63,14 @@ function buildOverviewLine(
 
   if (decision) {
     if (singleContext.relocationPressure) {
-      return `The case is handled as a single-path structural assessment around ${decision}, with cross-market transition burden treated as first-order.`;
+      return `This is a one-path structural viability memo centered on ${decision}, where cross-market conversion burden is the dominant frame.`;
     }
     if (singleContext.runwayPressure) {
-      return `The case is handled as a single-path structural assessment around ${decision}, with runway stability and downside control treated as first-order.`;
+      return `This is a one-path structural viability memo centered on ${decision}, where runway integrity and downside containment are first-order.`;
     }
-    return `The case is handled as a single-path structural assessment around ${decision}.`;
+    return `This is a one-path structural viability memo centered on ${decision}.`;
   }
-  return "The case is being handled as a single-path structural review under current conditions.";
+  return "This case is treated as a one-path structural viability memo under current conditions.";
 }
 
 function buildReadingLine(
@@ -91,14 +91,14 @@ function buildReadingLine(
   }
   if (flags.structurallyFragileMove || flags.highExecutionRisk) {
     if (singleContext.runwayPressure) {
-      return "Single-path exposure is concentrated in runway pressure, readiness uncertainty, and execution load.";
+      return "The burden topology clusters around runway pressure, readiness gaps, and execution load concentration.";
     }
-    return "Decision exposure is concentrated across stability, clarity, and execution conditions.";
+    return "The burden topology clusters across stability fragility, clarity gaps, and execution strain.";
   }
   if (singleContext.identityLoad) {
-    return "The single-path frame is shaped by a gap between role continuity and longer-horizon identity fit.";
+    return "The one-path frame is shaped by a mismatch between near-term continuity logic and longer-horizon identity fit.";
   }
-  return "The case is shaped less by preference and more by structural alignment with future direction.";
+  return "The frame is less preference-led and more dependent on whether this path can hold structural alignment over time.";
 }
 
 function buildImplicationLine(
@@ -108,18 +108,18 @@ function buildImplicationLine(
 ): string {
   const singleContext = inferSingleContext(normalized, flags);
   if (flags.highExecutionRisk) {
-    return "Implication: sequence in stages, hold explicit evidence gates, and keep commitment reversible.";
+    return "Implication: treat commitment as staged governance, with evidence discipline and reversibility held throughout.";
   }
   if (flags.highInterpretiveNeed) {
-    return "Implication: resolve signal gaps through staged structural evaluation, not accelerated commitment.";
+    return "Implication: resolve signal ambiguity first, then tighten commitment only after structural coherence improves.";
   }
   if (caseType === "comparative") {
     return "Implication: side-by-side condition testing is more defensible than a one-time preference call.";
   }
   if (singleContext.recoveryLoad) {
-    return "Implication: protect recovery capacity while execution proof and support depth are consolidated.";
+    return "Implication: preserve recovery bandwidth while execution proof and support depth are consolidated.";
   }
-  return "Implication: commitment quality follows structural conditions, not directional confidence alone.";
+  return "Implication: commitment quality should follow structural hold quality, not directional confidence alone.";
 }
 
 function inferSingleContext(

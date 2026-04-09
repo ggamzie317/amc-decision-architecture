@@ -244,7 +244,7 @@ function buildValidationCondition(
 ): string {
   if (bucket === "proof_gap") {
     return caseType === "single" && context.runwaySignal
-      ? "Validation gate: close the gap between movement logic and verifiable runway sustainability before stronger commitment."
+      ? "Validation gate: before commitment depth increases, runway sustainability must be evidenced under realistic load assumptions."
       : "Validation gate: close the remaining gap between movement logic and verifiable external proof before stronger commitment.";
   }
   if (bucket === "comparison_clarity") {
@@ -252,12 +252,12 @@ function buildValidationCondition(
   }
   if (bucket === "transferability_validation") {
     return caseType === "single" && context.relocationSignal
-      ? "Validation gate: confirm cross-market transferability and market readability before stronger commitment."
+      ? "Validation gate: before commitment depth increases, cross-market transferability and market readability must be evidenced."
       : "Validation gate: confirm transferability and market readability before stronger commitment.";
   }
   return caseType === "comparative"
     ? "Validation gate: consolidate signals so comparative differences reflect validated structure rather than interpretation gaps."
-    : "Validation gate: separate directional interest from executable fit through clearer signal consolidation.";
+    : "Validation gate: before commitment depth increases, directional intent must be translated into executable-fit evidence.";
 }
 
 function buildReadinessCondition(
@@ -269,7 +269,9 @@ function buildReadinessCondition(
     return "Readiness gate: confirm execution logic and timing alignment remain stable under pressure.";
   }
   if (bucket === "timing_sync") {
-    return "Readiness gate: synchronize timing and readiness before raising commitment intensity.";
+    return caseType === "single"
+      ? "Readiness gate: before commitment depth increases, timing cadence and execution readiness must hold in the same window."
+      : "Readiness gate: synchronize timing and readiness before raising commitment intensity.";
   }
   if (bucket === "threshold_definition") {
     return caseType === "single" && context.recoverySignal
@@ -278,7 +280,7 @@ function buildReadinessCondition(
   }
   return caseType === "comparative"
     ? "Readiness gate: validate each path independently rather than carrying directional intent across both options."
-    : "Readiness gate: require movement logic to be evidence-supported, not directional-intent-led.";
+    : "Readiness gate: before commitment depth increases, movement logic must be evidence-supported rather than intent-led.";
 }
 
 function buildSupportCondition(
@@ -287,7 +289,9 @@ function buildSupportCondition(
   context: SingleConditionsContext,
 ): string {
   if (bucket === "sponsor_safety") {
-    return "Support gate: require clearer sponsor backing and stronger downside safety coverage.";
+    return caseType === "single"
+      ? "Support gate: before commitment depth increases, sponsor backing and downside safety coverage must both clear minimum thresholds."
+      : "Support gate: require clearer sponsor backing and stronger downside safety coverage.";
   }
   if (bucket === "resource_backing") {
     return "Support gate: require stronger resource backing across timing, capacity, and execution load.";
@@ -299,7 +303,7 @@ function buildSupportCondition(
   }
   return caseType === "comparative"
     ? "Support gate: require equal reinforcement quality across both paths."
-    : "Support gate: reinforce support depth before treating the broader frame as commitment-ready.";
+    : "Support gate: before commitment depth increases, support depth must remain stable across timing and execution stress.";
 }
 
 function buildCommitmentCondition(
@@ -308,7 +312,9 @@ function buildCommitmentCondition(
   context: SingleConditionsContext,
 ): string {
   if (bucket === "aligned_conditions") {
-    return "Commitment gate: escalate only when validation, readiness, and support remain aligned over time.";
+    return caseType === "single"
+      ? "Commitment gate: increase depth only when validation, readiness, and support remain jointly stable over time."
+      : "Commitment gate: escalate only when validation, readiness, and support remain aligned over time.";
   }
   if (bucket === "threshold_commitment") {
     return caseType === "single" && context.recoverySignal
@@ -316,7 +322,9 @@ function buildCommitmentCondition(
       : "Commitment gate: enforce explicit thresholds instead of pressure-led escalation.";
   }
   if (bucket === "proof_before_speed") {
-    return "Commitment gate: reduce the gap between directional logic and execution proof before pace accelerates.";
+    return caseType === "single"
+      ? "Commitment gate: preserve proof-before-speed discipline so pace does not outrun structural hold quality."
+      : "Commitment gate: reduce the gap between directional logic and execution proof before pace accelerates.";
   }
   return caseType === "comparative"
     ? "Commitment gate: prioritize condition consolidation over speed across both paths."

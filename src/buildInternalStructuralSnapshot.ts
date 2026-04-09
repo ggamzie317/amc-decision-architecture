@@ -137,11 +137,11 @@ function buildReadinessLine(bucket: ReadinessBucket, caseType: "single" | "compa
     return "Readiness appears supported by practical traction and a transition logic that remains executable under current constraints.";
   }
   if (bucket === "weak") {
-    return "Readiness appears uneven, with movement intent running ahead of full execution proof and support depth.";
+    return "Readiness posture remains uneven, with execution reliability still lagging directional intent.";
   }
   return caseType === "comparative"
     ? "Readiness appears uneven across paths, with internal momentum present but conversion capacity not yet uniformly formed."
-    : "Readiness appears partial, with internal momentum present but execution consolidation still in progress.";
+    : "Readiness posture is partial, with momentum present but execution consolidation still incomplete.";
 }
 
 function buildSupportLine(bucket: SupportBucket, caseType: "single" | "comparative"): string {
@@ -149,11 +149,11 @@ function buildSupportLine(bucket: SupportBucket, caseType: "single" | "comparati
     return "Support conditions appear reasonably intact across sponsorship, stability, and downside coverage.";
   }
   if (bucket === "fragile") {
-    return "Support conditions appear fragile, with key backing elements not yet sufficiently reinforced for full defensibility.";
+    return "Support posture appears fragile, with backing depth still vulnerable across key load points.";
   }
   return caseType === "comparative"
     ? "Support conditions appear partial and uneven across paths, especially across timing, resources, and validation backing."
-    : "Support conditions appear partial, with relevant backing present but not yet fully reinforced across the decision structure.";
+    : "Support posture remains partial, with relevant backing present but unevenly reinforced across the one-path frame.";
 }
 
 function buildStrainLine(bucket: StrainBucket, caseType: "single" | "comparative"): string {

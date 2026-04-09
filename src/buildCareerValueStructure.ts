@@ -384,13 +384,13 @@ function buildTensionLine(
       return "The core tension sits between immediate income relief and preserving option value for a structurally stronger re-entry.";
     }
     return context.compensationSignal
-      ? "The main value tension sits between compensation/runway protection and expansion-oriented upside."
-      : "The main value tension appears to lie between security preservation and expansion-oriented upside.";
+      ? "The value trade-off centers on compensation/runway protection versus expansion-oriented upside expression."
+      : "The value trade-off centers on security preservation versus expansion-oriented upside expression.";
   }
   if (bucket === "credibility_vs_future_fit") {
     return context.identityLifestyleSignal
-      ? "The value structure reflects tension between current credibility continuity and future-fit requirements tied to identity and lifestyle."
-      : "The value structure reflects tension between current credibility continuity and broader future fit.";
+      ? "The value structure is pulled between credibility continuity and future-fit requirements tied to identity and lifestyle."
+      : "The value structure is pulled between credibility continuity and broader future-fit logic.";
   }
   if (bucket === "continuity_vs_mobility") {
     return caseType === "comparative"
@@ -398,10 +398,10 @@ function buildTensionLine(
         ? "The value structure appears split between continuity preservation and cross-market repositioning across paths."
         : "The value structure appears split between continuity preservation and mobility-oriented repositioning across paths."
       : context.optionValueSignal
-        ? "The value structure appears split between continuity preservation now and preserving option value for stronger later repositioning."
-        : "The value structure appears split between continuity preservation and mobility upside.";
+        ? "The value structure is split between preserving continuity now and preserving option value for higher-quality later repositioning."
+        : "The value structure is split between continuity preservation and mobility upside.";
   }
-  return "The core value tension appears to lie between current stability logic and longer-horizon optionality logic.";
+  return "The core value tension sits between current stability logic and longer-horizon optionality logic.";
 }
 
 function buildAlignmentLine(
@@ -426,8 +426,8 @@ function buildAlignmentLine(
       ? "Alignment appears partial, with one path protecting near-term runway while the other protects continuity credibility and deferred upside."
       : "Alignment appears partial, with each path protecting different value sets rather than one integrated value profile."
     : context.continuitySignal
-      ? "Alignment appears partial, with continuity and compensation priorities better protected than expansion-oriented value expression."
-      : "Alignment appears partial, with continuity supported more clearly than expansion-oriented value expression.";
+      ? "Alignment is partial: continuity and compensation priorities are better protected than expansion-oriented value expression."
+      : "Alignment is partial: continuity is protected more clearly than expansion-oriented value expression.";
 }
 
 function buildComparativeReading(

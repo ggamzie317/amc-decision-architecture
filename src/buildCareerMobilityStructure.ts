@@ -165,8 +165,8 @@ function buildMobilityLine(
     return caseType === "comparative"
       ? "Mobility architecture is constrained in parts of the comparison, where conversion burden outweighs directional pull."
       : context.runwaySignal
-        ? "Mobility architecture is constrained by conversion conditions and runway-sensitive timing pressure."
-        : "Mobility architecture is constrained more by conversion conditions than by directional interest.";
+        ? "Mobility geometry is constrained by conversion load and runway-sensitive timing pressure."
+        : "Mobility geometry is constrained more by conversion load than by directional interest.";
   }
   return context.industryConversionSignal
     ? "Movement is structurally possible, but industry and role-conversion pathways are not yet consolidated."
@@ -187,8 +187,8 @@ function buildPortabilityLine(
     return caseType === "comparative"
       ? "Portability is uneven across paths, with selective transferability by sector, geography, and role framing."
       : context.marketTransferSignal
-        ? "The profile stays internally credible, while external readability remains selective across target markets and role frames."
-        : "The current profile remains internally credible, though externally transferable only in selective contexts.";
+        ? "The profile remains internally credible, while external transfer readability stays selective across target markets and role frames."
+        : "The current profile remains internally credible, though external transfer holds only in selective contexts.";
   }
   return context.relocationSignal
     ? "Portability is partial and depends on clearer cross-market packaging plus stronger legibility proof."
@@ -203,7 +203,7 @@ function buildBurdenLine(
   if (bucket === "manageable") {
     return caseType === "single" && context.runwaySignal
       ? "Conversion burden remains moderate and manageable if sequencing protects runway continuity during transition."
-      : "Conversion burden stays moderate and manageable under disciplined sequencing.";
+      : "Conversion burden remains moderate and manageable under disciplined sequencing.";
   }
   if (bucket === "elevated") {
     return caseType === "comparative"
@@ -226,8 +226,8 @@ function buildTimingLine(
 ): string {
   if (bucket === "open") {
     return caseType === "single" && context.runwaySignal
-      ? "Timing window appears open only conditionally, and remains dependent on runway-stable validation progress."
-      : "Timing window is open, while stronger validation would improve mobility defensibility.";
+      ? "Timing window appears open only conditionally, and remains dependent on runway-stable validation progression."
+      : "Timing window is open, while transfer-proof quality would further stabilize mobility defensibility.";
   }
   if (bucket === "compressed") {
     return caseType === "comparative"
@@ -237,7 +237,7 @@ function buildTimingLine(
   return caseType === "comparative"
     ? "Timing stays conditionally viable, with mobility quality tied to path-specific validation discipline."
     : context.marketTransferSignal
-      ? "Timing is conditionally viable, with transfer-readiness still maturing under current evidence."
+      ? "Timing is conditionally viable, with transfer-readiness still maturing under current evidence depth."
       : "Timing is conditionally viable rather than fully mature under current evidence.";
 }
 

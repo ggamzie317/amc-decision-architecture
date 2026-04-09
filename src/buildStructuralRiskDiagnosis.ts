@@ -289,16 +289,21 @@ function buildHandlingLine(
     return "Risk management quality is highest under condition-based evaluation and disciplined side-by-side thresholding.";
   }
   if (bucket === "threshold_staged") {
-    return caseType === "single" && context.runwayExposure
-      ? "Risk control is strongest with explicit thresholds, staged validation, and runway-aware sequencing discipline."
-      : "Risk control is strongest with explicit thresholds, staged validation, and sequencing discipline.";
+    if (caseType === "single") {
+      return context.runwayExposure
+        ? "Diagnostic priority is to map and monitor runway-linked burden nodes before they compound into commitment instability."
+        : "Diagnostic priority is to map burden concentration by sequence stage before governance thresholds are tightened.";
+    }
+    return "Risk control is strongest with explicit thresholds, staged validation, and sequencing discipline.";
   }
   if (bucket === "evidence_sequencing") {
-    return "Risk defensibility rises when evidence strengthening and sequence control precede commitment tightening.";
+    return caseType === "single"
+      ? "Diagnostic priority is to separate signal quality from directional pull so pressure is tracked by node, not mood."
+      : "Risk defensibility rises when evidence strengthening and sequence control precede commitment tightening.";
   }
   return caseType === "comparative"
     ? "Risk handling requires separating directional preference from path-specific readiness conditions."
-    : "Risk handling requires separating single-path directional interest from executable readiness.";
+    : "Diagnostic priority is to isolate where single-path strain is accumulating before governance thresholds are tightened.";
 }
 
 function buildComparativeReading(
