@@ -60,6 +60,26 @@ Section-level stability requirement:
 - Existing template-referenced keys under these namespaces must remain available.
 - Key renames/removals are contract-breaking unless template + tests + fixtures are updated in the same change.
 
+## Pre-Automation Freeze Rules (Customer-Facing)
+- Visible top label is `Structural Reading` (not `Decision Verdict`).
+- Single-case reports must treat `External Snapshot` as the primary external section.
+- Comparative reports must treat `External Comparative Snapshot` as the primary external section.
+- Single and comparative external sections must not appear as co-primary blocks in the same mode.
+- Scored and non-scored layers must remain visually and conceptually distinct.
+- `Hybrid Exploration Plan` language must remain disciplined, structural, and non-coaching.
+- Acronyms or shorthand in customer-facing copy should be avoided unless explained in-line.
+
+## Metadata and Display Policy (Freeze)
+- `meta.version` and generation metadata are contract fields for traceability, not customer-facing marketing copy.
+- Numeric matrix scores remain payload fields and can be rendered where scorecard layout expects them.
+- Visual score bands/cues should remain restrained and memo-like (no gamified treatment).
+
+## External Layer Contract (Freeze)
+- External provider automation is optional and non-blocking.
+- Expected external-layer input shape is frozen in:
+  - `docs/amc_external_layer_contract_v1.md`
+- Future automation (for example Perplexity hookup) must conform to this shape and fallback policy without changing template contracts.
+
 ## What `--strict-undeclared` Guarantees
 `--strict-undeclared` enforces:
 - template variables unresolved by context are treated as errors,

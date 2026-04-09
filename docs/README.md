@@ -3,6 +3,7 @@
 Operational entry point for AMC governance, metadata, and review documents.
 
 - `amc_render_contract.md`: Render contract, stability boundaries, and change classification.
+- `amc_external_layer_contract_v1.md`: Frozen external-layer input shape and fallback rules for pre-automation integration.
 - `amc_document_drift_policy.md`: Rules to prevent doc drift across contract, metadata, placeholders, and outputs.
 - `amc_native_metadata_inventory.md`: Current native metadata fields, owners, consumers, fallbacks, and warning behavior.
 - `amc_golden_fixture_runbook.md`: How to run and review the golden fixture render set.

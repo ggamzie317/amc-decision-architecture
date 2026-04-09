@@ -3,7 +3,7 @@
 - Input: Structured answers from the AMC Strategic Career Decision Assessment form.
 - Output:
   - 5-factor structural scorecard (D1–D5, 0–2 each)
-  - Total score (0–10) and decision verdict (Aggressive Go / Conditional Go / Pivot – Hold)
+  - Total structural scoring context and sectioned structural reading output
   - Narrative report fields (Executive summary, factor reads, implications, 90-day plan)
 
 This repo will host:
