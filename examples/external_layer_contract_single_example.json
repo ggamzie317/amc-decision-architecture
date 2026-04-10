@@ -1,0 +1,39 @@
+{
+  "market_direction": {
+    "status": "mixed",
+    "summary": "Domestic white-collar demand remains uneven, with selective hiring resilience in roles tied to operational continuity.",
+    "evidence": [
+      "Korean hiring momentum appears concentrated in selected functions rather than broad-based expansion.",
+      "Career transition outcomes improve when role continuity and timing discipline are preserved."
+    ]
+  },
+  "competition_pressure": {
+    "status": "moderate",
+    "summary": "Competition remains moderate for senior candidates with adjacent-role portability, but positioning clarity still matters.",
+    "evidence": [
+      "Candidates with directly portable responsibility scope tend to convert faster than broad role-switch applicants.",
+      "Role framing around proven delivery reduces competitive drag during mid-cycle transitions."
+    ]
+  },
+  "economic_pressure": {
+    "status": "moderate",
+    "summary": "Macro uncertainty is still present, creating selective budget discipline rather than full hiring freeze conditions.",
+    "evidence": [
+      "Enterprise hiring pace remains cautious with staggered approvals.",
+      "Compensation normalization pressure is visible in non-critical growth tracks."
+    ]
+  },
+  "transition_friction": {
+    "status": "moderate",
+    "summary": "Transition friction appears manageable when runway and target scope are kept aligned, but delayed pivoting raises strain.",
+    "evidence": [
+      "Longer search windows increase pressure when target role scope is broad or unconstrained.",
+      "Structured milestone checks reduce reversible-transition loss."
+    ]
+  },
+  "source_notes": [
+    "Perplexity Sonar synthesis across labor market and macro updates.",
+    "Signals interpreted for AMC structural decision context."
+  ],
+  "market_data_date": "2026-04-10"
+}

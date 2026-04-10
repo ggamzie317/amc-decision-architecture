@@ -1,0 +1,39 @@
+{
+  "market_direction": {
+    "status": "mixed",
+    "summary": "Cross-market mobility paths can unlock upside, but practical demand conversion remains uneven by geography and role proof.",
+    "evidence": [
+      "International-transition opportunities appear strongest when prior platform signals are explicit.",
+      "Domestic continuity tracks still provide steadier near-term conversion rates."
+    ]
+  },
+  "competition_pressure": {
+    "status": "elevated",
+    "summary": "Competition pressure is elevated in transition-heavy paths that require market revalidation and family-constraint alignment.",
+    "evidence": [
+      "Cross-border repositioning adds parallel competition from local and returnee talent pools.",
+      "Portability claims without market-specific proof increase screening loss."
+    ]
+  },
+  "economic_pressure": {
+    "status": "moderate",
+    "summary": "Economic pressure is moderate: funding caution is present, but selected strategic functions continue targeted hiring.",
+    "evidence": [
+      "Regional macro volatility drives selective headcount pacing rather than absolute hiring shutdown.",
+      "Employers favor narrower mandate fits under uncertain demand visibility."
+    ]
+  },
+  "transition_friction": {
+    "status": "elevated",
+    "summary": "Transition friction is elevated where relocation, schooling, and role transferability constraints interact in the same decision window.",
+    "evidence": [
+      "Family-anchored constraints raise execution burden in timing-sensitive transitions.",
+      "Relocation and role conversion frictions can compound when sequencing is not tightly managed."
+    ]
+  },
+  "source_notes": [
+    "Perplexity Sonar synthesis with cross-market labor and macro signal review.",
+    "Comparative interpretation constrained to AMC external-layer contract v1."
+  ],
+  "market_data_date": "2026-04-10"
+}

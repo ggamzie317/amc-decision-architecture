@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { generateAmcReport } from "../src/generateAmcReport";
+import { toExternalSnapshotOverride, normalizeExternalLayerContractV1 } from "../src/perplexity/externalLayerContract";
 import { resolvePerplexityExternalSnapshot } from "../src/perplexity/resolveAmcExternalSnapshot";
 
 type CliArgs = {
@@ -12,6 +13,7 @@ type CliArgs = {
   payload: string;
   python: string;
   strictUndeclared: boolean;
+  externalLayer?: string;
   lang?: string;
 };
 
@@ -68,6 +70,11 @@ function parseArgs(argv: string[]): CliArgs {
       args.strictUndeclared = true;
       continue;
     }
+    if (token === "--external-layer" && next) {
+      args.externalLayer = next;
+      i += 1;
+      continue;
+    }
     if (token === "--lang" && next) {
       args.lang = next;
       i += 1;
@@ -94,6 +101,7 @@ function printHelp(): void {
   console.log("  --payload <path>   Intermediate payload JSON path (default: repo output/amc_docx_payload_latest.json)");
   console.log("  --python <bin>     Python executable for merge_docx.py (default: python3)");
   console.log("  --strict-undeclared  Fail render if undeclared template variables remain");
+  console.log("  --external-layer <path>  Optional contract-v1 external layer JSON (preferred automation hookup path)");
   console.log("  --lang <ko|en|zh>  Locale for fixed render strings (default: intake.lang or en)");
   console.log("Environment (optional external intelligence):");
   console.log("  AMC_ENABLE_PERPLEXITY_EXTERNAL=1    Enable Perplexity external snapshot override");
@@ -122,7 +130,33 @@ async function main(): Promise<number> {
     assertPathExists(args.template, "Template file");
 
     const rawIntake = readJson(args.intake);
-    const perplexityExternal = await resolvePerplexityExternalSnapshot(rawIntake, {});
+    let overrideSource: "contract_file" | "perplexity_live" | "internal" = "internal";
+    let externalSnapshotOverride: ReturnType<typeof toExternalSnapshotOverride> | undefined;
+    const integrationWarnings: string[] = [];
+
+    if (args.externalLayer) {
+      assertPathExists(args.externalLayer, "External layer file");
+      try {
+        const rawExternal = readJson(args.externalLayer);
+        const normalized = normalizeExternalLayerContractV1(rawExternal);
+        externalSnapshotOverride = toExternalSnapshotOverride(normalized);
+        overrideSource = "contract_file";
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        integrationWarnings.push(
+          `External layer file could not be normalized to contract v1 (${message}); using internal/perplexity fallback.`,
+        );
+      }
+    }
+
+    if (!externalSnapshotOverride) {
+      const perplexityExternal = await resolvePerplexityExternalSnapshot(rawIntake, {});
+      if (perplexityExternal.override) {
+        externalSnapshotOverride = perplexityExternal.override;
+        overrideSource = "perplexity_live";
+      }
+      integrationWarnings.push(...perplexityExternal.warnings);
+    }
 
     const result = generateAmcReport(rawIntake, {
       templatePath: args.template,
@@ -131,8 +165,8 @@ async function main(): Promise<number> {
       pythonBin: args.python,
       strictUndeclared: args.strictUndeclared,
       locale: args.lang,
-      externalSnapshotOverride: perplexityExternal.override,
-      integrationWarnings: perplexityExternal.warnings,
+      externalSnapshotOverride,
+      integrationWarnings,
     });
 
     const summary = {
@@ -154,8 +188,11 @@ async function main(): Promise<number> {
         console.warn(`WARN: ${warning}`);
       }
     }
-    if (!process.env.CI && perplexityExternal.used) {
-      console.log("INFO: Perplexity external snapshot override applied.");
+    if (!process.env.CI && overrideSource === "perplexity_live") {
+      console.log("INFO: Perplexity live external snapshot override applied.");
+    }
+    if (!process.env.CI && overrideSource === "contract_file") {
+      console.log("INFO: Contract external layer override applied from file.");
     }
     return 0;
   } catch (error) {
