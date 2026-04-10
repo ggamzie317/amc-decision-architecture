@@ -351,7 +351,7 @@ export default function Home() {
           <div className="mb-8">
             <h3 className="report-subsection-title mb-4">Structural Diagnosis (D1–D5)</h3>
             <div className="space-y-4">
-              <div className="report-card border-l-4 border-l-accent">
+              <div className="report-card border-l-2 border-l-border">
                 <div className="flex justify-between items-start mb-2">
                   <span className="report-label">D1: Decision Clarity</span>
                   <span className="scored-badge">Scored</span>
@@ -362,7 +362,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="report-card border-l-4 border-l-accent">
+              <div className="report-card border-l-2 border-l-border">
                 <div className="flex justify-between items-start mb-2">
                   <span className="report-label">D2: Downside Containment</span>
                   <span className="scored-badge">Scored</span>
@@ -373,7 +373,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="report-card border-l-4 border-l-accent">
+              <div className="report-card border-l-2 border-l-border">
                 <div className="flex justify-between items-start mb-2">
                   <span className="report-label">D3: Differentiation Potential</span>
                   <span className="scored-badge">Scored</span>
@@ -384,7 +384,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="report-card border-l-4 border-l-accent">
+              <div className="report-card border-l-2 border-l-border">
                 <div className="flex justify-between items-start mb-2">
                   <span className="report-label">D4: Execution Readiness</span>
                   <span className="scored-badge">Scored</span>
@@ -395,7 +395,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="report-card border-l-4 border-l-accent">
+              <div className="report-card border-l-2 border-l-border">
                 <div className="flex justify-between items-start mb-2">
                   <span className="report-label">D5: Decision Reversibility</span>
                   <span className="scored-badge">Scored</span>
@@ -410,7 +410,7 @@ export default function Home() {
 
           {/* Structural Sustainability & Safety Margin */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="report-card border-l-4 border-l-accent">
+            <div className="report-card border-l-2 border-l-border">
               <div className="flex justify-between items-start mb-3">
                 <span className="report-label">Structural Sustainability Reading</span>
                 <span className="scored-badge">Scored</span>
@@ -439,7 +439,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="report-card border-l-4 border-l-accent">
+            <div className="report-card border-l-2 border-l-border">
               <div className="flex justify-between items-start mb-3">
                 <span className="report-label">Safety Margin</span>
                 <span className="scored-badge">Scored</span>
@@ -673,7 +673,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Current Path */}
-            <div className="report-card border-l-4 border-l-blue-500">
+            <div className="report-card border-l-2 border-l-border">
               <div className="flex justify-between items-start mb-4">
                 <span className="report-label">Current Path</span>
                 <span className="scored-badge">Scored</span>
@@ -733,7 +733,7 @@ export default function Home() {
             </div>
 
             {/* Transition Path */}
-            <div className="report-card border-l-4 border-l-amber-500">
+            <div className="report-card border-l-2 border-l-border">
               <div className="flex justify-between items-start mb-4">
                 <span className="report-label">Transition Path</span>
                 <span className="scored-badge">Scored</span>
