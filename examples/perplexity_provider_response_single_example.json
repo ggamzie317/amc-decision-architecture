@@ -1,0 +1,53 @@
+{
+  "request": {
+    "model": "sonar",
+    "lang": "en",
+    "source": "fixture"
+  },
+  "response": {
+    "id": "fixture-single-001",
+    "snapshot": {
+      "market_direction": {
+        "status": "mixed",
+        "summary": "Domestic white-collar demand remains uneven, with selective hiring resilience in continuity-linked roles.",
+        "evidence": [
+          "Hiring momentum appears concentrated by function rather than broad-based.",
+          "Transition outcomes improve when role continuity and timing discipline are preserved."
+        ]
+      },
+      "competition_pressure": {
+        "status": "moderate",
+        "summary": "Competition remains moderate for senior profiles with adjacent-role portability and clear scope framing.",
+        "evidence": [
+          "Candidates with directly portable responsibilities tend to convert faster.",
+          "Ambiguous role framing increases competitive pressure during transitions."
+        ]
+      },
+      "economic_pressure": {
+        "status": "moderate",
+        "summary": "Macro uncertainty creates selective budget discipline rather than broad hiring shutdown.",
+        "evidence": [
+          "Headcount pacing remains cautious under volatile demand visibility.",
+          "Compensation normalization pressure persists outside mission-critical tracks."
+        ]
+      },
+      "transition_friction": {
+        "status": "moderate",
+        "summary": "Transition friction is manageable under bounded sequencing, but increases with prolonged ambiguity.",
+        "evidence": [
+          "Long search windows raise runway strain when target scope is overly broad.",
+          "Staged checkpoints reduce reversible-transition loss."
+        ]
+      },
+      "source_notes": [
+        "Perplexity Sonar synthesis across labor and macro signals.",
+        "Interpretation constrained to AMC external-layer contract v1."
+      ],
+      "market_data_date": "2026-04-10"
+    },
+    "citations": [
+      "https://example.com/source-1",
+      "https://example.com/source-2"
+    ]
+  }
+}

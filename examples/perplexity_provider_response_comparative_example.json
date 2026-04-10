@@ -1,0 +1,53 @@
+{
+  "request": {
+    "model": "sonar",
+    "lang": "en",
+    "source": "fixture"
+  },
+  "response": {
+    "id": "fixture-comparative-001",
+    "snapshot": {
+      "market_direction": {
+        "status": "mixed",
+        "summary": "Cross-market mobility can unlock upside, but demand conversion remains uneven across geographies.",
+        "evidence": [
+          "International transition paths perform best when prior platform signals are explicit.",
+          "Domestic continuity paths still show steadier near-term conversion in many sectors."
+        ]
+      },
+      "competition_pressure": {
+        "status": "elevated",
+        "summary": "Competition pressure is elevated in transition-heavy paths requiring market revalidation.",
+        "evidence": [
+          "Cross-border repositioning introduces parallel local and returnee competition.",
+          "Portability claims without market-specific proof increase screening loss."
+        ]
+      },
+      "economic_pressure": {
+        "status": "moderate",
+        "summary": "Economic pressure is moderate: cautious budgets persist, while selected strategic hiring continues.",
+        "evidence": [
+          "Regional volatility drives selective hiring pace rather than full freeze.",
+          "Employers favor tighter mandate fit under uncertain demand signals."
+        ]
+      },
+      "transition_friction": {
+        "status": "elevated",
+        "summary": "Transition friction is elevated where relocation and family constraints interact within the same window.",
+        "evidence": [
+          "Schooling and housing constraints increase execution burden in cross-border timing windows.",
+          "Role conversion and relocation frictions can compound when sequencing discipline is weak."
+        ]
+      },
+      "source_notes": [
+        "Perplexity Sonar synthesis with cross-market labor and macro updates.",
+        "Comparative interpretation constrained to AMC external-layer contract v1."
+      ],
+      "market_data_date": "2026-04-10"
+    },
+    "citations": [
+      "https://example.com/source-a",
+      "https://example.com/source-b"
+    ]
+  }
+}
