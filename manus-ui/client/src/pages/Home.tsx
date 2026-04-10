@@ -408,11 +408,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* FIFWM & Safety Margin */}
+          {/* Structural Sustainability & Safety Margin */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="report-card border-l-4 border-l-accent">
               <div className="flex justify-between items-start mb-3">
-                <span className="report-label">FIFWM Score</span>
+                <span className="report-label">Structural Sustainability Reading</span>
                 <span className="scored-badge">Scored</span>
               </div>
               <div className="space-y-2">
@@ -662,20 +662,20 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 9. STRUCTURAL SCORECARD / FIVE-FACTOR MATRIX */}
+        {/* 9. FIVE-FACTOR STRUCTURAL VIEW */}
         <section className="report-section">
           <div className="report-section-header">
-            <h2 className="report-section-title">Structural Scorecard</h2>
+            <h2 className="report-section-title">Five-Factor Structural View</h2>
             <p className="report-caption mt-2">
               Compact scored synthesis layer
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Current Path Scorecard */}
+            {/* Current Path */}
             <div className="report-card border-l-4 border-l-blue-500">
               <div className="flex justify-between items-start mb-4">
-                <span className="report-label">Current Path Score</span>
+                <span className="report-label">Current Path</span>
                 <span className="scored-badge">Scored</span>
               </div>
               <div className="space-y-3">
@@ -732,10 +732,10 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Transition Path Scorecard */}
+            {/* Transition Path */}
             <div className="report-card border-l-4 border-l-amber-500">
               <div className="flex justify-between items-start mb-4">
-                <span className="report-label">Transition Path Score</span>
+                <span className="report-label">Transition Path</span>
                 <span className="scored-badge">Scored</span>
               </div>
               <div className="space-y-3">
@@ -850,10 +850,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 90-Day Execution Map */}
+          {/* Next-Step Considerations */}
           <div className="report-card">
             <div className="mb-4">
-              <span className="report-label">90-Day Execution Map</span>
+              <span className="report-label">Next-Step Considerations</span>
             </div>
             <div className="space-y-3">
               <div className="flex gap-4">
