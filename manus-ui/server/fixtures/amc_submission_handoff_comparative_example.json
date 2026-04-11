@@ -1,0 +1,67 @@
+{
+  "submissionId": "AMC-DEMO-COMP-001",
+  "createdAt": "2026-04-11T12:10:00.000Z",
+  "source": "manus_ui_intake_v1",
+  "language": "ko",
+  "tier": "executive",
+  "recipient": {
+    "email": "kwon@example.com",
+    "fullName": "Kwon"
+  },
+  "delivery": {
+    "channel": "email",
+    "language": "ko",
+    "tier": "executive"
+  },
+  "intakeRaw": {
+    "fullName": "Kwon",
+    "email": "kwon@example.com",
+    "location": "Beijing, CN",
+    "currentRoleCompany": "China-based B2B expatriate role at a Korean company",
+    "yearsExperience": "15+ years",
+    "mainDecision": "Compare staying on the current China-based path versus pursuing an overseas Asia transition that can preserve family stability and extend an international career.",
+    "urgency": "Within 6 months",
+    "optionsUnderConsideration": "Option A: Current China path. Option B: Overseas Asia transition.",
+    "forcedChoiceToday": "No immediate forced choice today, but the direction should become clearer within 6 months.",
+    "topPriorities": [
+      "Family living stability",
+      "Children's education",
+      "Continued overseas residence"
+    ],
+    "nonNegotiable": "The move must not undermine family stability, schooling continuity, or basic living sustainability.",
+    "biggestRisks": "The worst-case scenario is an overseas move followed by early exit, creating family instability and income uncertainty.",
+    "marketDemandOutlook": "Mixed / selective",
+    "marketDemandReason": "The current China-based expatriate track appears more defensive over time, while Singapore-like regional roles offer opportunity but under tighter competition and higher entry thresholds.",
+    "profileDifferentiation": "Clear differentiation through China experience, B2B and B2G exposure, emerging-market commercial work, strategy planning experience, and Korean-English-Chinese capability.",
+    "companyHealthConfidence": "Medium confidence",
+    "companyStability": "Somewhat stable, but with visible ceiling pressure and some longer-term uncertainty",
+    "restructuringHistory": "Not a major current disruption, but there is some concern about future instability or structural limitation",
+    "sponsorSupport": "Unclear / limited",
+    "decisionLineClarity": "Somewhat clear",
+    "workflowPace": "Mixed (some fast, some slow)",
+    "externalShockExposure": "Some exposure, but manageable",
+    "riskOptimizationStyle": "Balancing risk and reward",
+    "visibleRiskComfort": "Somewhat comfortable",
+    "commitmentStyle": "I move only when the opportunity is strong enough to support family stability.",
+    "energizingWorkStyle": "Cross-market business development, strategy, and externally oriented problem solving.",
+    "stayScenario12to18m": "Likely continuity with relative short-term stability, but limited upward mobility and possible concern about eventual repatriation or narrower career interpretation.",
+    "planBStrength": "I can continue the current path while testing overseas options, but I do not want to miss a viable international transition window.",
+    "reportValueExpectation": [
+      "Clarify structural trade-offs",
+      "Improve decision defensibility",
+      "Test whether an overseas transition is truly family-viable"
+    ],
+    "mustAnswerQuestion": "Under what conditions would an overseas Asia move be structurally defensible for both my career and my family?",
+    "consent": "yes, i understand and agree",
+    "tier": "executive",
+    "submittedAt": "2026-04-04T09:55:00Z",
+    "reportDate": "2026-04-04",
+    "betaMode": true,
+    "lang": "ko",
+    "chatbotAccessToken": "",
+    "chatbotAccessExpiresAt": ""
+  },
+  "intakeMeta": {
+    "completedAt": "2026-04-11T12:08:00.000Z"
+  }
+}

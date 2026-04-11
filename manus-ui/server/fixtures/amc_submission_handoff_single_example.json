@@ -1,0 +1,67 @@
+{
+  "submissionId": "AMC-DEMO-SINGLE-001",
+  "createdAt": "2026-04-11T12:00:00.000Z",
+  "source": "manus_ui_intake_v1",
+  "language": "ko",
+  "tier": "essential",
+  "recipient": {
+    "email": "minsoo.park@example.com",
+    "fullName": "Minsoo Park"
+  },
+  "delivery": {
+    "channel": "email",
+    "language": "ko",
+    "tier": "essential"
+  },
+  "intakeRaw": {
+    "fullName": "Minsoo Park",
+    "email": "minsoo.park@example.com",
+    "location": "Seoul, KR",
+    "currentRoleCompany": "Country sales and operations lead at a mid-size industrial distributor",
+    "yearsExperience": "16+ years",
+    "mainDecision": "Single-path diagnosis: determine whether the post-retirement 12–18 month structure is financially and operationally sustainable if the retirement package is accepted.",
+    "urgency": "Within 1 month",
+    "optionsUnderConsideration": "Single-path assessment of retirement-package transition readiness and survivability.",
+    "forcedChoiceToday": "Package timeline creates near-term pressure; decision quality depends on whether transition structure is fully defensible.",
+    "topPriorities": [
+      "12-18 month runway resilience",
+      "Monthly burn control and liquidity discipline",
+      "Maintaining employability while not forcing a weak early move"
+    ],
+    "nonNegotiable": "Do not trigger retirement unless household runway and transition execution capacity are both structurally viable.",
+    "biggestRisks": "Underestimating job-search duration and overestimating short-term conversion probability after exit.",
+    "marketDemandOutlook": "Unclear / mixed",
+    "marketDemandReason": "Market has openings but hiring selectivity and compensation pressure make timing-sensitive re-entry risk material.",
+    "profileDifferentiation": "Some differentiation, but still competitive",
+    "companyHealthConfidence": "Medium confidence",
+    "companyStability": "Somewhat stable, but with noticeable changes or uncertainty",
+    "restructuringHistory": "Yes – a few changes, but mostly stable",
+    "sponsorSupport": "No – I don’t have a clear sponsor yet",
+    "decisionLineClarity": "Somewhat clear",
+    "workflowPace": "Mixed (some fast, some slow)",
+    "externalShockExposure": "Highly exposed, with limited protection",
+    "riskOptimizationStyle": "Protecting the downside",
+    "visibleRiskComfort": "Not comfortable at all",
+    "commitmentStyle": "I prefer small, reversible steps and testing before fully committing.",
+    "energizingWorkStyle": "Structured problem solving with measurable operating impact and clear decision rights.",
+    "stayScenario12to18m": "If exit is delayed, short-term income remains intact but transition window may narrow and package quality may decline.",
+    "planBStrength": "I have almost no safety net if this fails.",
+    "reportValueExpectation": [
+      "Clarify structural trade-offs",
+      "Stress-test post-exit sustainability",
+      "Define explicit go/no-go conditions"
+    ],
+    "mustAnswerQuestion": "Is the 12–18 month post-exit structure truly survivable without forced low-quality re-entry?",
+    "consent": "yes, i understand and agree",
+    "tier": "essential",
+    "submittedAt": "2026-04-05T12:20:00Z",
+    "reportDate": "2026-04-05",
+    "betaMode": true,
+    "lang": "ko",
+    "chatbotAccessToken": "",
+    "chatbotAccessExpiresAt": ""
+  },
+  "intakeMeta": {
+    "completedAt": "2026-04-11T11:58:00.000Z"
+  }
+}

@@ -5,6 +5,17 @@ import { readSubmissionHandoff } from "../data/intakeHandoff";
 export default function PaymentSuccess() {
   const [, setLocation] = useLocation();
   const handoff = readSubmissionHandoff();
+  const submissionResult =
+    typeof window !== "undefined"
+      ? (() => {
+          try {
+            const raw = window.localStorage.getItem("amc_submission_result_v1");
+            return raw ? (JSON.parse(raw) as { status?: string; artifacts?: { docxPath?: string; payloadPath?: string } }) : null;
+          } catch {
+            return null;
+          }
+        })()
+      : null;
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -26,6 +37,12 @@ export default function PaymentSuccess() {
           {handoff ? (
             <p className="text-xs text-muted-foreground mb-8">
               Delivery routing: {handoff.recipient.email || "email not provided"} · {handoff.language.toUpperCase()} · {handoff.tier}
+            </p>
+          ) : null}
+          {submissionResult?.status ? (
+            <p className="text-xs text-muted-foreground mb-8">
+              Pipeline status: {submissionResult.status}
+              {submissionResult.artifacts?.docxPath ? ` · ${submissionResult.artifacts.docxPath}` : ""}
             </p>
           ) : null}
 

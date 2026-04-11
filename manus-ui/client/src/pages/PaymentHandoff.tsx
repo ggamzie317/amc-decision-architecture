@@ -12,12 +12,46 @@ function getFormatFromLocation(): "essential" | "executive" {
 export default function PaymentHandoff() {
   const [, setLocation] = useLocation();
   const [notice, setNotice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const apiBase = (import.meta.env.VITE_AMC_SUBMISSION_API_BASE as string | undefined)?.replace(/\/$/, "") || "";
   const format = getFormatFromLocation();
   const label = format === "executive" ? "Executive" : "Essential";
   const handoff = readSubmissionHandoff();
 
   const onStripeCheckout = () => {
     setNotice("Stripe Checkout redirect is not connected in this environment yet. Connect Stripe session creation and redirect URL here.");
+  };
+
+  const submitToReportBridge = async () => {
+    if (!handoff) {
+      setNotice("Submission handoff is missing. Return to format selection and continue again.");
+      return;
+    }
+    setSubmitting(true);
+    setNotice("");
+    try {
+      const endpoint = `${apiBase}/api/submissions`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(handoff),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        const message = typeof payload?.error === "string" ? payload.error : "Submission bridge request failed.";
+        setNotice(message);
+        setSubmitting(false);
+        return;
+      }
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("amc_submission_result_v1", JSON.stringify(payload));
+      }
+      setNotice("Submission received and report artifacts generated.");
+      setLocation("/payment-success");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Submission bridge request failed.");
+      setSubmitting(false);
+    }
   };
 
   const downloadHandoff = () => {
@@ -76,6 +110,19 @@ export default function PaymentHandoff() {
               Back to Format Selection
             </button>
           </div>
+
+          {handoff ? (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={submitToReportBridge}
+                disabled={submitting}
+                className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-border text-sm font-medium disabled:opacity-60"
+              >
+                {submitting ? "Submitting..." : "Submit to AMC Report Bridge (Local)"}
+              </button>
+            </div>
+          ) : null}
 
           {notice ? <p className="text-xs text-muted-foreground mt-4">{notice}</p> : null}
 
