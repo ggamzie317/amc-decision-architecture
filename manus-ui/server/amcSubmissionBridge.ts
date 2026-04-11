@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type { Express } from "express";
 import { z } from "zod";
+import { sendPreparedEmail } from "./emailSender";
 
 const languageSchema = z.enum(["ko", "en", "zh"]);
 const tierSchema = z.enum(["essential", "executive"]);
@@ -336,6 +337,28 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
     const summary = parseSummaryFromStdout(runner.stdout);
     const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, payloadPath);
     fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
+    const autoSendEnabled = process.env.AMC_AUTO_SEND_EMAIL_ON_SUBMISSION === "1";
+    let emailDeliveryResult:
+      | {
+          status: "sent" | "failed";
+          messageId?: string;
+          resultPath: string;
+          error?: string;
+        }
+      | undefined;
+
+    if (autoSendEnabled) {
+      const sent = await sendPreparedEmail({
+        repoRoot,
+        emailHandoffPath,
+      });
+      emailDeliveryResult = {
+        status: sent.result.status,
+        messageId: sent.result.messageId,
+        resultPath: toRepoRelative(repoRoot, sent.resultPath),
+        error: sent.result.error,
+      };
+    }
 
     res.status(201).json({
       ok: true,
@@ -352,6 +375,7 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         subject: emailHandoff.email.subject,
       },
       followUp: emailHandoff.followUp,
+      emailDelivery: emailDeliveryResult,
       artifacts: {
         submissionDir: toRepoRelative(repoRoot, submissionDir),
         handoffPath: toRepoRelative(repoRoot, handoffPath),

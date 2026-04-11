@@ -3,6 +3,7 @@ import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { registerAmcSubmissionBridge } from "./amcSubmissionBridge";
+import { resolveEmailHandoffPathFromSubmissionId, sendPreparedEmail } from "./emailSender";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,8 +28,61 @@ async function startServer() {
     process.env.NODE_ENV === "production"
       ? path.resolve(__dirname, "public")
       : path.resolve(__dirname, "..", "dist", "public");
+  const repoRoot = path.resolve(__dirname, "..", "..");
 
   registerAmcSubmissionBridge(app, __dirname);
+
+  app.post("/api/send-email", async (req, res) => {
+    try {
+      const body = (req.body || {}) as { submissionId?: string; emailHandoffPath?: string };
+      const submissionId = String(body.submissionId || "").trim();
+      const customPath = String(body.emailHandoffPath || "").trim();
+
+      if (!submissionId && !customPath) {
+        res.status(400).json({
+          ok: false,
+          error: "submissionId or emailHandoffPath is required.",
+        });
+        return;
+      }
+
+      const emailHandoffPath = customPath
+        ? path.resolve(repoRoot, customPath)
+        : resolveEmailHandoffPathFromSubmissionId(repoRoot, submissionId);
+      const sent = await sendPreparedEmail({
+        repoRoot,
+        emailHandoffPath,
+      });
+
+      if (sent.result.status !== "sent") {
+        res.status(500).json({
+          ok: false,
+          status: sent.result.status,
+          submissionId: sent.result.submissionId,
+          error: sent.result.error || "Email sending failed.",
+          resultPath: path.relative(repoRoot, sent.resultPath),
+        });
+        return;
+      }
+
+      res.status(200).json({
+        ok: true,
+        status: sent.result.status,
+        submissionId: sent.result.submissionId,
+        messageId: sent.result.messageId,
+        to: sent.result.to,
+        language: sent.result.language,
+        tier: sent.result.tier,
+        resultPath: path.relative(repoRoot, sent.resultPath),
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
   app.use(express.static(staticPath));
 
   // Handle client-side routing - serve index.html for all routes

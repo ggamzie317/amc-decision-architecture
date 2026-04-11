@@ -10,6 +10,7 @@
     "start": "NODE_ENV=production node dist/index.js",
     "preview": "vite preview --host",
     "test:submission-bridge": "tsx scripts/post_submission_fixture.ts",
+    "send:email-handoff": "tsx scripts/send_email_handoff.ts",
     "check": "tsc --noEmit",
     "format": "prettier --write ."
   },
