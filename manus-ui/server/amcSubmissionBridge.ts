@@ -40,6 +40,33 @@ type RunnerResult = {
   stderr: string;
 };
 
+type EmailTemplateType = "report_delivery_essential" | "report_delivery_executive";
+
+type EmailHandoff = {
+  submissionId: string;
+  preparedAt: string;
+  deliveryStatus: "prepared";
+  recipient: {
+    email: string;
+    fullName: string;
+  };
+  tier: "essential" | "executive";
+  language: "ko" | "en" | "zh";
+  artifacts: {
+    reportDocxPath: string;
+    reportPayloadPath: string;
+  };
+  email: {
+    templateType: EmailTemplateType;
+    subject: string;
+    bodyText: string;
+  };
+  followUp: {
+    reportLinkedWindowDays: 0 | 7;
+    mode: "none" | "bounded_report_linked_chat";
+  };
+};
+
 function sanitizeSegment(value: string): string {
   const trimmed = value.trim();
   const safe = trimmed.replace(/[^a-zA-Z0-9._-]+/g, "_");
@@ -92,6 +119,139 @@ function parseSummaryFromStdout(stdout: string): Record<string, unknown> | null 
   }
 }
 
+function toLanguageGreeting(language: "ko" | "en" | "zh", name: string): string {
+  if (language === "ko") {
+    return name ? `${name}님,` : "안녕하세요,";
+  }
+  if (language === "zh") {
+    return name ? `${name}，您好：` : "您好：";
+  }
+  return name ? `${name},` : "Hello,";
+}
+
+function toEmailSubject(language: "ko" | "en" | "zh", tier: "essential" | "executive"): string {
+  if (language === "ko") {
+    return tier === "executive"
+      ? "[AMC] 구조 리포트 전달 및 Executive 후속 안내"
+      : "[AMC] 구조 리포트 전달 안내";
+  }
+  if (language === "zh") {
+    return tier === "executive"
+      ? "[AMC] 您的结构报告与 Executive 跟进说明"
+      : "[AMC] 您的 AMC 结构报告已准备完成";
+  }
+  return tier === "executive"
+    ? "[AMC] Your structural report and Executive follow-up details"
+    : "[AMC] Your AMC structural report is ready";
+}
+
+function buildBodyText(
+  language: "ko" | "en" | "zh",
+  tier: "essential" | "executive",
+  recipientName: string,
+  relativeDocxPath: string,
+): string {
+  const greeting = toLanguageGreeting(language, recipientName);
+
+  if (language === "ko") {
+    const lines = [
+      greeting,
+      "",
+      "AMC 리포트가 준비되었습니다.",
+      `리포트 파일: ${relativeDocxPath}`,
+      "",
+      "AMC는 구조를 먼저 읽는 리포트 중심 서비스입니다.",
+      "이번 전달에는 동일한 핵심 리포트가 포함됩니다.",
+    ];
+    if (tier === "executive") {
+      lines.push(
+        "",
+        "Executive에는 리포트 전달 후 7일간의 리포트 연동 후속 해석/질의 레이어가 포함됩니다.",
+        "해당 후속은 오픈형 코칭이 아닌, 리포트 기반의 제한된 확인/정리 용도입니다.",
+      );
+    }
+    lines.push("", "감사합니다.", "AMC");
+    return lines.join("\n");
+  }
+
+  if (language === "zh") {
+    const lines = [
+      greeting,
+      "",
+      "您的 AMC 报告已准备完成。",
+      `报告文件：${relativeDocxPath}`,
+      "",
+      "AMC 是以结构先行为核心的报告型服务。",
+      "本次交付包含同一份核心报告。",
+    ];
+    if (tier === "executive") {
+      lines.push(
+        "",
+        "Executive 包含报告交付后 7 天的报告关联式跟进说明/澄清层。",
+        "该跟进并非开放式辅导，而是基于报告的边界内解释支持。",
+      );
+    }
+    lines.push("", "谢谢。", "AMC");
+    return lines.join("\n");
+  }
+
+  const lines = [
+    greeting,
+    "",
+    "Your AMC report is now prepared.",
+    `Report file: ${relativeDocxPath}`,
+    "",
+    "AMC is a report-led, structure-first service.",
+    "This delivery includes the same core report.",
+  ];
+  if (tier === "executive") {
+    lines.push(
+      "",
+      "Executive includes a 7-day report-linked clarification layer after report delivery.",
+      "It is bounded follow-up support, not open-ended coaching.",
+    );
+  }
+  lines.push("", "Thank you,", "AMC");
+  return lines.join("\n");
+}
+
+function buildEmailHandoff(
+  handoff: SubmissionHandoff,
+  repoRoot: string,
+  docxPath: string,
+  payloadPath: string,
+): EmailHandoff {
+  const templateType: EmailTemplateType =
+    handoff.tier === "executive" ? "report_delivery_executive" : "report_delivery_essential";
+  const relativeDocxPath = toRepoRelative(repoRoot, docxPath);
+  const relativePayloadPath = toRepoRelative(repoRoot, payloadPath);
+
+  return {
+    submissionId: handoff.submissionId,
+    preparedAt: new Date().toISOString(),
+    deliveryStatus: "prepared",
+    recipient: {
+      email: handoff.recipient.email,
+      fullName: handoff.recipient.fullName,
+    },
+    tier: handoff.tier,
+    language: handoff.language,
+    artifacts: {
+      reportDocxPath: relativeDocxPath,
+      reportPayloadPath: relativePayloadPath,
+    },
+    email: {
+      templateType,
+      subject: toEmailSubject(handoff.language, handoff.tier),
+      bodyText: buildBodyText(handoff.language, handoff.tier, handoff.recipient.fullName, relativeDocxPath),
+    },
+    followUp: {
+      reportLinkedWindowDays: handoff.tier === "executive" ? 7 : 0,
+      mode: handoff.tier === "executive" ? "bounded_report_linked_chat" : "none",
+    },
+  };
+}
+
 export function registerAmcSubmissionBridge(app: Express, serverDir: string): void {
   const repoRoot = path.resolve(serverDir, "..", "..");
   const templatePath =
@@ -125,6 +285,7 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
     const intakePath = path.join(submissionDir, "intake_raw.json");
     const payloadPath = path.join(submissionDir, "amc_docx_payload.json");
     const docxPath = path.join(submissionDir, "AMC_Report.docx");
+    const emailHandoffPath = path.join(submissionDir, "email_handoff.json");
     const runnerLogPath = path.join(submissionDir, "runner.log");
 
     fs.writeFileSync(handoffPath, JSON.stringify(handoff, null, 2));
@@ -173,6 +334,9 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
     }
 
     const summary = parseSummaryFromStdout(runner.stdout);
+    const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, payloadPath);
+    fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
+
     res.status(201).json({
       ok: true,
       submissionId: handoff.submissionId,
@@ -182,12 +346,19 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
       recipient: handoff.recipient,
       delivery: handoff.delivery,
       summary,
+      deliveryStatus: emailHandoff.deliveryStatus,
+      email: {
+        templateType: emailHandoff.email.templateType,
+        subject: emailHandoff.email.subject,
+      },
+      followUp: emailHandoff.followUp,
       artifacts: {
         submissionDir: toRepoRelative(repoRoot, submissionDir),
         handoffPath: toRepoRelative(repoRoot, handoffPath),
         intakePath: toRepoRelative(repoRoot, intakePath),
         payloadPath: toRepoRelative(repoRoot, payloadPath),
         docxPath: toRepoRelative(repoRoot, docxPath),
+        emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
         runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
       },
     });
