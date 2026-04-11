@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import LanguageToggle from "../components/LanguageToggle";
+import { useLanguage } from "../contexts/LanguageContext";
 import {
   buildInitialAnswers,
   INTAKE_META_KEY,
@@ -68,6 +70,7 @@ function optionLabel(value: string): string {
 
 export default function Intake() {
   const [, setLocation] = useLocation();
+  const { language } = useLanguage();
   const [answers, setAnswers] = useState<IntakeAnswers>(() => parseStoredAnswers());
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
@@ -199,11 +202,17 @@ export default function Intake() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <main className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10 py-12 lg:py-16">
+        <div className="mb-4 flex justify-end">
+          <LanguageToggle />
+        </div>
         <div className="border border-border rounded-lg bg-card p-6 sm:p-8">
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-3">AMC Intake Questionnaire</p>
           <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-3">Begin Your AMC Case</h1>
           <p className="text-sm text-muted-foreground leading-relaxed mb-6">
             No account required to begin. Your case is handled as a private submission. Submitted information is used for your AMC report and related follow-up only.
+          </p>
+          <p className="text-xs text-muted-foreground mb-6">
+            Selected report language: <span className="font-medium">{language.toUpperCase()}</span>
           </p>
 
           <div className="space-y-4 mb-7">

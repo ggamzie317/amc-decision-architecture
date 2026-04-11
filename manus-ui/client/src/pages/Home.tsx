@@ -1,3 +1,6 @@
+import LanguageToggle from "../components/LanguageToggle";
+import { useLanguage } from "../contexts/LanguageContext";
+
 const reportOutline = [
   "External Context",
   "Structural Risk",
@@ -104,9 +107,14 @@ const faqs = [
 ] as const;
 
 export default function Home() {
+  const { language } = useLanguage();
+
   return (
     <div className="bg-background text-foreground min-h-screen">
       <main className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+        <div className="pt-6 flex justify-end">
+          <LanguageToggle />
+        </div>
         <section className="py-16 lg:py-24 border-b border-border" id="top">
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 lg:gap-16 items-start">
             <div>
@@ -137,6 +145,9 @@ export default function Home() {
               </div>
               <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
                 No account required to begin. Your case is handled as a private submission and used for your AMC report and related follow-up only.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Report language currently selected: <span className="font-medium">{language.toUpperCase()}</span>
               </p>
             </div>
             <div className="border border-border rounded-lg bg-card p-6 sm:p-7">

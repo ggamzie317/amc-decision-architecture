@@ -3,11 +3,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import FormatHandoff from "./pages/FormatHandoff";
 import Home from "./pages/Home";
 import Intake from "./pages/Intake";
 import PaymentHandoff from "./pages/PaymentHandoff";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 
 function Router() {
@@ -17,6 +19,7 @@ function Router() {
       <Route path={"/intake"} component={Intake} />
       <Route path={"/format-handoff"} component={FormatHandoff} />
       <Route path={"/payment-handoff"} component={PaymentHandoff} />
+      <Route path={"/payment-success"} component={PaymentSuccess} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -30,10 +33,12 @@ function App() {
       <ThemeProvider
         defaultTheme="light"
       >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
