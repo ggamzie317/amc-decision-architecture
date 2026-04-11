@@ -97,6 +97,10 @@ const faqs = [
     q: "Is AMC a generic AI chat tool?",
     a: "No. The report is the core product. Chat is an optional, limited follow-up layer in Executive.",
   },
+  {
+    q: "Do I need an account before I begin?",
+    a: "No account is required to begin. Your case is handled as a private submission for report generation and related follow-up only.",
+  },
 ] as const;
 
 export default function Home() {
@@ -119,10 +123,10 @@ export default function Home() {
               <p className="text-sm uppercase tracking-[0.14em] text-muted-foreground mb-8">Tip in. Decide. Value up.</p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
-                  href="#report-covers"
+                  href="/intake"
                   className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
                 >
-                  See What the Report Covers
+                  Start Your AMC Case
                 </a>
                 <a
                   href="#how-it-works"
@@ -131,6 +135,9 @@ export default function Home() {
                   How AMC Works
                 </a>
               </div>
+              <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
+                No account required to begin. Your case is handled as a private submission and used for your AMC report and related follow-up only.
+              </p>
             </div>
             <div className="border border-border rounded-lg bg-card p-6 sm:p-7">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-4">Report-Led Service</p>
@@ -194,8 +201,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-16 lg:py-20 border-b border-border" id="tiers">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">Essential / Executive</h2>
+        <section className="py-16 lg:py-20 border-b border-border" id="formats">
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">Available in Two Formats</h2>
+          <p className="text-sm text-muted-foreground mb-8">
+            AMC format selection happens after case intake. Both formats are built around the same core report.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="border border-border rounded-lg p-6 bg-card">
               <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">Essential</p>
@@ -209,7 +219,7 @@ export default function Home() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-5">
-            Executive does not change the report itself. It adds a bounded interpretation layer linked to the same report.
+            Executive does not change the report itself. It adds a bounded interpretation layer linked to the same report, presented after intake completion.
           </p>
         </section>
 
@@ -288,16 +298,16 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <a
-                href="#top"
+                href="/intake"
                 className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
               >
                 Start Your AMC Case
               </a>
               <a
-                href="#tiers"
+                href="#formats"
                 className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
               >
-                View Essential and Executive
+                View Available Formats
               </a>
             </div>
           </div>

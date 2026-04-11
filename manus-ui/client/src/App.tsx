@@ -4,13 +4,19 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import FormatHandoff from "./pages/FormatHandoff";
 import Home from "./pages/Home";
+import Intake from "./pages/Intake";
+import PaymentHandoff from "./pages/PaymentHandoff";
 
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/intake"} component={Intake} />
+      <Route path={"/format-handoff"} component={FormatHandoff} />
+      <Route path={"/payment-handoff"} component={PaymentHandoff} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
