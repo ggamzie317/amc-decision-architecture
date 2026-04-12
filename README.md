@@ -166,6 +166,40 @@ pnpm install
 pnpm dev
 ```
 
+## AMC Operations Snapshot
+
+- Local branded email flow has been validated end-to-end:
+  `submission handoff -> DOCX generation -> email_handoff preparation -> actual email send`.
+
+- Server modes:
+  - `cd manus-ui && pnpm dev` = frontend/UI preview only
+  - `cd manus-ui && pnpm exec tsx server/index.ts` = bridge/API server for `/api/submissions` and `/api/send-email`
+
+- Required email env:
+  - `AMC_EMAIL_FROM`
+  - `AMC_GMAIL_USER`
+  - `AMC_GMAIL_APP_PASSWORD`
+
+- Local submission smoke test:
+  ```bash
+  curl -X POST http://localhost:3000/api/submissions \
+    -H "content-type: application/json" \
+    --data-binary @manus-ui/server/fixtures/amc_submission_handoff_single_example.json
+  ```
+
+- Local send-email smoke test:
+  ```bash
+  curl -X POST http://localhost:3000/api/send-email \
+    -H "content-type: application/json" \
+    --data '{"submissionId":"AMC-DEMO-SINGLE-001"}'
+  ```
+
+- Language continuity note:
+  AMC language is not a UI-only toggle. In v1, selected language should consistently drive UI, report, email, and follow-up language.
+
+- Executive note:
+  Executive is a bounded report-linked interpretation layer, not open-ended coaching.
+
 ### Sync generated payload to Manus UI
 
 After generating the latest AMC payload, sync it to the Manus UI data file:
