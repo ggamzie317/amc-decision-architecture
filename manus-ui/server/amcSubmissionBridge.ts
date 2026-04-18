@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { sendPreparedEmail, sendSubmissionReceiptEmail } from "./emailSender";
 
@@ -274,6 +274,28 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
   const templatePath =
     process.env.AMC_TEMPLATE_PATH ||
     path.resolve(repoRoot, "templates", "AMC_Strategic_Career_Decision_Template_v3_4_working.docx");
+  const opsSecret = String(process.env.AMC_OPS_SECRET || "").trim();
+
+  function requireOpsAuth(req: Request, res: Response): boolean {
+    if (!opsSecret) {
+      res.status(403).json({
+        ok: false,
+        error: "Ops endpoint is disabled: AMC_OPS_SECRET is not configured.",
+      });
+      return false;
+    }
+
+    const provided = String(req.header("x-amc-ops-secret") || "").trim();
+    if (!provided || provided !== opsSecret) {
+      res.status(401).json({
+        ok: false,
+        error: "Unauthorized.",
+      });
+      return false;
+    }
+
+    return true;
+  }
 
   app.get("/api/health", (_req, res) => {
     res.json({
@@ -701,6 +723,10 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
   });
 
   app.post("/api/submissions/report-delivery", async (req, res) => {
+    if (!requireOpsAuth(req, res)) {
+      return;
+    }
+
     const body = (req.body || {}) as { submissionId?: string; sendEmail?: boolean; force?: boolean };
     const submissionId = String(body.submissionId || "").trim();
     const sendEmail = body.sendEmail !== false;
@@ -723,6 +749,10 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
   });
 
   app.post("/api/submissions/report-delivery/trigger", async (req, res) => {
+    if (!requireOpsAuth(req, res)) {
+      return;
+    }
+
     const body = (req.body || {}) as {
       submissionId?: string;
       limit?: number;
