@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import { readSubmissionHandoff } from "../data/intakeHandoff";
 
 function getFormatFromLocation(): "essential" | "executive" {
   const search = typeof window !== "undefined" ? window.location.search : "";
@@ -10,6 +11,8 @@ export default function PaymentHandoff() {
   const [, setLocation] = useLocation();
   const format = getFormatFromLocation();
   const label = format === "executive" ? "Executive" : "Essential";
+  const handoff = readSubmissionHandoff();
+  const isValidHandoff = Boolean(handoff && handoff.tier === format && handoff.recipient.email.trim());
 
   return (
     <div className="bg-background text-foreground min-h-screen">
@@ -18,29 +21,55 @@ export default function PaymentHandoff() {
           <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-4">
             Continue with {label}
           </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-            You will continue to secure payment for your selected format.
-          </p>
-          <p className="text-sm text-foreground/90 leading-relaxed mb-8">
-            Selected format: <span className="font-medium">{label}</span>
-          </p>
+          {isValidHandoff ? (
+            <>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                You will continue to secure payment for your selected format.
+              </p>
+              <p className="text-sm text-foreground/90 leading-relaxed mb-8">
+                Selected format: <span className="font-medium">{label}</span>
+              </p>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={() => setLocation("/payment-success")}
-              className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
-            >
-              Continue to Payment
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocation("/format-handoff")}
-              className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
-            >
-              Back to Format Selection
-            </button>
-          </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setLocation("/payment-success")}
+                  className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
+                >
+                  Continue to Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocation("/format-handoff")}
+                  className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
+                >
+                  Back to Format Selection
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-8">
+                We could not find your format selection details. Please return to choose your AMC format.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setLocation("/format-handoff")}
+                  className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
+                >
+                  Return to Format Selection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocation("/intake")}
+                  className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
+                >
+                  Back to Intake
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

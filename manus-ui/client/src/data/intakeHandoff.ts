@@ -1,4 +1,3 @@
-import type { AmcLanguage } from "../contexts/LanguageContext";
 import {
   buildInitialAnswers,
   INTAKE_META_KEY,
@@ -12,7 +11,7 @@ export type AmcSubmissionHandoff = {
   submissionId: string;
   createdAt: string;
   source: "manus_ui_intake_v1";
-  language: AmcLanguage;
+  language: "en";
   tier: AmcTier;
   recipient: {
     email: string;
@@ -20,7 +19,7 @@ export type AmcSubmissionHandoff = {
   };
   delivery: {
     channel: "email";
-    language: AmcLanguage;
+    language: "en";
     tier: AmcTier;
   };
   intakeRaw: Record<string, unknown>;
@@ -201,10 +200,14 @@ function readIntakeMetaFromStorage(): { completedAt?: string } {
   }
 }
 
+export function hasCompletedIntakeState(): boolean {
+  const meta = readIntakeMetaFromStorage();
+  return Boolean(meta.completedAt);
+}
+
 export function buildEngineCompatibleIntake(
   answers: IntakeAnswers,
   tier: AmcTier,
-  language: AmcLanguage,
 ): Record<string, unknown> {
   return {
     fullName: asString(answers.fullName),
@@ -251,7 +254,7 @@ export function buildEngineCompatibleIntake(
     submittedAt: new Date().toISOString(),
     reportDate: todayISODate(),
     betaMode: true,
-    lang: language,
+    lang: "en",
     chatbotAccessToken: "",
     chatbotAccessExpiresAt: "",
   };
@@ -259,19 +262,18 @@ export function buildEngineCompatibleIntake(
 
 export function buildSubmissionHandoffFromStorage(
   tier: AmcTier,
-  language: AmcLanguage,
 ): AmcSubmissionHandoff {
   const answers = readIntakeAnswersFromStorage();
   const intakeMeta = readIntakeMetaFromStorage();
   const submissionId = createSubmissionId();
   const createdAt = new Date().toISOString();
-  const intakeRaw = buildEngineCompatibleIntake(answers, tier, language);
+  const intakeRaw = buildEngineCompatibleIntake(answers, tier);
 
   return {
     submissionId,
     createdAt,
     source: "manus_ui_intake_v1",
-    language,
+    language: "en",
     tier,
     recipient: {
       email: asString(answers.email),
@@ -279,7 +281,7 @@ export function buildSubmissionHandoffFromStorage(
     },
     delivery: {
       channel: "email",
-      language,
+      language: "en",
       tier,
     },
     intakeRaw,
@@ -308,4 +310,3 @@ export function readSubmissionHandoff(): AmcSubmissionHandoff | null {
     return null;
   }
 }
-

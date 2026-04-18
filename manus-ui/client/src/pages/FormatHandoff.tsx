@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { buildSubmissionHandoffFromStorage, saveSubmissionHandoff, type AmcTier } from "../data/intakeHandoff";
+import { buildSubmissionHandoffFromStorage, hasCompletedIntakeState, saveSubmissionHandoff, type AmcTier } from "../data/intakeHandoff";
 
 const formatOptions = [
   {
@@ -18,8 +18,9 @@ const formatOptions = [
 
 export default function FormatHandoff() {
   const [, setLocation] = useLocation();
+  const intakeReady = hasCompletedIntakeState();
   const continueWithTier = (tier: AmcTier) => {
-    const handoff = buildSubmissionHandoffFromStorage(tier, "en");
+    const handoff = buildSubmissionHandoffFromStorage(tier);
     saveSubmissionHandoff(handoff);
     setLocation(`/payment-handoff?format=${tier}`);
   };
@@ -31,26 +32,45 @@ export default function FormatHandoff() {
           <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-4">
             Choose the AMC Format That Fits Your Case
           </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-            Both formats include the same core report. Executive adds bounded report-linked follow-up.
-          </p>
+          {intakeReady ? (
+            <>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-8">
+                Both formats include the same core report. Executive adds bounded report-linked follow-up.
+              </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {formatOptions.map((item) => (
-              <div key={item.key} className="border border-border rounded-lg p-6 bg-background">
-                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">{item.title}</p>
-                <p className="text-lg font-medium mb-2">{item.line1}</p>
-                <p className="text-sm text-muted-foreground mb-6">{item.line2}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {formatOptions.map((item) => (
+                  <div key={item.key} className="border border-border rounded-lg p-6 bg-background">
+                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">{item.title}</p>
+                    <p className="text-lg font-medium mb-2">{item.line1}</p>
+                    <p className="text-sm text-muted-foreground mb-6">{item.line2}</p>
+                    <button
+                      type="button"
+                      onClick={() => continueWithTier(item.key)}
+                      className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium w-full"
+                    >
+                      Continue with {item.title}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="border border-border rounded-lg p-6 bg-background mb-6">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Please complete your case intake before selecting a format.
+              </p>
+              <div className="mt-4">
                 <button
                   type="button"
-                  onClick={() => continueWithTier(item.key)}
-                  className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium w-full"
+                  onClick={() => setLocation("/intake")}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-md bg-foreground text-background text-sm font-medium"
                 >
-                  Continue with {item.title}
+                  Continue to Intake
                 </button>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
           <div className="mt-8">
             <button
