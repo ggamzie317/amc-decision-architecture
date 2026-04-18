@@ -38,7 +38,7 @@ export default function FormatHandoff() {
                 Both formats include the same core report. Executive adds bounded report-linked follow-up.
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed mb-8">
-                Checkout access is being released in stages.
+                After selection, you will review and submit your case.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
