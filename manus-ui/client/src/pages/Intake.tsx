@@ -93,6 +93,11 @@ export default function Intake() {
   const completeIntakeAndContinueLabel = "Complete Intake and Continue";
   const consentRequiredError = "Consent is required to continue.";
   const selectOneLabel = "Select one";
+  const requiredFieldLabels: Array<{ field: keyof IntakeAnswers; label: string }> = [
+    { field: "fullName", label: "full name" },
+    { field: "email", label: "email" },
+    { field: "mainDecision", label: "main decision" },
+  ];
 
   const sectionQuestionIndex = currentSection.questions.findIndex((q) => q.id === current.id);
   const sectionProgress = ((sectionQuestionIndex + 1) / currentSection.questions.length) * 100;
@@ -117,6 +122,18 @@ export default function Intake() {
 
     if (index < totalQuestions - 1) {
       setIndex((v) => v + 1);
+      return;
+    }
+
+    const missingRequired = requiredFieldLabels.filter(({ field }) => !String(answers[field] ?? "").trim());
+    if (missingRequired.length > 0) {
+      const firstMissing = missingRequired[0];
+      const firstMissingIndex = intakeQuestions.findIndex((q) => q.field === firstMissing.field);
+      if (firstMissingIndex >= 0) {
+        setIndex(firstMissingIndex);
+      }
+      const summary = missingRequired.map((item) => item.label).join(", ");
+      setError(`Please complete the required fields before continuing: ${summary}.`);
       return;
     }
 
