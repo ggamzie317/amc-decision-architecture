@@ -86,3 +86,24 @@ curl -X POST http://localhost:3000/api/submissions/report-delivery/trigger \
 - [ ] Submit path sends receipt email successfully (`/api/submissions/receipt`).
 - [ ] Ops trigger path sends report delivery email successfully.
 - [ ] Ops process is in place to trigger report delivery within 3 hours.
+
+## H) Final Preflight And Cron Attachment Plan
+Preflight (before starting server):
+- [ ] Confirm env values are exported: `AMC_EMAIL_FROM`, `AMC_OPS_SECRET`, and optional `AMC_SENDMAIL_PATH`.
+- [ ] Confirm sendmail binary exists and is executable at the configured path.
+- [ ] Confirm protected-header value is available to operator/cron: `x-amc-ops-secret: $AMC_OPS_SECRET`.
+
+Preflight validation (after server start):
+- [ ] Run one invite-only submit and confirm receipt email is sent immediately (`status: case_received`).
+- [ ] Run one report-delivery trigger for that submission and confirm `status: report_email_sent`.
+
+Minimal cron attachment (next step):
+- Recommended cadence: every 10 minutes (15 minutes is also acceptable for lower volume).
+- Example cron entry:
+```cron
+*/10 * * * * curl -sS -X POST http://localhost:3000/api/submissions/report-delivery/trigger -H "Content-Type: application/json" -H "x-amc-ops-secret: ${AMC_OPS_SECRET}" -d '{"limit":20}' >/tmp/amc_report_delivery_cron.log 2>&1
+```
+
+Go / No-Go for invite-only soft launch:
+- Go: env is valid, receipt send is confirmed, protected report trigger is confirmed, and cron/ops cadence is active to meet the within-3-hours promise.
+- No-Go: missing/invalid ops secret, receipt send failure, report trigger failure, or no active cadence for delivery triggers.
