@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { readSubmissionHandoff } from "../data/intakeHandoff";
 
@@ -9,15 +10,41 @@ function getFormatFromLocation(): "essential" | "executive" {
 
 export default function PaymentHandoff() {
   const [, setLocation] = useLocation();
+  const [notice, setNotice] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const apiBase = (import.meta.env.VITE_AMC_SUBMISSION_API_BASE as string | undefined)?.replace(/\/$/, "") || "";
   const format = getFormatFromLocation();
   const label = format === "executive" ? "Executive" : "Essential";
   const handoff = readSubmissionHandoff();
   const isValidHandoff = Boolean(handoff && handoff.tier === format && handoff.recipient.email.trim());
-  const submitCase = () => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("amc_case_submitted_v1", "true");
+  const submitCase = async () => {
+    if (!handoff) {
+      setNotice("We could not confirm your selected format for this session.");
+      return;
     }
-    setLocation("/payment-success");
+    setSubmitting(true);
+    setNotice("");
+    try {
+      const endpoint = `${apiBase}/api/submissions/receipt`;
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(handoff),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.ok) {
+        setNotice("We could not submit your case right now. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("amc_case_submitted_v1", "true");
+      }
+      setLocation("/payment-success");
+    } catch {
+      setNotice("We could not submit your case right now. Please try again.");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -43,9 +70,10 @@ export default function PaymentHandoff() {
                 <button
                   type="button"
                   onClick={submitCase}
+                  disabled={submitting}
                   className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
                 >
-                  Submit AMC Case
+                  {submitting ? "Submitting Case..." : "Submit AMC Case"}
                 </button>
                 <button
                   type="button"
@@ -55,6 +83,7 @@ export default function PaymentHandoff() {
                   Change Format
                 </button>
               </div>
+              {notice ? <p className="text-xs text-muted-foreground mt-4">{notice}</p> : null}
             </>
           ) : (
             <>
@@ -77,6 +106,7 @@ export default function PaymentHandoff() {
                   Return to Intake
                 </button>
               </div>
+              {notice ? <p className="text-xs text-muted-foreground mt-4">{notice}</p> : null}
             </>
           )}
         </div>

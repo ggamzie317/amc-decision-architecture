@@ -4,7 +4,7 @@ import path from "node:path";
 
 import type { Express } from "express";
 import { z } from "zod";
-import { sendPreparedEmail } from "./emailSender";
+import { sendPreparedEmail, sendSubmissionReceiptEmail } from "./emailSender";
 
 const languageSchema = z.enum(["ko", "en", "zh"]);
 const tierSchema = z.enum(["essential", "executive"]);
@@ -42,6 +42,7 @@ type RunnerResult = {
 };
 
 type EmailTemplateType = "report_delivery_essential" | "report_delivery_executive";
+type ReceiptTemplateType = "submission_received_receipt";
 
 type EmailHandoff = {
   submissionId: string;
@@ -65,6 +66,23 @@ type EmailHandoff = {
   followUp: {
     reportLinkedWindowDays: 0 | 7;
     mode: "none" | "bounded_report_linked_chat";
+  };
+};
+
+type ReceiptEmailHandoff = {
+  submissionId: string;
+  preparedAt: string;
+  deliveryStatus: "prepared";
+  recipient: {
+    email: string;
+    fullName: string;
+  };
+  tier: "essential" | "executive";
+  language: "ko" | "en" | "zh";
+  email: {
+    templateType: ReceiptTemplateType;
+    subject: string;
+    bodyText: string;
   };
 };
 
@@ -214,6 +232,83 @@ function buildBodyText(
   }
   lines.push("", "Thank you,", "AMC");
   return lines.join("\n");
+}
+
+function toReceiptSubject(language: "ko" | "en" | "zh"): string {
+  if (language === "ko") {
+    return "[AMC] 케이스 접수 완료 안내";
+  }
+  if (language === "zh") {
+    return "[AMC] 你的案例已成功接收";
+  }
+  return "[AMC] Your case has been received";
+}
+
+function buildReceiptBodyText(
+  language: "ko" | "en" | "zh",
+  tier: "essential" | "executive",
+  recipientName: string,
+): string {
+  const greeting = toLanguageGreeting(language, recipientName);
+  if (language === "ko") {
+    const lines = [
+      greeting,
+      "",
+      "AMC 케이스가 접수되었습니다.",
+      `선택 포맷: ${tier === "executive" ? "Executive" : "Essential"}`,
+      "리포트는 3시간 이내 이메일로 전달됩니다.",
+    ];
+    if (tier === "executive") {
+      lines.push("Executive 후속 안내는 리포트 전달 시 함께 제공됩니다.");
+    }
+    lines.push("", "감사합니다.", "AMC");
+    return lines.join("\n");
+  }
+  if (language === "zh") {
+    const lines = [
+      greeting,
+      "",
+      "你的 AMC 案例已成功接收。",
+      `已选形式：${tier === "executive" ? "Executive" : "Essential"}`,
+      "报告将在 3 小时内通过邮件送达。",
+    ];
+    if (tier === "executive") {
+      lines.push("Executive 跟进说明将随报告一并发送。");
+    }
+    lines.push("", "谢谢。", "AMC");
+    return lines.join("\n");
+  }
+  const lines = [
+    greeting,
+    "",
+    "Your AMC case has been received.",
+    `Selected format: ${tier === "executive" ? "Executive" : "Essential"}`,
+    "Your report will be delivered by email within 3 hours.",
+  ];
+  if (tier === "executive") {
+    lines.push("Executive follow-up details will arrive with delivery.");
+  }
+  lines.push("", "Thank you,", "AMC");
+  return lines.join("\n");
+}
+
+function buildReceiptEmailHandoff(handoff: SubmissionHandoff): ReceiptEmailHandoff {
+  return {
+    submissionId: handoff.submissionId,
+    preparedAt: new Date().toISOString(),
+    deliveryStatus: "prepared",
+    recipient: {
+      email: handoff.recipient.email,
+      fullName: handoff.recipient.fullName,
+    },
+    tier: handoff.tier,
+    language: handoff.language,
+    email: {
+      templateType: "submission_received_receipt",
+      subject: toReceiptSubject(handoff.language),
+      bodyText: buildReceiptBodyText(handoff.language, handoff.tier, handoff.recipient.fullName),
+    },
+  };
 }
 
 function buildEmailHandoff(
@@ -384,6 +479,77 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         docxPath: toRepoRelative(repoRoot, docxPath),
         emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
         runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+      },
+    });
+  });
+
+  app.post("/api/submissions/receipt", async (req, res) => {
+    const parsed = submissionHandoffSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        ok: false,
+        error: "Invalid submission handoff payload.",
+        details: parsed.error.flatten(),
+      });
+      return;
+    }
+
+    const handoff = parsed.data as SubmissionHandoff;
+    if (!handoff.recipient.email.trim()) {
+      res.status(400).json({
+        ok: false,
+        error: "Recipient email is required.",
+      });
+      return;
+    }
+
+    const submissionSafe = sanitizeSegment(handoff.submissionId);
+    const submissionDir = path.resolve(repoRoot, "output", "submissions", submissionSafe);
+    fs.mkdirSync(submissionDir, { recursive: true });
+
+    const handoffPath = path.join(submissionDir, "submission_handoff.json");
+    const receiptEmailHandoffPath = path.join(submissionDir, "receipt_email_handoff.json");
+    fs.writeFileSync(handoffPath, JSON.stringify(handoff, null, 2));
+
+    const receiptEmailHandoff = buildReceiptEmailHandoff(handoff);
+    fs.writeFileSync(receiptEmailHandoffPath, JSON.stringify(receiptEmailHandoff, null, 2));
+
+    const sent = await sendSubmissionReceiptEmail({
+      repoRoot,
+      receiptEmailHandoffPath,
+    });
+
+    if (sent.result.status !== "sent") {
+      res.status(500).json({
+        ok: false,
+        status: sent.result.status,
+        submissionId: sent.result.submissionId,
+        error: sent.result.error || "Receipt email sending failed.",
+        resultPath: toRepoRelative(repoRoot, sent.resultPath),
+      });
+      return;
+    }
+
+    res.status(201).json({
+      ok: true,
+      submissionId: handoff.submissionId,
+      status: "case_received",
+      tier: handoff.tier,
+      language: handoff.language,
+      recipient: handoff.recipient,
+      email: {
+        templateType: receiptEmailHandoff.email.templateType,
+        subject: receiptEmailHandoff.email.subject,
+      },
+      emailDelivery: {
+        status: sent.result.status,
+        messageId: sent.result.messageId,
+        resultPath: toRepoRelative(repoRoot, sent.resultPath),
+      },
+      artifacts: {
+        submissionDir: toRepoRelative(repoRoot, submissionDir),
+        handoffPath: toRepoRelative(repoRoot, handoffPath),
+        receiptEmailHandoffPath: toRepoRelative(repoRoot, receiptEmailHandoffPath),
       },
     });
   });
