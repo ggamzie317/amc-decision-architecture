@@ -1,5 +1,14 @@
-import LanguageToggle from "../components/LanguageToggle";
-import { useLanguage } from "../contexts/LanguageContext";
+const fitFor = [
+  "Experienced professionals at meaningful crossroads",
+  "Decisions with non-obvious trade-offs",
+  "People who want structure before action",
+] as const;
+
+const fitNotFor = [
+  "Instant-answer expectations",
+  "Open-ended coaching expectations",
+  "Generic motivational support requests",
+] as const;
 
 const reportOutline = [
   "External Context",
@@ -27,52 +36,6 @@ const howItWorks = [
     title: "Executive Follow-up (7 days)",
     body: "Optional report-linked clarification access.",
   },
-] as const;
-
-const reportCoverage = [
-  {
-    title: "Risk",
-    body: "External and internal structural exposure",
-  },
-  {
-    title: "Fit",
-    body: "Path alignment and operating posture",
-  },
-  {
-    title: "Burden",
-    body: "Transition load and execution pressure",
-  },
-  {
-    title: "Trade-offs",
-    body: "Value logic across competing priorities",
-  },
-  {
-    title: "Mobility",
-    body: "Portability, timing, and conversion friction",
-  },
-  {
-    title: "Commitment Conditions",
-    body: "What must be true before stronger commitment",
-  },
-] as const;
-
-const fitFor = [
-  "Experienced professionals at meaningful crossroads",
-  "Decisions with non-obvious trade-offs",
-  "People who want structure before action",
-] as const;
-
-const fitNotFor = [
-  "Instant-answer expectations",
-  "Open-ended coaching expectations",
-  "Generic motivational support requests",
-] as const;
-
-const differences = [
-  "Structure before decision",
-  "Report before conversation",
-  "Serious and restrained",
-  "Built for complex crossroads",
 ] as const;
 
 const faqs = [
@@ -106,15 +69,44 @@ const faqs = [
   },
 ] as const;
 
-export default function Home() {
-  const { language } = useLanguage();
+const differences = [
+  "Structure before decision",
+  "Report before conversation",
+  "Serious and restrained",
+  "Built for complex crossroads",
+] as const;
 
+const reportCoverage = [
+  {
+    title: "Risk",
+    body: "External and internal structural exposure",
+  },
+  {
+    title: "Fit",
+    body: "Path alignment and operating posture",
+  },
+  {
+    title: "Burden",
+    body: "Transition load and execution pressure",
+  },
+  {
+    title: "Trade-offs",
+    body: "Value logic across competing priorities",
+  },
+  {
+    title: "Mobility",
+    body: "Portability, timing, and conversion friction",
+  },
+  {
+    title: "Commitment Conditions",
+    body: "What must be true before stronger commitment",
+  },
+] as const;
+
+export default function Home() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <main className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
-        <div className="pt-6 flex justify-end">
-          <LanguageToggle />
-        </div>
         <section className="py-16 lg:py-24 border-b border-border" id="top">
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 lg:gap-16 items-start">
             <div>
@@ -123,7 +115,7 @@ export default function Home() {
                 A private career architecture service for serious career crossroads.
               </h1>
               <p className="text-base sm:text-lg text-foreground/90 leading-relaxed mb-3">
-                You receive a structured written report before any follow-up conversation.
+                You receive a structured written report.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed mb-8">
                 We do not look at decisions first. We look at structure first.
@@ -144,19 +136,16 @@ export default function Home() {
                 </a>
               </div>
               <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
-                No account required to begin. Your case is handled as a private submission and used for your AMC report and related follow-up only.
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Report language currently selected: <span className="font-medium">{language.toUpperCase()}</span>
+                No account required. Your case is handled as a private submission for report delivery and related follow-up.
               </p>
             </div>
             <div className="border border-border rounded-lg bg-card p-6 sm:p-7">
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-4">Report-Led Service</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-4">Delivery</p>
               <p className="text-sm text-foreground/90 leading-relaxed mb-3">
-                AMC is built as a private, written decision service.
+                AMC is delivered as a structured report.
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Essential delivers the report. Executive adds bounded report-linked follow-up access for 7 days.
+                Essential includes the report. Executive adds 7-day follow-up clarification.
               </p>
             </div>
           </div>
@@ -166,7 +155,7 @@ export default function Home() {
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">What You Receive</h2>
           <p className="text-base text-foreground/90 mb-2">AMC delivers a structured report as the core product.</p>
           <p className="text-sm text-muted-foreground mb-8">
-            Executive adds bounded follow-up access to the same report. It does not replace the report.
+            Executive adds bounded follow-up access to the same report.
           </p>
           <div className="border border-border rounded-lg bg-card p-7 sm:p-8 max-w-3xl">
             <div className="flex items-center justify-between mb-6">
@@ -215,7 +204,7 @@ export default function Home() {
         <section className="py-16 lg:py-20 border-b border-border" id="formats">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">Available in Two Formats</h2>
           <p className="text-sm text-muted-foreground mb-8">
-            AMC format selection happens after case intake. Both formats are built around the same core report.
+            Format selection happens after case intake. Both formats share the same core report.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="border border-border rounded-lg p-6 bg-card">
@@ -230,7 +219,7 @@ export default function Home() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-5">
-            Executive does not change the report itself. It adds a bounded interpretation layer linked to the same report, presented after intake completion.
+            Executive keeps the same report and adds a bounded interpretation layer after intake.
           </p>
         </section>
 
@@ -274,7 +263,7 @@ export default function Home() {
         </section>
 
         <section className="py-16 lg:py-20 border-b border-border" id="faq">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">FAQ / Trust</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">FAQ</h2>
 
           <div className="hidden md:block border border-border rounded-lg overflow-hidden">
             {faqs.map((item, idx) => (

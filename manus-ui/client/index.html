@@ -35,10 +35,11 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+    <!--
+      Umami analytics is disabled by default for launch.
+      Re-enable by restoring the script tag and setting:
+      VITE_ANALYTICS_ENDPOINT and VITE_ANALYTICS_WEBSITE_ID
+    -->
   </body>
 
 </html>

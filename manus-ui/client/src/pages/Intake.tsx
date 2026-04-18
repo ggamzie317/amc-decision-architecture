@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import LanguageToggle from "../components/LanguageToggle";
-import { useLanguage } from "../contexts/LanguageContext";
 import {
   buildInitialAnswers,
   INTAKE_META_KEY,
@@ -70,7 +68,6 @@ function optionLabel(value: string): string {
 
 export default function Intake() {
   const [, setLocation] = useLocation();
-  const { language } = useLanguage();
   const [answers, setAnswers] = useState<IntakeAnswers>(() => parseStoredAnswers());
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
@@ -81,6 +78,22 @@ export default function Intake() {
     () => intakeSections.find((section) => section.id === current.sectionId) || intakeSections[0],
     [current.sectionId],
   );
+  const section = currentSection;
+  const question = current;
+  const totalSections = intakeSections.length;
+
+  const progressStatusLine = `Section ${section.id} of ${totalSections} · Question ${question.id} of ${totalQuestions}`;
+  const questionProgressLabel = `Question ${index + 1} of ${totalQuestions}`;
+  const backButtonLabel = "Back";
+  const intakeTitle = "Begin Your AMC Case";
+  const intakeDescription = "No account required. Your case is private and used only for your AMC report and follow-up.";
+  const overallProgressLabel = "Overall progress";
+  const sectionProgressLabel = "Section progress";
+  const continueLabel = "Continue";
+  const completeIntakeAndContinueLabel = "Complete Intake and Continue";
+  const consentRequiredError = "Consent is required to continue.";
+  const selectOneLabel = "Select one";
+
   const sectionQuestionIndex = currentSection.questions.findIndex((q) => q.id === current.id);
   const sectionProgress = ((sectionQuestionIndex + 1) / currentSection.questions.length) * 100;
   const overallProgress = ((index + 1) / totalQuestions) * 100;
@@ -98,7 +111,7 @@ export default function Intake() {
 
   const onContinue = () => {
     if (current.type === "consent" && answers[current.field] !== true) {
-      setError("Consent is required to continue.");
+      setError(consentRequiredError);
       return;
     }
 
@@ -140,7 +153,7 @@ export default function Intake() {
           value={String(value ?? "")}
           onChange={(e) => updateAnswer(current.field, e.target.value)}
         >
-          <option value="">Select one</option>
+          <option value="">{selectOneLabel}</option>
           {(current.options || []).map((opt) => (
             <option key={opt} value={opt}>
               {optionLabel(opt)}
@@ -202,39 +215,32 @@ export default function Intake() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <main className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10 py-12 lg:py-16">
-        <div className="mb-4 flex justify-end">
-          <LanguageToggle />
-        </div>
         <div className="border border-border rounded-lg bg-card p-6 sm:p-8">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-3">AMC Intake Questionnaire</p>
-          <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-3">Begin Your AMC Case</h1>
+          <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-3">{intakeTitle}</h1>
           <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-            No account required to begin. Your case is handled as a private submission. Submitted information is used for your AMC report and related follow-up only.
-          </p>
-          <p className="text-xs text-muted-foreground mb-6">
-            Selected report language: <span className="font-medium">{language.toUpperCase()}</span>
+            {intakeDescription}
           </p>
 
           <div className="space-y-4 mb-7">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
               <p className="text-sm font-medium">
-                Section {currentSection.id} of {intakeSections.length}: {currentSection.title}
+                {progressStatusLine}
               </p>
-              <p className="text-xs text-muted-foreground">Question {index + 1} of {totalQuestions}</p>
+              <p className="text-xs text-muted-foreground">{questionProgressLabel}</p>
             </div>
 
             <div>
               <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                 <div className="h-full bg-foreground/80 rounded-full" style={{ width: `${overallProgress}%` }} />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Overall progress</p>
+              <p className="text-xs text-muted-foreground mt-1">{overallProgressLabel}</p>
             </div>
 
             <div>
               <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
                 <div className="h-full bg-foreground/50 rounded-full" style={{ width: `${sectionProgress}%` }} />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Section progress</p>
+              <p className="text-xs text-muted-foreground mt-1">{sectionProgressLabel}</p>
             </div>
           </div>
 
@@ -256,14 +262,14 @@ export default function Intake() {
               onClick={onBack}
               className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
             >
-              Back
+              {backButtonLabel}
             </button>
             <button
               type="button"
               onClick={onContinue}
               className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
             >
-              {index === totalQuestions - 1 ? "Complete Intake and Continue" : "Continue"}
+              {index === totalQuestions - 1 ? completeIntakeAndContinueLabel : continueLabel}
             </button>
           </div>
         </div>
