@@ -86,6 +86,10 @@ type ReceiptEmailHandoff = {
   };
 };
 
+type ExistingEmailDeliveryResult = {
+  status?: string;
+};
+
 function sanitizeSegment(value: string): string {
   const trimmed = value.trim();
   const safe = trimmed.replace(/[^a-zA-Z0-9._-]+/g, "_");
@@ -135,6 +139,26 @@ function parseSummaryFromStdout(stdout: string): Record<string, unknown> | null 
     return JSON.parse(match[1]) as Record<string, unknown>;
   } catch {
     return null;
+  }
+}
+
+function readExistingEmailDeliveryStatus(submissionDir: string): {
+  alreadyDelivered: boolean;
+  resultPath: string;
+} {
+  const resultPath = path.join(submissionDir, "email_delivery_result.json");
+  if (!fs.existsSync(resultPath)) {
+    return { alreadyDelivered: false, resultPath };
+  }
+
+  try {
+    const raw = JSON.parse(fs.readFileSync(resultPath, "utf-8")) as ExistingEmailDeliveryResult;
+    return {
+      alreadyDelivered: raw.status === "sent",
+      resultPath,
+    };
+  } catch {
+    return { alreadyDelivered: false, resultPath };
   }
 }
 
@@ -257,6 +281,231 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
       service: "amc_submission_bridge",
     });
   });
+
+  const deliverReportForSubmission = async (params: {
+    submissionId: string;
+    sendEmail: boolean;
+    force: boolean;
+  }): Promise<
+    | {
+        ok: true;
+        httpCode: number;
+        body: Record<string, unknown>;
+      }
+    | {
+        ok: false;
+        httpCode: number;
+        body: Record<string, unknown>;
+      }
+  > => {
+    const submissionSafe = sanitizeSegment(params.submissionId);
+    const submissionDir = path.resolve(repoRoot, "output", "submissions", submissionSafe);
+    const handoffPath = path.join(submissionDir, "submission_handoff.json");
+    const intakePath = path.join(submissionDir, "intake_raw.json");
+    const payloadPath = path.join(submissionDir, "amc_docx_payload.json");
+    const docxPath = path.join(submissionDir, "AMC_Report.docx");
+    const emailHandoffPath = path.join(submissionDir, "email_handoff.json");
+    const runnerLogPath = path.join(submissionDir, "runner.log");
+
+    if (!fs.existsSync(handoffPath)) {
+      return {
+        ok: false,
+        httpCode: 404,
+        body: {
+          ok: false,
+          status: "not_ready",
+          submissionId: params.submissionId,
+          error: "Submission handoff not found. Submit the case first.",
+        },
+      };
+    }
+
+    let handoff: SubmissionHandoff;
+    try {
+      const raw = JSON.parse(fs.readFileSync(handoffPath, "utf-8")) as unknown;
+      handoff = submissionHandoffSchema.parse(raw) as SubmissionHandoff;
+    } catch (error) {
+      return {
+        ok: false,
+        httpCode: 400,
+        body: {
+          ok: false,
+          status: "invalid",
+          submissionId: params.submissionId,
+          error: error instanceof Error ? error.message : "Invalid stored submission handoff.",
+        },
+      };
+    }
+
+    const existingDelivery = readExistingEmailDeliveryStatus(submissionDir);
+    if (params.sendEmail && !params.force && existingDelivery.alreadyDelivered) {
+      return {
+        ok: true,
+        httpCode: 200,
+        body: {
+          ok: true,
+          submissionId: handoff.submissionId,
+          status: "already_delivered",
+          tier: handoff.tier,
+          language: handoff.language,
+          recipient: handoff.recipient,
+          emailDelivery: {
+            status: "sent",
+            resultPath: toRepoRelative(repoRoot, existingDelivery.resultPath),
+          },
+          artifacts: {
+            submissionDir: toRepoRelative(repoRoot, submissionDir),
+            handoffPath: toRepoRelative(repoRoot, handoffPath),
+          },
+        },
+      };
+    }
+
+    if (!handoff.recipient.email.trim()) {
+      return {
+        ok: false,
+        httpCode: 400,
+        body: {
+          ok: false,
+          status: "invalid",
+          submissionId: handoff.submissionId,
+          error: "Recipient email is required for report delivery.",
+        },
+      };
+    }
+
+    fs.mkdirSync(submissionDir, { recursive: true });
+    fs.writeFileSync(intakePath, JSON.stringify(handoff.intakeRaw, null, 2));
+
+    const runnerArgs = [
+      "--dir",
+      "manus-ui",
+      "exec",
+      "tsx",
+      "../scripts/run_amc_report.ts",
+      "--template",
+      templatePath,
+      "--intake",
+      intakePath,
+      "--payload",
+      payloadPath,
+      "--out",
+      docxPath,
+      "--strict-undeclared",
+      "--lang",
+      handoff.language,
+    ];
+
+    const runner = await runCommand("pnpm", runnerArgs, repoRoot);
+    const combinedLog = `${runner.stdout}\n${runner.stderr}`.trim();
+    fs.writeFileSync(runnerLogPath, combinedLog);
+
+    if (runner.code !== 0) {
+      return {
+        ok: false,
+        httpCode: 500,
+        body: {
+          ok: false,
+          submissionId: handoff.submissionId,
+          status: "generation_failed",
+          tier: handoff.tier,
+          language: handoff.language,
+          recipient: handoff.recipient,
+          artifacts: {
+            submissionDir: toRepoRelative(repoRoot, submissionDir),
+            handoffPath: toRepoRelative(repoRoot, handoffPath),
+            intakePath: toRepoRelative(repoRoot, intakePath),
+            runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+          },
+          error: "AMC report generation failed.",
+        },
+      };
+    }
+
+    const summary = parseSummaryFromStdout(runner.stdout);
+    const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, payloadPath);
+    fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
+
+    let emailDeliveryResult:
+      | {
+          status: "sent" | "failed";
+          messageId?: string;
+          resultPath: string;
+          error?: string;
+        }
+      | undefined;
+
+    if (params.sendEmail) {
+      const sent = await sendPreparedEmail({
+        repoRoot,
+        emailHandoffPath,
+      });
+      emailDeliveryResult = {
+        status: sent.result.status,
+        messageId: sent.result.messageId,
+        resultPath: toRepoRelative(repoRoot, sent.resultPath),
+        error: sent.result.error,
+      };
+
+      if (sent.result.status !== "sent") {
+        return {
+          ok: false,
+          httpCode: 500,
+          body: {
+            ok: false,
+            submissionId: handoff.submissionId,
+            status: "report_email_failed",
+            tier: handoff.tier,
+            language: handoff.language,
+            recipient: handoff.recipient,
+            email: {
+              templateType: emailHandoff.email.templateType,
+              subject: emailHandoff.email.subject,
+            },
+            emailDelivery: emailDeliveryResult,
+            artifacts: {
+              submissionDir: toRepoRelative(repoRoot, submissionDir),
+              payloadPath: toRepoRelative(repoRoot, payloadPath),
+              docxPath: toRepoRelative(repoRoot, docxPath),
+              emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
+              runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+            },
+            error: sent.result.error || "Report delivery email failed.",
+          },
+        };
+      }
+    }
+
+    return {
+      ok: true,
+      httpCode: 201,
+      body: {
+        ok: true,
+        submissionId: handoff.submissionId,
+        status: params.sendEmail ? "report_email_sent" : "report_prepared_for_delivery",
+        tier: handoff.tier,
+        language: handoff.language,
+        recipient: handoff.recipient,
+        summary,
+        deliveryStatus: emailHandoff.deliveryStatus,
+        email: {
+          templateType: emailHandoff.email.templateType,
+          subject: emailHandoff.email.subject,
+        },
+        followUp: emailHandoff.followUp,
+        emailDelivery: emailDeliveryResult,
+        artifacts: {
+          submissionDir: toRepoRelative(repoRoot, submissionDir),
+          handoffPath: toRepoRelative(repoRoot, handoffPath),
+          intakePath: toRepoRelative(repoRoot, intakePath),
+          payloadPath: toRepoRelative(repoRoot, payloadPath),
+          docxPath: toRepoRelative(repoRoot, docxPath),
+          emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
+          runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+        },
+      },
+    };
+  };
 
   app.post("/api/submissions", async (req, res) => {
     const parsed = submissionHandoffSchema.safeParse(req.body);
@@ -452,9 +701,10 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
   });
 
   app.post("/api/submissions/report-delivery", async (req, res) => {
-    const body = (req.body || {}) as { submissionId?: string; sendEmail?: boolean };
+    const body = (req.body || {}) as { submissionId?: string; sendEmail?: boolean; force?: boolean };
     const submissionId = String(body.submissionId || "").trim();
     const sendEmail = body.sendEmail !== false;
+    const force = body.force === true;
 
     if (!submissionId) {
       res.status(400).json({
@@ -464,164 +714,102 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
       return;
     }
 
-    const submissionSafe = sanitizeSegment(submissionId);
-    const submissionDir = path.resolve(repoRoot, "output", "submissions", submissionSafe);
-    const handoffPath = path.join(submissionDir, "submission_handoff.json");
-    const intakePath = path.join(submissionDir, "intake_raw.json");
-    const payloadPath = path.join(submissionDir, "amc_docx_payload.json");
-    const docxPath = path.join(submissionDir, "AMC_Report.docx");
-    const emailHandoffPath = path.join(submissionDir, "email_handoff.json");
-    const runnerLogPath = path.join(submissionDir, "runner.log");
+    const result = await deliverReportForSubmission({
+      submissionId,
+      sendEmail,
+      force,
+    });
+    res.status(result.httpCode).json(result.body);
+  });
 
-    if (!fs.existsSync(handoffPath)) {
-      res.status(404).json({
-        ok: false,
-        error: "Submission handoff not found. Submit the case first.",
+  app.post("/api/submissions/report-delivery/trigger", async (req, res) => {
+    const body = (req.body || {}) as {
+      submissionId?: string;
+      limit?: number;
+      force?: boolean;
+    };
+    const submissionId = String(body.submissionId || "").trim();
+    const force = body.force === true;
+    const requestedLimit = Number(body.limit ?? 20);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.max(1, Math.min(100, Math.floor(requestedLimit)))
+      : 20;
+
+    if (submissionId) {
+      const result = await deliverReportForSubmission({
+        submissionId,
+        sendEmail: true,
+        force,
+      });
+      res.status(result.httpCode).json(result.body);
+      return;
+    }
+
+    const submissionsRoot = path.resolve(repoRoot, "output", "submissions");
+    if (!fs.existsSync(submissionsRoot)) {
+      res.status(200).json({
+        ok: true,
+        status: "no_pending_submissions",
+        processedCount: 0,
+        deliveredCount: 0,
+        alreadyDeliveredCount: 0,
+        failedCount: 0,
+        results: [],
       });
       return;
     }
 
-    let handoff: SubmissionHandoff;
-    try {
-      const raw = JSON.parse(fs.readFileSync(handoffPath, "utf-8")) as unknown;
-      handoff = submissionHandoffSchema.parse(raw) as SubmissionHandoff;
-    } catch (error) {
-      res.status(400).json({
-        ok: false,
-        error: error instanceof Error ? error.message : "Invalid stored submission handoff.",
+    const candidates = fs
+      .readdirSync(submissionsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+
+    const results: Array<Record<string, unknown>> = [];
+    let deliveredCount = 0;
+    let alreadyDeliveredCount = 0;
+    let failedCount = 0;
+    let processedCount = 0;
+
+    for (const candidate of candidates) {
+      if (processedCount >= limit) {
+        break;
+      }
+
+      const submissionDir = path.resolve(submissionsRoot, candidate);
+      const handoffPath = path.join(submissionDir, "submission_handoff.json");
+      if (!fs.existsSync(handoffPath)) {
+        continue;
+      }
+
+      const result = await deliverReportForSubmission({
+        submissionId: candidate,
+        sendEmail: true,
+        force,
       });
-      return;
-    }
+      processedCount += 1;
+      results.push(result.body);
 
-    if (!handoff.recipient.email.trim()) {
-      res.status(400).json({
-        ok: false,
-        submissionId: handoff.submissionId,
-        error: "Recipient email is required for report delivery.",
-      });
-      return;
-    }
-
-    fs.mkdirSync(submissionDir, { recursive: true });
-    fs.writeFileSync(intakePath, JSON.stringify(handoff.intakeRaw, null, 2));
-
-    const runnerArgs = [
-      "--dir",
-      "manus-ui",
-      "exec",
-      "tsx",
-      "../scripts/run_amc_report.ts",
-      "--template",
-      templatePath,
-      "--intake",
-      intakePath,
-      "--payload",
-      payloadPath,
-      "--out",
-      docxPath,
-      "--strict-undeclared",
-      "--lang",
-      handoff.language,
-    ];
-
-    const runner = await runCommand("pnpm", runnerArgs, repoRoot);
-    const combinedLog = `${runner.stdout}\n${runner.stderr}`.trim();
-    fs.writeFileSync(runnerLogPath, combinedLog);
-
-    if (runner.code !== 0) {
-      res.status(500).json({
-        ok: false,
-        submissionId: handoff.submissionId,
-        status: "generation_failed",
-        tier: handoff.tier,
-        language: handoff.language,
-        recipient: handoff.recipient,
-        artifacts: {
-          submissionDir: toRepoRelative(repoRoot, submissionDir),
-          handoffPath: toRepoRelative(repoRoot, handoffPath),
-          intakePath: toRepoRelative(repoRoot, intakePath),
-          runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
-        },
-        error: "AMC report generation failed.",
-      });
-      return;
-    }
-
-    const summary = parseSummaryFromStdout(runner.stdout);
-    const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, payloadPath);
-    fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
-
-    let emailDeliveryResult:
-      | {
-          status: "sent" | "failed";
-          messageId?: string;
-          resultPath: string;
-          error?: string;
-        }
-      | undefined;
-
-    if (sendEmail) {
-      const sent = await sendPreparedEmail({
-        repoRoot,
-        emailHandoffPath,
-      });
-      emailDeliveryResult = {
-        status: sent.result.status,
-        messageId: sent.result.messageId,
-        resultPath: toRepoRelative(repoRoot, sent.resultPath),
-        error: sent.result.error,
-      };
-
-      if (sent.result.status !== "sent") {
-        res.status(500).json({
-          ok: false,
-          submissionId: handoff.submissionId,
-          status: "report_email_failed",
-          tier: handoff.tier,
-          language: handoff.language,
-          recipient: handoff.recipient,
-          email: {
-            templateType: emailHandoff.email.templateType,
-            subject: emailHandoff.email.subject,
-          },
-          emailDelivery: emailDeliveryResult,
-          artifacts: {
-            submissionDir: toRepoRelative(repoRoot, submissionDir),
-            payloadPath: toRepoRelative(repoRoot, payloadPath),
-            docxPath: toRepoRelative(repoRoot, docxPath),
-            emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
-            runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
-          },
-          error: sent.result.error || "Report delivery email failed.",
-        });
-        return;
+      const status = String((result.body as { status?: string }).status || "");
+      if (status === "report_email_sent") {
+        deliveredCount += 1;
+      } else if (status === "already_delivered") {
+        alreadyDeliveredCount += 1;
+      } else {
+        failedCount += 1;
       }
     }
 
-    res.status(201).json({
-      ok: true,
-      submissionId: handoff.submissionId,
-      status: sendEmail ? "report_email_sent" : "report_prepared_for_delivery",
-      tier: handoff.tier,
-      language: handoff.language,
-      recipient: handoff.recipient,
-      summary,
-      deliveryStatus: emailHandoff.deliveryStatus,
-      email: {
-        templateType: emailHandoff.email.templateType,
-        subject: emailHandoff.email.subject,
-      },
-      followUp: emailHandoff.followUp,
-      emailDelivery: emailDeliveryResult,
-      artifacts: {
-        submissionDir: toRepoRelative(repoRoot, submissionDir),
-        handoffPath: toRepoRelative(repoRoot, handoffPath),
-        intakePath: toRepoRelative(repoRoot, intakePath),
-        payloadPath: toRepoRelative(repoRoot, payloadPath),
-        docxPath: toRepoRelative(repoRoot, docxPath),
-        emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
-        runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
-      },
+    res.status(failedCount > 0 ? 207 : 200).json({
+      ok: failedCount === 0,
+      status: "trigger_completed",
+      processedCount,
+      deliveredCount,
+      alreadyDeliveredCount,
+      failedCount,
+      limit,
+      force,
+      results,
     });
   });
 }
