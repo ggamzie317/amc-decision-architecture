@@ -34,8 +34,11 @@ export default function FormatHandoff() {
           </h1>
           {intakeReady ? (
             <>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-8">
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                 Both formats include the same core report. Executive adds bounded report-linked follow-up.
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-8">
+                Checkout access is being released in stages.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -49,7 +52,7 @@ export default function FormatHandoff() {
                       onClick={() => continueWithTier(item.key)}
                       className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium w-full"
                     >
-                      Continue with {item.title}
+                      Select {item.title}
                     </button>
                   </div>
                 ))}
