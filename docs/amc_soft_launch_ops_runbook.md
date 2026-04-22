@@ -22,6 +22,8 @@ Runtime requirements:
 - Home -> Intake -> FormatHandoff -> Submit AMC Case -> Success.
 - Submit action calls `POST /api/submissions/receipt`.
 - Receipt email is sent immediately on successful submit.
+- Report-delivery email defaults to a PDF attachment (`AMC_Report.pdf`).
+- DOCX remains an internal intermediate artifact for render/export and QA traceability.
 
 ## D) Ops-Only Flow
 Protected endpoints:

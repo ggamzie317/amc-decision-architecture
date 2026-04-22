@@ -56,6 +56,7 @@ type EmailHandoff = {
   language: "ko" | "en" | "zh";
   artifacts: {
     reportDocxPath: string;
+    reportPdfPath: string;
     reportPayloadPath: string;
   };
   email: {
@@ -140,6 +141,48 @@ function parseSummaryFromStdout(stdout: string): Record<string, unknown> | null 
   } catch {
     return null;
   }
+}
+
+async function convertDocxToPdf(params: {
+  repoRoot: string;
+  submissionDir: string;
+  docxPath: string;
+}): Promise<
+  | { ok: true; pdfPath: string; log: string }
+  | { ok: false; error: string; log: string }
+> {
+  const expectedPdfPath = path.join(
+    params.submissionDir,
+    `${path.basename(params.docxPath, path.extname(params.docxPath))}.pdf`,
+  );
+  const runner = await runCommand(
+    "soffice",
+    ["--headless", "--convert-to", "pdf", "--outdir", params.submissionDir, params.docxPath],
+    params.repoRoot,
+  );
+
+  const log = `${runner.stdout}\n${runner.stderr}`.trim();
+  if (runner.code !== 0) {
+    return {
+      ok: false,
+      error: "PDF export failed.",
+      log,
+    };
+  }
+
+  if (!fs.existsSync(expectedPdfPath)) {
+    return {
+      ok: false,
+      error: "PDF export completed but output file was not found.",
+      log,
+    };
+  }
+
+  return {
+    ok: true,
+    pdfPath: expectedPdfPath,
+    log,
+  };
 }
 
 function readExistingEmailDeliveryStatus(submissionDir: string): {
@@ -236,11 +279,13 @@ function buildEmailHandoff(
   handoff: SubmissionHandoff,
   repoRoot: string,
   docxPath: string,
+  pdfPath: string,
   payloadPath: string,
 ): EmailHandoff {
   const templateType: EmailTemplateType =
     handoff.tier === "executive" ? "report_delivery_executive" : "report_delivery_essential";
   const relativeDocxPath = toRepoRelative(repoRoot, docxPath);
+  const relativePdfPath = toRepoRelative(repoRoot, pdfPath);
   const relativePayloadPath = toRepoRelative(repoRoot, payloadPath);
 
   return {
@@ -255,6 +300,7 @@ function buildEmailHandoff(
     language: handoff.language,
     artifacts: {
       reportDocxPath: relativeDocxPath,
+      reportPdfPath: relativePdfPath,
       reportPayloadPath: relativePayloadPath,
     },
     email: {
@@ -328,6 +374,7 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
     const docxPath = path.join(submissionDir, "AMC_Report.docx");
     const emailHandoffPath = path.join(submissionDir, "email_handoff.json");
     const runnerLogPath = path.join(submissionDir, "runner.log");
+    const pdfExportLogPath = path.join(submissionDir, "pdf_export.log");
 
     if (!fs.existsSync(handoffPath)) {
       return {
@@ -445,7 +492,37 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
     }
 
     const summary = parseSummaryFromStdout(runner.stdout);
-    const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, payloadPath);
+    const pdfExport = await convertDocxToPdf({
+      repoRoot,
+      submissionDir,
+      docxPath,
+    });
+    fs.writeFileSync(pdfExportLogPath, pdfExport.log);
+    if (!pdfExport.ok) {
+      return {
+        ok: false,
+        httpCode: 500,
+        body: {
+          ok: false,
+          submissionId: handoff.submissionId,
+          status: "generation_failed",
+          tier: handoff.tier,
+          language: handoff.language,
+          recipient: handoff.recipient,
+          artifacts: {
+            submissionDir: toRepoRelative(repoRoot, submissionDir),
+            handoffPath: toRepoRelative(repoRoot, handoffPath),
+            intakePath: toRepoRelative(repoRoot, intakePath),
+            payloadPath: toRepoRelative(repoRoot, payloadPath),
+            docxPath: toRepoRelative(repoRoot, docxPath),
+            runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+            pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
+          },
+          error: pdfExport.error,
+        },
+      };
+    }
+    const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, pdfExport.pdfPath, payloadPath);
     fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
 
     let emailDeliveryResult:
@@ -489,8 +566,10 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
               submissionDir: toRepoRelative(repoRoot, submissionDir),
               payloadPath: toRepoRelative(repoRoot, payloadPath),
               docxPath: toRepoRelative(repoRoot, docxPath),
+              pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
               emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
               runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+              pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
             },
             error: sent.result.error || "Report delivery email failed.",
           },
@@ -522,8 +601,10 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
           intakePath: toRepoRelative(repoRoot, intakePath),
           payloadPath: toRepoRelative(repoRoot, payloadPath),
           docxPath: toRepoRelative(repoRoot, docxPath),
+          pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
           emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
           runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+          pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
         },
       },
     };
@@ -551,6 +632,7 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
     const docxPath = path.join(submissionDir, "AMC_Report.docx");
     const emailHandoffPath = path.join(submissionDir, "email_handoff.json");
     const runnerLogPath = path.join(submissionDir, "runner.log");
+    const pdfExportLogPath = path.join(submissionDir, "pdf_export.log");
 
     fs.writeFileSync(handoffPath, JSON.stringify(handoff, null, 2));
     fs.writeFileSync(intakePath, JSON.stringify(handoff.intakeRaw, null, 2));
@@ -598,7 +680,34 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
     }
 
     const summary = parseSummaryFromStdout(runner.stdout);
-    const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, payloadPath);
+    const pdfExport = await convertDocxToPdf({
+      repoRoot,
+      submissionDir,
+      docxPath,
+    });
+    fs.writeFileSync(pdfExportLogPath, pdfExport.log);
+    if (!pdfExport.ok) {
+      res.status(500).json({
+        ok: false,
+        submissionId: handoff.submissionId,
+        status: "generation_failed",
+        tier: handoff.tier,
+        language: handoff.language,
+        recipient: handoff.recipient,
+        artifacts: {
+          submissionDir: toRepoRelative(repoRoot, submissionDir),
+          handoffPath: toRepoRelative(repoRoot, handoffPath),
+          intakePath: toRepoRelative(repoRoot, intakePath),
+          payloadPath: toRepoRelative(repoRoot, payloadPath),
+          docxPath: toRepoRelative(repoRoot, docxPath),
+          runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+          pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
+        },
+        error: pdfExport.error,
+      });
+      return;
+    }
+    const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, pdfExport.pdfPath, payloadPath);
     fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
     const autoSendEnabled = process.env.AMC_AUTO_SEND_EMAIL_ON_SUBMISSION === "1";
     let emailDeliveryResult:
@@ -645,8 +754,10 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         intakePath: toRepoRelative(repoRoot, intakePath),
         payloadPath: toRepoRelative(repoRoot, payloadPath),
         docxPath: toRepoRelative(repoRoot, docxPath),
+        pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
         emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
         runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+        pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
       },
     });
   });
