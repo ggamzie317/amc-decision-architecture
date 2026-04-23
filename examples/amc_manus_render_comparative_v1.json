@@ -1,0 +1,231 @@
+{
+  "contract_version": "amc_manus_render_v1",
+  "report_metadata": {
+    "report_id": "amc-comparative-baseline-v1",
+    "case_mode": "comparative",
+    "language": "en",
+    "generated_at": "2026-04-23T09:05:00Z",
+    "template_baseline": "templates/AMC_Strategic_Career_Decision_Template_v3_4_working.docx"
+  },
+  "governance": {
+    "amc_logic_owner": true,
+    "manus_renderer_only": true,
+    "section_order_locked": true,
+    "recommendation_language_forbidden": true,
+    "first_page_conclusion_first": true,
+    "comparative_table_first": true,
+    "scored_non_scored_separation_required": true
+  },
+  "labels": {
+    "executive_layer": "Structural Reading",
+    "measurement_layer": "Measurement Layer",
+    "interpretation_layer": "Interpretation Layer",
+    "comparative_snapshot_label": "External Comparative Snapshot"
+  },
+  "layout_rules": {
+    "first_page": {
+      "mode": "conclusion_first",
+      "support_text_quiet": true
+    },
+    "comparative": {
+      "mode": "table_first",
+      "legend_secondary": true,
+      "reading_lines_compact": true
+    },
+    "layer_separation": {
+      "scored_layer_visible": true,
+      "non_scored_layer_visible": true,
+      "visual_separation_required": true
+    },
+    "section_order": [
+      "executive_structural_reading",
+      "external_comparative_snapshot",
+      "structural_risk_diagnosis",
+      "career_value_structure",
+      "career_mobility_structure",
+      "strategic_temperament",
+      "decision_conditions"
+    ]
+  },
+  "sections": [
+    {
+      "id": "executive_structural_reading",
+      "heading": "Executive Structural Reading",
+      "intent_line": "Frame the case-level divergence in one line.",
+      "conclusion_line": "Conclusion: the live divergence is continuity protection versus repositioning burden concentration.",
+      "support_line": "The key split sits in proof burden timing, not in generic opportunity narrative.",
+      "basis_line": "Assessment basis: comparative structural exposure and commitment thresholds.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Path A Structural Score", "score": 67, "band": "stable" },
+          { "name": "Path B Structural Score", "score": 57, "band": "guarded" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Comparative implication: decision quality depends on validating burden concentration before irreversible commitment."
+        ]
+      }
+    },
+    {
+      "id": "external_comparative_snapshot",
+      "heading": "External Comparative Snapshot",
+      "intent_line": "Surface path-level asymmetry with table-first readability.",
+      "conclusion_line": "Conclusion: Option A carries lower conversion burden; Option B carries higher repositioning demand with higher upside optionality.",
+      "support_line": "The table is primary; reading and implication lines remain secondary and compact.",
+      "basis_line": "Structural basis: transferability, timing exposure, and conversion burden.",
+      "scored_layer": {
+        "visible": false,
+        "items": []
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Comparative reading: burden concentration diverges more by execution load than by declared preference.",
+          "Comparative implication: define proof thresholds per path before selecting commitment timing."
+        ]
+      },
+      "comparative_table": {
+        "columns": ["Dimension", "Option A", "Option B"],
+        "rows": [
+          {
+            "dimension": "Continuity protection",
+            "option_a": "Higher continuity protection with lower immediate transition friction",
+            "option_b": "Lower continuity protection during initial conversion period"
+          },
+          {
+            "dimension": "Conversion burden",
+            "option_a": "Moderate conversion burden with clearer operating conditions",
+            "option_b": "High conversion burden with tighter proof requirements"
+          },
+          {
+            "dimension": "Timing exposure",
+            "option_a": "More timing slack before irreversible commitment",
+            "option_b": "Higher timing exposure with narrower defensibility window"
+          }
+        ],
+        "legend": "Table-first comparative block; interpretation lines are secondary support only."
+      }
+    },
+    {
+      "id": "structural_risk_diagnosis",
+      "heading": "Structural Risk Diagnosis",
+      "intent_line": "Pinpoint where fragility is concentrated by path.",
+      "conclusion_line": "Risk concentration is materially higher on Option B due to timing and conversion load overlap.",
+      "support_line": "Option A risk is steadier but still exposed to execution sequencing errors.",
+      "basis_line": "Structural basis: overlap between external volatility and path-specific burden concentration.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Option A Risk Score", "score": 61, "band": "guarded" },
+          { "name": "Option B Risk Score", "score": 49, "band": "low" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Risk implication: burden concentration should be reduced before stronger path commitment."
+        ]
+      }
+    },
+    {
+      "id": "career_value_structure",
+      "heading": "Career Value Structure",
+      "intent_line": "Clarify continuity value versus repositioning value by path.",
+      "conclusion_line": "Option A preserves continuity value; Option B increases repositioning value potential with added proof burden.",
+      "support_line": "Trade-off quality depends on the defensibility of the conversion plan, not aspiration intensity.",
+      "basis_line": "Structural basis: continuity protection versus repositioning demand.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Option A Value Stability", "score": 70, "band": "stable" },
+          { "name": "Option B Repositioning Optionality", "score": 65, "band": "stable" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Value implication: select path only after explicit downside containment boundaries are met."
+        ]
+      }
+    },
+    {
+      "id": "career_mobility_structure",
+      "heading": "Career Mobility Structure",
+      "intent_line": "Compare transferability, timing exposure, and transition friction.",
+      "conclusion_line": "Option B has higher mobility upside but materially higher conversion friction and timing exposure.",
+      "support_line": "Option A has lower upside variance but lower execution volatility.",
+      "basis_line": "Structural basis: transferability and conversion burden under constrained timing windows.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Option A Mobility Score", "score": 64, "band": "guarded" },
+          { "name": "Option B Mobility Score", "score": 59, "band": "guarded" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Mobility implication: the higher-variance path requires earlier burden-proofing milestones."
+        ]
+      }
+    },
+    {
+      "id": "strategic_temperament",
+      "heading": "Strategic Temperament",
+      "intent_line": "Distinguish governance demands under each path.",
+      "conclusion_line": "Option A demands continuity governance; Option B demands stricter proof discipline under uncertainty.",
+      "support_line": "Temperament fit depends on consistency of threshold execution, not confidence language.",
+      "basis_line": "Assessment basis: governance burden under structural pressure.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Option A Governance Fit", "score": 68, "band": "stable" },
+          { "name": "Option B Governance Fit", "score": 56, "band": "guarded" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Temperament implication: choose the path whose proof burden discipline is realistically sustainable."
+        ]
+      }
+    },
+    {
+      "id": "decision_conditions",
+      "heading": "Decision Conditions",
+      "intent_line": "Define defensibility thresholds by path before commitment.",
+      "conclusion_line": "Commitment is defensible only when path-specific proof thresholds are met and downside containment remains intact.",
+      "support_line": "Condition clarity is mandatory before irreversible timing commitments.",
+      "basis_line": "Structural basis: commitment defensibility under divergent burden profiles.",
+      "scored_layer": {
+        "visible": false,
+        "items": []
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Condition A: continuity downside containment threshold met.",
+          "Condition B: repositioning conversion burden threshold met.",
+          "Condition C: timing exposure remains inside predefined limits."
+        ]
+      }
+    }
+  ],
+  "forbidden_transformations": [
+    "recommendation_language",
+    "coaching_tone",
+    "section_reorder",
+    "narrative_over_table_in_comparative",
+    "score_layer_merge_into_interpretation",
+    "logic_recalculation"
+  ],
+  "qa_hints": {
+    "expect_conclusion_first_above_fold": true,
+    "expect_table_first_in_comparative": true,
+    "expect_no_recommendation_language": true,
+    "expect_scored_non_scored_separation": true
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "contract_version": "amc_manus_render_v1",
+  "report_metadata": {
+    "report_id": "amc-single-baseline-v1",
+    "case_mode": "single",
+    "language": "en",
+    "generated_at": "2026-04-23T09:00:00Z",
+    "template_baseline": "templates/AMC_Strategic_Career_Decision_Template_v3_4_working.docx"
+  },
+  "governance": {
+    "amc_logic_owner": true,
+    "manus_renderer_only": true,
+    "section_order_locked": true,
+    "recommendation_language_forbidden": true,
+    "first_page_conclusion_first": true,
+    "comparative_table_first": true,
+    "scored_non_scored_separation_required": true
+  },
+  "labels": {
+    "executive_layer": "Structural Reading",
+    "measurement_layer": "Measurement Layer",
+    "interpretation_layer": "Interpretation Layer",
+    "comparative_snapshot_label": "External Comparative Snapshot"
+  },
+  "layout_rules": {
+    "first_page": {
+      "mode": "conclusion_first",
+      "support_text_quiet": true
+    },
+    "comparative": {
+      "mode": "table_first",
+      "legend_secondary": true,
+      "reading_lines_compact": true
+    },
+    "layer_separation": {
+      "scored_layer_visible": true,
+      "non_scored_layer_visible": true,
+      "visual_separation_required": true
+    },
+    "section_order": [
+      "executive_structural_reading",
+      "structural_risk_diagnosis",
+      "career_value_structure",
+      "career_mobility_structure",
+      "strategic_temperament",
+      "decision_conditions"
+    ]
+  },
+  "sections": [
+    {
+      "id": "executive_structural_reading",
+      "heading": "Executive Structural Reading",
+      "intent_line": "Frame the case in one defensible structural view.",
+      "conclusion_line": "Conclusion: continuity pressure is manageable only with explicit downside containment thresholds.",
+      "support_line": "Exposure concentration sits in timing and transition friction rather than role-fit alone.",
+      "basis_line": "Assessment basis: intake completeness and internal consistency checks.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "FIFWM", "score": 62, "band": "guarded" },
+          { "name": "Safety Margin", "score": 58, "band": "guarded" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Key implication: commitment requires tighter proof thresholds before acceleration.",
+          "Interpretive note: governance burden rises when timing assumptions remain untested."
+        ]
+      }
+    },
+    {
+      "id": "structural_risk_diagnosis",
+      "heading": "Structural Risk Diagnosis",
+      "intent_line": "Identify where fragility is concentrated.",
+      "conclusion_line": "Risk concentration is highest in conversion timing and downside liquidity coverage.",
+      "support_line": "Risk does not sit evenly across categories; execution exposure is front-loaded.",
+      "basis_line": "Structural basis: concentration of risk across market and execution nodes.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Market Outlook", "score": 60, "band": "guarded" },
+          { "name": "Execution Exposure", "score": 54, "band": "guarded" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Fragility marker: confidence drops when timeline assumptions are not testable in sequence."
+        ]
+      }
+    },
+    {
+      "id": "career_value_structure",
+      "heading": "Career Value Structure",
+      "intent_line": "Clarify what is protected versus surrendered.",
+      "conclusion_line": "The current path protects continuity value but constrains repositioning value capture.",
+      "support_line": "Value asymmetry is defined by optionality trade-off, not by headline role appeal.",
+      "basis_line": "Structural basis: continuity protection versus repositioning demand.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Continuity Protection", "score": 68, "band": "stable" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Value implication: defer stronger commitments until repositioning proof burden is reduced."
+        ]
+      }
+    },
+    {
+      "id": "career_mobility_structure",
+      "heading": "Career Mobility Structure",
+      "intent_line": "Read transferability, conversion burden, and timing exposure.",
+      "conclusion_line": "Mobility is feasible but burdened by sequence risk and transition friction.",
+      "support_line": "Transferability exists, yet conversion burden increases under compressed timing.",
+      "basis_line": "Structural basis: transferability versus conversion load under time pressure.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Transferability", "score": 63, "band": "guarded" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Mobility implication: preserve optionality while lowering near-term conversion friction."
+        ]
+      }
+    },
+    {
+      "id": "strategic_temperament",
+      "heading": "Strategic Temperament",
+      "intent_line": "Assess governance posture under pressure.",
+      "conclusion_line": "Current posture is disciplined but can tighten too slowly when proof windows narrow.",
+      "support_line": "Governance strength is caution; governance risk is delayed threshold activation.",
+      "basis_line": "Assessment basis: decision posture under uncertainty and constraint.",
+      "scored_layer": {
+        "visible": true,
+        "items": [
+          { "name": "Governance Discipline", "score": 66, "band": "stable" }
+        ]
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Temperament implication: convert caution into explicit trigger discipline."
+        ]
+      }
+    },
+    {
+      "id": "decision_conditions",
+      "heading": "Decision Conditions",
+      "intent_line": "Define commitment defensibility thresholds.",
+      "conclusion_line": "Commitment becomes more defensible once timing, liquidity, and conversion assumptions are jointly verified.",
+      "support_line": "Threshold clarity matters more than confidence language.",
+      "basis_line": "Structural basis: commitment defensibility under bounded uncertainty.",
+      "scored_layer": {
+        "visible": false,
+        "items": []
+      },
+      "non_scored_layer": {
+        "visible": true,
+        "items": [
+          "Condition 1: downside runway threshold met.",
+          "Condition 2: conversion burden validated against timeline reality.",
+          "Condition 3: governance triggers defined before acceleration."
+        ]
+      }
+    }
+  ],
+  "forbidden_transformations": [
+    "recommendation_language",
+    "coaching_tone",
+    "section_reorder",
+    "narrative_over_table_in_comparative",
+    "score_layer_merge_into_interpretation",
+    "logic_recalculation"
+  ],
+  "qa_hints": {
+    "expect_conclusion_first_above_fold": true,
+    "expect_table_first_in_comparative": true,
+    "expect_no_recommendation_language": true,
+    "expect_scored_non_scored_separation": true
+  }
+}

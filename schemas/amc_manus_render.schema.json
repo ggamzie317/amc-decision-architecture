@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/amc_manus_render.schema.json",
+  "title": "AMC x Manus Render Package Schema v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "report_metadata",
+    "governance",
+    "labels",
+    "layout_rules",
+    "sections",
+    "forbidden_transformations",
+    "qa_hints"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "amc_manus_render_v1"
+    },
+    "report_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_id",
+        "case_mode",
+        "language",
+        "generated_at",
+        "template_baseline"
+      ],
+      "properties": {
+        "report_id": { "type": "string", "minLength": 1 },
+        "case_mode": { "type": "string", "enum": ["single", "comparative"] },
+        "language": { "type": "string", "enum": ["en"] },
+        "generated_at": { "type": "string", "minLength": 1 },
+        "template_baseline": {
+          "type": "string",
+          "const": "templates/AMC_Strategic_Career_Decision_Template_v3_4_working.docx"
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amc_logic_owner",
+        "manus_renderer_only",
+        "section_order_locked",
+        "recommendation_language_forbidden",
+        "first_page_conclusion_first",
+        "comparative_table_first",
+        "scored_non_scored_separation_required"
+      ],
+      "properties": {
+        "amc_logic_owner": { "type": "boolean", "const": true },
+        "manus_renderer_only": { "type": "boolean", "const": true },
+        "section_order_locked": { "type": "boolean", "const": true },
+        "recommendation_language_forbidden": { "type": "boolean", "const": true },
+        "first_page_conclusion_first": { "type": "boolean", "const": true },
+        "comparative_table_first": { "type": "boolean", "const": true },
+        "scored_non_scored_separation_required": { "type": "boolean", "const": true }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "executive_layer",
+        "measurement_layer",
+        "interpretation_layer",
+        "comparative_snapshot_label"
+      ],
+      "properties": {
+        "executive_layer": { "type": "string", "minLength": 1 },
+        "measurement_layer": { "type": "string", "minLength": 1 },
+        "interpretation_layer": { "type": "string", "minLength": 1 },
+        "comparative_snapshot_label": { "type": "string", "minLength": 1 }
+      }
+    },
+    "layout_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "first_page",
+        "comparative",
+        "layer_separation",
+        "section_order"
+      ],
+      "properties": {
+        "first_page": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "support_text_quiet"],
+          "properties": {
+            "mode": { "type": "string", "const": "conclusion_first" },
+            "support_text_quiet": { "type": "boolean", "const": true }
+          }
+        },
+        "comparative": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "legend_secondary", "reading_lines_compact"],
+          "properties": {
+            "mode": { "type": "string", "const": "table_first" },
+            "legend_secondary": { "type": "boolean", "const": true },
+            "reading_lines_compact": { "type": "boolean", "const": true }
+          }
+        },
+        "layer_separation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scored_layer_visible", "non_scored_layer_visible", "visual_separation_required"],
+          "properties": {
+            "scored_layer_visible": { "type": "boolean", "const": true },
+            "non_scored_layer_visible": { "type": "boolean", "const": true },
+            "visual_separation_required": { "type": "boolean", "const": true }
+          }
+        },
+        "section_order": {
+          "type": "array",
+          "minItems": 6,
+          "items": { "type": "string", "enum": [
+            "executive_structural_reading",
+            "external_comparative_snapshot",
+            "structural_risk_diagnosis",
+            "career_value_structure",
+            "career_mobility_structure",
+            "strategic_temperament",
+            "decision_conditions"
+          ] }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 6,
+      "items": { "$ref": "#/$defs/sectionBlock" }
+    },
+    "forbidden_transformations": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "string",
+        "enum": [
+          "recommendation_language",
+          "coaching_tone",
+          "section_reorder",
+          "narrative_over_table_in_comparative",
+          "score_layer_merge_into_interpretation",
+          "logic_recalculation"
+        ]
+      }
+    },
+    "qa_hints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expect_conclusion_first_above_fold",
+        "expect_table_first_in_comparative",
+        "expect_no_recommendation_language",
+        "expect_scored_non_scored_separation"
+      ],
+      "properties": {
+        "expect_conclusion_first_above_fold": { "type": "boolean", "const": true },
+        "expect_table_first_in_comparative": { "type": "boolean", "const": true },
+        "expect_no_recommendation_language": { "type": "boolean", "const": true },
+        "expect_scored_non_scored_separation": { "type": "boolean", "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "scoredItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "score", "band"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "band": { "type": "string", "enum": ["low", "guarded", "stable", "strong"] }
+      }
+    },
+    "comparativeTable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "rows", "legend"],
+      "properties": {
+        "columns": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dimension", "option_a", "option_b"],
+            "properties": {
+              "dimension": { "type": "string", "minLength": 1 },
+              "option_a": { "type": "string", "minLength": 1 },
+              "option_b": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "legend": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sectionBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "heading",
+        "intent_line",
+        "conclusion_line",
+        "support_line",
+        "basis_line",
+        "scored_layer",
+        "non_scored_layer"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "executive_structural_reading",
+            "external_comparative_snapshot",
+            "structural_risk_diagnosis",
+            "career_value_structure",
+            "career_mobility_structure",
+            "strategic_temperament",
+            "decision_conditions"
+          ]
+        },
+        "heading": { "type": "string", "minLength": 1 },
+        "intent_line": { "type": "string", "minLength": 1 },
+        "conclusion_line": { "type": "string", "minLength": 1 },
+        "support_line": { "type": "string", "minLength": 1 },
+        "basis_line": { "type": "string", "minLength": 1 },
+        "scored_layer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["visible", "items"],
+          "properties": {
+            "visible": { "type": "boolean" },
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/scoredItem" }
+            }
+          }
+        },
+        "non_scored_layer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["visible", "items"],
+          "properties": {
+            "visible": { "type": "boolean" },
+            "items": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "comparative_table": {
+          "$ref": "#/$defs/comparativeTable"
+        }
+      }
+    }
+  }
+}
