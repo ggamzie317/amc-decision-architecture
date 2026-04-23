@@ -4,7 +4,16 @@ import path from "node:path";
 
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
+import mapModule from "../../src/mapAmcToManusRenderPackage.ts";
+import validateModule from "../../src/validateAmcManusRenderPackage.ts";
 import { sendPreparedEmail, sendSubmissionReceiptEmail } from "./emailSender";
+
+const { mapAmcPayloadToManusRenderPackageV1 } = mapModule as {
+  mapAmcPayloadToManusRenderPackageV1: (payload: any, context?: Record<string, unknown>) => any;
+};
+const { validateAmcManusRenderPackageV1 } = validateModule as {
+  validateAmcManusRenderPackageV1: (schema: any, instance: any) => { valid: boolean; errors: string[] };
+};
 
 const languageSchema = z.enum(["ko", "en", "zh"]);
 const tierSchema = z.enum(["essential", "executive"]);
@@ -234,6 +243,73 @@ function buildBodyText(tier: "essential" | "executive", recipientName: string): 
   }
   lines.push("", "Thank you,", "AMC");
   return lines.join("\n");
+}
+
+function buildAndValidateManusRenderPackage(params: {
+  repoRoot: string;
+  submissionDir: string;
+  payloadPath: string;
+  handoff: SubmissionHandoff;
+  templatePath: string;
+}):
+  | {
+      ok: true;
+      packagePath: string;
+      validationPath: string;
+    }
+  | {
+      ok: false;
+      error: string;
+      validationPath?: string;
+    } {
+  const schemaPath = path.resolve(params.repoRoot, "schemas", "amc_manus_render.schema.json");
+  if (!fs.existsSync(schemaPath)) {
+    return { ok: false, error: `Schema not found: ${schemaPath}` };
+  }
+  if (!fs.existsSync(params.payloadPath)) {
+    return { ok: false, error: `AMC payload not found: ${params.payloadPath}` };
+  }
+
+  const livePayload = JSON.parse(fs.readFileSync(params.payloadPath, "utf-8")) as Record<string, unknown>;
+  const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as unknown;
+  const templateBaselinePath = toRepoRelative(params.repoRoot, params.templatePath);
+  const mapped = mapAmcPayloadToManusRenderPackageV1(livePayload, {
+    reportId: params.handoff.submissionId,
+    language: params.handoff.language,
+    templateBaselinePath,
+  });
+  const validation = validateAmcManusRenderPackageV1(schema, mapped);
+
+  const packagePath = path.join(params.submissionDir, "amc_manus_render_package_v1.json");
+  const validationPath = path.join(params.submissionDir, "amc_manus_render_package_validation_v1.json");
+  fs.writeFileSync(packagePath, JSON.stringify(mapped, null, 2));
+  fs.writeFileSync(
+    validationPath,
+    JSON.stringify(
+      {
+        valid: validation.valid,
+        errors: validation.errors,
+        schemaPath: toRepoRelative(params.repoRoot, schemaPath),
+        generatedAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+  );
+
+  if (!validation.valid) {
+    return {
+      ok: false,
+      error: `Manus render package schema validation failed: ${validation.errors.join("; ")}`,
+      validationPath,
+    };
+  }
+
+  return {
+    ok: true,
+    packagePath,
+    validationPath,
+  };
 }
 
 function toReceiptSubject(): string {
@@ -522,6 +598,41 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         },
       };
     }
+    const manusRender = buildAndValidateManusRenderPackage({
+      repoRoot,
+      submissionDir,
+      payloadPath,
+      handoff,
+      templatePath,
+    });
+    if (!manusRender.ok) {
+      return {
+        ok: false,
+        httpCode: 500,
+        body: {
+          ok: false,
+          submissionId: handoff.submissionId,
+          status: "generation_failed",
+          tier: handoff.tier,
+          language: handoff.language,
+          recipient: handoff.recipient,
+          artifacts: {
+            submissionDir: toRepoRelative(repoRoot, submissionDir),
+            handoffPath: toRepoRelative(repoRoot, handoffPath),
+            intakePath: toRepoRelative(repoRoot, intakePath),
+            payloadPath: toRepoRelative(repoRoot, payloadPath),
+            docxPath: toRepoRelative(repoRoot, docxPath),
+            pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
+            runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+            pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
+            manusRenderValidationPath: manusRender.validationPath
+              ? toRepoRelative(repoRoot, manusRender.validationPath)
+              : undefined,
+          },
+          error: manusRender.error,
+        },
+      };
+    }
     const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, pdfExport.pdfPath, payloadPath);
     fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
 
@@ -567,6 +678,8 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
               payloadPath: toRepoRelative(repoRoot, payloadPath),
               docxPath: toRepoRelative(repoRoot, docxPath),
               pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
+              manusRenderPackagePath: toRepoRelative(repoRoot, manusRender.packagePath),
+              manusRenderValidationPath: toRepoRelative(repoRoot, manusRender.validationPath),
               emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
               runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
               pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
@@ -602,6 +715,8 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
           payloadPath: toRepoRelative(repoRoot, payloadPath),
           docxPath: toRepoRelative(repoRoot, docxPath),
           pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
+          manusRenderPackagePath: toRepoRelative(repoRoot, manusRender.packagePath),
+          manusRenderValidationPath: toRepoRelative(repoRoot, manusRender.validationPath),
           emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
           runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
           pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
@@ -707,6 +822,38 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
       });
       return;
     }
+    const manusRender = buildAndValidateManusRenderPackage({
+      repoRoot,
+      submissionDir,
+      payloadPath,
+      handoff,
+      templatePath,
+    });
+    if (!manusRender.ok) {
+      res.status(500).json({
+        ok: false,
+        submissionId: handoff.submissionId,
+        status: "generation_failed",
+        tier: handoff.tier,
+        language: handoff.language,
+        recipient: handoff.recipient,
+        artifacts: {
+          submissionDir: toRepoRelative(repoRoot, submissionDir),
+          handoffPath: toRepoRelative(repoRoot, handoffPath),
+          intakePath: toRepoRelative(repoRoot, intakePath),
+          payloadPath: toRepoRelative(repoRoot, payloadPath),
+          docxPath: toRepoRelative(repoRoot, docxPath),
+          pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
+          runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
+          pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
+          manusRenderValidationPath: manusRender.validationPath
+            ? toRepoRelative(repoRoot, manusRender.validationPath)
+            : undefined,
+        },
+        error: manusRender.error,
+      });
+      return;
+    }
     const emailHandoff = buildEmailHandoff(handoff, repoRoot, docxPath, pdfExport.pdfPath, payloadPath);
     fs.writeFileSync(emailHandoffPath, JSON.stringify(emailHandoff, null, 2));
     const autoSendEnabled = process.env.AMC_AUTO_SEND_EMAIL_ON_SUBMISSION === "1";
@@ -755,6 +902,8 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         payloadPath: toRepoRelative(repoRoot, payloadPath),
         docxPath: toRepoRelative(repoRoot, docxPath),
         pdfPath: toRepoRelative(repoRoot, pdfExport.pdfPath),
+        manusRenderPackagePath: toRepoRelative(repoRoot, manusRender.packagePath),
+        manusRenderValidationPath: toRepoRelative(repoRoot, manusRender.validationPath),
         emailHandoffPath: toRepoRelative(repoRoot, emailHandoffPath),
         runnerLogPath: toRepoRelative(repoRoot, runnerLogPath),
         pdfExportLogPath: toRepoRelative(repoRoot, pdfExportLogPath),
