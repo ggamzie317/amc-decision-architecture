@@ -4,6 +4,7 @@ Operational entry point for AMC governance, metadata, and review documents.
 
 - `amc_codex_operating_loop.md`: Operating loop for product owner + ChatGPT + Codex task execution.
 - `amc_codex_local_worktree_runbook.md`: Local Codex worktree setup and branch/PR flow for repeatable task execution.
+- `amc_manus_fixed_report_workflow.md`: Fixed AMC x Manus premium report production workflow and delivery review rules.
 - `amc_render_contract.md`: Render contract, stability boundaries, and change classification.
 - `amc_external_layer_contract_v1.md`: Frozen external-layer input shape and fallback rules for pre-automation integration.
 - `amc_document_drift_policy.md`: Rules to prevent doc drift across contract, metadata, placeholders, and outputs.
