@@ -39,12 +39,6 @@ if [[ "$TASK_FILE" != *.md ]]; then
   TASK_FILE="${TASK_FILE}.md"
 fi
 
-if [[ ! -f "$TASK_FILE" ]]; then
-  echo "Task file not found: $TASK_FILE"
-  echo "Checkout may be stale or task name may be wrong."
-  exit 1
-fi
-
 TASK_BASENAME="$(basename "$TASK_FILE" .md)"
 BRANCH_NAME="codex/${TASK_BASENAME}"
 
@@ -55,6 +49,13 @@ if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
 else
   echo "Creating branch from origin/main: $BRANCH_NAME"
   git switch -c "$BRANCH_NAME" origin/main
+fi
+
+if [[ ! -f "$TASK_FILE" ]]; then
+  echo "Task file not found after switching branches: $TASK_FILE"
+  echo "The checkout may be stale or the task is not present on origin/main."
+  echo "Request the task contents or update the checkout."
+  exit 1
 fi
 
 echo
