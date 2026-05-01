@@ -32,3 +32,27 @@ This keeps the lane easy to scan for non-developers.
 
 A good task usually touches one docs cluster or one focused implementation area.
 Avoid combining report logic, UI, and delivery changes into one task.
+
+## Patch handoff fallback
+
+Use this only when Codex completes the task but cannot push a branch or create a GitHub PR.
+
+Ask Codex for a `unified diff` patch that you can apply locally.
+Codex should include changed file paths, the full patch, verification commands and results, and commit hash if available.
+
+Copy-ready prompt:
+
+```text
+Push failed, so please provide the complete patch for the current task.
+
+I need the full unified diff that I can apply locally.
+
+Include all changed files.
+Do not summarize. Provide the exact patch only.
+
+Also include:
+- current branch name
+- commit hash, if available
+- verification commands run
+- verification results
+```
