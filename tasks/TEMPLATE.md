@@ -1,5 +1,19 @@
 # Task
 
+## Startup preflight
+
+Run this before doing implementation work:
+
+```bash
+git remote -v
+git branch --show-current
+git status -sb
+ls tasks
+sed -n '1,220p' tasks/<task-file>.md
+```
+
+If the expected task file is missing, stop. Do not proceed by guessing. Report that the checkout may be stale and request the task contents or an updated checkout.
+
 ## Objective
 
 One sentence describing the result.

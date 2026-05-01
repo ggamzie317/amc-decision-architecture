@@ -18,6 +18,20 @@ Use it when you want implementation work to happen in small, reviewable batches 
 4. Review against the checklist in the task and in `docs/amc_codex_operating_loop.md`.
 5. Approve, request edits, or open the next task.
 
+## Startup preflight
+
+Before implementation, Codex should run a quick preflight to confirm repo, branch, and task file:
+
+```bash
+git remote -v
+git branch --show-current
+git status -sb
+ls tasks
+sed -n '1,220p' tasks/<task-file>.md
+```
+
+If the expected task file is missing, do not proceed by guessing. Report that the checkout may be stale and request the task contents or an updated checkout.
+
 ## Naming convention
 
 Use short, sequential file names:
