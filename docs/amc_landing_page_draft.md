@@ -32,9 +32,9 @@ AMC is a private career architecture service for decisions where stakes, constra
 1. Intake: You submit career context, constraints, options, and timing signals.
 2. Structural Report: AMC produces a structured DOCX decision brief with diagnostic, comparative/single-path, and condition-based layers.
 3. Delivery Tier Selection:
-- Essential: Report only
-- Executive: Report + 7-day chatbot access for follow-up interpretation and clarification
-4. Optional Follow-Up: For Executive tier, clients can pressure-test implications and assumptions during the 7-day window.
+- Essential: Report-only delivery for clients who want a standalone structured decision brief
+- Executive: Report + a bounded 7-day report-linked interpretation window
+4. Optional Follow-Up: In Executive, clients can pressure-test implications and assumptions during the defined 7-day window. This is not open-ended coaching, therapy, or general career advice.
 
 ## 5) What the Report Covers
 - Executive Reading: A concise structural framing of the case and core tension
@@ -64,12 +64,12 @@ AMC is a private career architecture service for decisions where stakes, constra
 ## 7) Offer / Tier Section
 
 ### Essential
-- Includes: AMC structural report (DOCX)
+- Includes: AMC structural report (DOCX) only
 - Best for: Clients who want a standalone decision brief
 
 ### Executive
-- Includes: AMC structural report (DOCX) + 7-day chatbot access
-- Best for: Clients who want short-window follow-up clarification and interpretation support
+- Includes: AMC structural report (DOCX) + bounded 7-day report-linked interpretation window
+- Best for: Clients who want short-window report clarification and interpretation support
 
 ## 8) FAQ Draft (10)
 
@@ -83,7 +83,7 @@ AMC does not choose for you. It clarifies structure, tension, and commitment con
 Professionals facing high-impact decisions with real constraints and trade-offs.
 
 ### 4. What do I receive?
-A structured AMC report. Executive tier also includes 7-day chatbot access.
+A structured AMC report. Executive tier also includes a bounded 7-day report-linked interpretation window.
 
 ### 5. Can AMC handle comparative decisions?
 Yes. Comparative cases are a core mode and include structured side-by-side reading.
@@ -101,7 +101,7 @@ AMC still provides a structured read, while signaling assumptions and conditions
 AMC is currently running an English-first soft launch. Additional language workflows may be introduced in later phases.
 
 ### 10. Is AMC a long-term advisory subscription?
-No. AMC is case-based. Executive adds a defined 7-day follow-up window.
+No. AMC is case-based. Executive adds a defined, bounded 7-day follow-up window for report-linked interpretation only.
 
 ## 9) CTA Ending Options (3)
 

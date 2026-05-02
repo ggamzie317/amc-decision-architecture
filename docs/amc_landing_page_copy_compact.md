@@ -23,7 +23,7 @@ AMC is a private, case-based decision brief service for professionals at meaning
 ## 4) How It Works
 1. Submit intake context, constraints, options, and timing signals.
 2. Receive an AMC structural report (single-path or comparative).
-3. Choose delivery mode: Essential (report only) or Executive (report + 7-day chatbot access).
+3. Choose delivery mode: Essential (report-only delivery) or Executive (report + bounded 7-day report-linked interpretation window).
 
 ## 5) What the Report Covers
 - Executive structural reading of the core decision tension
@@ -49,10 +49,10 @@ AMC is a private, case-based decision brief service for professionals at meaning
 ## 7) Offer / Tier
 
 ### Essential
-Report only.
+Report-only delivery for clients who want a standalone structured decision brief.
 
 ### Executive
-Report + 7-day chatbot access.
+Report + a bounded 7-day report-linked interpretation window.
 
 ## 8) FAQ (6)
 
@@ -63,7 +63,10 @@ No. AMC is a structural decision-read service.
 No. AMC clarifies structure, trade-offs, and conditions so you can decide with clearer constraints.
 
 ### What do I receive?
-An AMC report. Executive tier also includes 7-day chatbot access.
+An AMC report. Executive tier also includes a bounded 7-day report-linked interpretation window.
+
+### Is Executive open-ended coaching?
+No. Executive is not open-ended coaching, therapy, or general career advice. It is limited to report-linked clarification and interpretation.
 
 ### Can AMC handle comparative and single-path cases?
 Yes. AMC supports both two-path comparison and one-path sustainability assessment.

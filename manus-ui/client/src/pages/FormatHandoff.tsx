@@ -6,13 +6,13 @@ const formatOptions = [
     key: "essential" as const,
     title: "Essential",
     line1: "Structured AMC Report",
-    line2: "Report-only delivery",
+    line2: "Report-only delivery for a standalone structured decision brief",
   },
   {
     key: "executive" as const,
     title: "Executive",
     line1: "Structured AMC Report",
-    line2: "7-day report-linked follow-up chat",
+    line2: "Bounded 7-day report-linked interpretation window",
   },
 ];
 
@@ -36,6 +36,9 @@ export default function FormatHandoff() {
             <>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                 Both formats include the same core report. Executive adds bounded report-linked follow-up.
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                Executive is not open-ended coaching, therapy, or general career advice.
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed mb-8">
                 After selection, you will review and submit your case.
