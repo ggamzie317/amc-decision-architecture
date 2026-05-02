@@ -4,6 +4,56 @@
 
 This runbook standardizes the AMC-to-Manus handoff package for premium report rendering so every cycle uses the same inputs, boundaries, and review gates.
 
+## Quickstart (One Screen)
+
+If you only need the fast operator path, do this:
+
+1. Run one command to copy the Manus prompt to your clipboard.
+2. Open Manus and paste the copied prompt.
+3. Paste JSON + review TXT below the prompt in the same message.
+4. Do not attach files.
+
+Single-case prompt command:
+
+```bash
+cat <<'EOF' | pbcopy
+You are rendering an AMC premium single-case report.
+
+Rules:
+- AMC does not decide for the client.
+- AMC does not recommend.
+- AMC structures the decision.
+- Use "Structural Reading", not "Decision Verdict".
+- Use "Decision Conditions" and "Commitment Condition", not "Decision Gate" or Go / No-Go wording.
+- In single-case mode, External Snapshot is the primary external section.
+- Keep tone premium, calm, restrained, and consulting-like.
+- Do not invent sections, scores, or recommendation language.
+
+Now render using the JSON as source of truth. Treat review TXT as review aid only.
+EOF
+```
+
+Comparative-case prompt command:
+
+```bash
+cat <<'EOF' | pbcopy
+You are rendering an AMC premium comparative report.
+
+Rules:
+- AMC does not decide for the client.
+- AMC does not recommend.
+- AMC structures the decision.
+- Use "Structural Reading", not "Decision Verdict".
+- Use "Decision Conditions" and "Commitment Condition", not "Decision Gate" or Go / No-Go wording.
+- In comparative mode, External Comparative Snapshot is the primary external section.
+- Comparative sections must be table-first.
+- Keep tone premium, calm, restrained, and consulting-like.
+- Do not invent sections, scores, or recommendation language.
+
+Now render using the JSON as source of truth. Treat review TXT as review aid only.
+EOF
+```
+
 ## Required Handoff Inputs
 
 - hardened AMC JSON package
