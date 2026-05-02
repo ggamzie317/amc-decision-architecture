@@ -98,7 +98,7 @@ No. It is for broader career-structure decisions, including stay/transition and 
 AMC still provides a structured read, while signaling assumptions and conditions that require validation.
 
 ### 9. Can AMC be used in different languages?
-AMC is prepared for Korean, English, and Chinese delivery workflows.
+AMC is currently running an English-first soft launch. Additional language workflows may be introduced in later phases.
 
 ### 10. Is AMC a long-term advisory subscription?
 No. AMC is case-based. Executive adds a defined 7-day follow-up window.
