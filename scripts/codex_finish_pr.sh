@@ -35,10 +35,21 @@ echo "$MERGE_OUTPUT"
 
 if [[ $MERGE_EXIT -ne 0 ]]; then
   if echo "$MERGE_OUTPUT" | grep -qi "already used by worktree"; then
-    echo
-    echo "Note: GitHub may have merged the PR even though local branch cleanup warned that 'main' is already used by another worktree."
-    echo "This is a known local worktree warning and does not require checking out main in /Users/kwonkibum/amc-codex-work."
-    echo "Confirm with: gh pr view $PR_NUMBER --json state,mergedAt"
+    PR_STATE="$(gh pr view "$PR_NUMBER" --json state --jq '.state' 2>/dev/null || true)"
+    if [[ "$PR_STATE" == "MERGED" ]]; then
+      echo
+      echo "Note: PR #$PR_NUMBER is merged on GitHub."
+      echo "Local cleanup reported that 'main' is already used by another worktree."
+      echo "Do not checkout main in /Users/kwonkibum/amc-codex-work."
+      echo "Update main in the primary worktree instead:"
+      echo "  cd /Users/kwonkibum/amc-decision-architecture"
+      echo "  git pull origin main"
+    else
+      echo
+      echo "Error: merge command returned a worktree warning, but PR state is not MERGED."
+      echo "Check with: gh pr view $PR_NUMBER --json state,mergedAt,url"
+      exit "$MERGE_EXIT"
+    fi
   else
     echo
     echo "Error: merge command failed before a known post-merge cleanup warning."
