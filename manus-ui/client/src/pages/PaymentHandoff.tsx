@@ -62,6 +62,16 @@ export default function PaymentHandoff() {
               <p className="text-sm text-foreground/90 leading-relaxed mb-8">
                 Selected format: <span className="font-medium">{label}</span>
               </p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                {format === "executive"
+                  ? "Executive includes the same structured report plus a bounded 7-day report-linked interpretation window."
+                  : "Essential includes report-only delivery for clients who want a standalone structured decision brief."}
+              </p>
+              {format === "executive" ? (
+                <p className="text-xs text-muted-foreground leading-relaxed mb-8">
+                  Executive is not open-ended coaching, therapy, or general career advice.
+                </p>
+              ) : null}
               <p className="text-sm text-muted-foreground leading-relaxed mb-8">
                 Once submitted, your case enters processing and your report is delivered within 3 hours.
               </p>
