@@ -72,7 +72,7 @@ Yes. AMC supports both two-path comparison and one-path sustainability assessmen
 Professionals handling meaningful career decisions with real structural constraints.
 
 ### Is AMC available for different languages?
-AMC is prepared for Korean, English, and Chinese delivery workflows.
+AMC is currently running an English-first soft launch. Additional language workflows may be introduced in later phases.
 
 ## 9) Closing CTA
 For high-stakes career decisions, start with a structural read before commitment.

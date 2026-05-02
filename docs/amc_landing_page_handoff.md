@@ -148,7 +148,7 @@ Yes. AMC supports both two-path comparison and one-path sustainability assessmen
 Professionals handling meaningful career decisions with real structural constraints.
 
 ### 6) Is AMC available for different languages?
-AMC is prepared for Korean, English, and Chinese delivery workflows.
+AMC is currently running an English-first soft launch. Additional language workflows may be introduced in later phases.
 
 ## 8) Design Guidance Notes
 Use a calm, premium, structure-first visual tone. Keep typography strong and restrained. Avoid startup-style hype cues, coaching clichés, aggressive conversion language, and decorative excess. The page should read like a clear decision service brief, not a promotional campaign.
