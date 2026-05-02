@@ -69,7 +69,7 @@ Manus should return a premium rendered report that:
 ## Review Ownership (ChatGPT and Codex)
 
 - ChatGPT and Codex review Manus output against AMC workflow and terminology rules.
-- Use [docs/amc_manus_fixed_report_workflow.md](/Users/kwonkibum/amc-codex-work/docs/amc_manus_fixed_report_workflow.md) as the governing checklist.
+- Use [docs/amc_manus_fixed_report_workflow.md](amc_manus_fixed_report_workflow.md) as the governing checklist.
 - Confirm output is suitable for customer delivery before final packaging.
 
 ## Failure and Rework Triggers
@@ -90,5 +90,5 @@ Request rework if any of the following appear:
 3. Use the fixed Manus prompt.
 4. Paste prompt + JSON + TXT into Manus without asking Manus to alter logic.
 5. Add screenshots only when visual refinement is needed.
-6. Review Manus output against [docs/amc_manus_fixed_report_workflow.md](/Users/kwonkibum/amc-codex-work/docs/amc_manus_fixed_report_workflow.md).
+6. Review Manus output against [docs/amc_manus_fixed_report_workflow.md](amc_manus_fixed_report_workflow.md).
 7. Approve, request rework, or package for delivery.
