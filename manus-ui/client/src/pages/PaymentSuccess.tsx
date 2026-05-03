@@ -15,13 +15,13 @@ export default function PaymentSuccess() {
           {hasValidSuccessContext ? (
             <>
               <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-4">
-                Your AMC case has been received successfully.
+                Your private AMC case handoff is confirmed.
               </h1>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                Your report is now being prepared and will be delivered to your email within 3 hours.
+                Your report is now in preparation and will be delivered to your email within 3 hours.
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-                If you selected Executive, bounded 7-day report-linked interpretation details will arrive with your delivery.
+                If you selected Executive, bounded 7-day report-linked interpretation details will arrive with your report delivery.
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed mb-8">
                 Executive follow-up is limited to report clarification and interpretation, not open-ended coaching or general career advice.
@@ -56,10 +56,10 @@ export default function PaymentSuccess() {
           ) : (
             <>
               <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-4">
-                Next step not completed yet.
+                Session confirmation required.
               </h1>
               <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-                We could not confirm a submitted case for this session. Please return to format selection and continue from there.
+                We could not verify a completed case handoff for this session. Please return to format selection and continue from there.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
