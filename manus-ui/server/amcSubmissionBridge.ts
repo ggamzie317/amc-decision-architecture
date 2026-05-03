@@ -4,16 +4,9 @@ import path from "node:path";
 
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import mapModule from "../../src/mapAmcToManusRenderPackage.ts";
-import validateModule from "../../src/validateAmcManusRenderPackage.ts";
+import { mapAmcPayloadToManusRenderPackageV1 } from "../../src/mapAmcToManusRenderPackage.ts";
+import { validateAmcManusRenderPackageV1 } from "../../src/validateAmcManusRenderPackage.ts";
 import { sendPreparedEmail, sendSubmissionReceiptEmail } from "./emailSender";
-
-const { mapAmcPayloadToManusRenderPackageV1 } = mapModule as {
-  mapAmcPayloadToManusRenderPackageV1: (payload: any, context?: Record<string, unknown>) => any;
-};
-const { validateAmcManusRenderPackageV1 } = validateModule as {
-  validateAmcManusRenderPackageV1: (schema: any, instance: any) => { valid: boolean; errors: string[] };
-};
 
 const languageSchema = z.enum(["ko", "en", "zh"]);
 const tierSchema = z.enum(["essential", "executive"]);
