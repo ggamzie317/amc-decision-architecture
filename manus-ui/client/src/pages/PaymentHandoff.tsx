@@ -19,7 +19,7 @@ export default function PaymentHandoff() {
   const isValidHandoff = Boolean(handoff && handoff.tier === format && handoff.recipient.email.trim());
   const submitCase = async () => {
     if (!handoff) {
-      setNotice("We could not confirm your selected format for this session.");
+      setNotice("We could not verify your current format selection for this session.");
       return;
     }
     setSubmitting(true);
@@ -33,7 +33,7 @@ export default function PaymentHandoff() {
       });
       const payload = await response.json();
       if (!response.ok || !payload?.ok) {
-        setNotice("We could not submit your case right now. Please try again.");
+        setNotice("We could not complete your case handoff right now. Please try again.");
         setSubmitting(false);
         return;
       }
@@ -42,7 +42,7 @@ export default function PaymentHandoff() {
       }
       setLocation("/payment-success");
     } catch {
-      setNotice("We could not submit your case right now. Please try again.");
+      setNotice("We could not complete your case handoff right now. Please try again.");
       setSubmitting(false);
     }
   };
@@ -52,12 +52,12 @@ export default function PaymentHandoff() {
       <main className="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 py-16 lg:py-20">
         <div className="border border-border rounded-lg bg-card p-7 sm:p-9">
           <h1 className="text-3xl sm:text-4xl tracking-tight font-semibold mb-4">
-            Final Step for {label}
+            Private Case Handoff for {label}
           </h1>
           {isValidHandoff ? (
             <>
               <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                Review your selected format and submit your AMC case.
+                Review your selected format and confirm your private AMC case handoff.
               </p>
               <p className="text-sm text-foreground/90 leading-relaxed mb-8">
                 Selected format: <span className="font-medium">{label}</span>
@@ -73,7 +73,7 @@ export default function PaymentHandoff() {
                 </p>
               ) : null}
               <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-                Once submitted, your case enters processing and your report is delivered within 3 hours.
+                After confirmation, your case enters controlled processing and your report is delivered within 3 hours.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -83,7 +83,7 @@ export default function PaymentHandoff() {
                   disabled={submitting}
                   className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
                 >
-                  {submitting ? "Submitting Case..." : "Submit AMC Case"}
+                  {submitting ? "Confirming Handoff..." : "Confirm Private Case Handoff"}
                 </button>
                 <button
                   type="button"
@@ -98,7 +98,7 @@ export default function PaymentHandoff() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-                We could not confirm your selected format for this session.
+                We could not verify a valid format selection for this session.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button

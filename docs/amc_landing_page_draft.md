@@ -34,7 +34,8 @@ AMC is a private career architecture service for decisions where stakes, constra
 3. Delivery Tier Selection:
 - Essential: Report-only delivery for clients who want a standalone structured decision brief
 - Executive: Report + a bounded 7-day report-linked interpretation window
-4. Optional Follow-Up: In Executive, clients can pressure-test implications and assumptions during the defined 7-day window. This is not open-ended coaching, therapy, or general career advice.
+4. Private Case Handoff: Client confirms private handoff for controlled report preparation and email delivery within 3 hours.
+5. Optional Follow-Up: In Executive, clients can pressure-test implications and assumptions during the defined 7-day window. This is not open-ended coaching, therapy, or general career advice.
 
 ## 5) What the Report Covers
 - Executive Reading: A concise structural framing of the case and core tension

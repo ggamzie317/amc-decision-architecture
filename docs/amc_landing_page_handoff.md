@@ -44,10 +44,11 @@ This page introduces AMC as a private, structure-first career decision service a
 
 ### How It Works
 - Section purpose: Show process clarity and set delivery expectations.
-- Final copy to use:
+  - Final copy to use:
   1. `Submit intake context, constraints, options, and timing signals.`
   2. `Receive an AMC structural report (single-path or comparative).`
   3. `Choose delivery mode: Essential (report-only delivery) or Executive (report + bounded 7-day report-linked interpretation window).`
+  4. `Confirm private case handoff; report delivery follows by email within 3 hours.`
 - Recommended content format: Numbered 3-step row/list.
 - Notes for design/dev handoff: Steps should scan in under 10 seconds; keep copy unexpanded.
 

@@ -24,6 +24,7 @@ AMC is a private, case-based decision brief service for professionals at meaning
 1. Submit intake context, constraints, options, and timing signals.
 2. Receive an AMC structural report (single-path or comparative).
 3. Choose delivery mode: Essential (report-only delivery) or Executive (report + bounded 7-day report-linked interpretation window).
+4. Confirm private case handoff; your report is delivered by email within 3 hours.
 
 ## 5) What the Report Covers
 - Executive structural reading of the core decision tension
