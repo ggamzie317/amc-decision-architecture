@@ -4,9 +4,42 @@ import path from "node:path";
 
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { mapAmcPayloadToManusRenderPackageV1 } from "../../src/mapAmcToManusRenderPackage.ts";
-import { validateAmcManusRenderPackageV1 } from "../../src/validateAmcManusRenderPackage.ts";
+import * as mapModule from "../../src/mapAmcToManusRenderPackage.ts";
+import * as validateModule from "../../src/validateAmcManusRenderPackage.ts";
 import { sendPreparedEmail, sendSubmissionReceiptEmail } from "./emailSender";
+
+type MapFn = (payload: any, context?: Record<string, unknown>) => any;
+type ValidateFn = (schema: any, instance: any) => { valid: boolean; errors: string[] };
+
+function resolveInteropExport<T>(moduleValue: Record<string, unknown>, exportName: string): T {
+  const fromNamespace = moduleValue[exportName];
+  if (typeof fromNamespace === "function") {
+    return fromNamespace as T;
+  }
+
+  const fromDefault = (moduleValue.default as Record<string, unknown> | undefined)?.[exportName];
+  if (typeof fromDefault === "function") {
+    return fromDefault as T;
+  }
+
+  const fromModuleExports = (moduleValue["module.exports"] as Record<string, unknown> | undefined)?.[exportName];
+  if (typeof fromModuleExports === "function") {
+    return fromModuleExports as T;
+  }
+
+  throw new Error(
+    `Failed to resolve export '${exportName}' from module interop shape. Available keys: ${Object.keys(moduleValue).join(", ")}`,
+  );
+}
+
+const mapAmcPayloadToManusRenderPackageV1 = resolveInteropExport<MapFn>(
+  mapModule as unknown as Record<string, unknown>,
+  "mapAmcPayloadToManusRenderPackageV1",
+);
+const validateAmcManusRenderPackageV1 = resolveInteropExport<ValidateFn>(
+  validateModule as unknown as Record<string, unknown>,
+  "validateAmcManusRenderPackageV1",
+);
 
 const languageSchema = z.enum(["ko", "en", "zh"]);
 const tierSchema = z.enum(["essential", "executive"]);
