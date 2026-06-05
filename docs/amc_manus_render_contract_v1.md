@@ -10,6 +10,7 @@
 ## Contract Boundaries
 - AMC owns analysis logic, scoring logic, and philosophy.
 - Manus is renderer-only for this package.
+- DOCX template output is baseline/fallback only; Manus output is the final premium customer-facing design target.
 - Section order is locked by `layout_rules.section_order`.
 - Recommendation language is forbidden by governance and forbidden-transformation rules.
 - First page must render conclusion-first.
