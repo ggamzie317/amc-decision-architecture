@@ -10,6 +10,8 @@ This runbook fixes the current production path for premium AMC reports:
 
 Manus is fixed for now because premium report quality is customer-sensitive and must stay stable.
 
+The DOCX template runner remains a baseline/fallback path for deterministic report generation. It is not the final premium customer-facing design target. Final premium report delivery should be rendered through Manus under the structure, terminology, and visual lock in this workflow.
+
 ## Ownership Model
 
 ### AMC and Codex own
@@ -25,6 +27,7 @@ Manus is fixed for now because premium report quality is customer-sensitive and 
 - Premium visual rendering and layout polish.
 - High-quality typographic and spacing execution.
 - Visual hierarchy improvements that keep AMC structure unchanged.
+- PDF-ready executive consulting report presentation.
 
 ### Manus must not do
 
@@ -32,6 +35,8 @@ Manus is fixed for now because premium report quality is customer-sensitive and 
 - Introduce recommendation language.
 - Rename frozen visible sections or internal/external meaning.
 - Convert the report into a startup SaaS dashboard style.
+- Convert the report into a dashboard-like scorecard, colorful SaaS UI, coaching workbook, motivational poster, or gamified score experience.
+- Invent sections, labels, scores, visual score systems, or decision framings.
 
 ## Required AMC Interpretation Rules
 
@@ -68,11 +73,12 @@ Manus is fixed for now because premium report quality is customer-sensitive and 
 
 ## Visual Style Constraints
 
-- Premium, calm, restrained, consulting-like tone.
-- Avoid bright color-heavy UI signals.
-- Avoid gamification or score-as-game cues.
-- Avoid startup SaaS dashboard styling patterns.
-- Keep clear section hierarchy and readable table structure.
+- Use simple executive consulting report style.
+- Keep the visual direction clean, McKinsey-simple, restrained, premium, and non-decorative.
+- Use strong typography hierarchy, generous whitespace, and a conclusion-first first page.
+- Make the report PDF-ready: clear page hierarchy, readable tables, disciplined spacing, and no screen-only UI affordances.
+- Keep comparative pages table-first, followed by concise reading and implication lines.
+- Avoid bright color-heavy UI signals, colorful SaaS styling, dashboard-like scorecard feel, workbook layouts, motivational poster styling, heavy icons, gamification, or score-as-game cues.
 
 ## Manus Handoff Inputs
 
@@ -85,13 +91,20 @@ Use this package for each render cycle:
 
 ## Pre-Delivery Review Checklist
 
-- No internal-only terminology is visible.
-- No recommendation language is present.
+- Visual tone is premium, calm, restrained, non-decorative, and simple executive consulting report style.
+- Final output is PDF-ready with strong typography hierarchy, generous whitespace, readable tables, and a conclusion-first first page.
+- No dashboard-like scorecard feel, colorful SaaS UI style, coaching workbook style, motivational poster style, heavy icons, or gamified score visuals are present.
+- Section fidelity is intact: no invented sections, omitted required sections, renamed frozen sections, invented labels, or changed section order.
 - Single vs comparative mode is rendered correctly.
-- Comparative sections remain table-first.
-- External section emphasis follows mode-specific rules.
-- Visual tone is premium, calm, restrained, and consulting-like.
-- AMC structure and interpretation ownership remain intact.
+- Single-case output emphasizes `External Snapshot`.
+- Comparative output emphasizes `External Comparative Snapshot`.
+- Comparative sections remain table-first, followed by short reading and implication lines.
+- Terminology discipline is intact: required AMC terms remain visible where expected.
+- No internal-only terminology, internal acronyms, payload keys, or implementation terms are visible.
+- No raw score machinery, score formulas, or invented scores are visible.
+- No recommendation language is present.
+- No `Decision Verdict`, `Decision Gate`, Go / No-Go, or Go-No-Go framing is present.
+- AMC structure and interpretation ownership remain intact: AMC does not decide, AMC does not recommend, AMC structures the decision, and Manus renders only.
 - Final output is suitable for customer delivery.
 
 ## Operating Rule
