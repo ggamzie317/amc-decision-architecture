@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import AmcWebMvp from "./pages/AmcWebMvp";
 import FormatHandoff from "./pages/FormatHandoff";
 import Home from "./pages/Home";
 import Intake from "./pages/Intake";
@@ -15,6 +16,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/amc-web-mvp"} component={AmcWebMvp} />
       <Route path={"/intake"} component={Intake} />
       <Route path={"/format-handoff"} component={FormatHandoff} />
       <Route path={"/payment-handoff"} component={PaymentHandoff} />
