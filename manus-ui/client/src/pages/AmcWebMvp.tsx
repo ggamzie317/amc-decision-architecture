@@ -112,37 +112,184 @@ const lockedModules = [
 const intakeGroups = [
   {
     title: "Current Situation",
-    body: "Clarifies the current role, pressure, and decision context.",
+    questions: [
+      {
+        id: 1,
+        text: "What career decision are you facing now?",
+        sample: "Whether to remain in corporate strategy or prepare for a PhD and research-oriented advisory path.",
+      },
+      {
+        id: 2,
+        text: "Why has this decision become important at this point?",
+        sample: "The current role remains stable, but the gap between daily work and long-term identity is widening.",
+      },
+      {
+        id: 3,
+        text: "What pressure, trigger, or opportunity is making the decision more urgent?",
+        sample: "A possible research collaboration and the next admissions cycle create a time-sensitive validation window.",
+      },
+      {
+        id: 4,
+        text: "What would happen if you delayed this decision for 6 to 12 months?",
+        sample: "Income stability would remain, but the research transition window could become narrower.",
+      },
+    ],
   },
   {
     title: "Option A / Option B",
-    body: "Defines the paths being compared and what each path protects or strains.",
+    questions: [
+      { id: 5, text: "What is Option A?", sample: "Remain in the current corporate strategy path." },
+      {
+        id: 6,
+        text: "What does Option A protect?",
+        sample: "Income continuity, professional credibility, and near-term family stability.",
+      },
+      {
+        id: 7,
+        text: "What does Option A limit or strain?",
+        sample: "Research identity, intellectual depth, and longer-term platform renewal.",
+      },
+      { id: 8, text: "What is Option B?", sample: "Prepare for a PhD and research-oriented advisory path." },
+      {
+        id: 9,
+        text: "What does Option B open up?",
+        sample: "A stronger research identity, deeper expertise, and a possible second professional platform.",
+      },
+      {
+        id: 10,
+        text: "What does Option B put at risk?",
+        sample: "Income stability, execution capacity, and credibility if external validation remains weak.",
+      },
+    ],
   },
   {
     title: "External Pressure",
-    body: "Locates market, institutional, and validation signals around each path.",
+    questions: [
+      {
+        id: 11,
+        text: "What external market, industry, policy, or company changes are affecting this decision?",
+        sample: "Corporate strategy roles are becoming more execution-heavy while research-led advisory demand is selective.",
+      },
+      {
+        id: 12,
+        text: "Which option is more aligned with where the external environment seems to be moving?",
+        sample: "Option B may align with demand for specialized research, but Option A remains more immediately validated.",
+      },
+      {
+        id: 13,
+        text: "What evidence supports that external reading?",
+        sample: "Early conversations show interest in the research topic, but no funded commitment exists yet.",
+      },
+      {
+        id: 14,
+        text: "What external validation is still missing?",
+        sample: "Admissions fit, funding visibility, supervisor support, and paid advisory demand.",
+      },
+    ],
   },
   {
     title: "Internal Readiness",
-    body: "Reads clarity, emotional load, and capacity for sustained execution.",
+    questions: [
+      {
+        id: 15,
+        text: "Which option feels more aligned with your long-term identity?",
+        sample: "Option B feels more aligned with the desired long-term research and advisory identity.",
+      },
+      {
+        id: 16,
+        text: "Which option requires more personal reconfiguration?",
+        sample: "Option B requires a larger shift in routine, identity, learning discipline, and professional positioning.",
+      },
+      {
+        id: 17,
+        text: "What skills, credentials, or proof points are still missing?",
+        sample: "Published research, stronger academic references, and evidence of market demand for advisory work.",
+      },
+      {
+        id: 18,
+        text: "What emotional or cognitive load would each option create?",
+        sample: "Option A creates stagnation pressure; Option B creates uncertainty and sustained execution load.",
+      },
+    ],
   },
   {
     title: "Safety Margin",
-    body: "Checks runway, reversibility, and downside exposure.",
+    questions: [
+      {
+        id: 19,
+        text: "How much financial runway or income stability do you have?",
+        sample: "The current role provides strong stability, while a transition would require a protected 12-month runway.",
+      },
+      {
+        id: 20,
+        text: "Which option gives you more reversibility if things do not work out?",
+        sample: "Option A is currently more reversible because exploration can continue while income is protected.",
+      },
+      {
+        id: 21,
+        text: "What downside exposure would be hardest to absorb?",
+        sample: "A transition that weakens income without producing academic or advisory validation.",
+      },
+    ],
   },
   {
     title: "Support System",
-    body: "Maps practical backing, mentors, family constraints, and operating support.",
+    questions: [
+      {
+        id: 22,
+        text: "Who would support you in Option A?",
+        sample: "Current colleagues, family, and the existing professional network.",
+      },
+      {
+        id: 23,
+        text: "Who would support you in Option B?",
+        sample: "Potential supervisors, research collaborators, and a small group of advisory contacts.",
+      },
+      {
+        id: 24,
+        text: "What network, mentor, family, or institutional support is still missing?",
+        sample: "A committed academic sponsor, clearer family operating support, and stronger institutional backing.",
+      },
+    ],
   },
   {
     title: "Timing and Constraints",
-    body: "Surfaces sequencing pressure, deadlines, and constraint collisions.",
+    questions: [
+      {
+        id: 25,
+        text: "What deadlines, age, visa, family, company, or market timing constraints matter?",
+        sample: "The admissions calendar, family obligations, and corporate workload shape the next 12 months.",
+      },
+      {
+        id: 26,
+        text: "Which option becomes harder if you wait?",
+        sample: "Option B becomes harder if research proof and academic relationships are delayed.",
+      },
+      {
+        id: 27,
+        text: "Which option becomes safer if you wait?",
+        sample: "Option B becomes safer if external validation and financial runway improve before commitment.",
+      },
+    ],
   },
   {
     title: "Decision Conditions",
-    body: "Defines what would make deeper commitment structurally defensible.",
+    questions: [
+      {
+        id: 28,
+        text: "What condition would make deeper commitment to Option B more defensible?",
+        sample: "Credible supervisor support, funding visibility, and a tested advisory demand signal.",
+      },
+      {
+        id: 29,
+        text: "What condition would make staying with Option A more defensible?",
+        sample: "A reshaped role that protects learning, exploration time, and a clear longer-term platform strategy.",
+      },
+    ],
   },
 ] as const;
+
+const totalFullIntakeQuestions = intakeGroups.reduce((total, group) => total + group.questions.length, 0);
 
 const dashboardDeck = [
   {
@@ -251,17 +398,21 @@ export default function AmcWebMvp() {
   const [previewStarted, setPreviewStarted] = useState(false);
   const [previewGenerated, setPreviewGenerated] = useState(false);
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
-  const [completedGroups, setCompletedGroups] = useState<string[]>([]);
   const [dashboardGenerated, setDashboardGenerated] = useState(false);
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
+  const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
 
   const optionALabel = answers.optionA.trim() || "Corporate Strategy Path";
   const optionBLabel = answers.optionB.trim() || "PhD / Research Path";
   const requiredPreviewReady = Boolean(answers.decision.trim() && answers.optionA.trim() && answers.optionB.trim());
-  const progress = Math.round((completedGroups.length / intakeGroups.length) * 100);
-  const fullIntakeComplete = completedGroups.length === intakeGroups.length;
-
-  const completedGroupSet = useMemo(() => new Set(completedGroups), [completedGroups]);
+  const answeredQuestionCount = useMemo(
+    () => Object.values(fullIntakeAnswers).filter((value) => value.trim()).length,
+    [fullIntakeAnswers],
+  );
+  const progress = Math.round((answeredQuestionCount / totalFullIntakeQuestions) * 100);
+  const fullIntakeComplete = answeredQuestionCount === totalFullIntakeQuestions;
+  const expandedGroupSet = useMemo(() => new Set(expandedGroups), [expandedGroups]);
 
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
@@ -289,10 +440,22 @@ export default function AmcWebMvp() {
     });
   };
 
+  const updateFullIntakeAnswer = (questionId: number, value: string) => {
+    setFullIntakeAnswers((current) => ({ ...current, [questionId]: value }));
+  };
+
   const toggleGroup = (title: string) => {
-    setCompletedGroups((current) =>
+    setExpandedGroups((current) =>
       current.includes(title) ? current.filter((item) => item !== title) : [...current, title],
     );
+  };
+
+  const fillSampleAnswers = () => {
+    const sampleAnswers = Object.fromEntries(
+      intakeGroups.flatMap((group) => group.questions.map((question) => [question.id, question.sample])),
+    ) as Record<number, string>;
+    setFullIntakeAnswers(sampleAnswers);
+    setExpandedGroups(intakeGroups.map((group) => group.title));
   };
 
   const generateDashboard = () => {
@@ -571,43 +734,92 @@ export default function AmcWebMvp() {
         {selectedTier ? (
           <section id="full-intake" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
-              eyebrow="Full intake simulation"
-              title="Eight groups stand in for the full 29-question intake."
-              body="Mark each group complete to simulate the deeper evidence base needed for the full dashboard."
+              eyebrow="Full intake"
+              title="A deeper evidence base for the full dashboard."
+              body="The full intake expands the quick preview into a deeper evidence base for the dashboard."
             />
             <div className="mb-5 rounded-lg border border-border bg-card p-5">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <p className="text-sm font-medium">
-                  {completedGroups.length} / {intakeGroups.length} groups complete
-                </p>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    Full intake progress
+                  </p>
+                  <p className="mt-2 text-sm font-medium">
+                    {answeredQuestionCount} / {totalFullIntakeQuestions} questions answered
+                  </p>
+                </div>
                 <p className="text-sm text-muted-foreground">Progress: {progress}%</p>
               </div>
               <div className="mt-4 h-2 rounded-full bg-secondary">
                 <div className="h-2 rounded-full bg-foreground/75" style={{ width: `${progress}%` }} />
               </div>
+              <button
+                type="button"
+                onClick={fillSampleAnswers}
+                className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground"
+              >
+                Fill sample answers
+              </button>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+
+            <div className="space-y-4">
               {intakeGroups.map((group, index) => {
-                const complete = completedGroupSet.has(group.title);
+                const expanded = expandedGroupSet.has(group.title);
+                const answeredInGroup = group.questions.filter((question) =>
+                  String(fullIntakeAnswers[question.id] || "").trim(),
+                ).length;
+                const complete = answeredInGroup === group.questions.length;
+
                 return (
-                  <div key={group.title} className="rounded-lg border border-border bg-card p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-xs font-medium text-muted-foreground">{String(index + 1).padStart(2, "0")}</p>
-                      <Tag>{complete ? "Complete" : "Open"}</Tag>
-                    </div>
-                    <h3 className="mt-4 text-base font-semibold">{group.title}</h3>
-                    <p className="mt-3 min-h-16 text-sm leading-relaxed text-muted-foreground">{group.body}</p>
+                  <div key={group.title} className="overflow-hidden rounded-lg border border-border bg-card">
                     <button
                       type="button"
                       onClick={() => toggleGroup(group.title)}
-                      className="mt-5 inline-flex h-10 w-full items-center justify-center rounded-md border border-border px-4 text-sm font-medium"
+                      aria-expanded={expanded}
+                      className="flex w-full items-center justify-between gap-5 p-5 text-left"
                     >
-                      {complete ? "Mark open" : "Mark complete"}
+                      <div className="flex min-w-0 items-start gap-4">
+                        <Marker>{String(index + 1)}</Marker>
+                        <div>
+                          <h3 className="text-base font-semibold">{group.title}</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {answeredInGroup} / {group.questions.length} complete
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <Tag>{complete ? "Complete" : "In progress"}</Tag>
+                        <span className="text-sm font-medium text-muted-foreground">{expanded ? "Close" : "Open"}</span>
+                      </div>
                     </button>
+
+                    {expanded ? (
+                      <div className="border-t border-border bg-background/50 p-5">
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                          {group.questions.map((question) => (
+                            <label key={question.id} className="rounded-md border border-border bg-background p-4">
+                              <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                Question {question.id}
+                              </span>
+                              <span className="mt-2 block min-h-10 text-sm font-medium leading-snug">
+                                {question.text}
+                              </span>
+                              <textarea
+                                value={fullIntakeAnswers[question.id] || ""}
+                                onChange={(event) => updateFullIntakeAnswer(question.id, event.target.value)}
+                                placeholder="Add your structural evidence..."
+                                className="mt-3 h-24 w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
             </div>
+
             <button
               type="button"
               onClick={generateDashboard}
@@ -616,6 +828,11 @@ export default function AmcWebMvp() {
             >
               Generate Full Dashboard
             </button>
+            {!fullIntakeComplete ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Complete all intake questions to generate the full dashboard.
+              </p>
+            ) : null}
           </section>
         ) : null}
 
