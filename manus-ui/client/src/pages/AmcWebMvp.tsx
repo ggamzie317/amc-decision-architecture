@@ -100,13 +100,26 @@ const lockedModules = [
     reveals: "What makes deeper commitment more defensible.",
   },
   {
-    title: "PDF Download",
-    reveals: "Save the dashboard as a PDF.",
+    title: "Detailed PDF Report",
+    reveals: "Deeper written interpretation and richer analysis for later review.",
   },
   {
     title: "Executive Report Q&A",
     reveals: "Ask report-based questions for 7 days.",
   },
+] as const;
+
+const detailedPdfSections = [
+  "Executive Summary",
+  "Situation and Decision Context",
+  "Option A / Option B Detailed Reading",
+  "External Comparative Analysis",
+  "Internal Readiness Analysis",
+  "Safety Margin and Reversibility",
+  "Structural Risk Diagnosis",
+  "Decision Conditions",
+  "30 / 60 / 90-day Validation Plan",
+  "Reflection Questions",
 ] as const;
 
 const intakeGroups = [
@@ -465,7 +478,7 @@ export default function AmcWebMvp() {
     });
   };
 
-  const printReport = () => {
+  const generateDetailedReport = () => {
     window.print();
   };
 
@@ -682,19 +695,19 @@ export default function AmcWebMvp() {
           <section id="unlock" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
               eyebrow="Unlock"
-              title="The full report begins with a detailed 29-question intake."
+              title="The paid experience begins with a detailed 29-question intake."
               body="No account is required. A private email link can be used later for report access and Executive Q&A."
             />
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="rounded-lg border border-border bg-card p-6">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Essential</p>
-                <h3 className="mt-3 text-2xl font-semibold">Full dashboard</h3>
+                <h3 className="mt-3 text-2xl font-semibold">Dashboard and detailed report</h3>
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
                     Full Web Dashboard
                   </div>
                   <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
-                    PDF Download
+                    Detailed PDF Report
                   </div>
                 </div>
                 <button
@@ -707,13 +720,13 @@ export default function AmcWebMvp() {
               </div>
               <div className="rounded-lg border border-foreground/20 bg-card p-6">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Executive</p>
-                <h3 className="mt-3 text-2xl font-semibold">Dashboard plus report Q&A</h3>
+                <h3 className="mt-3 text-2xl font-semibold">Dashboard, detailed report, and Q&A</h3>
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
                     Full Web Dashboard
                   </div>
                   <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
-                    PDF Download
+                    Detailed PDF Report
                   </div>
                   <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
                     7-day Report Q&A
@@ -841,8 +854,8 @@ export default function AmcWebMvp() {
             <section id="full-dashboard" className="border-b border-border py-12 sm:py-14">
               <SectionHeader
                 eyebrow="Full Web Dashboard"
-                title="A five-card map before the detailed sections."
-                body="The full report opens as a dashboard: compact signals first, deeper interpretation second."
+                title="A compact structural map of the decision."
+                body="The dashboard keeps the core tension, trade-offs, risks, and conditions visual and scannable."
               />
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -1008,24 +1021,39 @@ export default function AmcWebMvp() {
               </div>
             </section>
 
-            <section className="grid grid-cols-1 gap-6 border-b border-border py-12 sm:py-14 lg:grid-cols-[0.75fr_1.25fr]">
-              <div>
-                <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  PDF Download
-                </p>
-                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Save the dashboard as a PDF.</h2>
-              </div>
+            <section className="border-b border-border py-12 sm:py-14">
+              <SectionHeader
+                eyebrow="Detailed PDF Report"
+                title="A richer written report for deeper review."
+                body="A detailed report based on your full intake, designed for offline review and later reference."
+              />
               <div className="rounded-lg border border-border bg-card p-6">
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Use the browser print dialog to keep the web dashboard portable.
+                <p className="max-w-3xl text-sm leading-relaxed text-foreground">
+                  The dashboard gives the structural map. The PDF report expands the reasoning behind it.
                 </p>
-                <button
-                  type="button"
-                  onClick={printReport}
-                  className="mt-6 inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
-                >
-                  Download / Save as PDF
-                </button>
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  {detailedPdfSections.map((section, index) => (
+                    <div key={section} className="rounded-md border border-border bg-background p-4">
+                      <p className="text-[11px] font-medium text-muted-foreground">
+                        {String(index + 1).padStart(2, "0")}
+                      </p>
+                      <p className="mt-2 text-sm font-medium leading-snug">{section}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                    In this MVP, PDF generation is represented as a placeholder. The production version should generate
+                    a richer written report.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={generateDetailedReport}
+                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
+                  >
+                    Generate Detailed PDF Report
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -1040,7 +1068,7 @@ export default function AmcWebMvp() {
                 body={
                   selectedTier === "executive"
                     ? "Ask structured questions about your report for 7 days."
-                    : "Essential includes the dashboard and PDF download. Executive adds report-based Q&A."
+                    : "Essential includes the dashboard and Detailed PDF Report. Executive adds report-based Q&A."
                 }
               />
               <div className="rounded-lg border border-border bg-card p-6">
