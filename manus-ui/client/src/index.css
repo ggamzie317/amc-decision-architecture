@@ -330,3 +330,112 @@
     @apply border-t border-border/50;
   }
 }
+
+.pdf-kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(32, 35, 38, 0.48);
+}
+
+.pdf-section-heading {
+  max-width: 46rem;
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  font-weight: 650;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.pdf-report-section {
+  border-bottom: 1px solid rgba(32, 35, 38, 0.15);
+}
+
+.pdf-comparison-table th {
+  background: #202326;
+  color: white;
+  padding: 0.9rem;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pdf-comparison-table td {
+  border-bottom: 1px solid rgba(32, 35, 38, 0.15);
+  padding: 0.9rem;
+  vertical-align: top;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: rgba(32, 35, 38, 0.68);
+}
+
+.pdf-comparison-table td:first-child {
+  color: #202326;
+  font-weight: 600;
+}
+
+.pdf-comparison-table tr:last-child td {
+  border-bottom: 0;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    background: white !important;
+    width: 100%;
+    min-height: auto;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .pdf-report-shell {
+    min-height: auto;
+    background: white !important;
+  }
+
+  .pdf-report-controls {
+    display: none !important;
+  }
+
+  .pdf-report-view {
+    width: 210mm;
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .pdf-cover {
+    min-height: 297mm;
+    break-after: page;
+  }
+
+  .pdf-report-section {
+    padding: 14mm 15mm;
+  }
+
+  .pdf-page-break {
+    break-before: page;
+  }
+
+  .pdf-keep-together,
+  table,
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .pdf-section-heading {
+    font-size: 24pt;
+  }
+}

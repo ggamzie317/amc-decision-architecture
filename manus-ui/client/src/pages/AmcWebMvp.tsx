@@ -381,6 +381,85 @@ const optionAConditions = [
   "Stability connects to a longer platform strategy.",
 ] as const;
 
+const reportExecutiveSummary = [
+  "The decision is best understood as a staged reconfiguration rather than an immediate binary choice.",
+  "The central tension sits between stronger long-term identity alignment and stronger near-term safety margin.",
+  "Premature commitment is the primary risk while external evidence remains incomplete.",
+  "A deeper transition becomes more defensible when validation, runway, and reversibility improve together.",
+] as const;
+
+const externalPressureSignals = [
+  {
+    label: "Market / Industry Signal",
+    value: "Selective opportunity",
+    reading: "Specialized research and advisory demand appears credible but uneven.",
+  },
+  {
+    label: "Institutional / Company Signal",
+    value: "Current path validated",
+    reading: "The existing role retains market credibility but offers slower identity renewal.",
+  },
+  {
+    label: "Evidence Quality",
+    value: "Developing",
+    reading: "Early conversations support exploration, not yet full commitment.",
+  },
+  {
+    label: "Missing Validation",
+    value: "Material",
+    reading: "Funding, sponsor support, and paid advisory demand remain unresolved.",
+  },
+] as const;
+
+const reportRiskItems = [
+  {
+    label: "Primary Risk",
+    name: "Premature Commitment",
+    meaning: "Moving before the transition has enough external support.",
+    why: "Identity alignment may be mistaken for structural readiness.",
+    reduction: "Test demand, sponsorship, and runway before irreversible movement.",
+  },
+  {
+    label: "Secondary Risk",
+    name: "Corporate Stagnation",
+    meaning: "Remaining stable without building a second platform.",
+    why: "Near-term safety can gradually narrow future mobility.",
+    reduction: "Protect research, network, and proof-building time inside Option A.",
+  },
+  {
+    label: "Distortion Risk",
+    name: "Fatigue Misread as Readiness",
+    meaning: "Current-role fatigue may intensify the appeal of change.",
+    why: "Urgency can look like evidence when capacity is already strained.",
+    reduction: "Separate recovery needs from transition validation.",
+  },
+] as const;
+
+const validationPlan = [
+  {
+    period: "30 days",
+    title: "Clarify evidence",
+    body: "Define the strongest claims behind each option and identify the evidence still missing.",
+  },
+  {
+    period: "60 days",
+    title: "Test external validation",
+    body: "Pressure-test supervisor, market, funding, and advisory signals with real counterparties.",
+  },
+  {
+    period: "90 days",
+    title: "Decide commitment conditions",
+    body: "Review whether evidence, safety margin, support, and timing now justify deeper commitment.",
+  },
+] as const;
+
+const reflectionQuestions = [
+  "What evidence would materially change the decision?",
+  "Which risk is currently being underestimated?",
+  "What support must be secured before deeper commitment?",
+  "What should be tested before any irreversible move?",
+] as const;
+
 function SectionHeader({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
   return (
     <div className="mb-7 max-w-3xl">
@@ -407,17 +486,36 @@ function Tag({ children }: { children: string }) {
   );
 }
 
+function reportOptionLabel(value: string, fallback: string) {
+  const normalized = value.trim();
+  return normalized.length >= 3 ? normalized : fallback;
+}
+
 export default function AmcWebMvp() {
   const [previewStarted, setPreviewStarted] = useState(false);
   const [previewGenerated, setPreviewGenerated] = useState(false);
   const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
   const [dashboardGenerated, setDashboardGenerated] = useState(false);
+  const [showPdfReportView, setShowPdfReportView] = useState(false);
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
   const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
   const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
 
-  const optionALabel = answers.optionA.trim() || "Corporate Strategy Path";
-  const optionBLabel = answers.optionB.trim() || "PhD / Research Path";
+  const optionALabel = reportOptionLabel(answers.optionA, "Option A");
+  const optionBLabel = reportOptionLabel(answers.optionB, "Option B");
+  const decisionContext =
+    answers.decision.trim() ||
+    fullIntakeAnswers[1]?.trim() ||
+    "A comparative career decision requiring staged validation.";
+  const reportDate = useMemo(
+    () =>
+      new Intl.DateTimeFormat("en", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date()),
+    [],
+  );
   const requiredPreviewReady = Boolean(answers.decision.trim() && answers.optionA.trim() && answers.optionB.trim());
   const answeredQuestionCount = useMemo(
     () => Object.values(fullIntakeAnswers).filter((value) => value.trim()).length,
@@ -479,8 +577,294 @@ export default function AmcWebMvp() {
   };
 
   const generateDetailedReport = () => {
-    window.print();
+    setShowPdfReportView(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  if (showPdfReportView) {
+    const snapshotItems = [
+      { label: "Decision Type", value: "Staged Reconfiguration" },
+      { label: "Core Tension", value: "Identity Pull vs Safety Margin" },
+      { label: "Primary Risk", value: "Premature Commitment" },
+      { label: "Safety Margin", value: `Stronger in ${optionALabel}` },
+      { label: "Commitment Condition", value: "Validation, runway, and reversibility" },
+    ];
+
+    return (
+      <div className="pdf-report-shell min-h-screen bg-[#e9e9e7] text-[#202326]">
+        <div className="pdf-report-controls sticky top-0 z-20 border-b border-black/10 bg-white/95 px-5 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-[960px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => setShowPdfReportView(false)}
+              className="inline-flex h-10 items-center justify-center rounded-md border border-black/15 bg-white px-4 text-sm font-medium"
+            >
+              Back to Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex h-10 items-center justify-center rounded-md bg-[#202326] px-4 text-sm font-medium text-white"
+            >
+              Print / Save Report as PDF
+            </button>
+          </div>
+        </div>
+
+        <article className="pdf-report-view mx-auto my-8 max-w-[960px] bg-white shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
+          <section className="pdf-cover relative flex min-h-[760px] flex-col justify-between overflow-hidden border-b border-black/15 p-10 sm:p-16">
+            <div className="absolute right-0 top-0 h-full w-[34%] bg-[#202326]" aria-hidden="true" />
+            <div className="relative z-10 max-w-[62%]">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black/55">AMC - All of My Career</p>
+              <div className="mt-16 h-px w-16 bg-black" />
+              <h1 className="mt-8 text-4xl font-semibold leading-[1.04] tracking-[-0.035em] sm:text-6xl">
+                Strategic Career Decision Report
+              </h1>
+              <p className="mt-7 text-lg font-medium tracking-[0.08em] text-black/60">Tip in. Decide. Value up.</p>
+            </div>
+            <div className="relative z-10 max-w-[62%] border-t border-black/20 pt-7">
+              <p className="text-sm font-medium">Private structural interpretation report</p>
+              <dl className="mt-7 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">Date</dt>
+                  <dd className="mt-2 font-medium">{reportDate}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">
+                    Decision type
+                  </dt>
+                  <dd className="mt-2 font-medium">Staged Reconfiguration</dd>
+                </div>
+              </dl>
+            </div>
+          </section>
+
+          <div className="pdf-report-body">
+            <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
+              <p className="pdf-kicker">01 / Executive Summary</p>
+              <div className="mt-4 grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+                <div>
+                  <h2 className="pdf-section-heading">The decision is a validation problem before it is a commitment problem.</h2>
+                  <p className="mt-5 text-sm leading-7 text-black/60">{decisionContext}</p>
+                </div>
+                <div className="border-t-2 border-black">
+                  {reportExecutiveSummary.map((item, index) => (
+                    <div key={item} className="pdf-keep-together grid grid-cols-[32px_1fr] gap-3 border-b border-black/15 py-4">
+                      <span className="text-xs font-semibold text-black/40">{String(index + 1).padStart(2, "0")}</span>
+                      <p className="text-sm font-medium leading-6">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="pdf-report-section p-8 sm:p-12">
+              <p className="pdf-kicker">02 / Decision Snapshot</p>
+              <h2 className="pdf-section-heading mt-3">Five signals define the current decision architecture.</h2>
+              <div className="mt-7 grid grid-cols-1 border-l border-t border-black/15 sm:grid-cols-2 lg:grid-cols-5">
+                {snapshotItems.map((item, index) => (
+                  <div key={item.label} className="pdf-keep-together border-b border-r border-black/15 p-4">
+                    <p className="text-[10px] font-semibold text-black/35">{String(index + 1).padStart(2, "0")}</p>
+                    <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-black/50">{item.label}</p>
+                    <p className="mt-2 text-sm font-semibold leading-5">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
+              <p className="pdf-kicker">03 / Option A - Option B Comparative Read</p>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <h2 className="pdf-section-heading max-w-xl">The options optimize for different forms of career value.</h2>
+                <p className="text-xs font-medium text-black/50">Structural reading, not recommendation</p>
+              </div>
+              <div className="mt-7 overflow-hidden border border-black/15">
+                <table className="pdf-comparison-table w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th>Dimension</th>
+                      <th>{optionALabel}</th>
+                      <th>{optionBLabel}</th>
+                      <th>Structural reading</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matrixRows.map((row) => (
+                      <tr key={row.dimension}>
+                        <td>{row.dimension}</td>
+                        <td><strong>{row.optionA}</strong></td>
+                        <td><strong>{row.optionB}</strong></td>
+                        <td>{row.reading}</td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td>Structural Reading</td>
+                      <td><strong>Protects continuity</strong></td>
+                      <td><strong>Expands identity fit</strong></td>
+                      <td>Staging preserves optionality while evidence develops.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="pdf-report-section p-8 sm:p-12">
+              <p className="pdf-kicker">04 / External Pressure Map</p>
+              <h2 className="pdf-section-heading mt-3">External signals support exploration more strongly than immediate conversion.</h2>
+              <div className="mt-7 grid grid-cols-1 gap-px bg-black/15 sm:grid-cols-2">
+                {externalPressureSignals.map((signal) => (
+                  <div key={signal.label} className="pdf-keep-together bg-[#f6f6f4] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-black/45">{signal.label}</p>
+                    <p className="mt-3 text-lg font-semibold">{signal.value}</p>
+                    <p className="mt-3 text-sm leading-6 text-black/60">{signal.reading}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
+              <p className="pdf-kicker">05 / Internal Readiness Map</p>
+              <h2 className="pdf-section-heading mt-3">Readiness is mixed: the strategic pull is clear, but the operating base is incomplete.</h2>
+              <div className="mt-8 space-y-4">
+                {internalSignals.map((signal) => (
+                  <div key={signal.label} className="pdf-keep-together grid grid-cols-[1fr_1.4fr] items-center gap-5 border-b border-black/15 pb-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/45">{signal.label}</p>
+                      <p className="mt-1 text-sm font-semibold">{signal.status}</p>
+                    </div>
+                    <div className="h-2 bg-black/8">
+                      <div className="h-2 bg-[#202326]" style={{ width: signal.width }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section p-8 sm:p-12">
+              <p className="pdf-kicker">06 / Safety Margin &amp; Reversibility</p>
+              <h2 className="pdf-section-heading mt-3">The safer path protects time; the growth path requires proof.</h2>
+              <div className="mt-7 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                {[
+                  {
+                    label: "What the safer path protects",
+                    text: `${optionALabel} protects income continuity, existing credibility, and the capacity to validate a second platform without immediate conversion pressure.`,
+                  },
+                  {
+                    label: "What the growth path requires",
+                    text: `${optionBLabel} requires stronger external sponsorship, a protected runway, repeatable execution capacity, and evidence that identity alignment can become durable field value.`,
+                  },
+                  {
+                    label: "What must be validated",
+                    text: "Demand, institutional support, financial resilience, and a reversible sequence must become clearer before deeper commitment is structurally defensible.",
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="pdf-keep-together border-t-2 border-black bg-[#f6f6f4] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/45">{item.label}</p>
+                    <p className="mt-4 text-sm leading-6 text-black/70">{item.text}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
+              <p className="pdf-kicker">07 / Structural Risk Diagnosis</p>
+              <h2 className="pdf-section-heading mt-3">Risk sits in both action and inaction - but through different mechanisms.</h2>
+              <div className="mt-7 space-y-4">
+                {reportRiskItems.map((risk, index) => (
+                  <div key={risk.label} className="pdf-keep-together border border-black/15">
+                    <div className="grid grid-cols-[52px_1fr] border-b border-black/15 bg-[#202326] text-white">
+                      <p className="p-4 text-xs font-semibold text-white/55">{String(index + 1).padStart(2, "0")}</p>
+                      <div className="border-l border-white/20 p-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">{risk.label}</p>
+                        <p className="mt-1 text-lg font-semibold">{risk.name}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 divide-y divide-black/15 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                      {[
+                        ["What it means", risk.meaning],
+                        ["Why it matters", risk.why],
+                        ["What reduces the risk", risk.reduction],
+                      ].map(([label, text]) => (
+                        <div key={label} className="p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">{label}</p>
+                          <p className="mt-2 text-sm leading-6 text-black/65">{text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section p-8 sm:p-12">
+              <p className="pdf-kicker">08 / Decision Conditions</p>
+              <h2 className="pdf-section-heading mt-3">Commitment becomes defensible when evidence and operating conditions move together.</h2>
+              <div className="mt-7 grid grid-cols-1 gap-px bg-black/20 lg:grid-cols-2">
+                {[
+                  [`Conditions that make ${optionBLabel} more defensible`, optionBConditions],
+                  [`Conditions that make ${optionALabel} more defensible`, optionAConditions],
+                ].map(([title, conditions]) => (
+                  <div key={String(title)} className="pdf-keep-together bg-[#f6f6f4] p-6">
+                    <h3 className="text-lg font-semibold leading-6">{String(title)}</h3>
+                    <ol className="mt-5 space-y-4">
+                      {(conditions as readonly string[]).map((condition, index) => (
+                        <li key={condition} className="grid grid-cols-[24px_1fr] gap-3 text-sm leading-6 text-black/65">
+                          <span className="font-semibold text-black">{index + 1}</span>
+                          <span>{condition}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
+              <p className="pdf-kicker">09 / 30 - 60 - 90 Day Validation Plan</p>
+              <h2 className="pdf-section-heading mt-3">Sequence evidence before increasing commitment.</h2>
+              <div className="mt-9 grid grid-cols-1 gap-0 lg:grid-cols-3">
+                {validationPlan.map((item, index) => (
+                  <div key={item.period} className="pdf-keep-together relative border-l border-black/25 pb-8 pl-6 lg:border-l-0 lg:border-t lg:pb-0 lg:pl-0 lg:pt-7">
+                    <span className="absolute -left-[5px] top-0 h-[9px] w-[9px] rounded-full bg-black lg:-top-[5px] lg:left-0" />
+                    <div className={index < validationPlan.length - 1 ? "lg:pr-7" : ""}>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/45">{item.period}</p>
+                      <h3 className="mt-3 text-xl font-semibold">{item.title}</h3>
+                      <p className="mt-3 text-sm leading-6 text-black/60">{item.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section p-8 sm:p-12">
+              <p className="pdf-kicker">10 / Closing Reflection</p>
+              <div className="mt-4 grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+                <div>
+                  <h2 className="pdf-section-heading">The next move is to improve the quality of the decision conditions.</h2>
+                  <p className="mt-5 text-sm leading-7 text-black/60">
+                    These questions are designed to expose weak evidence, hidden exposure, and missing support before
+                    the decision becomes harder to reverse.
+                  </p>
+                </div>
+                <ol className="border-t-2 border-black">
+                  {reflectionQuestions.map((question, index) => (
+                    <li key={question} className="pdf-keep-together grid grid-cols-[36px_1fr] gap-3 border-b border-black/15 py-4">
+                      <span className="text-xs font-semibold text-black/40">{String(index + 1).padStart(2, "0")}</span>
+                      <p className="text-sm font-semibold leading-6">{question}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <div className="mt-14 flex items-end justify-between border-t border-black/20 pt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">
+                <span>AMC - All of My Career</span>
+                <span>Private structural interpretation</span>
+              </div>
+            </section>
+          </div>
+        </article>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -1043,15 +1427,15 @@ export default function AmcWebMvp() {
                 </div>
                 <div className="mt-6 flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                    In this MVP, PDF generation is represented as a placeholder. The production version should generate
-                    a richer written report.
+                    Open a dedicated report-only view with richer written interpretation, comparative analysis, and a
+                    structured validation plan.
                   </p>
                   <button
                     type="button"
                     onClick={generateDetailedReport}
                     className="inline-flex h-11 shrink-0 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
                   >
-                    Generate Detailed PDF Report
+                    Open Detailed PDF Report
                   </button>
                 </div>
               </div>
