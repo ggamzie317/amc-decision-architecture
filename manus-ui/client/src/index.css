@@ -410,6 +410,46 @@
   word-break: normal;
 }
 
+.pdf-report-shell[lang="ko"] .pdf-report-view {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  word-spacing: normal;
+  line-height: 1.65;
+}
+
+.pdf-report-shell[lang="ko"] .pdf-report-view h1,
+.pdf-report-shell[lang="ko"] .pdf-report-view h2,
+.pdf-report-shell[lang="ko"] .pdf-report-view h3,
+.pdf-report-shell[lang="ko"] .pdf-report-view h4,
+.pdf-report-shell[lang="ko"] .pdf-report-view p,
+.pdf-report-shell[lang="ko"] .pdf-report-view dd,
+.pdf-report-shell[lang="ko"] .pdf-report-view td,
+.pdf-report-shell[lang="ko"] .pdf-report-view li {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.pdf-report-shell[lang="ko"] .pdf-section-heading {
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.pdf-report-shell[lang="ko"] .pdf-executive-message {
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+}
+
+.pdf-report-shell[lang="ko"] .pdf-snapshot-card,
+.pdf-report-shell[lang="ko"] .pdf-risk-card,
+.pdf-report-shell[lang="ko"] .pdf-timeline-step {
+  min-height: auto;
+}
+
+.pdf-report-shell[lang="ko"] .pdf-comparison-table th,
+.pdf-report-shell[lang="ko"] .pdf-comparison-table td {
+  line-height: 1.65;
+}
+
 .pdf-executive-message {
   max-width: 48rem;
   font-size: clamp(2rem, 4.3vw, 3.55rem);
@@ -594,6 +634,12 @@
     word-spacing: 0.04em;
   }
 
+  .pdf-report-shell[lang="ko"] .pdf-report-view {
+    font-size: 9.5pt;
+    line-height: 1.55;
+    word-spacing: normal;
+  }
+
   .pdf-cover {
     min-height: 297mm;
     break-after: page;
@@ -624,6 +670,10 @@
     font-size: 31pt;
   }
 
+  .pdf-report-shell[lang="ko"] .pdf-executive-message {
+    font-size: 27pt;
+  }
+
   .pdf-snapshot-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2.5mm;
@@ -634,6 +684,10 @@
     padding: 3.5mm;
   }
 
+  .pdf-report-shell[lang="ko"] .pdf-snapshot-card {
+    min-height: 48mm;
+  }
+
   .pdf-risk-map {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 3mm;
@@ -641,6 +695,10 @@
 
   .pdf-risk-card-header {
     min-height: 31mm;
+  }
+
+  .pdf-report-shell[lang="ko"] .pdf-risk-card-header {
+    min-height: 34mm;
   }
 
   .pdf-timeline {
