@@ -155,7 +155,7 @@ Tone should not be:
 
 Purpose: introduce AMC, brand, philosophy, and value.
 
-Core message: AMC looks at structure before choice. Before deciding what to choose, AMC clarifies why the decision is difficult.
+Core message: AMC sees structure.
 
 Primary CTA: Start a free structural preview.
 
