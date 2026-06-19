@@ -10,21 +10,25 @@ Lock customer-facing report terminology, section labels, score presentation, and
 - Manus-like premium visual rhythm should be the target.
 
 ## Section Labels
-- Executive Dashboard -> 결정 한눈에 보기
-- Executive Overview -> 이번 결정의 핵심 구조
-- External Snapshot -> 외부 환경 요약
-- External Comparative Snapshot -> 선택지 간 환경 비교
-- Internal Structural Snapshot -> 현재 나의 준비 상태
-- Structural Risk Diagnosis -> 리스크 구조 진단
-- FIFWM (internal only) -> 환경–준비 적합도
-- Career Value Structure -> 가치 구조 비교
-- Career Mobility Structure -> 이동 가능성
-- Strategic Temperament -> 성향과 선택의 적합성
-- Structural Scorecard -> 핵심 비교 요약
-- Hybrid Exploration Plan -> 현실 검증 계획
-- 90-Day Execution Map -> 향후 체크 사항
-- Decision Conditions -> 결정이 가능한 조건
-- Recommendation Box (if used) -> 지금의 판단 방향
+Korean delivery uses hybrid EN/KR labels. Keep the framework label in English and place the Korean interpretation beneath or beside it.
+
+- Executive Dashboard
+- Executive Overview
+- Decision Snapshot
+- External Snapshot
+- External Comparative Snapshot
+- Internal Structural Snapshot
+- Structural Risk Diagnosis / Risk Diagnosis
+- Career Value Structure
+- Career Mobility Structure
+- Strategic Temperament
+- Structural Scorecard
+- Hybrid Exploration Plan
+- 30 / 60 / 90-Day Validation Plan
+- Decision Conditions
+- Structural Reading
+
+Do not convert these labels into literal Korean section titles. Korean should explain what the section means and why the signal matters.
 
 ## FIFWM Naming Rule
 - Keep FIFWM as an internal framework reference only.
@@ -57,7 +61,10 @@ Lock customer-facing report terminology, section labels, score presentation, and
 - All labels and copy must be ready for Korean / English / Chinese
 - Avoid unexplained jargon
 - Keep headings short and translation-safe
+- For Korean, retain major AMC framework labels in English
+- Use natural Korean for explanations, helper text, questions, and interpretation
 - Prefer plain customer language over internal analysis terms
+- Avoid awkward literal translations of business and strategy terminology
 
 ## Implementation Order
 1. Lock this spec

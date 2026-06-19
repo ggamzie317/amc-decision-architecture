@@ -190,7 +190,10 @@ test("external snapshot reading cue resolves deterministic normal-evidence text"
 test("external snapshot reading cue weakEvidence branch is locale-consistent (en/ko/zh)", () => {
   const localeCases = [
     { locale: "en", expected: "External reading cue: signal visibility is present, but not yet fully consolidated." },
-    { locale: "ko", expected: "외부 해석 큐: 외부 신호는 확인되나, 아직 충분히 통합되지는 않았습니다." },
+    {
+      locale: "ko",
+      expected: "External Validation: 외부 신호는 확인되지만, 아직 충분한 검증으로 이어지지는 않았습니다.",
+    },
     { locale: "zh", expected: "外部解读提示：外部信号可见，但尚未充分收敛。" },
   ] as const;
 
@@ -419,7 +422,7 @@ test("missing native matrixBands falls back to derived band mapping safely", () 
 test("matrix reading cue locale parity is stable across en/ko/zh", () => {
   const cases = [
     { locale: "en", startsWith: "Matrix reading cue:" },
-    { locale: "ko", startsWith: "매트릭스 해석 큐:" },
+    { locale: "ko", startsWith: "Structural Reading:" },
     { locale: "zh", startsWith: "矩阵解读提示:" },
   ] as const;
 
