@@ -382,10 +382,26 @@ const optionAConditions = [
 ] as const;
 
 const reportExecutiveSummary = [
-  "The decision is best understood as a staged reconfiguration rather than an immediate binary choice.",
-  "The central tension sits between stronger long-term identity alignment and stronger near-term safety margin.",
-  "Premature commitment is the primary risk while external evidence remains incomplete.",
-  "A deeper transition becomes more defensible when validation, runway, and reversibility improve together.",
+  {
+    lead: "Staged reconfiguration",
+    body: "The decision is better treated as a sequenced transition than as an immediate binary choice.",
+  },
+  {
+    lead: "Identity alignment",
+    body: "The growth path carries stronger long-term fit, while the current path retains more near-term operating stability.",
+  },
+  {
+    lead: "Safety margin",
+    body: "Runway, support, and reversibility remain stronger on the current path and should be protected during validation.",
+  },
+  {
+    lead: "Premature commitment",
+    body: "The primary risk is increasing exposure before external evidence can support the transition.",
+  },
+  {
+    lead: "Defensible commitment",
+    body: "A deeper move becomes structurally stronger when validation, runway, and reversibility improve together.",
+  },
 ] as const;
 
 const externalPressureSignals = [
@@ -439,17 +455,23 @@ const validationPlan = [
   {
     period: "30 days",
     title: "Clarify evidence",
-    body: "Define the strongest claims behind each option and identify the evidence still missing.",
+    objective: "Separate assumptions from evidence.",
+    action: "List the strongest claim behind each option and identify the proof still missing.",
+    output: "A prioritized evidence register with explicit validation questions.",
   },
   {
     period: "60 days",
     title: "Test external validation",
-    body: "Pressure-test supervisor, market, funding, and advisory signals with real counterparties.",
+    objective: "Test whether external support is repeatable.",
+    action: "Pressure-test sponsor, market, funding, and advisory signals with real counterparties.",
+    output: "A documented view of signal strength, gaps, and credible next tests.",
   },
   {
     period: "90 days",
     title: "Decide commitment conditions",
-    body: "Review whether evidence, safety margin, support, and timing now justify deeper commitment.",
+    objective: "Set the threshold for deeper commitment.",
+    action: "Review evidence, safety margin, support, execution load, and timing as one system.",
+    output: "A defined commitment condition, validation extension, or protected holding pattern.",
   },
 ] as const;
 
@@ -583,11 +605,31 @@ export default function AmcWebMvp() {
 
   if (showPdfReportView) {
     const snapshotItems = [
-      { label: "Decision Type", value: "Staged Reconfiguration" },
-      { label: "Core Tension", value: "Identity Pull vs Safety Margin" },
-      { label: "Primary Risk", value: "Premature Commitment" },
-      { label: "Safety Margin", value: `Stronger in ${optionALabel}` },
-      { label: "Commitment Condition", value: "Validation, runway, and reversibility" },
+      {
+        label: "Decision Type",
+        value: "Staged Reconfiguration",
+        reading: "Sequence validation before increasing exposure.",
+      },
+      {
+        label: "Core Tension",
+        value: "Identity Pull vs Safety Margin",
+        reading: "Long-term fit competes with near-term operating stability.",
+      },
+      {
+        label: "Primary Risk",
+        value: "Premature Commitment",
+        reading: "Commitment may move faster than the evidence base.",
+      },
+      {
+        label: "Safety Margin",
+        value: `Stronger in ${optionALabel}`,
+        reading: "The current path protects runway and reversibility.",
+      },
+      {
+        label: "Commitment Condition",
+        value: "Validation, Runway, Reversibility",
+        reading: "All three conditions should strengthen together.",
+      },
     ];
 
     return (
@@ -613,45 +655,75 @@ export default function AmcWebMvp() {
 
         <article className="pdf-report-view mx-auto my-8 max-w-[960px] bg-white shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
           <section className="pdf-cover relative flex min-h-[760px] flex-col justify-between overflow-hidden border-b border-black/15 p-10 sm:p-16">
-            <div className="absolute right-0 top-0 h-full w-[34%] bg-[#202326]" aria-hidden="true" />
-            <div className="relative z-10 max-w-[62%]">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black/55">AMC - All of My Career</p>
-              <div className="mt-16 h-px w-16 bg-black" />
-              <h1 className="mt-8 text-4xl font-semibold leading-[1.04] tracking-[-0.035em] sm:text-6xl">
+            <div className="absolute right-0 top-0 h-full w-[31%] bg-[#202326]" aria-hidden="true" />
+            <div className="absolute right-[31%] top-0 h-full w-px bg-black/15" aria-hidden="true" />
+            <div className="relative z-10 max-w-[64%]">
+              <div className="flex items-center gap-4">
+                <span className="h-px w-10 bg-black/70" aria-hidden="true" />
+                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-black/55">
+                  AMC - All of My Career
+                </p>
+              </div>
+              <p className="mt-16 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/42">
+                Private career decision architecture
+              </p>
+              <h1 className="mt-5 text-4xl font-semibold leading-[1.02] tracking-[-0.04em] sm:text-6xl">
                 Strategic Career Decision Report
               </h1>
-              <p className="mt-7 text-lg font-medium tracking-[0.08em] text-black/60">Tip in. Decide. Value up.</p>
+              <p className="mt-8 text-base font-medium tracking-[0.1em] text-black/58">Tip in. Decide. Value up.</p>
             </div>
-            <div className="relative z-10 max-w-[62%] border-t border-black/20 pt-7">
-              <p className="text-sm font-medium">Private structural interpretation report</p>
-              <dl className="mt-7 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
-                <div>
+            <div className="relative z-10 max-w-[64%]">
+              <p className="border-l-2 border-black pl-4 text-sm font-semibold leading-6">
+                Private structural interpretation report
+              </p>
+              <dl className="mt-9 grid grid-cols-1 border-y border-black/20 text-sm sm:grid-cols-2">
+                <div className="py-5 sm:border-r sm:border-black/15 sm:pr-5">
                   <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">Date</dt>
                   <dd className="mt-2 font-medium">{reportDate}</dd>
                 </div>
-                <div>
+                <div className="py-5 sm:pl-5">
                   <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">
                     Decision type
                   </dt>
                   <dd className="mt-2 font-medium">Staged Reconfiguration</dd>
                 </div>
               </dl>
+              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/42">
+                Prepared for private career decision review
+              </p>
             </div>
           </section>
 
           <div className="pdf-report-body">
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
               <p className="pdf-kicker">01 / Executive Summary</p>
-              <div className="mt-4 grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-                <div>
-                  <h2 className="pdf-section-heading">The decision is a validation problem before it is a commitment problem.</h2>
-                  <p className="mt-5 text-sm leading-7 text-black/60">{decisionContext}</p>
+              <div className="mt-5 border-y border-black/20 py-7">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">Core message</p>
+                <h2 className="pdf-executive-message mt-3">
+                  The decision is a validation problem before it is a commitment problem.
+                </h2>
+              </div>
+              <div className="mt-8 grid gap-8 lg:grid-cols-[0.72fr_1.28fr]">
+                <div className="pdf-keep-together">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Decision context</p>
+                  <p className="mt-3 text-sm leading-7 text-black/65">{decisionContext}</p>
+                  <div className="mt-7 border-l-2 border-black pl-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Structural read</p>
+                    <p className="mt-2 text-sm font-semibold leading-6">
+                      Preserve optionality while converting uncertainty into evidence.
+                    </p>
+                  </div>
                 </div>
                 <div className="border-t-2 border-black">
                   {reportExecutiveSummary.map((item, index) => (
-                    <div key={item} className="pdf-keep-together grid grid-cols-[32px_1fr] gap-3 border-b border-black/15 py-4">
+                    <div
+                      key={item.lead}
+                      className="pdf-keep-together grid grid-cols-[32px_1fr] gap-3 border-b border-black/15 py-3.5"
+                    >
                       <span className="text-xs font-semibold text-black/40">{String(index + 1).padStart(2, "0")}</span>
-                      <p className="text-sm font-medium leading-6">{item}</p>
+                      <p className="text-sm leading-6 text-black/65">
+                        <strong className="font-semibold text-black">{item.lead}.</strong> {item.body}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -661,12 +733,15 @@ export default function AmcWebMvp() {
             <section className="pdf-report-section p-8 sm:p-12">
               <p className="pdf-kicker">02 / Decision Snapshot</p>
               <h2 className="pdf-section-heading mt-3">Five signals define the current decision architecture.</h2>
-              <div className="mt-7 grid grid-cols-1 border-l border-t border-black/15 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="pdf-snapshot-grid mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 {snapshotItems.map((item, index) => (
-                  <div key={item.label} className="pdf-keep-together border-b border-r border-black/15 p-4">
-                    <p className="text-[10px] font-semibold text-black/35">{String(index + 1).padStart(2, "0")}</p>
-                    <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-black/50">{item.label}</p>
-                    <p className="mt-2 text-sm font-semibold leading-5">{item.value}</p>
+                  <div key={item.label} className="pdf-snapshot-card pdf-keep-together">
+                    <div className="flex items-center justify-between border-b border-black/12 pb-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/50">{item.label}</p>
+                      <p className="text-[10px] font-semibold text-black/30">{String(index + 1).padStart(2, "0")}</p>
+                    </div>
+                    <p className="mt-4 text-sm font-semibold leading-5">{item.value}</p>
+                    <p className="mt-3 text-xs leading-5 text-black/55">{item.reading}</p>
                   </div>
                 ))}
               </div>
@@ -680,6 +755,12 @@ export default function AmcWebMvp() {
               </div>
               <div className="mt-7 overflow-hidden border border-black/15">
                 <table className="pdf-comparison-table w-full border-collapse">
+                  <colgroup>
+                    <col className="w-[19%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[41%]" />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Dimension</th>
@@ -692,16 +773,16 @@ export default function AmcWebMvp() {
                     {matrixRows.map((row) => (
                       <tr key={row.dimension}>
                         <td>{row.dimension}</td>
-                        <td><strong>{row.optionA}</strong></td>
-                        <td><strong>{row.optionB}</strong></td>
-                        <td>{row.reading}</td>
+                        <td><span className="pdf-signal-label">{row.optionA}</span></td>
+                        <td><span className="pdf-signal-label">{row.optionB}</span></td>
+                        <td className="pdf-structural-reading">{row.reading}</td>
                       </tr>
                     ))}
                     <tr>
                       <td>Structural Reading</td>
-                      <td><strong>Protects continuity</strong></td>
-                      <td><strong>Expands identity fit</strong></td>
-                      <td>Staging preserves optionality while evidence develops.</td>
+                      <td><strong className="text-black">Protects continuity</strong></td>
+                      <td><strong className="text-black">Expands identity fit</strong></td>
+                      <td className="pdf-structural-reading">Staging preserves optionality while evidence develops.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -769,17 +850,17 @@ export default function AmcWebMvp() {
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
               <p className="pdf-kicker">07 / Structural Risk Diagnosis</p>
               <h2 className="pdf-section-heading mt-3">Risk sits in both action and inaction - but through different mechanisms.</h2>
-              <div className="mt-7 space-y-4">
+              <div className="pdf-risk-map mt-8">
                 {reportRiskItems.map((risk, index) => (
-                  <div key={risk.label} className="pdf-keep-together border border-black/15">
-                    <div className="grid grid-cols-[52px_1fr] border-b border-black/15 bg-[#202326] text-white">
-                      <p className="p-4 text-xs font-semibold text-white/55">{String(index + 1).padStart(2, "0")}</p>
-                      <div className="border-l border-white/20 p-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">{risk.label}</p>
-                        <p className="mt-1 text-lg font-semibold">{risk.name}</p>
+                  <div key={risk.label} className="pdf-risk-card pdf-keep-together">
+                    <div className="pdf-risk-card-header">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">{risk.label}</p>
+                        <p className="mt-2 text-lg font-semibold leading-6">{risk.name}</p>
                       </div>
+                      <p className="text-2xl font-light text-white/25">{String(index + 1).padStart(2, "0")}</p>
                     </div>
-                    <div className="grid grid-cols-1 divide-y divide-black/15 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                    <div className="divide-y divide-black/12">
                       {[
                         ["What it means", risk.meaning],
                         ["Why it matters", risk.why],
@@ -787,7 +868,7 @@ export default function AmcWebMvp() {
                       ].map(([label, text]) => (
                         <div key={label} className="p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">{label}</p>
-                          <p className="mt-2 text-sm leading-6 text-black/65">{text}</p>
+                          <p className="mt-2 text-sm leading-5 text-black/65">{text}</p>
                         </div>
                       ))}
                     </div>
@@ -822,15 +903,26 @@ export default function AmcWebMvp() {
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
               <p className="pdf-kicker">09 / 30 - 60 - 90 Day Validation Plan</p>
               <h2 className="pdf-section-heading mt-3">Sequence evidence before increasing commitment.</h2>
-              <div className="mt-9 grid grid-cols-1 gap-0 lg:grid-cols-3">
+              <div className="pdf-timeline mt-10 grid grid-cols-1 lg:grid-cols-3">
                 {validationPlan.map((item, index) => (
-                  <div key={item.period} className="pdf-keep-together relative border-l border-black/25 pb-8 pl-6 lg:border-l-0 lg:border-t lg:pb-0 lg:pl-0 lg:pt-7">
-                    <span className="absolute -left-[5px] top-0 h-[9px] w-[9px] rounded-full bg-black lg:-top-[5px] lg:left-0" />
-                    <div className={index < validationPlan.length - 1 ? "lg:pr-7" : ""}>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/45">{item.period}</p>
-                      <h3 className="mt-3 text-xl font-semibold">{item.title}</h3>
-                      <p className="mt-3 text-sm leading-6 text-black/60">{item.body}</p>
+                  <div key={item.period} className="pdf-timeline-step pdf-keep-together">
+                    <div className="pdf-timeline-marker">
+                      <span>{String(index + 1).padStart(2, "0")}</span>
                     </div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/45">{item.period}</p>
+                    <h3 className="mt-2 text-xl font-semibold leading-6">{item.title}</h3>
+                    <dl className="mt-5 space-y-4">
+                      {[
+                        ["Objective", item.objective],
+                        ["Action focus", item.action],
+                        ["Decision output", item.output],
+                      ].map(([label, text]) => (
+                        <div key={label}>
+                          <dt className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">{label}</dt>
+                          <dd className="mt-1.5 text-sm leading-5 text-black/65">{text}</dd>
+                        </div>
+                      ))}
+                    </dl>
                   </div>
                 ))}
               </div>

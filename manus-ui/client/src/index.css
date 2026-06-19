@@ -347,14 +347,45 @@
   letter-spacing: -0.035em;
 }
 
+.pdf-report-view {
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
+  text-rendering: optimizeLegibility;
+  word-spacing: 0.035em;
+}
+
+.pdf-report-view p,
+.pdf-report-view dd,
+.pdf-report-view td,
+.pdf-report-view li {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.pdf-executive-message {
+  max-width: 48rem;
+  font-size: clamp(2rem, 4.3vw, 3.55rem);
+  font-weight: 650;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
 .pdf-report-section {
   border-bottom: 1px solid rgba(32, 35, 38, 0.15);
+}
+
+.pdf-snapshot-card {
+  min-height: 12.5rem;
+  border: 1px solid rgba(32, 35, 38, 0.15);
+  border-top: 3px solid #202326;
+  background: #f6f6f4;
+  padding: 1rem;
 }
 
 .pdf-comparison-table th {
   background: #202326;
   color: white;
-  padding: 0.9rem;
+  padding: 0.95rem 1rem;
   text-align: left;
   font-size: 0.68rem;
   font-weight: 650;
@@ -364,11 +395,16 @@
 
 .pdf-comparison-table td {
   border-bottom: 1px solid rgba(32, 35, 38, 0.15);
-  padding: 0.9rem;
+  padding: 0.95rem 1rem;
   vertical-align: top;
   font-size: 0.76rem;
-  line-height: 1.45;
+  line-height: 1.55;
   color: rgba(32, 35, 38, 0.68);
+}
+
+.pdf-comparison-table th + th,
+.pdf-comparison-table td + td {
+  border-left: 1px solid rgba(32, 35, 38, 0.1);
 }
 
 .pdf-comparison-table td:first-child {
@@ -376,8 +412,101 @@
   font-weight: 600;
 }
 
+.pdf-comparison-table .pdf-structural-reading {
+  background: #f6f6f4;
+  color: rgba(32, 35, 38, 0.78);
+  font-weight: 500;
+}
+
+.pdf-signal-label {
+  display: inline-flex;
+  min-width: 4.75rem;
+  justify-content: center;
+  border: 1px solid rgba(32, 35, 38, 0.18);
+  background: #f6f6f4;
+  padding: 0.3rem 0.5rem;
+  color: #202326;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .pdf-comparison-table tr:last-child td {
   border-bottom: 0;
+}
+
+.pdf-risk-map {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.pdf-risk-card {
+  border: 1px solid rgba(32, 35, 38, 0.16);
+  background: #f6f6f4;
+}
+
+.pdf-risk-card-header {
+  display: flex;
+  min-height: 7.2rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #202326;
+  padding: 1rem;
+  color: white;
+}
+
+.pdf-timeline {
+  position: relative;
+  gap: 1rem;
+}
+
+.pdf-timeline::before {
+  position: absolute;
+  top: 1.15rem;
+  right: 16%;
+  left: 16%;
+  height: 1px;
+  background: rgba(32, 35, 38, 0.28);
+  content: "";
+}
+
+.pdf-timeline-step {
+  position: relative;
+  border: 1px solid rgba(32, 35, 38, 0.15);
+  border-top: 3px solid #202326;
+  background: #f6f6f4;
+  padding: 3.5rem 1.1rem 1.2rem;
+}
+
+.pdf-timeline-marker {
+  position: absolute;
+  top: -1.45rem;
+  left: 1rem;
+  z-index: 1;
+  display: flex;
+  height: 2.8rem;
+  width: 2.8rem;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid white;
+  border-radius: 9999px;
+  background: #202326;
+  color: white;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+@media (max-width: 1023px) {
+  .pdf-risk-map {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-timeline::before {
+    display: none;
+  }
 }
 
 @page {
@@ -413,6 +542,8 @@
     max-width: none;
     margin: 0;
     box-shadow: none;
+    font-size: 10pt;
+    word-spacing: 0.04em;
   }
 
   .pdf-cover {
@@ -430,6 +561,8 @@
 
   .pdf-keep-together,
   table,
+  thead,
+  tbody,
   tr {
     break-inside: avoid;
     page-break-inside: avoid;
@@ -437,5 +570,37 @@
 
   .pdf-section-heading {
     font-size: 24pt;
+  }
+
+  .pdf-executive-message {
+    font-size: 31pt;
+  }
+
+  .pdf-snapshot-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2.5mm;
+  }
+
+  .pdf-snapshot-card {
+    min-height: 43mm;
+    padding: 3.5mm;
+  }
+
+  .pdf-risk-map {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+  }
+
+  .pdf-risk-card-header {
+    min-height: 31mm;
+  }
+
+  .pdf-timeline {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+  }
+
+  .pdf-timeline::before {
+    display: block;
   }
 }
