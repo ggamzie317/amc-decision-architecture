@@ -61,8 +61,8 @@ const previewQuestionsKo: Record<keyof PreviewAnswers, { question: string; place
     placeholder: "어떤 요인이 판단을 왜곡할 수 있나요?",
   },
   condition: {
-    question: "더 깊은 전환을 구조적으로 설명 가능하게 만드는 조건은 무엇인가요?",
-    placeholder: "무엇이 더 명확해져야 하나요?",
+    question: "전환을 더 구체적으로 검토하려면 어떤 조건이 확인되어야 하나요?",
+    placeholder: "전환 전에 무엇을 확인해야 하나요?",
   },
 };
 
@@ -349,8 +349,8 @@ const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
     sample: "현재 역할은 안정적이지만, 일상 업무와 장기적 정체성 사이의 간격이 커지고 있습니다.",
   },
   3: {
-    text: "결정의 시급성을 높이는 압력, 계기 또는 기회는 무엇인가요?",
-    sample: "가능성 있는 연구 협업과 다음 지원 일정이 제한된 검증 시기를 만들고 있습니다.",
+    text: "결정을 앞당기는 압력, 계기 또는 기회는 무엇인가요?",
+    sample: "연구 협업 가능성과 다음 지원 일정으로 인해 검증 가능한 시기가 제한되어 있습니다.",
   },
   4: {
     text: "이 결정을 6개월에서 12개월 미루면 어떤 변화가 생기나요?",
@@ -362,13 +362,13 @@ const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
     sample: "소득의 연속성, 직업적 신뢰도, 단기적인 가족 안정성을 보호합니다.",
   },
   7: {
-    text: "Option A가 제한하거나 부담을 높이는 것은 무엇인가요?",
-    sample: "리서치 정체성, 지적 깊이, 장기적인 커리어 플랫폼 전환이 제한될 수 있습니다.",
+    text: "Option A가 제한하는 가능성은 무엇인가요?",
+    sample: "리서치 정체성, 전문성의 깊이, 장기적인 커리어 전환이 제한될 수 있습니다.",
   },
   8: { text: "Option B는 무엇인가요?", sample: "박사과정과 리서치 기반 자문 경로를 준비합니다." },
   9: {
     text: "Option B가 열어 주는 가능성은 무엇인가요?",
-    sample: "더 강한 리서치 정체성, 전문성의 깊이, 두 번째 직업 플랫폼의 가능성을 엽니다.",
+    sample: "리서치 정체성, 전문성의 깊이, 두 번째 커리어 플랫폼을 구축할 가능성이 커집니다.",
   },
   10: {
     text: "Option B에서 감수해야 하는 리스크는 무엇인가요?",
@@ -379,8 +379,8 @@ const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
     sample: "기업 전략 역할의 실행 부담은 커지고 있으며, 리서치 기반 자문 수요는 선별적으로 형성되고 있습니다.",
   },
   12: {
-    text: "외부 환경의 변화 방향과 더 잘 맞는 선택지는 무엇인가요?",
-    sample: "Option B는 전문 리서치 수요와 연결될 수 있지만, Option A는 현재 더 명확한 검증을 받고 있습니다.",
+    text: "외부 환경의 변화 방향과 더 잘 맞는 선택지는 어느 쪽인가요?",
+    sample: "Option B는 전문 리서치 수요와 연결될 수 있지만, 현재는 Option A의 검증 수준이 더 높습니다.",
   },
   13: {
     text: "그 외부 환경 해석을 뒷받침하는 근거는 무엇인가요?",
@@ -395,20 +395,20 @@ const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
     sample: "Option B가 장기적으로 원하는 리서치 및 자문 정체성과 더 잘 맞습니다.",
   },
   16: {
-    text: "개인적인 재구성이 더 많이 필요한 선택지는 무엇인가요?",
-    sample: "Option B는 일상, 정체성, 학습 규율, 직업적 포지셔닝에서 더 큰 변화가 필요합니다.",
+    text: "더 큰 변화와 준비가 필요한 선택지는 무엇인가요?",
+    sample: "Option B는 일상, 정체성, 학습 방식, 전문 분야 포지셔닝에서 더 큰 변화가 필요합니다.",
   },
   17: {
     text: "아직 부족한 역량, 자격 또는 검증 근거는 무엇인가요?",
     sample: "출판된 연구, 더 강한 학술 추천, 자문 수요를 입증할 시장 근거가 필요합니다.",
   },
   18: {
-    text: "각 선택지가 만드는 감정적 또는 인지적 부담은 무엇인가요?",
-    sample: "Option A는 정체 압력을 만들고, Option B는 불확실성과 지속적인 실행 부담을 만듭니다.",
+    text: "각 선택지에서 예상되는 감정적·인지적 부담은 무엇인가요?",
+    sample: "Option A는 정체감과 답답함을 키울 수 있고, Option B는 불확실성과 지속적인 실행 부담을 높일 수 있습니다.",
   },
   19: {
-    text: "현재 확보된 재정적 여유와 소득 안정성은 어느 정도인가요?",
-    sample: "현재 역할은 높은 안정성을 제공하지만, 전환에는 보호된 12개월의 재정 여유가 필요합니다.",
+    text: "현재 재정적 여유와 소득 안정성은 어느 정도인가요?",
+    sample: "현재 역할의 안정성은 높지만, 전환을 위해서는 최소 12개월의 재정적 여유가 필요합니다.",
   },
   20: {
     text: "예상대로 진행되지 않을 때 Reversibility가 더 높은 선택지는 무엇인가요?",
@@ -428,26 +428,26 @@ const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
   },
   24: {
     text: "아직 부족한 네트워크, 멘토, 가족 또는 기관의 지원은 무엇인가요?",
-    sample: "확실한 학술 스폰서, 구체적인 가족 운영 지원, 더 강한 기관의 지지가 필요합니다.",
+    sample: "신뢰할 수 있는 학술 스폰서, 구체적인 가족 지원, 더 강한 기관의 지지가 필요합니다.",
   },
   25: {
-    text: "마감 일정, 연령, 비자, 가족, 회사 또는 시장 시기 중 어떤 제약이 중요한가요?",
-    sample: "지원 일정, 가족 의무, 회사의 업무량이 향후 12개월의 선택 조건을 만듭니다.",
+    text: "마감 일정, 연령, 비자, 가족, 회사 또는 시장 시기 중 중요한 제약은 무엇인가요?",
+    sample: "지원 일정, 가족 의무, 회사의 업무량이 향후 12개월의 의사결정 시기에 영향을 줍니다.",
   },
   26: {
     text: "기다릴수록 더 어려워지는 선택지는 무엇인가요?",
     sample: "리서치 근거와 학술 관계 형성이 늦어지면 Option B가 더 어려워집니다.",
   },
   27: {
-    text: "기다릴수록 더 안정적으로 검증할 수 있는 선택지는 무엇인가요?",
-    sample: "External Validation과 재정적 여유가 강화되면 Option B의 전환 조건이 더 안정적이 됩니다.",
+    text: "기다리는 동안 더 충분히 검증할 수 있는 선택지는 무엇인가요?",
+    sample: "External Validation과 재정적 여유가 강화되면 Option B의 전환 조건이 더 명확해집니다.",
   },
   28: {
-    text: "Option B로 더 깊이 전환하기 위해 확인해야 할 Decision Condition은 무엇인가요?",
+    text: "Option B 전환 전에 확인해야 할 Decision Condition은 무엇인가요?",
     sample: "신뢰할 수 있는 지도교수 지원, 자금 가시성, 검증된 자문 수요 신호가 필요합니다.",
   },
   29: {
-    text: "Option A를 유지하는 결정을 더 구조적으로 설명 가능하게 만드는 조건은 무엇인가요?",
+    text: "Option A를 유지하는 데 필요한 Decision Condition은 무엇인가요?",
     sample: "학습과 탐색 시간을 보호하고 장기 플랫폼 전략과 연결되는 역할 재설계가 필요합니다.",
   },
 };
@@ -1117,7 +1117,7 @@ export default function AmcWebMvp() {
   }
 
   return (
-    <div lang={isKo ? "ko" : "en"} className="min-h-screen bg-background text-foreground">
+    <div lang={isKo ? "ko" : "en"} className="amc-web-mvp-shell min-h-screen bg-background text-foreground">
       <main className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <section className="grid min-h-[86vh] grid-cols-1 gap-10 border-b border-border py-14 sm:py-18 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:py-20">
           <div>
@@ -1151,13 +1151,13 @@ export default function AmcWebMvp() {
             <h1 className="max-w-4xl text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               {t(
                 "We do not tell you what to do. We show the structure behind your career decision.",
-                "AMC는 무엇을 선택하라고 말하지 않습니다. 커리어 결정의 구조를 보여드립니다.",
+                "AMC는 무엇을 선택하라고 말하지 않습니다. 결정의 구조를 먼저 보여드립니다.",
               )}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               {t(
                 "A private web-based structural interpretation dashboard for serious career decisions.",
-                "중요한 커리어 결정을 위한 비공개 웹 기반 구조 해석 Dashboard입니다.",
+                "중요한 커리어 결정을 구조적으로 검토하는 비공개 웹 Dashboard입니다.",
               )}
             </p>
             <p className="mt-4 inline-flex rounded-sm border border-border bg-secondary/30 px-3 py-2 text-sm font-medium">
@@ -1166,7 +1166,7 @@ export default function AmcWebMvp() {
             <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {t(
                 "Your quick preview uses 7 questions. The full report requires a detailed intake after unlock.",
-                "빠른 Preview는 7개 질문으로 구성됩니다. 전체 Report는 Unlock 후 상세 Intake를 통해 생성됩니다.",
+                "Preview는 7개 질문으로 시작합니다. 전체 Report는 상세 Intake를 바탕으로 구성됩니다.",
               )}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -1203,7 +1203,7 @@ export default function AmcWebMvp() {
             <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
               {t(
                 "A structured mirror for tension, trade-offs, risk concentration, and commitment conditions.",
-                "긴장 관계, trade-off, 리스크 집중 지점, 전환 조건을 구조적으로 확인합니다.",
+                "선택의 조건과 리스크를 함께 점검합니다.",
               )}
             </p>
           </aside>
@@ -1212,10 +1212,13 @@ export default function AmcWebMvp() {
         <section id="how-amc-works" className="border-b border-border py-12 sm:py-14">
           <SectionHeader
             eyebrow={t("How AMC works", "AMC 진행 방식")}
-            title={t("A staged path from quick signal to full dashboard.", "빠른 신호에서 전체 Dashboard까지 단계적으로 진행합니다.")}
+            title={t(
+              "A staged path from quick signal to full dashboard.",
+              "Preview에서 Full Web Dashboard까지 단계적으로 확인합니다.",
+            )}
             body={t(
               "AMC is not a recommendation engine. AMC does not decide for the user. AMC structures the decision.",
-              "AMC는 추천 엔진이 아니며 사용자를 대신해 결정하지 않습니다. 선택의 조건과 결정의 구조를 정리합니다.",
+              "AMC는 답을 대신 정하지 않습니다. 선택의 조건과 리스크를 함께 점검합니다.",
             )}
           />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -1228,7 +1231,7 @@ export default function AmcWebMvp() {
                     ? [
                         "현재 커리어 결정에 관한 핵심 질문에 답합니다.",
                         "결정 안의 Core Tension, trade-off, 리스크, 조건을 확인합니다.",
-                        "구조적 명확성을 더 설명 가능한 커리어 선택으로 연결합니다.",
+                        "확인한 구조를 실행 가능한 선택 조건으로 정리합니다.",
                       ][index]
                     : item.body}
                 </p>
@@ -1241,7 +1244,10 @@ export default function AmcWebMvp() {
           <section id="preview-intake" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
               eyebrow={t("Free Preview Intake", "무료 Preview Intake")}
-              title={t("Seven compact questions. One first structural signal.", "7개의 질문으로 첫 번째 구조 신호를 확인합니다.")}
+              title={t(
+                "Seven compact questions. One first structural signal.",
+                "7개 질문으로 결정의 핵심 구조를 먼저 확인합니다.",
+              )}
               body={t(
                 "Complete at least the decision and both options to generate the preview.",
                 "현재 결정과 Option A, Option B를 입력하면 Preview를 생성할 수 있습니다.",
@@ -1281,7 +1287,7 @@ export default function AmcWebMvp() {
           <section id="preview-dashboard" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
               eyebrow="Preview Dashboard"
-              title={t("The first read as an insight deck.", "결정의 첫 구조를 간결한 Insight Deck으로 확인합니다.")}
+              title={t("The first read as an insight deck.", "결정의 핵심 신호를 한눈에 확인합니다.")}
               body={t(
                 "The preview shows structure without delivering the full report.",
                 "Preview는 전체 Report 전에 핵심 구조 신호를 먼저 보여줍니다.",
@@ -1304,9 +1310,9 @@ export default function AmcWebMvp() {
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     {isKo
                       ? [
-                          "더 깊은 전환 전에 근거를 검증해야 하는 단계적 재구성입니다.",
+                          "전환 전 확인해야 할 근거가 남아 있는 단계적 재구성입니다.",
                           "장기적 방향성은 Option B로 기울지만 단기 안정성은 Option A에 더 강하게 남아 있습니다.",
-                          "External Validation이 충분해지기 전에 전환 범위를 확대하는 것이 핵심 리스크입니다.",
+                          "충분한 External Validation 없이 결정을 앞당기는 것이 핵심 리스크입니다.",
                           "불확실성을 줄이기 위해 무엇을 먼저 검증해야 하는지 확인합니다.",
                         ][index]
                       : card.line}
@@ -1357,7 +1363,7 @@ export default function AmcWebMvp() {
               <p className="mt-5 rounded-md border border-border bg-secondary/25 p-4 text-sm leading-relaxed">
                 {t(
                   "The decision is not which option is more attractive, but which conditions make deeper commitment defensible.",
-                  "핵심은 어느 선택지가 더 매력적인지가 아니라, 어떤 조건이 갖춰질 때 전환을 구조적으로 설명할 수 있는지입니다.",
+                  "핵심은 어느 쪽이 더 매력적인지가 아니라, 어떤 조건에서 전환을 설명할 수 있는지입니다.",
                 )}
               </p>
             </div>
@@ -1366,11 +1372,9 @@ export default function AmcWebMvp() {
               <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    {t("Locked Full Report Modules", "잠긴 Full Report 모듈")}
+                    {t("Locked Full Report Modules", "Full Report 포함 항목")}
                   </p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-tight">
-                    {t("Unlock Full Career Structure Report", "Full Career Structure Report Unlock")}
-                  </h3>
+                  <h3 className="mt-2 text-xl font-semibold tracking-tight">Full Career Structure Report</h3>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1378,7 +1382,7 @@ export default function AmcWebMvp() {
                   <div key={module.title} className="rounded-lg border border-border bg-card p-5">
                     <div className="flex items-start justify-between gap-3">
                       <h4 className="text-sm font-semibold leading-snug text-foreground">{module.title}</h4>
-                      <Tag>{t("Locked", "잠김")}</Tag>
+                      <Tag>{t("Locked", "포함 예정")}</Tag>
                     </div>
                     <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
                       {isKo
@@ -1400,7 +1404,7 @@ export default function AmcWebMvp() {
                 onClick={() => document.getElementById("unlock")?.scrollIntoView({ behavior: "smooth" })}
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
               >
-                {t("Unlock Full Career Structure Report", "Full Career Structure Report Unlock")}
+                {t("Unlock Full Career Structure Report", "Full Report 확인하기")}
               </button>
             </div>
           </section>
@@ -1412,11 +1416,11 @@ export default function AmcWebMvp() {
               eyebrow="Unlock"
               title={t(
                 "The paid experience begins with a detailed 29-question intake.",
-                "상세 29개 질문으로 전체 분석을 위한 근거를 정리합니다.",
+                "29개 질문으로 전체 분석의 근거를 정리합니다.",
               )}
               body={t(
                 "No account is required. A private email link can be used later for report access and Executive Q&A.",
-                "계정 없이 진행할 수 있습니다. 이후 비공개 이메일 링크로 Report와 Executive Q&A에 접근할 수 있습니다.",
+                "계정 없이 진행할 수 있습니다. 이후 Report와 Executive Q&A는 비공개 이메일 링크로 확인할 수 있습니다.",
               )}
             />
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -1438,7 +1442,7 @@ export default function AmcWebMvp() {
                   onClick={() => simulateUnlock("essential")}
                   className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
                 >
-                  {t("Simulate Essential Unlock", "Essential Unlock 체험")}
+                  {t("Simulate Essential Unlock", "Essential 이용 흐름 체험")}
                 </button>
               </div>
               <div className="rounded-lg border border-foreground/20 bg-card p-6">
@@ -1462,7 +1466,7 @@ export default function AmcWebMvp() {
                   onClick={() => simulateUnlock("executive")}
                   className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
                 >
-                  {t("Simulate Executive Unlock", "Executive Unlock 체험")}
+                  {t("Simulate Executive Unlock", "Executive 이용 흐름 체험")}
                 </button>
               </div>
             </div>
@@ -1473,10 +1477,10 @@ export default function AmcWebMvp() {
           <section id="full-intake" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
               eyebrow="Full Intake"
-              title={t("A deeper evidence base for the full dashboard.", "Full Dashboard를 위한 근거를 더 깊이 정리합니다.")}
+              title={t("A deeper evidence base for the full dashboard.", "Full Web Dashboard를 위한 근거를 정리합니다.")}
               body={t(
                 "The full intake expands the quick preview into a deeper evidence base for the dashboard.",
-                "Full Intake는 빠른 Preview의 답변을 확장해 결정의 구조, 리스크, 실행 조건을 분석할 근거를 만듭니다.",
+                "Full Intake에서는 결정의 구조, 리스크, 실행 부담을 판단할 근거를 구체화합니다.",
               )}
             />
             <div className="mb-5 rounded-lg border border-border bg-card p-5">
@@ -1590,10 +1594,10 @@ export default function AmcWebMvp() {
             <section id="full-dashboard" className="border-b border-border py-12 sm:py-14">
               <SectionHeader
                 eyebrow="Full Web Dashboard"
-                title={t("A compact structural map of the decision.", "결정의 구조를 간결하게 보여주는 Dashboard입니다.")}
+                title={t("A compact structural map of the decision.", "결정의 구조를 한눈에 보여주는 Dashboard입니다.")}
                 body={t(
                   "The dashboard keeps the core tension, trade-offs, risks, and conditions visual and scannable.",
-                  "Core Tension, trade-off, 리스크, 선택의 조건을 빠르게 확인할 수 있도록 정리합니다.",
+                  "Core Tension, trade-off, 리스크, Decision Conditions를 빠르게 확인합니다.",
                 )}
               />
 
@@ -1608,8 +1612,8 @@ export default function AmcWebMvp() {
                         ? [
                             "전환 범위를 확대하기 전에 근거를 검증해야 합니다.",
                             "Option B는 더 강한 External Validation이 필요합니다.",
-                            "Option A가 현재 단기 안정성을 더 안정적으로 보호합니다.",
-                            "근거가 충분해지기 전에 전환하는 것이 가장 큰 리스크입니다.",
+                            "Option A는 단기 안정성을 더 강하게 보호합니다.",
+                            "충분한 검증 없이 결정을 앞당기는 것이 핵심 리스크입니다.",
                             "불확실성이 줄어들수록 선택의 조건이 더 명확해집니다.",
                           ][index]
                         : card.reading}
@@ -1689,8 +1693,8 @@ export default function AmcWebMvp() {
                             <td className="px-4 py-4 text-sm leading-relaxed text-muted-foreground">
                               {isKo
                                 ? [
-                                    "Option A가 소득과 검증 시간을 더 안정적으로 보호합니다.",
-                                    "Option B가 장기 방향성과 더 강하게 정렬됩니다.",
+                                "Option A는 소득과 검증 시간을 더 안정적으로 보호합니다.",
+                                "Option B는 장기 방향성이 강하지만 추가 검증이 필요합니다.",
                                     "Option B는 시장과 기관의 추가 검증이 필요합니다.",
                                     "Option B는 더 높은 실행 부담과 순서 설계가 필요합니다.",
                                     "단계적 접근이 Reversibility를 보호합니다.",
@@ -1760,9 +1764,9 @@ export default function AmcWebMvp() {
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                           {isKo
                             ? [
-                                "External Validation이 전환을 지지하기 전에 움직이는 리스크입니다.",
+                                "External Validation이 충분하지 않은 상태에서 결정을 앞당기는 리스크입니다.",
                                 "안정성은 유지되지만 장기 방향 전환이 느려질 수 있습니다.",
-                                "현재의 피로가 전환 준비도로 잘못 해석될 수 있습니다.",
+                                "현재의 피로를 전환 준비도로 잘못 해석할 수 있습니다.",
                               ][index]
                             : item.body}
                         </p>
@@ -1780,7 +1784,7 @@ export default function AmcWebMvp() {
                       <h3 className="max-w-md text-lg font-semibold leading-snug">
                         {t(
                           `A deeper move toward ${optionBLabel} becomes more supportable if...`,
-                          `${optionBLabel}로의 전환이 더 구조적으로 설명 가능해지는 조건`,
+                          `${optionBLabel} 전환을 뒷받침하는 Decision Conditions`,
                         )}
                       </h3>
                       <ul className="mt-4 space-y-3">
@@ -1788,7 +1792,7 @@ export default function AmcWebMvp() {
                           <li key={condition} className="max-w-md text-sm leading-relaxed text-muted-foreground">
                             {isKo
                               ? [
-                                  "외부 검증자가 리서치 또는 자문 수요의 신뢰도를 확인합니다.",
+                                  "시장·기관·전문가의 반응을 통해 리서치 또는 자문 수요를 확인합니다.",
                                   "탐색 기간 동안 Safety Margin을 보호할 재정 여유가 확보됩니다.",
                                   "되돌리기 어려운 전환 전에 작은 범위로 검증할 수 있습니다.",
                                 ][index]
@@ -1801,7 +1805,7 @@ export default function AmcWebMvp() {
                       <h3 className="max-w-md text-lg font-semibold leading-snug">
                         {t(
                           `Remaining in ${optionALabel} becomes more supportable if...`,
-                          `${optionALabel}를 유지하는 결정이 더 구조적으로 설명 가능해지는 조건`,
+                          `${optionALabel} 유지를 뒷받침하는 Decision Conditions`,
                         )}
                       </h3>
                       <ul className="mt-4 space-y-3">
@@ -1832,10 +1836,10 @@ export default function AmcWebMvp() {
             <section className="border-b border-border py-12 sm:py-14">
               <SectionHeader
                 eyebrow="Detailed PDF Report"
-                title={t("A richer written report for deeper review.", "더 깊은 검토를 위한 상세 서면 Report입니다.")}
+                title={t("A richer written report for deeper review.", "더 깊은 검토를 위한 Detailed PDF Report입니다.")}
                 body={t(
                   "A detailed report based on your full intake, designed for offline review and later reference.",
-                  "Full Intake를 기반으로 작성되며, 저장 후 다시 검토할 수 있도록 구성됩니다.",
+                  "Full Intake를 바탕으로 구성되며, 저장 후 다시 검토할 수 있습니다.",
                 )}
               />
               <div className="rounded-lg border border-border bg-card p-6">
@@ -1880,11 +1884,11 @@ export default function AmcWebMvp() {
                   selectedTier === "executive"
                     ? t(
                         "A report-based Q&A module for the Executive window.",
-                        "Executive 이용 기간 동안 Report를 기반으로 질문할 수 있습니다.",
+                        "Executive 이용 기간에는 Report를 바탕으로 질문할 수 있습니다.",
                       )
                     : t(
                         "Executive Report Q&A is available with Executive.",
-                        "Executive에서 Executive Report Q&A를 이용할 수 있습니다.",
+                        "Executive에서 Report 기반 Q&A를 이용할 수 있습니다.",
                       )
                 }
                 body={
@@ -1906,7 +1910,7 @@ export default function AmcWebMvp() {
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {t(
                         "Executive access can later be handled through a private email link or time-limited access code.",
-                        "Executive 이용은 이후 비공개 이메일 링크 또는 기간 제한 접근 코드로 제공할 수 있습니다.",
+                        "Executive 이용은 비공개 이메일 링크 또는 기간 제한 접근 코드로 제공됩니다.",
                       )}
                     </p>
                   </div>

@@ -331,6 +331,54 @@
   }
 }
 
+.amc-web-mvp-shell[lang="ko"] {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+
+.amc-web-mvp-shell[lang="ko"] h1,
+.amc-web-mvp-shell[lang="ko"] h2,
+.amc-web-mvp-shell[lang="ko"] h3,
+.amc-web-mvp-shell[lang="ko"] h4 {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.amc-web-mvp-shell[lang="ko"] p,
+.amc-web-mvp-shell[lang="ko"] li,
+.amc-web-mvp-shell[lang="ko"] label,
+.amc-web-mvp-shell[lang="ko"] td,
+.amc-web-mvp-shell[lang="ko"] th {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.amc-web-mvp-shell[lang="ko"] button:not([aria-pressed]),
+.amc-web-mvp-shell[lang="ko"] a {
+  height: auto;
+  min-height: 2.75rem;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  line-height: 1.4;
+}
+
+.amc-web-mvp-shell[lang="ko"] textarea {
+  line-height: 1.6;
+}
+
+.amc-web-mvp-shell[lang="ko"] table th,
+.amc-web-mvp-shell[lang="ko"] table td {
+  min-width: 7.5rem;
+  line-height: 1.55;
+}
+
+.amc-web-mvp-shell[lang="ko"] table th:last-child,
+.amc-web-mvp-shell[lang="ko"] table td:last-child {
+  min-width: 15rem;
+}
+
 .pdf-kicker {
   font-size: 0.68rem;
   font-weight: 700;
