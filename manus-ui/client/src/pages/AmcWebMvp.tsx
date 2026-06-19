@@ -1310,8 +1310,8 @@ export default function AmcWebMvp() {
             <p className="mb-5 text-sm font-medium tracking-[0.12em] text-muted-foreground">Tip in. Decide. Value up.</p>
             <h1 className="max-w-4xl text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               {t(
-                "AMC looks at structure before choice. Before deciding what to choose, AMC clarifies why the decision is difficult.",
-                "AMC는 선택보다 구조를 먼저 봅니다. 무엇을 선택할지보다, 왜 그 선택이 어려운지부터 정리합니다.",
+                "AMC sees structure.",
+                "AMC는 구조를 봅니다.",
               )}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -1377,8 +1377,8 @@ export default function AmcWebMvp() {
               "Preview에서 Full Web Dashboard까지 단계적으로 확인합니다.",
             )}
             body={t(
-              "AMC looks at structure before choice. Before deciding what to choose, AMC clarifies why the decision is difficult.",
-              "AMC는 선택보다 구조를 먼저 봅니다. 무엇을 선택할지보다, 왜 그 선택이 어려운지부터 정리합니다.",
+              "AMC sees structure.",
+              "AMC는 구조를 봅니다.",
             )}
           />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -2008,8 +2008,8 @@ export default function AmcWebMvp() {
               <div className="rounded-lg border border-border bg-card p-6">
                 <p className="max-w-3xl text-sm leading-relaxed text-foreground">
                   {t(
-                    "AMC looks at structure before choice. The PDF report expands the reasoning and evidence behind that structure.",
-                    "AMC는 선택보다 구조를 먼저 봅니다. PDF Report는 그 구조를 뒷받침하는 해석과 근거를 확장합니다.",
+                    "AMC sees structure.",
+                    "AMC는 구조를 봅니다.",
                   )}
                 </p>
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
