@@ -6,7 +6,7 @@
 - No follow-up chatbot access is included.
 
 ## Executive
-- Executive includes the same report plus 7-day report-linked follow-up chatbot access.
+- Executive includes the same report plus 1-Day Report Q&A after delivery.
 - Executive does not change the report itself.
 - It adds a bounded interpretation and clarification layer after delivery.
 

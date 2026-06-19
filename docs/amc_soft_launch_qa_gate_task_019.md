@@ -89,7 +89,7 @@ Pass criteria:
 Pass criteria:
 
 - [ ] Essential is clearly understood as report-only structured decision brief delivery.
-- [ ] Executive is clearly understood as report + bounded 7-day report-linked interpretation window.
+- [ ] Executive is clearly understood as report + 1-Day Report Q&A after delivery.
 - [ ] Executive is explicitly not open-ended coaching, therapy, or generic career advice.
 - [ ] Tier boundary language is consistent across landing, format, handoff, and success surfaces.
 

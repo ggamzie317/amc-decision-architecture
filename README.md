@@ -261,7 +261,7 @@ Optional path from Perplexity-style raw text:
 ### Tier and Delivery Note
 
 - Essential tier includes report only.
-- Executive tier includes report + chatbot access valid for 7 days.
+- Executive tier includes the report plus 1-Day Report Q&A after delivery.
 - AMC delivery maintains Korean / English / Chinese language-toggle readiness.
 
 ### AMC chatbot scaffold (report interpreter layer)

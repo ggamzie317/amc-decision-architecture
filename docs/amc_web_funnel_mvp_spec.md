@@ -21,7 +21,7 @@ AMC helps users see the structure behind a career decision:
 
 Core line:
 
-`We do not tell you what to do. We show the structure behind your career decision.`
+`AMC looks at structure before choice. Before deciding what to choose, AMC clarifies why the decision is difficult.`
 
 The MVP should preserve this distinction across every screen. It should clarify structure without implying that AMC chooses, recommends, or decides for the user.
 
@@ -57,7 +57,7 @@ Required content blocks:
 
 Hero message:
 
-`We do not tell you what to do. We show the structure behind your career decision.`
+`AMC looks at structure before choice. Before deciding what to choose, AMC clarifies why the decision is difficult.`
 
 Tone:
 
@@ -157,7 +157,7 @@ Define two tiers.
 
 - Full Web Dashboard
 - PDF Download
-- 7-day Report Q&A
+- 1-Day Report Q&A
 
 Clarification:
 

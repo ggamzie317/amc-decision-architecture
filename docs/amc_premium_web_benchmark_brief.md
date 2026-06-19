@@ -155,7 +155,7 @@ Tone should not be:
 
 Purpose: introduce AMC, brand, philosophy, and value.
 
-Core message: We do not tell you what to do. We show the structure behind your career decision.
+Core message: AMC looks at structure before choice. Before deciding what to choose, AMC clarifies why the decision is difficult.
 
 Primary CTA: Start a free structural preview.
 
@@ -228,14 +228,14 @@ Executive includes:
 
 - Full Web Dashboard
 - PDF Download
-- 7-day Report Q&A
+- 1-Day Report Q&A
 
 Use wording:
 
 - `Unlock Full Career Structure Report`
 - `Full Web Dashboard`
 - `PDF Download`
-- `7-day Report Q&A`
+- `1-Day Report Q&A`
 
 Avoid:
 

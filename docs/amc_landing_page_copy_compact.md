@@ -23,7 +23,7 @@ AMC is a private, case-based decision brief service for professionals at meaning
 ## 4) How It Works
 1. Submit intake context, constraints, options, and timing signals.
 2. Receive an AMC structural report (single-path or comparative).
-3. Choose delivery mode: Essential (report-only delivery) or Executive (report + bounded 7-day report-linked interpretation window).
+3. Choose delivery mode: Essential (report-only delivery) or Executive (report + 1-Day Report Q&A after delivery).
 4. Confirm private case handoff; your report is delivered by email within 3 hours.
 
 ## 5) What the Report Covers
@@ -53,7 +53,7 @@ AMC is a private, case-based decision brief service for professionals at meaning
 Report-only delivery for clients who want a standalone structured decision brief.
 
 ### Executive
-Report + a bounded 7-day report-linked interpretation window.
+Report + 1-Day Report Q&A after delivery.
 
 ## 8) FAQ (6)
 
@@ -64,7 +64,7 @@ No. AMC is a structural decision-read service.
 No. AMC clarifies structure, trade-offs, and conditions so you can decide with clearer constraints.
 
 ### What do I receive?
-An AMC report. Executive tier also includes a bounded 7-day report-linked interpretation window.
+An AMC report. Executive tier also includes 1-Day Report Q&A after delivery.
 
 ### Is Executive open-ended coaching?
 No. Executive is not open-ended coaching, therapy, or general career advice. It is limited to report-linked clarification and interpretation.

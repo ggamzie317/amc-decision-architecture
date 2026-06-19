@@ -47,7 +47,7 @@ This page introduces AMC as a private, structure-first career decision service a
   - Final copy to use:
   1. `Submit intake context, constraints, options, and timing signals.`
   2. `Receive an AMC structural report (single-path or comparative).`
-  3. `Choose delivery mode: Essential (report-only delivery) or Executive (report + bounded 7-day report-linked interpretation window).`
+  3. `Choose delivery mode: Essential (report-only delivery) or Executive (report + 1-Day Report Q&A after delivery).`
   4. `Confirm private case handoff; report delivery follows by email within 3 hours.`
 - Recommended content format: Numbered 3-step row/list.
 - Notes for design/dev handoff: Steps should scan in under 10 seconds; keep copy unexpanded.
@@ -73,7 +73,7 @@ This page introduces AMC as a private, structure-first career decision service a
 - Section purpose: Clarify purchase options without adding complexity.
 - Final copy to use:
   - Essential: `Report-only delivery for clients who want a standalone structured decision brief.`
-  - Executive: `Report + a bounded 7-day report-linked interpretation window.`
+  - Executive: `Report + 1-Day Report Q&A after delivery.`
 - Recommended content format: 2 side-by-side tier blocks.
 - Notes for design/dev handoff: Visual hierarchy should emphasize simplicity; avoid pricing-table complexity unless required later.
 
@@ -127,7 +127,7 @@ This page introduces AMC as a private, structure-first career decision service a
 - Includes: `Report-only delivery for clients who want a standalone structured decision brief.`
 
 ### Executive
-- Includes: `Report + a bounded 7-day report-linked interpretation window.`
+- Includes: `Report + 1-Day Report Q&A after delivery.`
 - Boundary note: `Executive is not open-ended coaching, therapy, or general career advice. It is limited to report-linked clarification and interpretation.`
 
 - Recommended visual hierarchy note: Keep tier names prominent and inclusions minimal; Essential first, Executive second; no upsell-heavy language.
@@ -141,7 +141,7 @@ No. AMC is a structural decision-read service.
 No. AMC clarifies structure, trade-offs, and conditions so you can decide with clearer constraints.
 
 ### 3) What do I receive?
-An AMC report. Executive tier also includes a bounded 7-day report-linked interpretation window.
+An AMC report. Executive tier also includes 1-Day Report Q&A after delivery.
 
 ### 4) Can AMC handle comparative and single-path cases?
 Yes. AMC supports both two-path comparison and one-path sustainability assessment.

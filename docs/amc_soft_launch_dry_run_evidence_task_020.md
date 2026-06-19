@@ -25,7 +25,7 @@ Interpretation:
 | --- | --- | --- |
 | QA gate definition exists | PASS | `docs/amc_soft_launch_qa_gate_task_019.md` present with pass/fail criteria. |
 | Customer flow copy hardening (Home->Success) | PASS | Task 016/017/018 updates align English-first, tier boundary, and premium handoff tone. |
-| Essential vs Executive boundary wording | PASS | Customer-facing copy now defines report-only vs bounded 7-day interpretation window. |
+| Essential vs Executive boundary wording | PASS | Customer-facing copy now defines report-only vs 1-Day Report Q&A. |
 | English-first launch consistency (customer-facing launch copy) | PASS | Landing copy/docs updated in Task 016 to English-first phrasing. |
 | Single-case report generation runtime | NEEDS OPERATOR CONFIRMATION | Requires run evidence from render command and output artifact check. |
 | Comparative report generation runtime | NEEDS OPERATOR CONFIRMATION | Requires run evidence from comparative render command and output artifact check. |
@@ -152,7 +152,7 @@ Still required from operator:
 Observed in this pack:
 
 - Essential is defined as report-only structured decision brief delivery.
-- Executive is defined as report + bounded 7-day report-linked interpretation window.
+- Executive is defined as report + 1-Day Report Q&A after delivery.
 - Executive non-coaching boundary is explicitly stated.
 
 Still required from operator:
