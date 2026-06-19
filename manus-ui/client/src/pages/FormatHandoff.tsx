@@ -12,7 +12,7 @@ const formatOptions = [
     key: "executive" as const,
     title: "Executive",
     line1: "Structured AMC Report",
-    line2: "Bounded 7-day report-linked interpretation window",
+    line2: "1-Day Report Q&A after delivery",
   },
 ];
 

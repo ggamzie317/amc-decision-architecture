@@ -21,7 +21,7 @@ export default function PaymentSuccess() {
                 Your report is now in preparation and will be delivered to your email within 3 hours.
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed mb-8">
-                If you selected Executive, bounded 7-day report-linked interpretation details will arrive with your report delivery.
+                If you selected Executive, 1-Day Report Q&amp;A details will arrive with your report delivery.
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed mb-8">
                 Executive follow-up is limited to report clarification and interpretation, not open-ended coaching or general career advice.

@@ -64,7 +64,7 @@ export default function PaymentHandoff() {
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                 {format === "executive"
-                  ? "Executive includes the same structured report plus a bounded 7-day report-linked interpretation window."
+                  ? "Executive includes the same structured report plus 1-Day Report Q&A after delivery."
                   : "Essential includes report-only delivery for clients who want a standalone structured decision brief."}
               </p>
               {format === "executive" ? (

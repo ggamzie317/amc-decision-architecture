@@ -12,7 +12,7 @@ AMC is close to soft-launch readiness on workflow stability, but customer-facing
    - `docs/amc_landing_page_copy_compact.md` still says AMC is available for Korean/English/Chinese.
    - Launch risk: trust and expectation mismatch for first customers.
 2. Offer decision clarity is too thin at customer decision points.
-   - `docs/amc_delivery_modes.md` defines Essential/Executive internally, but customer-facing copy in `docs/amc_landing_page_copy_compact.md` is minimal (`report only` vs `report + 7-day chatbot`).
+   - `docs/amc_delivery_modes.md` defines Essential/Executive internally, but customer-facing copy in `docs/amc_landing_page_copy_compact.md` is minimal (`report only` vs `report + 1-Day Report Q&A`).
    - Launch risk: avoidable drop-off or wrong-tier selection due to unclear value delta.
 3. Customer-facing flow framing can still feel staged/internal.
    - `docs/amc_web_launch_qa_checklist.md` correctly references staged payment handoff, but this is operationally fragile if page copy is not explicit and premium.
@@ -40,7 +40,7 @@ AMC is close to soft-launch readiness on workflow stability, but customer-facing
 
 1. Current model is structurally sound:
    - Essential = report-only.
-   - Executive = same report + bounded 7-day report-linked chatbot.
+   - Executive = same report + 1-Day Report Q&A after delivery.
 2. Clarity gap:
    - The “why pay more for Executive” narrative is under-specified in customer-facing copy.
 3. Required refinement:

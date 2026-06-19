@@ -33,8 +33,8 @@ const howItWorks = [
     body: "You get a structured written output.",
   },
   {
-    title: "Executive Follow-up (7 days)",
-    body: "Optional report-linked clarification access.",
+    title: "1-Day Report Q&A",
+    body: "Ask report-based questions for one day after receiving the report.",
   },
 ] as const;
 
@@ -53,7 +53,7 @@ const faqs = [
   },
   {
     q: "What is included in Essential and Executive?",
-    a: "Essential includes the report only. Executive includes the same report plus 7-day report-linked follow-up chat access.",
+    a: "Essential includes the report only. Executive includes the same report plus 1-Day Report Q&A.",
   },
   {
     q: "Is the chat open-ended?",
@@ -145,7 +145,7 @@ export default function Home() {
                 AMC is delivered as a structured report.
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Essential includes the report. Executive adds 7-day follow-up clarification.
+                Essential includes the report. Executive adds 1-Day Report Q&A.
               </p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function Home() {
             <div className="border border-border rounded-lg p-6 bg-card">
               <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">Executive</p>
               <p className="text-lg font-medium mb-2">Structured AMC Report</p>
-              <p className="text-sm text-muted-foreground">+ 7-day report-linked follow-up chat</p>
+              <p className="text-sm text-muted-foreground">+ 1-Day Report Q&amp;A</p>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-5">

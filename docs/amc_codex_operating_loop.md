@@ -45,7 +45,7 @@ Codex must preserve these AMC rules unless a task explicitly says otherwise:
 - Do not make both external sections visually compete as primary sections.
 - Comparative tables should remain table-first, with short reading and implication lines.
 - Essential is report only.
-- Executive is report plus bounded 7-day report-linked chatbot access.
+- Executive is the report plus 1-Day Report Q&A after delivery.
 
 ## Preferred Task Size
 
@@ -98,4 +98,3 @@ Before merging any Codex output, check:
 - Does it avoid unnecessary architecture drift?
 - Do tests or smoke commands pass?
 - Are customer-facing labels clean and English-first for launch baseline?
-
