@@ -611,30 +611,6 @@ const reportRiskItems = [
   },
 ] as const;
 
-const validationPlan = [
-  {
-    period: "30 days",
-    title: "Clarify evidence",
-    objective: "Separate assumptions from evidence.",
-    action: "List the strongest claim behind each option and identify the proof still missing.",
-    output: "A prioritized evidence register with explicit validation questions.",
-  },
-  {
-    period: "60 days",
-    title: "Test external validation",
-    objective: "Test whether external support is repeatable.",
-    action: "Pressure-test sponsor, market, funding, and advisory signals with real counterparties.",
-    output: "A documented view of signal strength, gaps, and credible next tests.",
-  },
-  {
-    period: "90 days",
-    title: "Decide commitment conditions",
-    objective: "Set the threshold for deeper commitment.",
-    action: "Review evidence, safety margin, support, execution load, and timing as one system.",
-    output: "A defined commitment condition, validation extension, or protected holding pattern.",
-  },
-] as const;
-
 const reflectionQuestions = [
   "What evidence would materially change the decision?",
   "Which risk is currently being underestimated?",
@@ -678,30 +654,6 @@ const reportRiskItemsKo = [
     meaning: "현재 역할의 피로감이 변화의 필요성을 더 크게 느끼게 하는 리스크입니다.",
     why: "피로로 인한 시급성과 실제 전환 준비도는 구분해서 봐야 합니다.",
     reduction: "회복이 필요한 문제와 전환 검증이 필요한 문제를 분리합니다.",
-  },
-] as const;
-
-const validationPlanKo = [
-  {
-    period: "30 days",
-    title: "근거 정리",
-    objective: "가정과 확인된 근거를 구분합니다.",
-    action: "각 Option의 핵심 주장과 아직 부족한 검증 항목을 정리합니다.",
-    output: "우선순위가 표시된 검증 질문 목록을 만듭니다.",
-  },
-  {
-    period: "60 days",
-    title: "External Validation 점검",
-    objective: "외부의 긍정 신호가 반복 가능한지 확인합니다.",
-    action: "스폰서, 시장, 자금, 자문 수요를 실제 관계자와 점검합니다.",
-    output: "신호의 강도, 부족한 근거, 다음 검증 항목을 기록합니다.",
-  },
-  {
-    period: "90 days",
-    title: "Decision Conditions 정리",
-    objective: "전환 범위를 확대할 기준을 정합니다.",
-    action: "근거, 안정성, 지원 체계, 실행 부담, 시기를 함께 검토합니다.",
-    output: "전환 조건, 검증 연장 조건 또는 현재 경로 유지 조건을 명확히 합니다.",
   },
 ] as const;
 
@@ -887,6 +839,569 @@ const caseSpecificReadings: Record<
   },
 };
 
+type LocalizedReportText = { en: string; ko: string };
+type CaseReportBranch = {
+  executiveSummary: LocalizedReportText;
+  primaryRisk: {
+    name: string;
+    meaning: LocalizedReportText;
+    why: LocalizedReportText;
+    reduction: LocalizedReportText;
+  };
+  conditions: { en: string[]; ko: string[] };
+  plan: Array<{
+    period: string;
+    title: LocalizedReportText;
+    objective: LocalizedReportText;
+    action: LocalizedReportText;
+    output: LocalizedReportText;
+  }>;
+  closingQuestion: LocalizedReportText;
+};
+
+const caseReportBranches: Record<CaseType, CaseReportBranch> = {
+  "Corporate Stay vs Exit": {
+    executiveSummary: {
+      en: "This report reads the decision as a stay-or-exit structure. The key question is whether the current organization can still support future career value, or whether the next path has stronger evidence and safety margin.",
+      ko: "이 리포트는 현재 결정을 잔류와 퇴사의 구조로 읽습니다. 핵심은 현재 조직이 앞으로의 커리어 가치를 계속 키워줄 수 있는지, 또는 다음 경로가 더 강한 근거와 안정성을 갖추고 있는지입니다.",
+    },
+    primaryRisk: {
+      name: "Binary Stay-or-Exit Framing",
+      meaning: {
+        en: "Reducing the decision to staying or leaving before testing role redesign and next-path evidence.",
+        ko: "현재 역할의 재설계 가능성과 다음 경로의 근거를 확인하기 전에 결정을 잔류와 퇴사로만 나누는 리스크입니다.",
+      },
+      why: {
+        en: "A binary frame can hide whether the organization still has unused career value.",
+        ko: "이분법적 판단은 현재 조직 안에 아직 활용하지 않은 커리어 가치가 있는지 놓치게 할 수 있습니다.",
+      },
+      reduction: {
+        en: "Test role redesign and compare it with concrete evidence from the next path.",
+        ko: "현재 역할의 재설계 가능성과 다음 경로의 구체적인 근거를 함께 비교합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "The current role has been tested for meaningful redesign.",
+        "The next path shows clearer value and external demand.",
+        "Safety margin remains sufficient during transition.",
+      ],
+      ko: [
+        "현재 역할을 의미 있게 재설계할 수 있는지 확인합니다.",
+        "다음 경로의 가치와 외부 수요가 더 명확합니다.",
+        "전환 기간의 안정성이 충분히 보호됩니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Test role redesign", ko: "역할 재설계 점검" },
+        objective: { en: "Identify unused value inside the current organization.", ko: "현재 조직 안에서 아직 활용하지 않은 가치를 확인합니다." },
+        action: { en: "Map realistic changes to scope, learning, authority, and mobility.", ko: "업무 범위, 학습, 권한, 이동 가능성의 현실적인 변화를 정리합니다." },
+        output: { en: "A clear view of whether staying can be redesigned.", ko: "잔류 경로의 재설계 가능성을 명확히 합니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Validate the next path", ko: "다음 경로 검증" },
+        objective: { en: "Compare external evidence with the redesigned current path.", ko: "외부 근거를 재설계된 현재 경로와 비교합니다." },
+        action: { en: "Test demand, role fit, compensation, and sponsor support.", ko: "수요, 역할 적합성, 보상, 스폰서 지원을 확인합니다." },
+        output: { en: "A comparable evidence base for stay and exit.", ko: "잔류와 퇴사를 비교할 수 있는 근거를 확보합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Set exit conditions", ko: "퇴사 조건 정리" },
+        objective: { en: "Define when exit is more defensible than redesign.", ko: "재설계보다 퇴사가 더 설명 가능한 기준을 정합니다." },
+        action: { en: "Review value, demand, safety margin, and reversibility together.", ko: "가치, 수요, 안정성, Reversibility를 함께 검토합니다." },
+        output: { en: "Proceed, redesign, or extend validation.", ko: "전환, 역할 재설계 또는 검증 연장을 결정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What evidence would show that exit creates more career value than redesigning the current role?",
+      ko: "퇴사가 현재 역할의 재설계보다 더 큰 커리어 가치를 만든다는 것을 어떤 근거가 보여줄 수 있나요?",
+    },
+  },
+  "MBA / EMBA / PhD Decision": {
+    executiveSummary: {
+      en: "This report reads the decision as a degree-path positioning question. The key issue is whether the degree creates enough long-term credibility, network, research access, or mobility to justify the time, cost, and opportunity risk.",
+      ko: "이 리포트는 현재 결정을 학위 경로를 통한 포지셔닝 문제로 읽습니다. 핵심은 학위가 시간, 비용, 기회비용을 감당할 만큼 장기 신뢰도, 네트워크, 연구 접근성, 이동 가능성을 만들어내는지입니다.",
+    },
+    primaryRisk: {
+      name: "Degree-as-Answer Bias",
+      meaning: {
+        en: "Treating the degree itself as the solution before validating its positioning value.",
+        ko: "학위의 포지셔닝 가치를 검증하기 전에 학위 자체를 해결책으로 보는 리스크입니다.",
+      },
+      why: {
+        en: "Intellectual interest may not translate into enough mobility, credibility, or access.",
+        ko: "지적 관심이 충분한 이동 가능성, 신뢰도, 접근성으로 이어지지 않을 수 있습니다.",
+      },
+      reduction: {
+        en: "Compare program outcomes, network access, cost, and alternatives with real evidence.",
+        ko: "프로그램 결과, 네트워크 접근성, 비용, 대안 경로를 실제 근거로 비교합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "The degree path creates clear positioning value.",
+        "Time and cost are balanced against future mobility.",
+        "The program provides network, research, or credibility that is difficult to build elsewhere.",
+      ],
+      ko: [
+        "학위 경로가 명확한 포지셔닝 가치를 만듭니다.",
+        "시간과 비용이 향후 이동 가능성과 균형을 이룹니다.",
+        "프로그램이 다른 방식보다 더 강한 네트워크, 연구 접근성, 신뢰도를 제공합니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Clarify degree purpose", ko: "학위 목적 정리" },
+        objective: { en: "Define the career outcome the degree must create.", ko: "학위가 만들어야 할 커리어 결과를 명확히 합니다." },
+        action: { en: "Separate intellectual interest from positioning, access, and mobility goals.", ko: "지적 관심과 포지셔닝, 접근성, 이동 목표를 구분합니다." },
+        output: { en: "A precise investment thesis for the degree.", ko: "학위에 대한 명확한 투자 가설을 정리합니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Validate program value", ko: "프로그램 가치 검증" },
+        objective: { en: "Test program fit, network value, and opportunity cost.", ko: "프로그램 적합성, 네트워크 가치, 기회비용을 확인합니다." },
+        action: { en: "Interview alumni, compare outcomes, and test lower-cost alternatives.", ko: "졸업생 인터뷰, 결과 비교, 저비용 대안을 검토합니다." },
+        output: { en: "Evidence of differentiated access and career value.", ko: "차별화된 접근성과 커리어 가치에 대한 근거를 확보합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Decide investment logic", ko: "투자 논리 결정" },
+        objective: { en: "Determine whether the degree is strategic investment or delayed decision.", ko: "학위가 전략적 투자인지 결정 지연인지 판단합니다." },
+        action: { en: "Review outcomes, cost, timing, alternatives, and mobility together.", ko: "결과, 비용, 시기, 대안, 이동 가능성을 함께 검토합니다." },
+        output: { en: "Apply, defer, or pursue an alternative route.", ko: "지원, 연기 또는 대안 경로를 결정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What would make the degree a strategic investment rather than a delay?",
+      ko: "이 학위가 단순한 지연이 아니라 전략적 투자가 되려면 어떤 조건이 필요할까요?",
+    },
+  },
+  "Overseas Relocation": {
+    executiveSummary: {
+      en: "This report reads the decision as a relocation and optionality question. The key issue is whether overseas movement expands career options while keeping visa, family, financial, and local-market constraints manageable.",
+      ko: "이 리포트는 현재 결정을 해외 이동과 선택지 확장의 문제로 읽습니다. 핵심은 해외 이동이 커리어 선택지를 넓히면서도 비자, 가족, 재정, 현지 시장 제약을 감당 가능한 수준으로 유지하는지입니다.",
+    },
+    primaryRisk: {
+      name: "Relocation Upside Bias",
+      meaning: {
+        en: "Overestimating career upside while underestimating operating constraints in the destination market.",
+        ko: "해외 이동의 커리어 기회는 크게 보고 현지의 실행 제약은 작게 보는 리스크입니다.",
+      },
+      why: {
+        en: "Visa, family, income, and local demand can weaken an otherwise attractive move.",
+        ko: "비자, 가족, 소득, 현지 수요가 매력적으로 보이는 이동의 실행 가능성을 약화할 수 있습니다.",
+      },
+      reduction: {
+        en: "Validate local demand, visa feasibility, family fit, and financial resilience together.",
+        ko: "현지 수요, 비자 가능성, 가족 적합성, 재정 안정성을 함께 검증합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "Local demand and role access are validated.",
+        "Visa and family logistics are workable.",
+        "Income stability remains resilient through relocation.",
+      ],
+      ko: [
+        "현지 수요와 역할 접근성이 확인됩니다.",
+        "비자와 가족 생활 조건이 실행 가능합니다.",
+        "이동 과정에서도 소득 안정성이 유지됩니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Map relocation constraints", ko: "이동 제약 정리" },
+        objective: { en: "Make visa, family, financial, and timing constraints explicit.", ko: "비자, 가족, 재정, 시기 제약을 명확히 합니다." },
+        action: { en: "Document non-negotiables, dependencies, and downside exposure.", ko: "필수 조건, 의존 관계, 하방 리스크를 정리합니다." },
+        output: { en: "A relocation feasibility map.", ko: "해외 이동 실행 가능성 지도를 만듭니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Test local fit", ko: "현지 적합성 검증" },
+        objective: { en: "Validate demand, role access, visa path, and family fit.", ko: "수요, 역할 접근성, 비자 경로, 가족 적합성을 확인합니다." },
+        action: { en: "Use real employer, advisor, and family-planning conversations.", ko: "실제 고용주, 전문가, 가족 계획 논의를 진행합니다." },
+        output: { en: "Evidence of career and operating fit.", ko: "커리어와 생활 조건의 적합성 근거를 확보합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Set relocation conditions", ko: "이동 조건 결정" },
+        objective: { en: "Decide whether optionality exceeds constraint risk.", ko: "선택지 확장의 가치가 제약 리스크보다 큰지 판단합니다." },
+        action: { en: "Review demand, visa, family, income, and reversibility.", ko: "수요, 비자, 가족, 소득, Reversibility를 함께 검토합니다." },
+        output: { en: "Proceed, delay, or redesign the relocation.", ko: "진행, 연기 또는 이동 경로 재설계를 결정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What must be true for relocation to expand optionality without making the operating base too fragile?",
+      ko: "해외 이동이 생활 기반을 지나치게 불안정하게 만들지 않으면서 선택지를 넓히려면 무엇이 충족되어야 하나요?",
+    },
+  },
+  Entrepreneurship: {
+    executiveSummary: {
+      en: "This report reads the decision as an entrepreneurship validation problem. The key issue is whether founder motivation is supported by paying demand, delivery capacity, income runway, and repeatable execution.",
+      ko: "이 리포트는 현재 결정을 창업 검증의 문제로 읽습니다. 핵심은 창업 의지가 실제 지불 수요, 제공 역량, 소득 여유, 반복 가능한 실행력으로 뒷받침되는지입니다.",
+    },
+    primaryRisk: {
+      name: "Founder Motivation vs Market Validation",
+      meaning: {
+        en: "Treating founder conviction as evidence of market demand and execution capacity.",
+        ko: "창업에 대한 확신을 시장 수요와 실행 역량의 근거로 해석하는 리스크입니다.",
+      },
+      why: {
+        en: "Motivation does not prove willingness to pay, repeatable delivery, or sustainable economics.",
+        ko: "의지만으로는 지불 의사, 반복 가능한 제공 역량, 지속 가능한 수익 구조가 증명되지 않습니다.",
+      },
+      reduction: {
+        en: "Test paying demand, delivery repeatability, pricing, and runway in small steps.",
+        ko: "지불 수요, 반복 가능한 제공, 가격, 소득 여유를 작은 단위로 검증합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "Paying demand is validated with real users or clients.",
+        "Delivery capacity can be repeated without excessive personal strain.",
+        "Income runway is protected before commitment increases.",
+      ],
+      ko: [
+        "실제 사용자나 고객의 지불 의사가 확인됩니다.",
+        "제공 역량이 과도한 개인 부담 없이 반복 가능합니다.",
+        "몰입도를 높이기 전에 소득 안정성이 보호됩니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Define offer and user", ko: "제안과 고객 정의" },
+        objective: { en: "Clarify the problem, target user, and offer.", ko: "문제, 목표 고객, 제공 가치를 명확히 합니다." },
+        action: { en: "Specify one offer, buyer, price hypothesis, and delivery method.", ko: "하나의 제안, 구매자, 가격 가설, 제공 방식을 정합니다." },
+        output: { en: "A testable offer with clear assumptions.", ko: "검증 가능한 제안과 핵심 가정을 정리합니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Test paying demand", ko: "지불 수요 검증" },
+        objective: { en: "Test demand through real conversations or small pilots.", ko: "실제 대화나 작은 Pilot을 통해 수요를 확인합니다." },
+        action: { en: "Run customer conversations, proposals, or paid pilots.", ko: "고객 대화, 제안, 유료 Pilot을 진행합니다." },
+        output: { en: "Evidence on willingness to pay and delivery fit.", ko: "지불 의사와 제공 적합성에 대한 근거를 확보합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Set commitment level", ko: "몰입 수준 결정" },
+        objective: { en: "Decide whether to extend validation, narrow the offer, or increase commitment.", ko: "검증 연장, 제안 축소 또는 몰입 확대를 결정합니다." },
+        action: { en: "Review demand, pricing, delivery strain, and income runway.", ko: "수요, 가격, 제공 부담, 소득 여유를 함께 검토합니다." },
+        output: { en: "A defined next investment level.", ko: "다음 투자와 몰입 수준을 명확히 합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What evidence would prove that this is more than founder motivation?",
+      ko: "이 선택이 창업 의지에 그치지 않는다는 것을 어떤 근거가 증명할 수 있나요?",
+    },
+  },
+  "Industry Transition": {
+    executiveSummary: {
+      en: "This report reads the decision as an industry transition problem. The key issue is whether existing career capital can be translated into credible proof in the new market.",
+      ko: "이 리포트는 현재 결정을 산업 전환의 문제로 읽습니다. 핵심은 기존 커리어 자산이 새로운 시장에서 설득력 있는 근거로 전환될 수 있는지입니다.",
+    },
+    primaryRisk: {
+      name: "Career Capital Transfer Risk",
+      meaning: {
+        en: "Assuming prior experience will automatically be valued in the new industry.",
+        ko: "기존 경험이 새로운 산업에서도 자동으로 가치 있게 인정될 것이라고 보는 리스크입니다.",
+      },
+      why: {
+        en: "The new market may require different proof, language, networks, and execution context.",
+        ko: "새 시장은 다른 근거, 언어, 네트워크, 실행 맥락을 요구할 수 있습니다.",
+      },
+      reduction: {
+        en: "Translate prior achievements into relevant proof and test recognition with market insiders.",
+        ko: "기존 성과를 관련 근거로 전환하고 시장 관계자에게 인정 가능성을 확인합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "Prior career capital is translated into relevant proof.",
+        "The new industry recognizes that proof as valuable.",
+        "Capability gaps can be closed without excessive transition risk.",
+      ],
+      ko: [
+        "기존 커리어 자산이 관련성 있는 근거로 전환됩니다.",
+        "새로운 산업이 그 근거를 가치 있게 인정합니다.",
+        "역량 격차를 과도한 전환 리스크 없이 줄일 수 있습니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Translate career capital", ko: "커리어 자산 전환" },
+        objective: { en: "Map transferable value and evidence gaps.", ko: "이전 가능한 가치와 부족한 근거를 정리합니다." },
+        action: { en: "Rewrite achievements in the new industry's language.", ko: "기존 성과를 새로운 산업의 언어로 재구성합니다." },
+        output: { en: "A new-market evidence portfolio.", ko: "새 시장을 위한 근거 Portfolio를 만듭니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Test market recognition", ko: "시장 인정 검증" },
+        objective: { en: "Confirm whether insiders recognize prior experience as relevant.", ko: "시장 관계자가 기존 경험을 관련 가치로 인정하는지 확인합니다." },
+        action: { en: "Use interviews, projects, referrals, and targeted applications.", ko: "인터뷰, 프로젝트, 추천, 선별 지원을 활용합니다." },
+        output: { en: "Evidence of recognition and remaining gaps.", ko: "인정 가능성과 남은 격차에 대한 근거를 확보합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Decide transition scope", ko: "전환 범위 결정" },
+        objective: { en: "Set the safest credible entry path.", ko: "가장 안정적이고 설득력 있는 진입 경로를 정합니다." },
+        action: { en: "Review proof strength, capability gaps, demand, and runway.", ko: "근거의 강도, 역량 격차, 수요, 소득 여유를 검토합니다." },
+        output: { en: "Enter, bridge, or extend proof-building.", ko: "진입, 연결 경로 또는 근거 축적 연장을 결정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What proof would make the new industry recognize your previous experience as relevant value?",
+      ko: "새로운 산업이 기존 경험을 관련 가치로 인정하려면 어떤 근거가 필요할까요?",
+    },
+  },
+  "Role Upgrade / Downgrade": {
+    executiveSummary: {
+      en: "This report reads the decision as a role-value question. The key issue is whether the role change expands long-term career value, not only title, workload, or short-term compensation.",
+      ko: "이 리포트는 현재 결정을 역할 가치의 문제로 읽습니다. 핵심은 역할 변화가 직급, 업무량, 단기 보상을 넘어 장기 커리어 가치를 실제로 확장하는지입니다.",
+    },
+    primaryRisk: {
+      name: "Title vs Career Value Risk",
+      meaning: {
+        en: "Focusing on title or status without testing the role's long-term value.",
+        ko: "역할의 장기 가치를 확인하지 않고 직급이나 지위 변화에 집중하는 리스크입니다.",
+      },
+      why: {
+        en: "A stronger title can still narrow authority, learning, strategic exposure, or mobility.",
+        ko: "더 높은 직급도 권한, 학습, 전략 노출, 이동 가능성을 오히려 좁힐 수 있습니다.",
+      },
+      reduction: {
+        en: "Compare authority, capability growth, exposure, workload, and future mobility.",
+        ko: "권한, 역량 성장, 노출, 업무량, 향후 이동 가능성을 함께 비교합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "The role expands decision authority or strategic exposure.",
+        "Capability growth exceeds the cost of added workload.",
+        "Future mobility improves beyond title or compensation.",
+      ],
+      ko: [
+        "역할이 의사결정 권한이나 전략 노출을 넓힙니다.",
+        "역량 성장이 추가 업무 부담보다 큽니다.",
+        "직급이나 보상을 넘어 향후 이동 가능성이 강화됩니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Map role value", ko: "역할 가치 정리" },
+        objective: { en: "Separate title from authority, learning, and mobility.", ko: "직급과 권한, 학습, 이동 가능성을 구분합니다." },
+        action: { en: "Compare mandate, exposure, workload, capability growth, and compensation.", ko: "권한, 노출, 업무량, 역량 성장, 보상을 비교합니다." },
+        output: { en: "A role-value comparison beyond status.", ko: "지위를 넘어선 역할 가치 비교표를 만듭니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Validate role reality", ko: "역할 현실 검증" },
+        objective: { en: "Test whether the advertised role matches operating reality.", ko: "제시된 역할과 실제 운영 현실이 일치하는지 확인합니다." },
+        action: { en: "Speak with stakeholders and clarify mandate, resources, and success metrics.", ko: "관계자와 권한, 자원, 성공 기준을 확인합니다." },
+        output: { en: "Evidence of real authority and growth potential.", ko: "실질 권한과 성장 가능성에 대한 근거를 확보합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Set role conditions", ko: "역할 조건 결정" },
+        objective: { en: "Decide whether the role expands durable career value.", ko: "역할이 지속 가능한 커리어 가치를 넓히는지 판단합니다." },
+        action: { en: "Review authority, learning, load, compensation, and mobility.", ko: "권한, 학습, 부담, 보상, 이동 가능성을 검토합니다." },
+        output: { en: "Accept, negotiate, decline, or redesign.", ko: "수락, 협상, 거절 또는 역할 재설계를 결정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What would prove that this role changes career value, not only title or workload?",
+      ko: "이 역할이 직급이나 업무량뿐 아니라 커리어 가치를 바꾼다는 것을 무엇이 증명할 수 있나요?",
+    },
+  },
+  "Burnout-driven Decision": {
+    executiveSummary: {
+      en: "This report reads the decision as a fatigue and transition-readiness question. The key issue is separating what requires recovery from what requires a real career redesign.",
+      ko: "이 리포트는 현재 결정을 피로감과 전환 준비도의 문제로 읽습니다. 핵심은 회복이 필요한 문제와 실제 커리어 재설계가 필요한 문제를 분리하는 것입니다.",
+    },
+    primaryRisk: {
+      name: "Fatigue-Driven Urgency",
+      meaning: {
+        en: "Reading current fatigue as proof that a full career transition is ready.",
+        ko: "현재의 피로감을 전면적인 커리어 전환이 준비됐다는 근거로 해석하는 리스크입니다.",
+      },
+      why: {
+        en: "Recovery needs can intensify urgency without improving market or execution readiness.",
+        ko: "회복의 필요성은 시급성을 키울 수 있지만 시장과 실행 준비도를 높이지는 않습니다.",
+      },
+      reduction: {
+        en: "Separate recovery actions from market validation and career redesign tests.",
+        ko: "회복을 위한 조치와 시장 검증, 커리어 재설계 실험을 분리합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "Recovery needs are separated from transition needs.",
+        "Market validation and execution capacity remain credible after recovery.",
+        "Financial safety is protected before major change.",
+      ],
+      ko: [
+        "회복이 필요한 문제와 전환이 필요한 문제를 구분합니다.",
+        "회복 이후에도 시장 검증과 실행력이 충분합니다.",
+        "큰 변화를 시작하기 전에 재정 안정성을 보호합니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Separate recovery needs", ko: "회복 필요 구분" },
+        objective: { en: "Distinguish exhaustion from structural career mismatch.", ko: "소진과 구조적인 커리어 불일치를 구분합니다." },
+        action: { en: "Map workload, boundaries, health, role design, and transition assumptions.", ko: "업무량, 경계, 건강, 역할 설계, 전환 가정을 정리합니다." },
+        output: { en: "A recovery-versus-redesign diagnosis.", ko: "회복과 재설계 필요를 구분한 진단을 만듭니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Test energy recovery", ko: "에너지 회복 검증" },
+        objective: { en: "See whether energy improves after workload or boundary changes.", ko: "업무량이나 경계 조정 후 에너지가 회복되는지 확인합니다." },
+        action: { en: "Run controlled changes while keeping external validation active.", ko: "외부 검증을 유지하면서 통제된 변화를 실행합니다." },
+        output: { en: "Evidence of what fatigue changes and what remains structural.", ko: "피로로 인한 문제와 남아 있는 구조적 문제를 구분합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Reassess transition need", ko: "전환 필요 재평가" },
+        objective: { en: "Decide whether transition is still needed after recovery signals clarify.", ko: "회복 신호가 명확해진 뒤에도 전환이 필요한지 판단합니다." },
+        action: { en: "Review energy, role fit, market evidence, capacity, and safety.", ko: "에너지, 역할 적합성, 시장 근거, 실행력, 안정성을 검토합니다." },
+        output: { en: "Recover, redesign, validate further, or transition.", ko: "회복, 역할 재설계, 추가 검증 또는 전환을 결정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What would still need to change if your energy recovered?",
+      ko: "에너지가 회복된 이후에도 여전히 바뀌어야 할 것은 무엇인가요?",
+    },
+  },
+  "Family Constraint-heavy Decision": {
+    executiveSummary: {
+      en: "This report reads the decision as a family-constraint decision architecture. The key issue is whether the preferred career path can actually work within family, location, timing, and financial constraints.",
+      ko: "이 리포트는 현재 결정을 가족 조건이 강하게 작용하는 결정 구조로 읽습니다. 핵심은 선호하는 커리어 경로가 가족, 지역, 시기, 재정 조건 안에서 실제로 작동 가능한지입니다.",
+    },
+    primaryRisk: {
+      name: "Career-Family Fit Risk",
+      meaning: {
+        en: "Designing a professionally attractive move that fails under family, location, or timing constraints.",
+        ko: "커리어 측면에서는 매력적이지만 가족, 지역, 시기 조건 안에서 작동하지 않는 선택을 설계하는 리스크입니다.",
+      },
+      why: {
+        en: "A path that cannot operate within family reality is not structurally sustainable.",
+        ko: "가족의 현실 안에서 작동하지 않는 경로는 구조적으로 지속 가능하지 않습니다.",
+      },
+      reduction: {
+        en: "Test logistics, support, timing, and financial resilience before commitment.",
+        ko: "몰입도를 높이기 전에 생활 조건, 지원, 시기, 재정 안정성을 검증합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "The preferred path works within family and location constraints.",
+        "Financial stability is not made too fragile.",
+        "Timing and support systems are realistic.",
+      ],
+      ko: [
+        "선호하는 경로가 가족과 지역 조건 안에서 작동합니다.",
+        "재정 안정성이 지나치게 약해지지 않습니다.",
+        "시기와 지원 체계가 현실적입니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Map family constraints", ko: "가족 조건 정리" },
+        objective: { en: "Make family, location, timing, and financial constraints explicit.", ko: "가족, 지역, 시기, 재정 조건을 명확히 합니다." },
+        action: { en: "Document logistics, non-negotiables, support, and downside exposure.", ko: "생활 조건, 필수 조건, 지원, 하방 리스크를 정리합니다." },
+        output: { en: "A family-operating constraint map.", ko: "가족 생활 조건 지도를 만듭니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Test path feasibility", ko: "경로 실행 가능성 검증" },
+        objective: { en: "Test whether the preferred path can operate within those constraints.", ko: "선호하는 경로가 해당 조건 안에서 작동하는지 확인합니다." },
+        action: { en: "Run scheduling, location, childcare, support, and budget scenarios.", ko: "일정, 지역, 육아, 지원, 예산 Scenario를 검토합니다." },
+        output: { en: "Evidence of family and career fit.", ko: "가족과 커리어 적합성에 대한 근거를 확보합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Choose proceed or redesign", ko: "진행 또는 재설계 결정" },
+        objective: { en: "Decide whether to proceed, delay, or redesign the path.", ko: "진행, 연기 또는 경로 재설계를 판단합니다." },
+        action: { en: "Review career value, family fit, timing, support, and finances.", ko: "커리어 가치, 가족 적합성, 시기, 지원, 재정을 검토합니다." },
+        output: { en: "A realistic family-compatible decision condition.", ko: "가족 현실과 양립 가능한 결정 조건을 정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What must be true for this path to work within family reality?",
+      ko: "이 경로가 가족의 현실 안에서 작동하려면 무엇이 충족되어야 할까요?",
+    },
+  },
+  "General Career Reconfiguration": {
+    executiveSummary: {
+      en: "This report reads the decision as a general career reconfiguration problem. The key issue is clarifying which option protects stability, which option creates future value, and what must be validated first.",
+      ko: "이 리포트는 현재 결정을 전반적인 커리어 재구성 문제로 읽습니다. 핵심은 어떤 선택이 안정성을 보호하고, 어떤 선택이 미래 가치를 만들며, 무엇을 먼저 검증해야 하는지 정리하는 것입니다.",
+    },
+    primaryRisk: {
+      name: "Premature Commitment",
+      meaning: {
+        en: "Increasing commitment before stability, future value, and validation evidence are clear.",
+        ko: "안정성, 미래 가치, 검증 근거가 명확해지기 전에 몰입도를 높이는 리스크입니다.",
+      },
+      why: {
+        en: "A large move can outpace the evidence supporting it.",
+        ko: "큰 변화가 이를 뒷받침하는 근거보다 앞서갈 수 있습니다.",
+      },
+      reduction: {
+        en: "Clarify stability, future value, reversibility, and missing evidence together.",
+        ko: "안정성, 미래 가치, Reversibility, 부족한 근거를 함께 정리합니다.",
+      },
+    },
+    conditions: {
+      en: [
+        "Stability and future value are considered together.",
+        "Reversibility is protected while evidence develops.",
+        "The most important uncertainty is tested before commitment increases.",
+      ],
+      ko: [
+        "안정성과 미래 가치를 함께 검토합니다.",
+        "근거를 쌓는 동안 Reversibility를 보호합니다.",
+        "몰입도를 높이기 전에 가장 중요한 불확실성을 검증합니다.",
+      ],
+    },
+    plan: [
+      {
+        period: "30 days",
+        title: { en: "Clarify decision structure", ko: "결정 구조 정리" },
+        objective: { en: "Separate stability, future value, and uncertainty.", ko: "안정성, 미래 가치, 불확실성을 구분합니다." },
+        action: { en: "Map the strongest claim, trade-off, and missing proof behind each option.", ko: "각 Option의 핵심 주장, trade-off, 부족한 근거를 정리합니다." },
+        output: { en: "A prioritized validation map.", ko: "우선순위가 표시된 검증 지도를 만듭니다." },
+      },
+      {
+        period: "60 days",
+        title: { en: "Test critical evidence", ko: "핵심 근거 검증" },
+        objective: { en: "Reduce the uncertainty that matters most.", ko: "가장 중요한 불확실성을 줄입니다." },
+        action: { en: "Run targeted market, role, support, and feasibility tests.", ko: "시장, 역할, 지원, 실행 가능성을 선별적으로 검증합니다." },
+        output: { en: "A documented view of evidence strength and gaps.", ko: "근거의 강도와 부족한 부분을 기록합니다." },
+      },
+      {
+        period: "90 days",
+        title: { en: "Set decision conditions", ko: "결정 조건 설정" },
+        objective: { en: "Define the threshold for increasing commitment.", ko: "몰입도를 높일 기준을 정합니다." },
+        action: { en: "Review stability, future value, evidence, load, and reversibility.", ko: "안정성, 미래 가치, 근거, 부담, Reversibility를 검토합니다." },
+        output: { en: "Proceed, extend validation, or protect the current path.", ko: "진행, 검증 연장 또는 현재 경로 보호를 결정합니다." },
+      },
+    ],
+    closingQuestion: {
+      en: "What evidence would make the decision more defensible?",
+      ko: "어떤 근거가 확인되면 이 결정의 설명력이 더 커질까요?",
+    },
+  },
+};
+
 const caseTypeRules: Array<{ type: Exclude<CaseType, "General Career Reconfiguration">; keywords: string[] }> = [
   {
     type: "Family Constraint-heavy Decision",
@@ -1015,6 +1530,7 @@ export default function AmcWebMvp() {
   );
   const caseTypeReading = caseTypeInterpretations[detectedCaseType];
   const caseSpecificReading = caseSpecificReadings[detectedCaseType];
+  const caseReportBranch = caseReportBranches[detectedCaseType];
 
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
@@ -1091,8 +1607,8 @@ export default function AmcWebMvp() {
       },
       {
         label: "Primary Risk",
-        value: t("Premature Commitment", "검증 전 전환"),
-        reading: t("Commitment may move faster than the evidence base.", "충분한 근거 없이 결정을 앞당길 수 있습니다."),
+        value: caseReportBranch.primaryRisk.name,
+        reading: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
       },
       {
         label: "Safety Margin",
@@ -1107,9 +1623,30 @@ export default function AmcWebMvp() {
     ];
     const executiveSummaryItems = isKo ? reportExecutiveSummaryKo : reportExecutiveSummary;
     const pressureSignals = isKo ? externalPressureSignalsKo : externalPressureSignals;
-    const riskMapItems = isKo ? reportRiskItemsKo : reportRiskItems;
-    const planItems = isKo ? validationPlanKo : validationPlan;
-    const closingQuestions = isKo ? reflectionQuestionsKo : reflectionQuestions;
+    const baseRiskItems = isKo ? reportRiskItemsKo : reportRiskItems;
+    const riskMapItems = [
+      {
+        label: "Primary Risk",
+        name: caseReportBranch.primaryRisk.name,
+        meaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
+        why: isKo ? caseReportBranch.primaryRisk.why.ko : caseReportBranch.primaryRisk.why.en,
+        reduction: isKo ? caseReportBranch.primaryRisk.reduction.ko : caseReportBranch.primaryRisk.reduction.en,
+      },
+      ...baseRiskItems.slice(1),
+    ];
+    const planItems = caseReportBranch.plan.map((item) => ({
+      period: item.period,
+      title: isKo ? item.title.ko : item.title.en,
+      objective: isKo ? item.objective.ko : item.objective.en,
+      action: isKo ? item.action.ko : item.action.en,
+      output: isKo ? item.output.ko : item.output.en,
+    }));
+    const baseClosingQuestions = isKo ? reflectionQuestionsKo : reflectionQuestions;
+    const closingQuestions = [
+      isKo ? caseReportBranch.closingQuestion.ko : caseReportBranch.closingQuestion.en,
+      ...baseClosingQuestions.slice(1),
+    ];
+    const reportConditions = isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en;
 
     return (
       <div lang={isKo ? "ko" : "en"} className="pdf-report-shell min-h-screen bg-[#e9e9e7] text-[#202326]">
@@ -1206,7 +1743,7 @@ export default function AmcWebMvp() {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Case Type</p>
                     <p className="mt-2 text-sm font-semibold">{detectedCaseType}</p>
                     <p className="mt-2 text-sm leading-6 text-black/60">
-                      {isKo ? caseTypeReading.ko : caseTypeReading.en}
+                      {isKo ? caseReportBranch.executiveSummary.ko : caseReportBranch.executiveSummary.en}
                     </p>
                   </div>
                 </div>
@@ -1430,37 +1967,22 @@ export default function AmcWebMvp() {
               <p className="pdf-kicker">08 / Decision Conditions</p>
               <h2 className="pdf-section-heading mt-3">
                 {t(
-                  "Commitment becomes defensible when evidence and operating conditions move together.",
-                  "근거와 실행 조건이 함께 강화될 때 결정 조건이 명확해집니다.",
+                  `Three conditions make ${detectedCaseType} more defensible.`,
+                  `${detectedCaseType}의 설명력을 높이는 세 가지 조건입니다.`,
                 )}
               </h2>
-              <div className="mt-7 grid grid-cols-1 gap-px bg-black/20 lg:grid-cols-2">
-                {[
-                  [
-                    t(`Conditions that make ${optionBLabel} more defensible`, `${optionBLabel} 선택을 뒷받침하는 조건`),
-                    isKo
-                      ? ["시장과 전문가를 통해 실제 수요를 확인합니다.", "검증 기간 동안 소득 안정성을 보호할 재정 여유를 확보합니다.", "되돌리기 어려운 전환 전에 작은 범위로 시험합니다."]
-                      : optionBConditions,
-                  ],
-                  [
-                    t(`Conditions that make ${optionALabel} more defensible`, `${optionALabel} 선택을 뒷받침하는 조건`),
-                    isKo
-                      ? ["현재 역할을 학습과 성장 중심으로 조정할 수 있습니다.", "새로운 경로를 검증할 시간이 보호됩니다.", "현재의 안정성이 장기 커리어 전략과 연결됩니다."]
-                      : optionAConditions,
-                  ],
-                ].map(([title, conditions]) => (
-                  <div key={String(title)} className="pdf-keep-together bg-[#f6f6f4] p-6">
-                    <h3 className="text-lg font-semibold leading-6">{String(title)}</h3>
-                    <ol className="mt-5 space-y-4">
-                      {(conditions as readonly string[]).map((condition, index) => (
-                        <li key={condition} className="grid grid-cols-[24px_1fr] gap-3 text-sm leading-6 text-black/65">
-                          <span className="font-semibold text-black">{index + 1}</span>
-                          <span>{condition}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                ))}
+              <div className="pdf-keep-together mt-7 border-t-2 border-black bg-[#f6f6f4] p-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
+                  Case-Specific Decision Conditions
+                </p>
+                <ol className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+                  {reportConditions.map((condition, index) => (
+                    <li key={condition} className="grid grid-cols-[24px_1fr] gap-3 text-sm leading-6 text-black/65">
+                      <span className="font-semibold text-black">{index + 1}</span>
+                      <span>{condition}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
             </section>
 
