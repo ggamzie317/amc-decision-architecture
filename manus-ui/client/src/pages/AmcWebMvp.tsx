@@ -751,6 +751,142 @@ const caseTypeInterpretations: Record<CaseType, { en: string; ko: string }> = {
   },
 };
 
+const caseSpecificReadings: Record<
+  CaseType,
+  {
+    primaryRisk: { en: string; ko: string };
+    decisionConditions: { en: string; ko: string };
+    validationFocus: { en: string; ko: string };
+  }
+> = {
+  "Corporate Stay vs Exit": {
+    primaryRisk: {
+      en: "The main risk is treating stay-or-exit as a binary choice before testing whether the current organization can still support future career value.",
+      ko: "핵심 리스크는 현재 조직이 앞으로의 커리어 가치를 계속 키워줄 수 있는지 확인하기 전에, 결정을 단순히 잔류와 퇴사로 나누는 것입니다.",
+    },
+    decisionConditions: {
+      en: "A defensible exit requires proof that the next path has clearer value, stronger pull, and enough safety margin.",
+      ko: "전환을 설명하려면 다음 경로의 가치, 외부 수요, 안정성이 현재 경로보다 충분히 명확해야 합니다.",
+    },
+    validationFocus: {
+      en: "Test whether the current role can be redesigned before assuming that exit is the only solution.",
+      ko: "퇴사만을 답으로 보기 전에, 현재 역할을 다시 설계할 수 있는지 먼저 확인해야 합니다.",
+    },
+  },
+  "MBA / EMBA / PhD Decision": {
+    primaryRisk: {
+      en: "The main risk is treating the degree itself as the answer before testing whether it creates enough long-term positioning value.",
+      ko: "핵심 리스크는 학위 자체를 답으로 보기 전에, 그 학위가 장기 포지셔닝 가치를 충분히 만드는지 검증하지 않는 것입니다.",
+    },
+    decisionConditions: {
+      en: "A degree path becomes more defensible when it creates clear access to research, network, credibility, or career mobility that cannot be built as effectively elsewhere.",
+      ko: "학위 경로는 연구, 네트워크, 신뢰도, 이동 가능성을 다른 방식보다 더 효과적으로 만들 때 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Separate intellectual interest from career positioning value, time cost, and opportunity risk.",
+      ko: "지적 관심과 커리어 포지셔닝 가치, 시간 비용, 기회비용을 분리해서 봐야 합니다.",
+    },
+  },
+  "Overseas Relocation": {
+    primaryRisk: {
+      en: "The main risk is overestimating career upside while underestimating visa, family, financial, and local-market constraints.",
+      ko: "핵심 리스크는 커리어 기회는 크게 보고, 비자, 가족, 재정, 현지 시장 제약은 작게 보는 것입니다.",
+    },
+    decisionConditions: {
+      en: "Relocation becomes more defensible when it increases career optionality without making family and financial constraints too fragile.",
+      ko: "해외 이동은 커리어 선택지를 넓히면서도 가족과 재정 조건을 지나치게 불안정하게 만들지 않을 때 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Validate local demand, visa feasibility, family fit, and income stability before committing.",
+      ko: "현지 수요, 비자 가능성, 가족 적합성, 소득 안정성을 먼저 검증해야 합니다.",
+    },
+  },
+  Entrepreneurship: {
+    primaryRisk: {
+      en: "The main risk is confusing founder motivation with market validation and repeatable execution capacity.",
+      ko: "핵심 리스크는 창업 의지와 실제 시장 검증, 반복 가능한 실행력을 혼동하는 것입니다.",
+    },
+    decisionConditions: {
+      en: "Entrepreneurship becomes more defensible when demand, pricing, delivery capacity, and income runway are tested in small steps.",
+      ko: "창업은 수요, 가격, 제공 역량, 소득 여유가 작은 단위로 검증될 때 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Test paying demand before increasing commitment.",
+      ko: "몰입도를 높이기 전에 실제 지불 의사를 먼저 확인해야 합니다.",
+    },
+  },
+  "Industry Transition": {
+    primaryRisk: {
+      en: "The main risk is assuming that past experience will automatically transfer into the new industry.",
+      ko: "핵심 리스크는 기존 경험이 새로운 산업에서도 자동으로 인정될 것이라고 보는 것입니다.",
+    },
+    decisionConditions: {
+      en: "An industry transition becomes more defensible when prior career capital can be translated into credible proof for the new market.",
+      ko: "산업 전환은 기존 커리어 자산이 새로운 시장에서 설득력 있는 근거로 전환될 때 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Build proof that the new industry recognizes your previous experience as relevant value.",
+      ko: "새로운 산업이 기존 경험을 가치 있는 근거로 인정하는지 확인해야 합니다.",
+    },
+  },
+  "Role Upgrade / Downgrade": {
+    primaryRisk: {
+      en: "The main risk is focusing on title or status before checking whether the role expands long-term career value.",
+      ko: "핵심 리스크는 직급이나 지위 변화에 집중한 나머지, 장기 커리어 가치가 실제로 확장되는지 놓치는 것입니다.",
+    },
+    decisionConditions: {
+      en: "A role change becomes more defensible when it expands decision authority, strategic exposure, capability growth, or future mobility.",
+      ko: "역할 변화는 의사결정 권한, 전략 노출, 역량 성장, 향후 이동 가능성을 넓힐 때 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Check whether the new role improves career value, not only title, workload, or short-term compensation.",
+      ko: "새 역할이 직급, 업무량, 단기 보상뿐 아니라 커리어 가치를 실제로 높이는지 확인해야 합니다.",
+    },
+  },
+  "Burnout-driven Decision": {
+    primaryRisk: {
+      en: "The main risk is reading fatigue as proof that a full career transition is ready.",
+      ko: "핵심 리스크는 피로감을 전면적인 커리어 전환이 준비됐다는 신호로 해석하는 것입니다.",
+    },
+    decisionConditions: {
+      en: "A transition becomes more defensible when recovery needs are separated from market validation, execution capacity, and financial safety.",
+      ko: "전환은 회복이 필요한 문제와 시장 검증, 실행력, 재정 안정성을 분리해서 확인할 때 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Separate what requires recovery from what requires career redesign.",
+      ko: "회복이 필요한 문제와 커리어 재설계가 필요한 문제를 분리해야 합니다.",
+    },
+  },
+  "Family Constraint-heavy Decision": {
+    primaryRisk: {
+      en: "The main risk is designing a career move that works professionally but fails under family, location, or timing constraints.",
+      ko: "핵심 리스크는 커리어 측면에서는 좋아 보여도 가족, 지역, 시기 조건 안에서 작동하지 않는 선택을 하는 것입니다.",
+    },
+    decisionConditions: {
+      en: "A career move becomes more defensible when the preferred path can work within family, location, timing, and financial constraints.",
+      ko: "선호하는 경로가 가족, 지역, 시기, 재정 조건 안에서 실제로 작동할 때 결정의 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Test the decision against family logistics before treating career upside as sufficient.",
+      ko: "커리어 기회만 보지 말고 가족 생활 조건 안에서 실행 가능한지 먼저 확인해야 합니다.",
+    },
+  },
+  "General Career Reconfiguration": {
+    primaryRisk: {
+      en: "The main risk is making a large decision before clarifying which option protects stability and which option creates future value.",
+      ko: "핵심 리스크는 어떤 선택이 안정성을 보호하고, 어떤 선택이 미래 가치를 만드는지 정리하기 전에 큰 결정을 내리는 것입니다.",
+    },
+    decisionConditions: {
+      en: "The decision becomes more defensible when stability, future value, reversibility, and validation evidence are considered together.",
+      ko: "안정성, 미래 가치, 되돌릴 수 있는 여지, 검증 근거를 함께 볼 때 결정의 설명력이 커집니다.",
+    },
+    validationFocus: {
+      en: "Clarify what must be validated before increasing commitment.",
+      ko: "몰입도를 높이기 전에 무엇을 검증해야 하는지 먼저 정리해야 합니다.",
+    },
+  },
+};
+
 const caseTypeRules: Array<{ type: Exclude<CaseType, "General Career Reconfiguration">; keywords: string[] }> = [
   {
     type: "Family Constraint-heavy Decision",
@@ -878,6 +1014,7 @@ export default function AmcWebMvp() {
     [answers, fullIntakeAnswers],
   );
   const caseTypeReading = caseTypeInterpretations[detectedCaseType];
+  const caseSpecificReading = caseSpecificReadings[detectedCaseType];
 
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
@@ -1925,6 +2062,30 @@ export default function AmcWebMvp() {
                         {isKo ? caseTypeReading.ko : caseTypeReading.en}
                       </p>
                     </div>
+                  </div>
+                </section>
+
+                <section className="rounded-lg border border-border bg-card p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    Case-Specific Reading
+                  </p>
+                  <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    {[
+                      ["Primary Risk", caseSpecificReading.primaryRisk],
+                      ["Decision Conditions", caseSpecificReading.decisionConditions],
+                      ["Validation Focus", caseSpecificReading.validationFocus],
+                    ].map(([label, reading]) => (
+                      <div key={String(label)} className="rounded-md border border-border bg-background p-5">
+                        <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                          {String(label)}
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed text-foreground">
+                          {isKo
+                            ? (reading as { en: string; ko: string }).ko
+                            : (reading as { en: string; ko: string }).en}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </section>
 
