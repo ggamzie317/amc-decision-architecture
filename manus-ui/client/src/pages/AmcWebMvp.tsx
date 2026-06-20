@@ -2,6 +2,16 @@ import { useMemo, useState } from "react";
 
 type Tier = "essential" | "executive";
 type Language = "en" | "ko";
+type CaseType =
+  | "Corporate Stay vs Exit"
+  | "MBA / EMBA / PhD Decision"
+  | "Overseas Relocation"
+  | "Entrepreneurship"
+  | "Industry Transition"
+  | "Role Upgrade / Downgrade"
+  | "Burnout-driven Decision"
+  | "Family Constraint-heavy Decision"
+  | "General Career Reconfiguration";
 
 type PreviewAnswers = {
   decision: string;
@@ -702,6 +712,100 @@ const reflectionQuestionsKo = [
   "되돌리기 어려운 결정을 내리기 전에 무엇을 검증해야 하나요?",
 ] as const;
 
+const caseTypeInterpretations: Record<CaseType, { en: string; ko: string }> = {
+  "Corporate Stay vs Exit": {
+    en: "This decision is about whether the current organization can still support future career value, not only whether to stay or leave.",
+    ko: "이 결정은 단순히 남을지 떠날지의 문제가 아닙니다. 현재 조직이 앞으로의 커리어 가치를 계속 키워줄 수 있는지 확인해야 합니다.",
+  },
+  "MBA / EMBA / PhD Decision": {
+    en: "This decision requires checking whether the degree path creates enough long-term positioning value compared with time, cost, and opportunity risk.",
+    ko: "이 결정은 학위 자체보다 시간, 비용, 기회비용 대비 장기 포지셔닝 가치가 충분한지를 확인해야 합니다.",
+  },
+  "Overseas Relocation": {
+    en: "This decision depends on whether relocation improves career optionality while keeping family, visa, and financial constraints manageable.",
+    ko: "이 결정은 해외 이동이 커리어 선택지를 넓히는 동시에 가족, 비자, 재정 조건 안에서 감당 가능한지 확인해야 합니다.",
+  },
+  Entrepreneurship: {
+    en: "This decision requires separating founder motivation from market validation, income stability, and repeatable execution capacity.",
+    ko: "이 결정은 창업 의지와 실제 시장 검증, 소득 안정성, 반복 가능한 실행력을 분리해서 봐야 합니다.",
+  },
+  "Industry Transition": {
+    en: "This decision depends on whether prior career capital can be transferred into the new industry with credible proof.",
+    ko: "이 결정은 기존 커리어 자산이 새로운 산업으로 설득력 있게 이전될 수 있는지가 핵심입니다.",
+  },
+  "Role Upgrade / Downgrade": {
+    en: "This decision is about whether the new role expands long-term career value or only changes title, workload, and short-term status.",
+    ko: "이 결정은 직급이나 역할 변화보다 장기 커리어 가치가 실제로 확장되는지를 봐야 합니다.",
+  },
+  "Burnout-driven Decision": {
+    en: "This decision requires separating recovery needs from true transition readiness.",
+    ko: "이 결정은 회복이 필요한 문제와 실제 전환 준비도를 분리해서 봐야 합니다.",
+  },
+  "Family Constraint-heavy Decision": {
+    en: "This decision depends on whether the preferred career path can work within family, location, and timing constraints.",
+    ko: "이 결정은 원하는 커리어 방향이 가족, 지역, 시간 조건 안에서 실제로 작동 가능한지 확인해야 합니다.",
+  },
+  "General Career Reconfiguration": {
+    en: "This decision requires clarifying which option protects stability, which option creates future value, and what must be validated first.",
+    ko: "이 결정은 어떤 선택이 안정성을 보호하고, 어떤 선택이 미래 가치를 만들며, 무엇을 먼저 검증해야 하는지 정리해야 합니다.",
+  },
+};
+
+const caseTypeRules: Array<{ type: Exclude<CaseType, "General Career Reconfiguration">; keywords: string[] }> = [
+  {
+    type: "Family Constraint-heavy Decision",
+    keywords: ["family", "spouse", "children", "parents", "childcare", "school", "family location", "가족", "배우자", "아이", "자녀", "부모", "육아", "학교", "가족 사정"],
+  },
+  {
+    type: "Burnout-driven Decision",
+    keywords: ["burnout", "fatigue", "exhaustion", "stress", "low energy", "escape", "번아웃", "피로", "지침", "스트레스", "회피", "쉬고 싶음"],
+  },
+  {
+    type: "Entrepreneurship",
+    keywords: ["startup", "founder", "business launch", "venture", "consulting business", "side business", "entrepreneurship", "창업", "사업", "스타트업", "독립", "자문 사업", "컨설팅 사업"],
+  },
+  {
+    type: "MBA / EMBA / PhD Decision",
+    keywords: ["mba", "emba", "phd", "doctoral program", "graduate school", "business school", "academic path", "박사", "석사", "학위", "대학원", "유학", "연구자"],
+  },
+  {
+    type: "Overseas Relocation",
+    keywords: ["relocation", "move abroad", "overseas assignment", "immigration", "visa", "singapore", "us", "korea", "china", "해외 이동", "해외 근무", "이주", "비자", "주재원", "해외 커리어"],
+  },
+  {
+    type: "Industry Transition",
+    keywords: ["changing industry", "new sector", "tech", "ai", "consulting", "finance", "industry shift", "산업 전환", "업종 변경", "산업 이동", "새로운 산업", "컨설팅", "금융"],
+  },
+  {
+    type: "Role Upgrade / Downgrade",
+    keywords: ["promotion", "senior role", "executive role", "bigger role", "lower title", "role change", "직급", "승진", "임원", "역할 확대", "역할 축소", "포지션 변경"],
+  },
+  {
+    type: "Corporate Stay vs Exit",
+    keywords: ["stay at current company", "leaving company", "resignation", "corporate career", "job change", "exit", "회사 유지", "퇴사", "이직", "현 직장", "대기업", "조직 내 경력"],
+  },
+];
+
+function includesCaseKeyword(text: string, keyword: string) {
+  if (/^[a-z0-9]+$/i.test(keyword)) {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(text);
+  }
+
+  return text.includes(keyword.toLowerCase());
+}
+
+function detectCaseType(previewAnswers: PreviewAnswers, fullAnswers: Record<number, string>): CaseType {
+  const answerText = [...Object.values(previewAnswers), ...Object.values(fullAnswers)]
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    caseTypeRules.find((rule) => rule.keywords.some((keyword) => includesCaseKeyword(answerText, keyword)))?.type ??
+    "General Career Reconfiguration"
+  );
+}
+
 function SectionHeader({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
   return (
     <div className="mb-7 max-w-3xl">
@@ -769,6 +873,11 @@ export default function AmcWebMvp() {
   const progress = Math.round((answeredQuestionCount / totalFullIntakeQuestions) * 100);
   const fullIntakeComplete = answeredQuestionCount === totalFullIntakeQuestions;
   const expandedGroupSet = useMemo(() => new Set(expandedGroups), [expandedGroups]);
+  const detectedCaseType = useMemo(
+    () => detectCaseType(answers, fullIntakeAnswers),
+    [answers, fullIntakeAnswers],
+  );
+  const caseTypeReading = caseTypeInterpretations[detectedCaseType];
 
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
@@ -921,6 +1030,10 @@ export default function AmcWebMvp() {
                   <dd className="mt-2 font-medium">{t("Staged Reconfiguration", "단계적 전환 설계")}</dd>
                 </div>
               </dl>
+              <div className="mt-5 border-l-2 border-black pl-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">Case Type</p>
+                <p className="mt-2 text-sm font-semibold">{detectedCaseType}</p>
+              </div>
               <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/42">
                 {t("Prepared for private career decision review", "개인 커리어 결정 검토용")}
               </p>
@@ -950,6 +1063,13 @@ export default function AmcWebMvp() {
                         "Preserve optionality while converting uncertainty into evidence.",
                         "선택 가능성을 유지하면서 불확실성을 검증 가능한 근거로 바꿉니다.",
                       )}
+                    </p>
+                  </div>
+                  <div className="mt-7 border-l-2 border-black/35 pl-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Case Type</p>
+                    <p className="mt-2 text-sm font-semibold">{detectedCaseType}</p>
+                    <p className="mt-2 text-sm leading-6 text-black/60">
+                      {isKo ? caseTypeReading.ko : caseTypeReading.en}
                     </p>
                   </div>
                 </div>
@@ -1783,6 +1903,31 @@ export default function AmcWebMvp() {
               </div>
 
               <div className="mt-6 space-y-6">
+                <section className="rounded-lg border border-border bg-card p-6">
+                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-[0.42fr_1.58fr]">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                        Case Type
+                      </p>
+                      <h3 className="mt-3 text-xl font-semibold tracking-tight">{detectedCaseType}</h3>
+                      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                        {t(
+                          "Detected from the language and patterns in your intake.",
+                          "Intake 답변의 표현과 패턴을 바탕으로 분류했습니다.",
+                        )}
+                      </p>
+                    </div>
+                    <div className="border-t border-border pt-5 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                        {t("Why this matters", "Why this matters")}
+                      </p>
+                      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-foreground">
+                        {isKo ? caseTypeReading.ko : caseTypeReading.en}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
                 <section className="rounded-lg border border-border bg-card p-6">
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                     01 / Structural Overview
