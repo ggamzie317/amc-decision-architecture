@@ -2397,8 +2397,8 @@ export default function AmcWebMvp() {
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               {t(
-                "A private web-based structural interpretation dashboard for serious career decisions.",
-                "중요한 커리어 결정을 구조적으로 검토하는 비공개 웹 Dashboard입니다.",
+                "A private career decision report for experienced professionals facing important career crossroads.",
+                "중요한 커리어 갈림길에 선 경력자를 위한 Private Career Decision Report입니다.",
               )}
             </p>
             <p className="mt-4 inline-flex rounded-sm border border-border bg-secondary/30 px-3 py-2 text-sm font-medium">
@@ -2406,8 +2406,8 @@ export default function AmcWebMvp() {
             </p>
             <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {t(
-                "Your quick preview uses 7 questions. The full report requires a detailed intake after unlock.",
-                "Preview는 7개 질문으로 시작합니다. 전체 Report는 상세 Intake를 바탕으로 구성됩니다.",
+                "Free Preview helps you see the initial structure of your career decision before unlocking the full report.",
+                "Free Preview는 유료 리포트 전에 현재 커리어 결정의 초기 구조를 먼저 확인하는 단계입니다.",
               )}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -2416,7 +2416,7 @@ export default function AmcWebMvp() {
                 onClick={startPreview}
                 className="inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
               >
-                {t("Start Free Structural Preview", "무료 Structural Preview 시작")}
+                {t("Start Free Preview", "Free Preview 시작하기")}
               </button>
               <a
                 href="#how-amc-works"
@@ -2484,14 +2484,14 @@ export default function AmcWebMvp() {
         {previewStarted ? (
           <section id="preview-intake" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
-              eyebrow={t("Free Preview Intake", "무료 Preview Intake")}
+              eyebrow="Free Preview"
               title={t(
                 "Seven compact questions. One first structural signal.",
                 "7개 질문으로 결정의 핵심 구조를 먼저 확인합니다.",
               )}
               body={t(
-                "Complete at least the decision and both options to generate the preview.",
-                "현재 결정과 Option A, Option B를 입력하면 Preview를 생성할 수 있습니다.",
+                "Free Preview helps you see the initial structure of your career decision before unlocking the full report.",
+                "Free Preview는 유료 리포트 전에 현재 커리어 결정의 초기 구조를 먼저 확인하는 단계입니다.",
               )}
             />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -2519,7 +2519,7 @@ export default function AmcWebMvp() {
               disabled={!requiredPreviewReady}
               className="mt-6 inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {t("Generate My Structural Preview", "Structural Preview 생성")}
+              {t("Generate Free Preview", "Free Preview 생성하기")}
             </button>
           </section>
         ) : null}
@@ -2645,7 +2645,7 @@ export default function AmcWebMvp() {
                 onClick={() => document.getElementById("unlock")?.scrollIntoView({ behavior: "smooth" })}
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
               >
-                {t("Unlock Full Career Structure Report", "Full Report 확인하기")}
+                {t("View Full Report Options", "Full Report 옵션 보기")}
               </button>
             </div>
           </section>
@@ -2656,20 +2656,26 @@ export default function AmcWebMvp() {
             <SectionHeader
               eyebrow="Unlock"
               title={t(
-                "The paid experience begins with a detailed 29-question intake.",
-                "29개 질문으로 전체 분석의 근거를 정리합니다.",
+                "Choose the report experience that fits your review needs.",
+                "필요한 검토 범위에 맞는 Report 옵션을 선택합니다.",
               )}
               body={t(
-                "No account is required. A private email link can be used later for report access and Executive Q&A.",
-                "계정 없이 진행할 수 있습니다. 이후 Report와 Executive Q&A는 비공개 이메일 링크로 확인할 수 있습니다.",
+                "Both options continue to the same detailed 29-question Full Intake.",
+                "두 옵션 모두 29개 질문으로 구성된 Full Intake로 이어집니다.",
               )}
             />
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="rounded-lg border border-border bg-card p-6">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Essential</p>
-                <h3 className="mt-3 text-2xl font-semibold">
-                  {t("Dashboard and detailed report", "Dashboard와 상세 Report")}
+                <h3 className="mt-3 text-xl font-semibold leading-snug">
+                  Full Web Dashboard + Detailed PDF Report
                 </h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {t(
+                    "For users who want a complete structured reading of their career decision.",
+                    "커리어 결정을 구조적으로 정리한 전체 리포트를 받고 싶은 경우에 적합합니다.",
+                  )}
+                </p>
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
                     Full Web Dashboard
@@ -2683,14 +2689,20 @@ export default function AmcWebMvp() {
                   onClick={() => simulateUnlock("essential")}
                   className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
                 >
-                  {t("Simulate Essential Unlock", "Essential 이용 흐름 체험")}
+                  {t("Continue to Full Intake", "Full Intake로 계속하기")}
                 </button>
               </div>
               <div className="rounded-lg border border-foreground/20 bg-card p-6">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Executive</p>
-                <h3 className="mt-3 text-2xl font-semibold">
-                  {t("Dashboard, detailed report, and Q&A", "Dashboard, 상세 Report, Q&A")}
+                <h3 className="mt-3 text-xl font-semibold leading-snug">
+                  Full Web Dashboard + Detailed PDF Report + 1-Day Report Q&A
                 </h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {t(
+                    "For users who want to review the report and ask follow-up questions on the same day.",
+                    "리포트를 받은 당일, 리포트 내용을 바탕으로 추가 질문까지 정리하고 싶은 경우에 적합합니다.",
+                  )}
+                </p>
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
                     Full Web Dashboard
@@ -2707,10 +2719,16 @@ export default function AmcWebMvp() {
                   onClick={() => simulateUnlock("executive")}
                   className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
                 >
-                  {t("Simulate Executive Unlock", "Executive 이용 흐름 체험")}
+                  {t("Continue to Full Intake", "Full Intake로 계속하기")}
                 </button>
               </div>
             </div>
+            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+              {t(
+                "Payment is not active in this MVP preview. This section simulates the unlock flow.",
+                "현재 MVP Preview에서는 실제 결제가 활성화되어 있지 않습니다. 이 영역은 Unlock 흐름을 확인하기 위한 시뮬레이션입니다.",
+              )}
+            </p>
           </section>
         ) : null}
 
@@ -2891,7 +2909,7 @@ export default function AmcWebMvp() {
               disabled={!fullIntakeComplete}
               className="mt-6 inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {t("Generate Full Dashboard", "Full Dashboard 생성")}
+              {t("Generate Full Dashboard", "Full Dashboard 생성하기")}
             </button>
             {!fullIntakeComplete ? (
               <p className="mt-3 text-sm text-muted-foreground">
@@ -3238,7 +3256,7 @@ export default function AmcWebMvp() {
                     onClick={generateDetailedReport}
                     className="inline-flex h-11 shrink-0 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
                   >
-                    {t("Open Detailed PDF Report", "Detailed PDF Report 열기")}
+                    {t("View Detailed PDF Report", "Detailed PDF Report 보기")}
                   </button>
                 </div>
               </div>
