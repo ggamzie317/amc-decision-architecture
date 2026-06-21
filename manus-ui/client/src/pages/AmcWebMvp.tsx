@@ -464,6 +464,281 @@ const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
 
 const totalFullIntakeQuestions = intakeGroups.reduce((total, group) => total + group.questions.length, 0);
 
+type QaPreset = {
+  label: string;
+  previewAnswers: PreviewAnswers;
+  fullAnswers: Record<number, string>;
+};
+
+function createQaFullAnswers(values: string[]) {
+  if (values.length !== totalFullIntakeQuestions) {
+    throw new Error(`QA preset requires ${totalFullIntakeQuestions} answers.`);
+  }
+
+  return Object.fromEntries(values.map((value, index) => [index + 1, value])) as Record<number, string>;
+}
+
+const qaPresets: QaPreset[] = [
+  {
+    label: "Corporate Stay vs Exit",
+    previewAnswers: {
+      decision: "Stay at my current company, move internally, or leave for a new path.",
+      optionA: "Redesign my role inside the company",
+      optionB: "Leave the company for a new role",
+      pull: "Broader growth and stronger future career value.",
+      constraint: "Income stability and 15 years of corporate credibility.",
+      risk: "Framing the decision as a simple resignation.",
+      condition: "Clear evidence that the next path creates more value with enough safety margin.",
+    },
+    fullAnswers: createQaFullAnswers([
+      "After 16 years at a large company, I am deciding whether to stay, move internally, or leave the company.",
+      "My current corporate career is stable, but future growth in the role is limited.",
+      "An internal opening and an external job change opportunity make the decision timely.",
+      "Waiting would protect income but could narrow both internal and external options.",
+      "Stay at the current company and redesign my role.",
+      "It protects income, credibility, benefits, and organizational relationships.",
+      "It may limit future career value and broader decision authority.",
+      "Leave the company for a new operating or advisory role.",
+      "It could create stronger growth, autonomy, and market exposure.",
+      "The next path may not yet have enough evidence or safety margin.",
+      "The company is restructuring and leadership positions are becoming narrower.",
+      "The external path may offer more future value if the role is real.",
+      "Two external conversations and one internal sponsor support further testing.",
+      "I still need a concrete mandate, compensation range, and next-path demand.",
+      "Option B feels more aligned with long-term growth.",
+      "Option B requires rebuilding trust and operating context.",
+      "I need proof of role authority, sponsor support, and transferable demand.",
+      "Option A creates stagnation pressure; Option B creates uncertainty.",
+      "I have nine months of protected financial runway.",
+      "Option A is more reversible while I test external evidence.",
+      "Leaving without a credible next platform would be hardest to absorb.",
+      "Current executives and colleagues support an internal redesign.",
+      "External mentors and former colleagues can support Option B.",
+      "I still need a committed external sponsor and clearer role scope.",
+      "A reorganization decision and external offer timing matter this quarter.",
+      "The external role may disappear if I wait too long.",
+      "Option B becomes safer if demand, mandate, and compensation are confirmed.",
+      "The next role must show clearer value, pull, and sufficient safety margin.",
+      "Staying is defensible if the current role gains authority, learning, and mobility.",
+    ]),
+  },
+  {
+    label: "MBA / EMBA / PhD",
+    previewAnswers: {
+      decision: "Choose between an EMBA, a PhD, or continuing without a degree.",
+      optionA: "Continue my current career without a degree",
+      optionB: "Pursue an EMBA or PhD",
+      pull: "Long-term positioning, research access, network, and global mobility.",
+      constraint: "Time cost, tuition, and opportunity risk.",
+      risk: "Treating the degree itself as the answer.",
+      condition: "Differentiated positioning value that cannot be built as effectively elsewhere.",
+    },
+    fullAnswers: createQaFullAnswers([
+      "I am deciding whether to pursue an EMBA or PhD for long-term positioning.",
+      "Research access, credibility, network, and global mobility now matter more.",
+      "Application cycles and a possible research sponsor create a decision window.",
+      "Waiting may improve savings but delay positioning and research access.",
+      "Continue building my current career without a degree.",
+      "It protects income, time, and current professional momentum.",
+      "It may limit research depth, credential value, and network expansion.",
+      "Pursue an EMBA or PhD.",
+      "It could create stronger positioning, research access, credibility, and mobility.",
+      "It requires major time, cost, and opportunity trade-offs.",
+      "Senior roles increasingly value differentiated expertise and global networks.",
+      "Option B may align better if program outcomes are credible.",
+      "Alumni outcomes show potential, but results vary by program.",
+      "I need evidence on program fit, network quality, funding, and career outcomes.",
+      "Option B fits my long-term research and leadership identity.",
+      "Option B requires sustained study, financial planning, and reduced work capacity.",
+      "I need stronger research proof, admissions fit, and a clear career thesis.",
+      "Option A creates intellectual frustration; Option B creates execution load.",
+      "I can protect tuition and living costs without immediate income loss.",
+      "Option A is more reversible until a program offer and funding are clear.",
+      "Spending years on a degree without differentiated career value is the largest downside.",
+      "Current mentors support continued professional development.",
+      "Alumni, faculty contacts, and research collaborators can support Option B.",
+      "I still need a credible academic sponsor and verified network access.",
+      "Application deadlines and project commitments shape the next year.",
+      "Option B becomes harder if I miss the next admissions cycle.",
+      "Option B becomes safer with funding, program fit, and verified outcomes.",
+      "The degree must create positioning, network, research, or mobility value unavailable elsewhere.",
+      "Option A is defensible if equivalent positioning can be built through projects and networks.",
+    ]),
+  },
+  {
+    label: "Overseas Relocation",
+    previewAnswers: {
+      decision: "Relocate to Singapore for a regional role or remain in my current market.",
+      optionA: "Remain in my current market",
+      optionB: "Relocate to Singapore",
+      pull: "Regional career optionality and larger market exposure.",
+      constraint: "Visa feasibility, household logistics, and financial stability.",
+      risk: "Overestimating relocation upside and local-market demand.",
+      condition: "Verified role access, visa path, and resilient income.",
+    },
+    fullAnswers: createQaFullAnswers([
+      "I am considering relocation to Singapore for a regional leadership role.",
+      "The move could expand career optionality and international market exposure.",
+      "A regional opening and visa timeline create urgency.",
+      "Waiting may protect stability but close the current relocation window.",
+      "Remain in my current market and role.",
+      "It protects income, local credibility, and established operating routines.",
+      "It may limit regional exposure and future international mobility.",
+      "Move abroad to Singapore for the regional role.",
+      "It opens regional responsibility, new networks, and broader career options.",
+      "Visa, household logistics, local demand, and income volatility remain risks.",
+      "Regional teams are growing, but hiring standards in Singapore are selective.",
+      "Option B aligns with regional market growth if the mandate is confirmed.",
+      "The employer has shared a role brief and preliminary compensation range.",
+      "I still need visa feasibility, local-market demand, and cost-of-living evidence.",
+      "Option B aligns more strongly with my regional leadership identity.",
+      "Option B requires relocation, local-network building, and operating adaptation.",
+      "I need local references, market knowledge, and proof of regional execution.",
+      "Option A creates missed-opportunity pressure; Option B creates relocation load.",
+      "I have a protected relocation budget and eight months of runway.",
+      "Option A is more reversible until visa and contract terms are final.",
+      "Relocating without durable role access or income stability is the hardest downside.",
+      "Current colleagues support staying and continued regional projects.",
+      "The hiring sponsor and regional peers can support Option B.",
+      "I still need local mentors, relocation support, and reliable housing guidance.",
+      "Visa processing, offer timing, and lease commitments matter.",
+      "Option B becomes harder if the regional opening closes.",
+      "Option B becomes safer with visa approval, local demand, and stable compensation.",
+      "The move needs verified demand, visa feasibility, role authority, and income resilience.",
+      "Option A is defensible if regional exposure can grow without relocation.",
+    ]),
+  },
+  {
+    label: "Entrepreneurship",
+    previewAnswers: {
+      decision: "Leave corporate work to launch a startup or independent advisory business.",
+      optionA: "Keep my corporate role while testing",
+      optionB: "Build the startup full time",
+      pull: "Founder autonomy and direct customer value.",
+      constraint: "Limited paying demand and income runway.",
+      risk: "Confusing founder motivation with market validation.",
+      condition: "Paying customers, repeatable delivery, and protected runway.",
+    },
+    fullAnswers: createQaFullAnswers([
+      "I am deciding whether to leave corporate work and launch a startup and consulting business.",
+      "I have strong founder motivation but limited paying customer validation.",
+      "Two potential clients and a possible pilot create a testing window.",
+      "Waiting protects income but may slow learning about real demand.",
+      "Keep my corporate role while testing the offer.",
+      "It protects income, credibility, and time to validate demand.",
+      "It limits speed, focus, and availability for customer delivery.",
+      "Build the startup and independent advisory business full time.",
+      "It opens autonomy, ownership, and direct market learning.",
+      "Paying demand, pricing, delivery capacity, and income runway are uncertain.",
+      "Companies are buying selective specialist advisory work with clear outcomes.",
+      "Option B aligns if customers will pay for a narrow offer.",
+      "Three conversations show interest, but no repeatable paid demand yet.",
+      "I still need signed pilots, tested pricing, and repeatable delivery evidence.",
+      "Option B aligns with my founder and advisory identity.",
+      "Option B requires sales, delivery systems, financial discipline, and focus.",
+      "I need a sharper offer, customer proof, pricing evidence, and delivery process.",
+      "Option A creates divided attention; Option B creates financial uncertainty.",
+      "I have ten months of income runway for controlled validation.",
+      "Option A is more reversible while paid pilots are tested.",
+      "Leaving income before proving demand would be hardest to absorb.",
+      "Current peers can provide introductions and domain feedback.",
+      "Potential clients, founder peers, and advisors can support Option B.",
+      "I still need a repeatable referral channel and delivery backup.",
+      "Pilot timing and current employment obligations matter this quarter.",
+      "Option B becomes harder if customer interest is not tested now.",
+      "Option B becomes safer with paid pilots and a protected runway.",
+      "At least three paying clients, repeatable delivery, and viable pricing are required.",
+      "Option A is defensible if it preserves enough time for disciplined market tests.",
+    ]),
+  },
+  {
+    label: "Burnout-driven",
+    previewAnswers: {
+      decision: "Leave my exhausting role or redesign work after recovery.",
+      optionA: "Reduce workload and recover",
+      optionB: "Make a full career transition",
+      pull: "Fatigue, stress, low energy, and a desire to escape.",
+      constraint: "Unclear transition readiness and limited execution capacity.",
+      risk: "Reading burnout as proof that a new career is ready.",
+      condition: "Recovery signals separated from market and career evidence.",
+    },
+    fullAnswers: createQaFullAnswers([
+      "I am considering a career transition because burnout, fatigue, and low energy make the current role exhausting.",
+      "Stress has increased and I often want to escape the role.",
+      "A difficult project and declining energy make the decision feel urgent.",
+      "Waiting without workload changes could deepen exhaustion.",
+      "Reduce workload, reset boundaries, and recover in the current role.",
+      "It protects income and creates space to understand the fatigue.",
+      "It may not solve a deeper mismatch in role design or career direction.",
+      "Make a full career transition after testing readiness.",
+      "It could create a healthier role and renewed long-term direction.",
+      "Low energy may weaken execution and distort the urgency of change.",
+      "The current workload is rising, while alternative roles remain only partly validated.",
+      "Neither option is clearly stronger until recovery signals improve.",
+      "Boundary changes have helped briefly, but evidence is incomplete.",
+      "I still need market evidence and proof that energy improves outside the current workload.",
+      "Option B may fit long-term identity, but current fatigue affects judgment.",
+      "Option B requires job search energy, learning, and sustained execution.",
+      "I need recovery capacity, clearer role criteria, and external validation.",
+      "Option A carries continued stress; Option B carries uncertainty while depleted.",
+      "Income is stable, but current execution energy is low.",
+      "Option A is more reversible while recovery and market tests continue.",
+      "Making a major transition without enough energy to execute is the hardest downside.",
+      "Current peers can support workload changes and boundary resets.",
+      "Mentors and selected contacts can support exploration of Option B.",
+      "I still need practical recovery support and realistic transition capacity.",
+      "Health, workload, and project deadlines shape the next three months.",
+      "Option B becomes harder if exhaustion continues without recovery.",
+      "Option B becomes safer if energy improves and market evidence remains strong.",
+      "Recovery, market validation, execution capacity, and financial safety must be separated.",
+      "Option A is defensible if workload redesign restores energy and role fit.",
+    ]),
+  },
+  {
+    label: "Family Constraint-heavy",
+    previewAnswers: {
+      decision: "Accept an overseas job change or remain near my spouse, children, and parents.",
+      optionA: "Remain in the current location",
+      optionB: "Take the overseas job change",
+      pull: "Career upside and regional leadership exposure.",
+      constraint: "Spouse, children, school, parents, location, and timing.",
+      risk: "Choosing a strong career move that fails under family reality.",
+      condition: "Workable family logistics, support, timing, and finances.",
+    },
+    fullAnswers: createQaFullAnswers([
+      "I am considering an overseas job change, but my spouse, children, school schedule, and parents strongly shape the decision.",
+      "The role is attractive, yet family location and timing constraints are significant.",
+      "An overseas offer and school enrollment deadline create urgency.",
+      "Waiting may close the role, but it may improve family readiness.",
+      "Remain in the current location and role.",
+      "It protects spouse employment, children routines, school continuity, and parent support.",
+      "It may limit career upside and regional leadership exposure.",
+      "Take the overseas job change and relocate.",
+      "It opens a larger role, international exposure, and future mobility.",
+      "Family logistics, childcare, parent care, timing, and finances may become fragile.",
+      "The overseas market is growing, but local operating conditions are uncertain.",
+      "Option B aligns with career upside if family feasibility is real.",
+      "The employer has confirmed interest and relocation support.",
+      "I still need visa, school, housing, spouse-work, and parent-care evidence.",
+      "Option B aligns with leadership ambitions, while Option A supports family stability.",
+      "Option B requires major household, location, and support-system reconfiguration.",
+      "I need local-market proof and a reliable family operating plan.",
+      "Option A creates opportunity cost; Option B creates heavy family execution load.",
+      "Finances are stable, but dual-location costs would reduce the safety margin.",
+      "Option A is more reversible until family logistics are tested.",
+      "A move that damages family stability without durable career value is hardest to absorb.",
+      "Spouse, relatives, and current community support Option A.",
+      "The employer and a small overseas network can support Option B.",
+      "Childcare, school, parent-care, and spouse-career support are still incomplete.",
+      "School dates, visa timing, spouse work, and parent needs define the window.",
+      "Option B becomes harder if the offer or visa window closes.",
+      "Option B becomes safer if family support, housing, and finances are confirmed.",
+      "The preferred path must work within family, location, timing, and financial constraints.",
+      "Option A is defensible if it protects family reality while creating another growth path.",
+    ]),
+  },
+];
+
 const dashboardDeck = [
   {
     section: "Overview",
@@ -1489,6 +1764,8 @@ function reportOptionLabel(value: string, fallback: string) {
 }
 
 export default function AmcWebMvp() {
+  const isQaMode =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
   const [language, setLanguage] = useState<Language>("en");
   const [previewStarted, setPreviewStarted] = useState(false);
   const [previewGenerated, setPreviewGenerated] = useState(false);
@@ -1579,6 +1856,16 @@ export default function AmcWebMvp() {
     ) as Record<number, string>;
     setFullIntakeAnswers(sampleAnswers);
     setExpandedGroups(intakeGroups.map((group) => group.title));
+  };
+
+  const applyQaPreset = (preset: QaPreset) => {
+    setAnswers(preset.previewAnswers);
+    setFullIntakeAnswers(preset.fullAnswers);
+    setExpandedGroups(intakeGroups.map((group) => group.title));
+    setDashboardGenerated(false);
+    requestAnimationFrame(() => {
+      document.getElementById("full-intake")?.scrollIntoView({ behavior: "smooth" });
+    });
   };
 
   const generateDashboard = () => {
@@ -2422,6 +2709,39 @@ export default function AmcWebMvp() {
                 "Full Intake에서는 결정의 구조, 리스크, 실행 부담을 판단할 근거를 구체화합니다.",
               )}
             />
+            {isQaMode ? (
+              <div className="mb-5 rounded-lg border border-dashed border-foreground/30 bg-secondary/20 p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                      QA mode
+                    </p>
+                    <h3 className="mt-2 text-lg font-semibold tracking-tight">Launch QA Presets</h3>
+                    <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                      {t(
+                        "Each preset replaces the preview and all 29 full-intake answers. Language state remains unchanged.",
+                        "Preset을 선택하면 Preview와 29개 Full Intake 답변이 교체됩니다. 현재 언어 설정은 유지됩니다.",
+                      )}
+                    </p>
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("Detected", "Detected")}: <span className="text-foreground">{detectedCaseType}</span>
+                  </p>
+                </div>
+                <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {qaPresets.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => applyQaPreset(preset)}
+                      className="inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-card px-3 py-2 text-center text-xs font-medium leading-snug text-foreground transition-colors hover:bg-secondary/50"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="mb-5 rounded-lg border border-border bg-card p-5">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
