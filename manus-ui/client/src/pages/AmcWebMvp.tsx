@@ -466,6 +466,7 @@ const totalFullIntakeQuestions = intakeGroups.reduce((total, group) => total + g
 
 type QaPreset = {
   label: string;
+  expectedCaseType: CaseType;
   previewAnswers: PreviewAnswers;
   fullAnswers: Record<number, string>;
 };
@@ -481,6 +482,7 @@ function createQaFullAnswers(values: string[]) {
 const qaPresets: QaPreset[] = [
   {
     label: "Corporate Stay vs Exit",
+    expectedCaseType: "Corporate Stay vs Exit",
     previewAnswers: {
       decision: "Stay at my current company, move internally, or leave for a new path.",
       optionA: "Redesign my role inside the company",
@@ -524,6 +526,7 @@ const qaPresets: QaPreset[] = [
   },
   {
     label: "MBA / EMBA / PhD",
+    expectedCaseType: "MBA / EMBA / PhD Decision",
     previewAnswers: {
       decision: "Choose between an EMBA, a PhD, or continuing without a degree.",
       optionA: "Continue my current career without a degree",
@@ -567,6 +570,7 @@ const qaPresets: QaPreset[] = [
   },
   {
     label: "Overseas Relocation",
+    expectedCaseType: "Overseas Relocation",
     previewAnswers: {
       decision: "Relocate to Singapore for a regional role or remain in my current market.",
       optionA: "Remain in my current market",
@@ -610,6 +614,7 @@ const qaPresets: QaPreset[] = [
   },
   {
     label: "Entrepreneurship",
+    expectedCaseType: "Entrepreneurship",
     previewAnswers: {
       decision: "Leave corporate work to launch a startup or independent advisory business.",
       optionA: "Keep my corporate role while testing",
@@ -653,6 +658,7 @@ const qaPresets: QaPreset[] = [
   },
   {
     label: "Burnout-driven",
+    expectedCaseType: "Burnout-driven Decision",
     previewAnswers: {
       decision: "Leave my exhausting role or redesign work after recovery.",
       optionA: "Reduce workload and recover",
@@ -696,6 +702,7 @@ const qaPresets: QaPreset[] = [
   },
   {
     label: "Family Constraint-heavy",
+    expectedCaseType: "Family Constraint-heavy Decision",
     previewAnswers: {
       decision: "Accept an overseas job change or remain near my spouse, children, and parents.",
       optionA: "Remain in the current location",
@@ -1775,6 +1782,7 @@ export default function AmcWebMvp() {
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
   const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
   const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
+  const [selectedQaPreset, setSelectedQaPreset] = useState<QaPreset | null>(null);
 
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
@@ -1808,6 +1816,12 @@ export default function AmcWebMvp() {
   const caseTypeReading = caseTypeInterpretations[detectedCaseType];
   const caseSpecificReading = caseSpecificReadings[detectedCaseType];
   const caseReportBranch = caseReportBranches[detectedCaseType];
+  const qaValidationStatus =
+    answeredQuestionCount < totalFullIntakeQuestions
+      ? "INCOMPLETE"
+      : selectedQaPreset?.expectedCaseType === detectedCaseType
+        ? "PASS"
+        : "MISMATCH";
 
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
@@ -1862,6 +1876,7 @@ export default function AmcWebMvp() {
     setAnswers(preset.previewAnswers);
     setFullIntakeAnswers(preset.fullAnswers);
     setExpandedGroups(intakeGroups.map((group) => group.title));
+    setSelectedQaPreset(preset);
     setDashboardGenerated(false);
     requestAnimationFrame(() => {
       document.getElementById("full-intake")?.scrollIntoView({ behavior: "smooth" });
@@ -2739,6 +2754,47 @@ export default function AmcWebMvp() {
                       {preset.label}
                     </button>
                   ))}
+                </div>
+              </div>
+            ) : null}
+            {isQaMode && selectedQaPreset ? (
+              <div className="mb-5 rounded-lg border border-border bg-card p-5">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  QA Validation Status
+                </p>
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                  {[
+                    ["Selected Preset", selectedQaPreset.label],
+                    ["Expected Case Type", selectedQaPreset.expectedCaseType],
+                    ["Detected Case Type", detectedCaseType],
+                    [
+                      "Answer Completion",
+                      `${answeredQuestionCount} / ${totalFullIntakeQuestions}`,
+                    ],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        {label}
+                      </p>
+                      <p className="mt-2 text-sm font-medium leading-snug">{value}</p>
+                    </div>
+                  ))}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      Status
+                    </p>
+                    <p
+                      className={`mt-2 text-sm font-semibold ${
+                        qaValidationStatus === "PASS"
+                          ? "text-emerald-700"
+                          : qaValidationStatus === "INCOMPLETE"
+                            ? "text-amber-700"
+                            : "text-red-700"
+                      }`}
+                    >
+                      {qaValidationStatus}
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : null}
