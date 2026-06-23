@@ -12,6 +12,25 @@ type CaseType =
   | "Burnout-driven Decision"
   | "Family Constraint-heavy Decision"
   | "General Career Reconfiguration";
+type ExternalSignalDirection = "supportive" | "mixed" | "caution";
+type ExternalEvidenceType = "market" | "company" | "education" | "region" | "role" | "general";
+type MockExternalSnapshot = {
+  status: "mock";
+  confidence: "medium";
+  generatedAtLabel: string;
+  externalSignals: Array<{
+    label: string;
+    direction: ExternalSignalDirection;
+    reading: string;
+  }>;
+  sourceNotes: Array<{
+    sourceLabel: string;
+    note: string;
+    evidenceType: ExternalEvidenceType;
+  }>;
+  uncertaintyNotes: string[];
+  implication: string;
+};
 
 type PreviewAnswers = {
   decision: string;
@@ -1739,6 +1758,514 @@ function detectCaseType(previewAnswers: PreviewAnswers, fullAnswers: Record<numb
   );
 }
 
+function buildMockExternalSnapshot(
+  caseType: CaseType,
+  optionALabel: string,
+  optionBLabel: string,
+  language: Language,
+): MockExternalSnapshot {
+  const isKo = language === "ko";
+  const t = (en: string, ko: string) => (isKo ? ko : en);
+  const snapshotByCase: Record<
+    CaseType,
+    Omit<MockExternalSnapshot, "status" | "confidence" | "generatedAtLabel">
+  > = {
+    "Corporate Stay vs Exit": {
+      externalSignals: [
+        {
+          label: "Company Stability / Internal Mobility",
+          direction: "mixed",
+          reading: t(
+            "Internal moves may preserve accumulated credibility, but their future career value depends on role scope and sponsorship.",
+            "내부 이동은 축적된 신뢰도를 유지할 수 있지만, 향후 커리어 가치는 역할 범위와 조직 내 지원에 달려 있습니다.",
+          ),
+        },
+        {
+          label: "External Hiring Market",
+          direction: "caution",
+          reading: t(
+            "Interest outside the company is not yet equivalent to a validated next platform.",
+            "외부의 관심이 곧바로 검증된 다음 경로를 의미하지는 않습니다.",
+          ),
+        },
+        {
+          label: "Role Portability",
+          direction: "supportive",
+          reading: t(
+            "Long tenure can remain valuable when translated into portable expertise, relationships, and outcomes.",
+            "장기 근속 경험은 전문성, 관계, 성과를 외부에서도 설명 가능한 형태로 전환할 때 가치가 유지됩니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Company context",
+          note: t(
+            "Review internal mobility, sponsorship, and the future scope of the current platform.",
+            "내부 이동 가능성, 조직 내 지원, 현재 플랫폼의 향후 역할 범위를 확인해야 합니다.",
+          ),
+          evidenceType: "company",
+        },
+        {
+          sourceLabel: "Role market",
+          note: t(
+            "Compare external demand for the candidate's portable capabilities, not title alone.",
+            "직급보다 외부에서 통용되는 역량에 대한 수요를 비교해야 합니다.",
+          ),
+          evidenceType: "role",
+        },
+      ],
+      uncertaintyNotes: [
+        t("No live company or labor-market data has been checked.", "실시간 기업 또는 채용시장 데이터는 확인하지 않았습니다."),
+        t("The strength of external pull still requires direct evidence.", "외부 기회의 강도는 직접적인 근거로 추가 확인해야 합니다."),
+      ],
+      implication: t(
+        `${optionALabel} should be compared with ${optionBLabel} on future career value, validated pull, and safety margin—not resignation alone.`,
+        `${optionALabel}와 ${optionBLabel}는 단순한 퇴사 여부가 아니라 향후 커리어 가치, 검증된 외부 기회, 안정성을 기준으로 비교해야 합니다.`,
+      ),
+    },
+    "MBA / EMBA / PhD Decision": {
+      externalSignals: [
+        {
+          label: "Credential Value",
+          direction: "mixed",
+          reading: t(
+            "A degree can strengthen positioning, but value varies materially by program, geography, and intended post-degree role.",
+            "학위는 포지셔닝을 강화할 수 있지만, 실제 가치는 프로그램, 지역, 학위 이후 역할에 따라 크게 달라집니다.",
+          ),
+        },
+        {
+          label: "Opportunity Cost",
+          direction: "caution",
+          reading: t(
+            "Time away from the market and foregone income may outweigh the credential if the use case is unclear.",
+            "학위의 활용 목적이 불명확하면 시장 이탈 기간과 기회비용이 학위 효과보다 커질 수 있습니다.",
+          ),
+        },
+        {
+          label: "Post-program Positioning",
+          direction: "supportive",
+          reading: t(
+            "The strongest programs can expand network access and geographic mobility when aligned with a defined transition thesis.",
+            "명확한 전환 가설과 연결된 프로그램은 네트워크와 지역 이동 가능성을 확대할 수 있습니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Program evidence",
+          note: t(
+            "Compare curriculum, faculty, alumni outcomes, format, and target-role placement.",
+            "커리큘럼, 교수진, 동문 성과, 운영 방식, 목표 역할 진출 결과를 비교해야 합니다.",
+          ),
+          evidenceType: "education",
+        },
+        {
+          sourceLabel: "Post-degree market",
+          note: t(
+            "Validate whether target roles actually reward the degree at the candidate's career stage.",
+            "목표 역할이 현재 커리어 단계에서 해당 학위를 실제로 평가하는지 확인해야 합니다.",
+          ),
+          evidenceType: "market",
+        },
+      ],
+      uncertaintyNotes: [
+        t("No current admissions, funding, or placement data has been checked.", "최신 입학, 재정 지원, 취업 성과 데이터는 확인하지 않았습니다."),
+        t("Program fit depends on the exact degree purpose and target geography.", "프로그램 적합성은 학위 목적과 목표 지역에 따라 달라집니다."),
+      ],
+      implication: t(
+        `${optionBLabel} becomes stronger only when the degree has a specific positioning job that ${optionALabel} cannot achieve as efficiently.`,
+        `${optionBLabel}는 ${optionALabel}보다 더 효율적으로 달성할 수 없는 구체적인 포지셔닝 목적이 있을 때 설명력이 높아집니다.`,
+      ),
+    },
+    "Overseas Relocation": {
+      externalSignals: [
+        {
+          label: "Regional Job Market",
+          direction: "mixed",
+          reading: t(
+            "Career upside depends on verified demand for the candidate's role and seniority in the destination market.",
+            "커리어 기회는 목표 지역에서 해당 역할과 경력 수준에 대한 수요가 확인될 때 구체화됩니다.",
+          ),
+        },
+        {
+          label: "Visa / Relocation Friction",
+          direction: "caution",
+          reading: t(
+            "Visa eligibility, sponsorship, and timing can constrain otherwise attractive opportunities.",
+            "비자 자격, 스폰서십, 일정은 매력적인 기회가 있어도 실행 가능성을 제한할 수 있습니다.",
+          ),
+        },
+        {
+          label: "Family / Schooling Context",
+          direction: "supportive",
+          reading: t(
+            "A staged move can preserve career optionality while family, schooling, and location feasibility are tested.",
+            "단계적 이전은 가족, 학교, 지역의 실행 가능성을 검증하는 동안 커리어 선택지를 보호할 수 있습니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Destination market",
+          note: t(
+            "Review role demand, compensation, language expectations, and local hiring patterns.",
+            "현지 역할 수요, 보상, 언어 요건, 채용 방식을 확인해야 합니다.",
+          ),
+          evidenceType: "region",
+        },
+        {
+          sourceLabel: "Mobility feasibility",
+          note: t(
+            "Confirm visa routes, employer sponsorship, family logistics, and relocation cost.",
+            "비자 경로, 고용주 지원, 가족 일정, 이전 비용을 확인해야 합니다.",
+          ),
+          evidenceType: "region",
+        },
+      ],
+      uncertaintyNotes: [
+        t("No live visa, compensation, or hiring data has been checked.", "실시간 비자, 보상, 채용 데이터는 확인하지 않았습니다."),
+        t("Feasibility can change by employer, nationality, and family situation.", "실행 가능성은 고용주, 국적, 가족 상황에 따라 달라질 수 있습니다."),
+      ],
+      implication: t(
+        `${optionBLabel} should remain a validated relocation pathway until local demand and family feasibility are both evidenced.`,
+        `${optionBLabel}는 현지 수요와 가족 차원의 실행 가능성이 함께 확인될 때까지 검증 단계로 유지하는 것이 적절합니다.`,
+      ),
+    },
+    Entrepreneurship: {
+      externalSignals: [
+        {
+          label: "Market Timing",
+          direction: "caution",
+          reading: t(
+            "A favorable market window matters only when it creates observable customer urgency and willingness to pay.",
+            "시장 기회는 고객의 구체적인 긴급성과 지불 의사로 확인될 때 의미가 있습니다.",
+          ),
+        },
+        {
+          label: "Founder-Market Fit",
+          direction: "mixed",
+          reading: t(
+            "Relevant expertise and trusted relationships can lower the cost of early customer discovery.",
+            "관련 전문성과 신뢰 관계는 초기 고객 검증의 비용을 낮출 수 있습니다.",
+          ),
+        },
+        {
+          label: "Cash Runway / Customer Validation",
+          direction: "supportive",
+          reading: t(
+            "Runway should protect enough time to test paid demand, pricing, and repeatable delivery.",
+            "소득 안정성은 유료 수요, 가격, 반복 가능한 제공 구조를 검증할 시간을 보호해야 합니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Customer evidence",
+          note: t(
+            "Track paid pilots, conversion, repeat demand, and reasons for refusal.",
+            "유료 파일럿, 전환율, 반복 수요, 거절 이유를 확인해야 합니다.",
+          ),
+          evidenceType: "market",
+        },
+        {
+          sourceLabel: "Operating model",
+          note: t(
+            "Test delivery capacity, acquisition effort, margins, and income runway.",
+            "제공 역량, 고객 확보 부담, 수익 구조, 소득 안정성을 검증해야 합니다.",
+          ),
+          evidenceType: "general",
+        },
+      ],
+      uncertaintyNotes: [
+        t("No live customer, competitor, or pricing research has been performed.", "실시간 고객, 경쟁사, 가격 조사는 수행하지 않았습니다."),
+        t("Early interest may not convert into durable revenue.", "초기 관심이 지속 가능한 매출로 이어지지 않을 수 있습니다."),
+      ],
+      implication: t(
+        `${optionBLabel} becomes defensible through paid demand and repeatable delivery—not founder motivation alone.`,
+        `${optionBLabel}의 설명력은 창업 동기만이 아니라 유료 수요와 반복 가능한 제공 구조에서 나옵니다.`,
+      ),
+    },
+    "Industry Transition": {
+      externalSignals: [
+        {
+          label: "Target Industry Demand",
+          direction: "mixed",
+          reading: t(
+            "Transferable capabilities may travel across industries, but employers still look for sector-specific proof.",
+            "이동 가능한 역량이 있어도 채용 시장은 해당 산업의 구체적인 경험과 근거를 요구할 수 있습니다.",
+          ),
+        },
+        {
+          label: "Transferable Skills",
+          direction: "caution",
+          reading: t(
+            "Titles and achievements may lose signal unless translated into the language of the target industry.",
+            "직급과 성과는 목표 산업의 언어로 설명되지 않으면 신호 가치가 낮아질 수 있습니다.",
+          ),
+        },
+        {
+          label: "Proof Point Gap",
+          direction: "supportive",
+          reading: t(
+            "Bridge roles and targeted projects can create sector-specific proof without discarding current career capital.",
+            "연결 역할과 목표 산업 프로젝트는 기존 경력 자산을 유지하면서 산업별 근거를 만들 수 있습니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Target industry",
+          note: t(
+            "Map hiring demand, entry points, sector credentials, and common transition paths.",
+            "채용 수요, 진입 역할, 산업 자격, 일반적인 전환 경로를 확인해야 합니다.",
+          ),
+          evidenceType: "market",
+        },
+        {
+          sourceLabel: "Capability translation",
+          note: t(
+            "Test the candidate's narrative with hiring managers and practitioners.",
+            "채용 담당자와 현업 전문가를 통해 경력 설명의 설득력을 검증해야 합니다.",
+          ),
+          evidenceType: "role",
+        },
+      ],
+      uncertaintyNotes: [
+        t("No live sector hiring or compensation data has been checked.", "실시간 산업 채용 또는 보상 데이터는 확인하지 않았습니다."),
+        t("Transferability depends on the exact target role and seniority.", "역량의 이동 가능성은 목표 역할과 경력 수준에 따라 달라집니다."),
+      ],
+      implication: t(
+        `${optionBLabel} is stronger when a bridge role converts existing career capital instead of discarding it.`,
+        `${optionBLabel}는 기존 경력 자산을 버리기보다 목표 산업으로 전환하는 연결 역할이 있을 때 더 강해집니다.`,
+      ),
+    },
+    "Role Upgrade / Downgrade": {
+      externalSignals: [
+        {
+          label: "Scope Expansion / Contraction",
+          direction: "mixed",
+          reading: t(
+            "A title change is meaningful only when decision rights, resources, and future role value change with it.",
+            "직급 변화는 의사결정 권한, 자원, 향후 역할 가치가 함께 달라질 때 의미가 있습니다.",
+          ),
+        },
+        {
+          label: "Compensation / Responsibility Tradeoff",
+          direction: "caution",
+          reading: t(
+            "Higher scope can create hidden operating burden if support, mandate, and team capacity are weak.",
+            "지원, 권한, 팀 역량이 부족하면 역할 확대가 예상보다 큰 실행 부담으로 이어질 수 있습니다.",
+          ),
+        },
+        {
+          label: "Future Marketability",
+          direction: "supportive",
+          reading: t(
+            "A strategically chosen role reset can improve long-term positioning even when the immediate title is lower.",
+            "단기 직급이 낮아져도 전략적으로 설계된 역할 전환은 장기 포지셔닝을 강화할 수 있습니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Role architecture",
+          note: t(
+            "Compare mandate, decision rights, resources, reporting line, and success measures.",
+            "권한, 의사결정 범위, 자원, 보고 체계, 성과 기준을 비교해야 합니다.",
+          ),
+          evidenceType: "role",
+        },
+        {
+          sourceLabel: "Market signal",
+          note: t(
+            "Assess how the role will be interpreted by future employers and networks.",
+            "향후 채용 시장과 네트워크가 해당 역할을 어떻게 해석할지 확인해야 합니다.",
+          ),
+          evidenceType: "market",
+        },
+      ],
+      uncertaintyNotes: [
+        t("No live role, compensation, or succession data has been checked.", "실시간 역할, 보상, 승계 데이터는 확인하지 않았습니다."),
+        t("Actual scope may differ from the stated title or job description.", "실제 역할 범위는 직급이나 직무 설명과 다를 수 있습니다."),
+      ],
+      implication: t(
+        `Compare ${optionALabel} and ${optionBLabel} on mandate, operating support, and future positioning rather than title alone.`,
+        `${optionALabel}와 ${optionBLabel}는 직급보다 권한, 실행 지원, 향후 포지셔닝을 기준으로 비교해야 합니다.`,
+      ),
+    },
+    "Burnout-driven Decision": {
+      externalSignals: [
+        {
+          label: "Role Sustainability",
+          direction: "caution",
+          reading: t(
+            "Low energy can make any alternative appear more attractive before the underlying decision is tested.",
+            "에너지가 낮은 상태에서는 충분한 검증 전에도 다른 선택지가 더 매력적으로 보일 수 있습니다.",
+          ),
+        },
+        {
+          label: "Fatigue-driven Urgency",
+          direction: "mixed",
+          reading: t(
+            "The source of strain may sit in workload, boundaries, manager context, or role design rather than the career field itself.",
+            "피로의 원인은 커리어 분야 자체보다 업무량, 경계 설정, 상사, 역할 설계에 있을 수 있습니다.",
+          ),
+        },
+        {
+          label: "Premature Exit Risk",
+          direction: "supportive",
+          reading: t(
+            "A protected recovery period can reduce the risk of exiting before the underlying career question is clear.",
+            "회복 기간을 확보하면 커리어 문제를 구분하기 전에 이탈하는 리스크를 낮출 수 있습니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Work context",
+          note: t(
+            "Review workload, control, support, boundaries, and whether changes are feasible in the current role.",
+            "업무량, 통제 가능성, 지원, 경계, 현재 역할에서 조정 가능한 범위를 확인해야 합니다.",
+          ),
+          evidenceType: "company",
+        },
+        {
+          sourceLabel: "Alternative role",
+          note: t(
+            "Test whether the proposed path changes the structural source of strain.",
+            "새 경로가 피로를 만든 구조적 원인을 실제로 바꾸는지 검증해야 합니다.",
+          ),
+          evidenceType: "role",
+        },
+      ],
+      uncertaintyNotes: [
+        t("This mock does not assess health or provide medical guidance.", "이 Mock은 건강 상태를 평가하거나 의료적 판단을 제공하지 않습니다."),
+        t("Readiness should be re-evaluated after workload or boundary changes.", "업무량이나 경계가 조정된 뒤 전환 준비도를 다시 확인해야 합니다."),
+      ],
+      implication: t(
+        `${optionBLabel} should be tested after separating recovery needs from durable career redesign needs.`,
+        `${optionBLabel}는 회복의 필요와 지속적인 커리어 재설계의 필요를 구분한 뒤 검증해야 합니다.`,
+      ),
+    },
+    "Family Constraint-heavy Decision": {
+      externalSignals: [
+        {
+          label: "Family Timing",
+          direction: "caution",
+          reading: t(
+            "An attractive career path is not executable if location, caregiving, school, or timing constraints remain unresolved.",
+            "매력적인 경로라도 지역, 돌봄, 학교, 일정 제약이 해결되지 않으면 실행하기 어렵습니다.",
+          ),
+        },
+        {
+          label: "Schooling / Location Constraints",
+          direction: "mixed",
+          reading: t(
+            "The decision becomes more feasible when support systems are specific, available, and financially sustainable.",
+            "지원 체계가 구체적이고 실제로 이용 가능하며 재정적으로 지속 가능할 때 실행 가능성이 높아집니다.",
+          ),
+        },
+        {
+          label: "Reversibility / Stability",
+          direction: "supportive",
+          reading: t(
+            "A staged sequence may preserve the opportunity while aligning with family timing.",
+            "단계적 접근은 가족 일정과 조율하면서도 기회를 유지할 수 있습니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Family logistics",
+          note: t(
+            "Map location, caregiving, school calendars, partner career, and support availability.",
+            "지역, 돌봄, 학사 일정, 배우자 커리어, 지원 가능성을 함께 확인해야 합니다.",
+          ),
+          evidenceType: "general",
+        },
+        {
+          sourceLabel: "Financial feasibility",
+          note: t(
+            "Model relocation, care, education, income, and contingency costs.",
+            "이전, 돌봄, 교육, 소득 변화, 비상 비용을 함께 검토해야 합니다.",
+          ),
+          evidenceType: "general",
+        },
+      ],
+      uncertaintyNotes: [
+        t("No live cost, school, care, or relocation data has been checked.", "실시간 비용, 학교, 돌봄, 이전 데이터는 확인하지 않았습니다."),
+        t("Support availability and family preferences may change the feasible sequence.", "지원 가능성과 가족의 선호에 따라 실행 순서가 달라질 수 있습니다."),
+      ],
+      implication: t(
+        `${optionBLabel} is defensible only when the career path works within family, location, timing, and financial constraints.`,
+        `${optionBLabel}는 가족, 지역, 일정, 재정 제약 안에서 실제로 실행 가능할 때 설명할 수 있습니다.`,
+      ),
+    },
+    "General Career Reconfiguration": {
+      externalSignals: [
+        {
+          label: "External Change Pressure",
+          direction: "mixed",
+          reading: t(
+            "The proposed direction may be plausible, but the target role and market demand remain broad.",
+            "제안된 방향은 가능성이 있지만 목표 역할과 시장 수요가 아직 넓게 정의되어 있습니다.",
+          ),
+        },
+        {
+          label: "Personal Readiness",
+          direction: "caution",
+          reading: t(
+            "General interest should be converted into role-specific conversations, trials, and observable demand.",
+            "일반적인 관심을 역할별 대화, 실행 실험, 관찰 가능한 수요로 전환해야 합니다.",
+          ),
+        },
+        {
+          label: "Validation Requirement",
+          direction: "supportive",
+          reading: t(
+            "A staged approach can preserve current value while the next platform becomes more specific.",
+            "단계적 접근은 다음 경로를 구체화하는 동안 현재의 가치를 보호할 수 있습니다.",
+          ),
+        },
+      ],
+      sourceNotes: [
+        {
+          sourceLabel: "Target definition",
+          note: t(
+            "Specify role, customer, institution, geography, and value proposition.",
+            "역할, 고객, 기관, 지역, 가치 제안을 구체화해야 합니다.",
+          ),
+          evidenceType: "general",
+        },
+        {
+          sourceLabel: "External evidence",
+          note: t(
+            "Collect interviews, trials, applications, and demand signals tied to the target.",
+            "목표 경로와 연결된 인터뷰, 실험, 지원, 수요 신호를 수집해야 합니다.",
+          ),
+          evidenceType: "general",
+        },
+      ],
+      uncertaintyNotes: [
+        t("The target path is too broad for precise external interpretation.", "목표 경로가 넓어 정밀한 외부 해석에는 한계가 있습니다."),
+        t("No live market, company, or role data has been checked.", "실시간 시장, 기업, 역할 데이터는 확인하지 않았습니다."),
+      ],
+      implication: t(
+        `Keep ${optionALabel} and ${optionBLabel} reversible while the target path and external evidence become more specific.`,
+        `${optionALabel}와 ${optionBLabel}의 Reversibility를 유지하면서 목표 경로와 외부 근거를 구체화해야 합니다.`,
+      ),
+    },
+  };
+
+  return {
+    status: "mock",
+    confidence: "medium",
+    generatedAtLabel: t("MVP preview · Live as-of date unavailable", "MVP Preview · 실시간 기준일 미적용"),
+    ...snapshotByCase[caseType],
+  };
+}
+
 function SectionHeader({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
   return (
     <div className="mb-7 max-w-3xl">
@@ -1768,6 +2295,12 @@ function Tag({ children }: { children: string }) {
 function reportOptionLabel(value: string, fallback: string) {
   const normalized = value.trim();
   return normalized.length >= 3 ? normalized : fallback;
+}
+
+function externalSignalTone(direction: ExternalSignalDirection) {
+  if (direction === "supportive") return "border-emerald-700/25 bg-emerald-50 text-emerald-800";
+  if (direction === "caution") return "border-amber-700/25 bg-amber-50 text-amber-800";
+  return "border-slate-500/25 bg-slate-50 text-slate-700";
 }
 
 export default function AmcWebMvp() {
@@ -1816,6 +2349,10 @@ export default function AmcWebMvp() {
   const caseTypeReading = caseTypeInterpretations[detectedCaseType];
   const caseSpecificReading = caseSpecificReadings[detectedCaseType];
   const caseReportBranch = caseReportBranches[detectedCaseType];
+  const mockExternalSnapshot = useMemo(
+    () => buildMockExternalSnapshot(detectedCaseType, optionALabel, optionBLabel, language),
+    [detectedCaseType, language, optionALabel, optionBLabel],
+  );
   const qaValidationStatus =
     answeredQuestionCount < totalFullIntakeQuestions
       ? "INCOMPLETE"
@@ -2082,6 +2619,91 @@ export default function AmcWebMvp() {
                   </div>
                 ))}
               </div>
+            </section>
+
+            <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
+              <p className="pdf-kicker">02A / External Snapshot</p>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <h2 className="pdf-section-heading max-w-2xl">
+                  {t(
+                    "A preliminary external context layer for this decision.",
+                    "이 결정에 대한 예비 외부 맥락 레이어입니다.",
+                  )}
+                </h2>
+                <span className="inline-flex w-fit border border-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
+                  Mock / Preview
+                </span>
+              </div>
+
+              <div className="pdf-keep-together mt-7 grid grid-cols-1 gap-px bg-black/15 sm:grid-cols-3">
+                {[
+                  ["Status", "Mock / Preview"],
+                  ["Confidence", "Medium"],
+                  ["Context", mockExternalSnapshot.generatedAtLabel],
+                ].map(([label, value]) => (
+                  <div key={label} className="bg-[#f6f6f4] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/45">{label}</p>
+                    <p className="mt-2 text-sm font-semibold leading-5">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-7 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                {mockExternalSnapshot.externalSignals.map((signal) => (
+                  <div key={signal.label} className="pdf-keep-together border-t-2 border-black bg-[#f6f6f4] p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/50">{signal.label}</p>
+                      <span className="border border-black/15 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-black/55">
+                        {signal.direction}
+                      </span>
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-black/70">{signal.reading}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-7 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="pdf-keep-together border-t border-black/20 pt-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Source Notes</p>
+                  <div className="mt-4 space-y-4">
+                    {mockExternalSnapshot.sourceNotes.map((source) => (
+                      <div key={source.sourceLabel}>
+                        <div className="flex items-baseline justify-between gap-3">
+                          <p className="text-sm font-semibold">{source.sourceLabel}</p>
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-black/40">
+                            {source.evidenceType}
+                          </p>
+                        </div>
+                        <p className="mt-1 text-sm leading-6 text-black/65">{source.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="pdf-keep-together border-t border-black/20 pt-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Uncertainty Notes</p>
+                  <ul className="mt-4 space-y-3">
+                    {mockExternalSnapshot.uncertaintyNotes.map((note) => (
+                      <li key={note} className="grid grid-cols-[16px_1fr] gap-2 text-sm leading-6 text-black/65">
+                        <span aria-hidden="true">—</span>
+                        <span>{note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="pdf-keep-together mt-7 border-l-2 border-black bg-[#f6f6f4] p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
+                  Strategic Implication
+                </p>
+                <p className="mt-3 text-sm font-semibold leading-6">{mockExternalSnapshot.implication}</p>
+              </div>
+              <p className="mt-5 text-xs leading-5 text-black/48">
+                {t(
+                  "This section shows where external evidence will be integrated. In this MVP view, it is represented as a mock external snapshot.",
+                  "이 섹션은 향후 외부 근거가 통합될 위치를 보여줍니다. 현재 MVP 화면에서는 mock 외부 스냅샷으로 표시됩니다.",
+                )}
+              </p>
             </section>
 
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
@@ -3003,6 +3625,117 @@ export default function AmcWebMvp() {
                       </div>
                     ))}
                   </div>
+                </section>
+
+                <section className="rounded-lg border border-border bg-card p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="max-w-3xl">
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                        External Snapshot
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold tracking-tight">
+                        {t(
+                          "A preliminary external context layer for this decision.",
+                          "이 결정에 대한 예비 외부 맥락 레이어입니다.",
+                        )}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {t(
+                          "This mock layer turns the detected case type into a focused external validation agenda.",
+                          "감지된 Case Type을 바탕으로 필요한 External Validation 항목을 Preview 형태로 보여드립니다.",
+                        )}
+                      </p>
+                    </div>
+                    <Tag>Mock / Preview</Tag>
+                  </div>
+
+                  <dl className="mt-5 grid grid-cols-1 overflow-hidden rounded-md border border-border bg-background sm:grid-cols-3">
+                    {[
+                      ["Status", "Mock / Preview"],
+                      ["Confidence", "Medium"],
+                      ["Context", mockExternalSnapshot.generatedAtLabel],
+                    ].map(([label, value], index) => (
+                      <div
+                        key={label}
+                        className={`p-4 ${index > 0 ? "border-t border-border sm:border-l sm:border-t-0" : ""}`}
+                      >
+                        <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                          {label}
+                        </dt>
+                        <dd className="mt-2 text-sm font-semibold leading-snug">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    {mockExternalSnapshot.externalSignals.map((signal) => (
+                      <div key={signal.label} className="rounded-md border border-border bg-background p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                            {signal.label}
+                          </p>
+                          <span
+                            className={`inline-flex shrink-0 rounded-sm border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] ${externalSignalTone(signal.direction)}`}
+                          >
+                            {signal.direction}
+                          </span>
+                        </div>
+                        <p className="mt-3 text-sm leading-relaxed text-foreground">{signal.reading}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="rounded-md border border-border bg-background p-5">
+                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Source Notes
+                      </p>
+                      <div className="mt-4 space-y-4">
+                        {mockExternalSnapshot.sourceNotes.map((source) => (
+                          <div key={source.sourceLabel}>
+                            <div className="flex flex-wrap items-baseline justify-between gap-2">
+                              <p className="text-sm font-semibold">{source.sourceLabel}</p>
+                              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                                {source.evidenceType}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{source.note}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-border bg-background p-5">
+                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Uncertainty Notes
+                      </p>
+                      <ul className="mt-4 space-y-3">
+                        {mockExternalSnapshot.uncertaintyNotes.map((note) => (
+                          <li
+                            key={note}
+                            className="grid grid-cols-[16px_minmax(0,1fr)] gap-2 text-sm leading-relaxed text-muted-foreground"
+                          >
+                            <span aria-hidden="true">—</span>
+                            <span>{note}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-md border border-foreground/15 bg-foreground/[0.035] p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      Strategic Implication
+                    </p>
+                    <p className="mt-3 text-sm font-semibold leading-relaxed text-foreground">
+                      {mockExternalSnapshot.implication}
+                    </p>
+                  </div>
+                  <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                    {t(
+                      "This snapshot is a mock external layer for MVP testing. Live external search is not active in this screen yet.",
+                      "이 스냅샷은 MVP 테스트를 위한 mock 외부 레이어입니다. 현재 화면에서는 live 외부 검색이 아직 활성화되어 있지 않습니다.",
+                    )}
+                  </p>
                 </section>
 
                 <section className="rounded-lg border border-border bg-card p-6">
