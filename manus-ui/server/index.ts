@@ -4,6 +4,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { registerAmcSubmissionBridge } from "./amcSubmissionBridge";
 import { resolveEmailHandoffPathFromSubmissionId, sendPreparedEmail } from "./emailSender";
+import {
+  buildFallbackSnapshot,
+  parseWebExternalSnapshotRequest,
+  resolveWebExternalSnapshot,
+} from "./externalSnapshotService";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +36,19 @@ async function startServer() {
   const repoRoot = path.resolve(__dirname, "..", "..");
 
   registerAmcSubmissionBridge(app, __dirname);
+
+  app.post("/api/amc/external-snapshot", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    const request = parseWebExternalSnapshotRequest(req.body);
+    if (!request) {
+      const language = req.body?.language === "kr" ? "kr" : "en";
+      res.status(400).json(buildFallbackSnapshot(language, "malformed_request"));
+      return;
+    }
+
+    const snapshot = await resolveWebExternalSnapshot(request);
+    res.status(200).json(snapshot);
+  });
 
   app.post("/api/send-email", async (req, res) => {
     try {

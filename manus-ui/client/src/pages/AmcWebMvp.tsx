@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type Tier = "essential" | "executive";
 type Language = "en" | "ko";
@@ -14,9 +14,9 @@ type CaseType =
   | "General Career Reconfiguration";
 type ExternalSignalDirection = "supportive" | "mixed" | "caution";
 type ExternalEvidenceType = "market" | "company" | "education" | "region" | "role" | "general";
-type MockExternalSnapshot = {
-  status: "mock";
-  confidence: "medium";
+type ExternalSnapshot = {
+  status: "mock" | "live" | "fallback";
+  confidence: "low" | "medium" | "high";
   generatedAtLabel: string;
   externalSignals: Array<{
     label: string;
@@ -1763,12 +1763,12 @@ function buildMockExternalSnapshot(
   optionALabel: string,
   optionBLabel: string,
   language: Language,
-): MockExternalSnapshot {
+): ExternalSnapshot {
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
   const snapshotByCase: Record<
     CaseType,
-    Omit<MockExternalSnapshot, "status" | "confidence" | "generatedAtLabel">
+    Omit<ExternalSnapshot, "status" | "confidence" | "generatedAtLabel">
   > = {
     "Corporate Stay vs Exit": {
       externalSignals: [
@@ -2303,6 +2303,31 @@ function externalSignalTone(direction: ExternalSignalDirection) {
   return "border-slate-500/25 bg-slate-50 text-slate-700";
 }
 
+function externalSnapshotStatusLabel(snapshot: ExternalSnapshot, loading: boolean) {
+  if (loading) return "Loading Live Context";
+  if (snapshot.status === "live") return "Live";
+  if (snapshot.status === "fallback") return "Fallback";
+  return "Mock / Preview";
+}
+
+function confidenceLabel(confidence: ExternalSnapshot["confidence"]) {
+  return `${confidence.charAt(0).toUpperCase()}${confidence.slice(1)}`;
+}
+
+function isExternalSnapshot(value: unknown): value is ExternalSnapshot {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const snapshot = value as Partial<ExternalSnapshot>;
+  return (
+    (snapshot.status === "live" || snapshot.status === "fallback") &&
+    (snapshot.confidence === "low" || snapshot.confidence === "medium" || snapshot.confidence === "high") &&
+    typeof snapshot.generatedAtLabel === "string" &&
+    Array.isArray(snapshot.externalSignals) &&
+    Array.isArray(snapshot.sourceNotes) &&
+    Array.isArray(snapshot.uncertaintyNotes) &&
+    typeof snapshot.implication === "string"
+  );
+}
+
 export default function AmcWebMvp() {
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
@@ -2316,6 +2341,10 @@ export default function AmcWebMvp() {
   const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
   const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
   const [selectedQaPreset, setSelectedQaPreset] = useState<QaPreset | null>(null);
+  const [externalSnapshot, setExternalSnapshot] = useState<ExternalSnapshot | null>(null);
+  const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
+  const [externalSnapshotError, setExternalSnapshotError] = useState<string | null>(null);
+  const externalSnapshotRequestId = useRef(0);
 
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
@@ -2353,6 +2382,8 @@ export default function AmcWebMvp() {
     () => buildMockExternalSnapshot(detectedCaseType, optionALabel, optionBLabel, language),
     [detectedCaseType, language, optionALabel, optionBLabel],
   );
+  const displayedExternalSnapshot = externalSnapshot ?? mockExternalSnapshot;
+  const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot, externalSnapshotLoading);
   const qaValidationStatus =
     answeredQuestionCount < totalFullIntakeQuestions
       ? "INCOMPLETE"
@@ -2410,21 +2441,71 @@ export default function AmcWebMvp() {
   };
 
   const applyQaPreset = (preset: QaPreset) => {
+    externalSnapshotRequestId.current += 1;
     setAnswers(preset.previewAnswers);
     setFullIntakeAnswers(preset.fullAnswers);
     setExpandedGroups(intakeGroups.map((group) => group.title));
     setSelectedQaPreset(preset);
     setDashboardGenerated(false);
+    setExternalSnapshot(null);
+    setExternalSnapshotLoading(false);
+    setExternalSnapshotError(null);
     requestAnimationFrame(() => {
       document.getElementById("full-intake")?.scrollIntoView({ behavior: "smooth" });
     });
   };
 
   const generateDashboard = () => {
+    const requestId = externalSnapshotRequestId.current + 1;
+    externalSnapshotRequestId.current = requestId;
+    setExternalSnapshot(mockExternalSnapshot);
+    setExternalSnapshotLoading(true);
+    setExternalSnapshotError(null);
     setDashboardGenerated(true);
     requestAnimationFrame(() => {
       document.getElementById("full-dashboard")?.scrollIntoView({ behavior: "smooth" });
     });
+
+    void fetch("/api/amc/external-snapshot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        caseType: detectedCaseType,
+        optionA: optionALabel,
+        optionB: optionBLabel,
+        currentDecision: decisionContext,
+        externalPressure: [fullIntakeAnswers[11], fullIntakeAnswers[12], fullIntakeAnswers[13]]
+          .filter(Boolean)
+          .join(" "),
+        validationNeed: [fullIntakeAnswers[14], fullIntakeAnswers[28]].filter(Boolean).join(" "),
+        language: isKo ? "kr" : "en",
+      }),
+    })
+      .then(async (response) => {
+        const payload = (await response.json().catch(() => null)) as unknown;
+        if (!isExternalSnapshot(payload)) throw new Error("External snapshot response was unavailable.");
+        if (externalSnapshotRequestId.current === requestId) setExternalSnapshot(payload);
+      })
+      .catch(() => {
+        if (externalSnapshotRequestId.current !== requestId) return;
+        setExternalSnapshotError(
+          isKo
+            ? "Live 외부 맥락을 불러오지 못해 Mock Snapshot을 유지합니다."
+            : "Live external context was unavailable, so the mock snapshot remains in use.",
+        );
+      })
+      .finally(() => {
+        if (externalSnapshotRequestId.current === requestId) setExternalSnapshotLoading(false);
+      });
+  };
+
+  const selectLanguage = (nextLanguage: Language) => {
+    if (nextLanguage === language) return;
+    externalSnapshotRequestId.current += 1;
+    setLanguage(nextLanguage);
+    setExternalSnapshot(null);
+    setExternalSnapshotLoading(false);
+    setExternalSnapshotError(null);
   };
 
   const generateDetailedReport = () => {
@@ -2631,15 +2712,15 @@ export default function AmcWebMvp() {
                   )}
                 </h2>
                 <span className="inline-flex w-fit border border-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
-                  Mock / Preview
+                  {displayedExternalStatus}
                 </span>
               </div>
 
               <div className="pdf-keep-together mt-7 grid grid-cols-1 gap-px bg-black/15 sm:grid-cols-3">
                 {[
-                  ["Status", "Mock / Preview"],
-                  ["Confidence", "Medium"],
-                  ["Context", mockExternalSnapshot.generatedAtLabel],
+                  ["Status", displayedExternalStatus],
+                  ["Confidence", confidenceLabel(displayedExternalSnapshot.confidence)],
+                  ["Context", displayedExternalSnapshot.generatedAtLabel],
                 ].map(([label, value]) => (
                   <div key={label} className="bg-[#f6f6f4] p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/45">{label}</p>
@@ -2649,7 +2730,7 @@ export default function AmcWebMvp() {
               </div>
 
               <div className="mt-7 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                {mockExternalSnapshot.externalSignals.map((signal) => (
+                {displayedExternalSnapshot.externalSignals.map((signal) => (
                   <div key={signal.label} className="pdf-keep-together border-t-2 border-black bg-[#f6f6f4] p-5">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/50">{signal.label}</p>
@@ -2666,7 +2747,7 @@ export default function AmcWebMvp() {
                 <div className="pdf-keep-together border-t border-black/20 pt-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Source Notes</p>
                   <div className="mt-4 space-y-4">
-                    {mockExternalSnapshot.sourceNotes.map((source) => (
+                    {displayedExternalSnapshot.sourceNotes.map((source) => (
                       <div key={source.sourceLabel}>
                         <div className="flex items-baseline justify-between gap-3">
                           <p className="text-sm font-semibold">{source.sourceLabel}</p>
@@ -2682,7 +2763,7 @@ export default function AmcWebMvp() {
                 <div className="pdf-keep-together border-t border-black/20 pt-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Uncertainty Notes</p>
                   <ul className="mt-4 space-y-3">
-                    {mockExternalSnapshot.uncertaintyNotes.map((note) => (
+                    {displayedExternalSnapshot.uncertaintyNotes.map((note) => (
                       <li key={note} className="grid grid-cols-[16px_1fr] gap-2 text-sm leading-6 text-black/65">
                         <span aria-hidden="true">—</span>
                         <span>{note}</span>
@@ -2696,14 +2777,15 @@ export default function AmcWebMvp() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
                   Strategic Implication
                 </p>
-                <p className="mt-3 text-sm font-semibold leading-6">{mockExternalSnapshot.implication}</p>
+                <p className="mt-3 text-sm font-semibold leading-6">{displayedExternalSnapshot.implication}</p>
               </div>
               <p className="mt-5 text-xs leading-5 text-black/48">
                 {t(
-                  "This section shows where external evidence will be integrated. In this MVP view, it is represented as a mock external snapshot.",
-                  "이 섹션은 향후 외부 근거가 통합될 위치를 보여줍니다. 현재 MVP 화면에서는 mock 외부 스냅샷으로 표시됩니다.",
+                  "Live external search is connected when server-side Perplexity configuration is available. If unavailable, AMC uses fallback external context.",
+                  "서버 측 Perplexity 설정이 준비되어 있으면 live 외부 검색이 연결됩니다. 사용할 수 없는 경우 AMC는 fallback 외부 맥락을 사용합니다.",
                 )}
               </p>
+              {externalSnapshotError ? <p className="mt-2 text-xs leading-5 text-black/48">{externalSnapshotError}</p> : null}
             </section>
 
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
@@ -2997,7 +3079,7 @@ export default function AmcWebMvp() {
                   <button
                     key={item}
                     type="button"
-                    onClick={() => setLanguage(item)}
+                    onClick={() => selectLanguage(item)}
                     aria-pressed={language === item}
                     className={`inline-flex h-8 min-w-10 items-center justify-center rounded-sm px-3 text-xs font-semibold tracking-[0.08em] transition-colors ${
                       language === item
@@ -3640,20 +3722,25 @@ export default function AmcWebMvp() {
                         )}
                       </h3>
                       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        {t(
-                          "This mock layer turns the detected case type into a focused external validation agenda.",
-                          "감지된 Case Type을 바탕으로 필요한 External Validation 항목을 Preview 형태로 보여드립니다.",
-                        )}
+                        {displayedExternalSnapshot.status === "live"
+                          ? t(
+                              "Live external context is normalized into AMC's external validation structure.",
+                              "Live 외부 맥락을 AMC의 External Validation 구조로 정리했습니다.",
+                            )
+                          : t(
+                              "Fallback context keeps the external validation agenda visible while live search is unavailable.",
+                              "Live 검색을 사용할 수 없는 동안 fallback 맥락으로 External Validation 항목을 유지합니다.",
+                            )}
                       </p>
                     </div>
-                    <Tag>Mock / Preview</Tag>
+                    <Tag>{displayedExternalStatus}</Tag>
                   </div>
 
                   <dl className="mt-5 grid grid-cols-1 overflow-hidden rounded-md border border-border bg-background sm:grid-cols-3">
                     {[
-                      ["Status", "Mock / Preview"],
-                      ["Confidence", "Medium"],
-                      ["Context", mockExternalSnapshot.generatedAtLabel],
+                      ["Status", displayedExternalStatus],
+                      ["Confidence", confidenceLabel(displayedExternalSnapshot.confidence)],
+                      ["Context", displayedExternalSnapshot.generatedAtLabel],
                     ].map(([label, value], index) => (
                       <div
                         key={label}
@@ -3668,7 +3755,7 @@ export default function AmcWebMvp() {
                   </dl>
 
                   <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                    {mockExternalSnapshot.externalSignals.map((signal) => (
+                    {displayedExternalSnapshot.externalSignals.map((signal) => (
                       <div key={signal.label} className="rounded-md border border-border bg-background p-5">
                         <div className="flex items-start justify-between gap-3">
                           <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -3691,7 +3778,7 @@ export default function AmcWebMvp() {
                         Source Notes
                       </p>
                       <div className="mt-4 space-y-4">
-                        {mockExternalSnapshot.sourceNotes.map((source) => (
+                        {displayedExternalSnapshot.sourceNotes.map((source) => (
                           <div key={source.sourceLabel}>
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
                               <p className="text-sm font-semibold">{source.sourceLabel}</p>
@@ -3709,7 +3796,7 @@ export default function AmcWebMvp() {
                         Uncertainty Notes
                       </p>
                       <ul className="mt-4 space-y-3">
-                        {mockExternalSnapshot.uncertaintyNotes.map((note) => (
+                        {displayedExternalSnapshot.uncertaintyNotes.map((note) => (
                           <li
                             key={note}
                             className="grid grid-cols-[16px_minmax(0,1fr)] gap-2 text-sm leading-relaxed text-muted-foreground"
@@ -3727,15 +3814,18 @@ export default function AmcWebMvp() {
                       Strategic Implication
                     </p>
                     <p className="mt-3 text-sm font-semibold leading-relaxed text-foreground">
-                      {mockExternalSnapshot.implication}
+                      {displayedExternalSnapshot.implication}
                     </p>
                   </div>
                   <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
                     {t(
-                      "This snapshot is a mock external layer for MVP testing. Live external search is not active in this screen yet.",
-                      "이 스냅샷은 MVP 테스트를 위한 mock 외부 레이어입니다. 현재 화면에서는 live 외부 검색이 아직 활성화되어 있지 않습니다.",
+                      "Live external search is connected when server-side Perplexity configuration is available. If unavailable, AMC uses fallback external context.",
+                      "서버 측 Perplexity 설정이 준비되어 있으면 live 외부 검색이 연결됩니다. 사용할 수 없는 경우 AMC는 fallback 외부 맥락을 사용합니다.",
                     )}
                   </p>
+                  {externalSnapshotError ? (
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{externalSnapshotError}</p>
+                  ) : null}
                 </section>
 
                 <section className="rounded-lg border border-border bg-card p-6">
@@ -4065,8 +4155,8 @@ export default function AmcWebMvp() {
         <section className="py-8">
           <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
             {t(
-              "Developer note: This static MVP prototype uses local UI state only. It does not include real payment, backend submission, account login, chatbot, external API calls, or production report generation.",
-              "개발 참고: 이 정적 MVP는 로컬 UI 상태만 사용합니다. 실제 결제, 백엔드 제출, 계정 로그인, chatbot, 외부 API 호출, 운영용 Report 생성은 포함하지 않습니다.",
+              "Developer note: This MVP uses local flow state and an optional server-side External Snapshot endpoint. It does not include real payment, account login, chatbot, or production report generation.",
+              "개발 참고: 현재 MVP는 로컬 흐름 상태와 선택적 서버 측 External Snapshot endpoint를 사용합니다. 실제 결제, 계정 로그인, chatbot, 운영용 Report 생성은 포함하지 않습니다.",
             )}
           </p>
         </section>
