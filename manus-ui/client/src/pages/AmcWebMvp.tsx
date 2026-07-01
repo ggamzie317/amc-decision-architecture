@@ -2303,15 +2303,47 @@ function externalSignalTone(direction: ExternalSignalDirection) {
   return "border-slate-500/25 bg-slate-50 text-slate-700";
 }
 
-function externalSnapshotStatusLabel(snapshot: ExternalSnapshot, loading: boolean) {
-  if (loading) return "Loading Live Context";
+function externalSnapshotStatusLabel(snapshot: ExternalSnapshot) {
   if (snapshot.status === "live") return "Live";
   if (snapshot.status === "fallback") return "Fallback";
   return "Mock / Preview";
 }
 
 function confidenceLabel(confidence: ExternalSnapshot["confidence"]) {
-  return `${confidence.charAt(0).toUpperCase()}${confidence.slice(1)}`;
+  return confidence;
+}
+
+function externalSnapshotStatusCopy(status: ExternalSnapshot["status"], isKo: boolean) {
+  if (status === "live") {
+    return isKo
+      ? "Live 외부 검색이 연결되었습니다. 아래 신호는 AMC의 결정 구조에 맞게 정규화된 내용입니다."
+      : "Live external search is connected. The signals below are normalized into AMC’s decision structure.";
+  }
+  if (status === "fallback") {
+    return isKo
+      ? "Live 외부 검색을 사용할 수 없어, 리포트 흐름을 유지하기 위해 fallback 외부 맥락을 사용합니다."
+      : "Live external search was unavailable, so AMC is using fallback external context to preserve the report flow.";
+  }
+  return isKo
+    ? "이 항목은 MVP 테스트를 위한 mock 외부 레이어입니다. 현재 결과에는 live 외부 검색이 적용되지 않았습니다."
+    : "This is a mock external layer for MVP testing. Live external search is not active in this result.";
+}
+
+function externalDirectionLabel(direction: ExternalSignalDirection, isKo: boolean) {
+  if (!isKo) return direction === "supportive" ? "Supportive" : direction === "mixed" ? "Mixed" : "Caution";
+  return direction === "supportive" ? "우호적" : direction === "mixed" ? "혼재" : "주의";
+}
+
+function evidenceTypeLabel(type: ExternalEvidenceType, isKo: boolean) {
+  if (!isKo) return `${type.charAt(0).toUpperCase()}${type.slice(1)}`;
+  return {
+    market: "시장",
+    company: "회사",
+    education: "교육",
+    region: "지역",
+    role: "직무",
+    general: "일반",
+  }[type];
 }
 
 function isExternalSnapshot(value: unknown): value is ExternalSnapshot {
@@ -2383,7 +2415,8 @@ export default function AmcWebMvp() {
     [detectedCaseType, language, optionALabel, optionBLabel],
   );
   const displayedExternalSnapshot = externalSnapshot ?? mockExternalSnapshot;
-  const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot, externalSnapshotLoading);
+  const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot);
+  const displayedExternalStatusCopy = externalSnapshotStatusCopy(displayedExternalSnapshot.status, isKo);
   const qaValidationStatus =
     answeredQuestionCount < totalFullIntakeQuestions
       ? "INCOMPLETE"
@@ -2501,11 +2534,7 @@ export default function AmcWebMvp() {
 
   const selectLanguage = (nextLanguage: Language) => {
     if (nextLanguage === language) return;
-    externalSnapshotRequestId.current += 1;
     setLanguage(nextLanguage);
-    setExternalSnapshot(null);
-    setExternalSnapshotLoading(false);
-    setExternalSnapshotError(null);
   };
 
   const generateDetailedReport = () => {
@@ -2703,24 +2732,30 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
-              <p className="pdf-kicker">02A / External Snapshot</p>
+              <p className="pdf-kicker">02A / External Evidence Snapshot</p>
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <h2 className="pdf-section-heading max-w-2xl">
                   {t(
-                    "A preliminary external context layer for this decision.",
-                    "이 결정에 대한 예비 외부 맥락 레이어입니다.",
+                    "This section separates external context from AMC’s internal structural reading. It helps identify what the outside environment appears to support, where it remains mixed, and what still requires validation.",
+                    "이 섹션은 외부 맥락을 AMC의 내부 구조 해석과 분리하여 보여줍니다. 외부 환경이 무엇을 지지하는지, 어디에서 신호가 혼재되어 있는지, 무엇을 추가로 검증해야 하는지 확인하기 위한 영역입니다.",
                   )}
                 </h2>
                 <span className="inline-flex w-fit border border-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
                   {displayedExternalStatus}
                 </span>
               </div>
+              <p className="mt-5 max-w-3xl text-sm leading-6 text-black/65">{displayedExternalStatusCopy}</p>
+              {externalSnapshotLoading ? (
+                <p className="mt-2 text-xs leading-5 text-black/45">
+                  {t("Checking live external context…", "Live 외부 맥락을 확인하고 있습니다…")}
+                </p>
+              ) : null}
 
               <div className="pdf-keep-together mt-7 grid grid-cols-1 gap-px bg-black/15 sm:grid-cols-3">
                 {[
-                  ["Status", displayedExternalStatus],
+                  ["Snapshot Mode", displayedExternalStatus],
                   ["Confidence", confidenceLabel(displayedExternalSnapshot.confidence)],
-                  ["Context", displayedExternalSnapshot.generatedAtLabel],
+                  ["Generated", displayedExternalSnapshot.generatedAtLabel],
                 ].map(([label, value]) => (
                   <div key={label} className="bg-[#f6f6f4] p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/45">{label}</p>
@@ -2729,13 +2764,29 @@ export default function AmcWebMvp() {
                 ))}
               </div>
 
+              <div className="pdf-keep-together mt-6 border border-black/15 p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
+                  {t("What this uses", "이 섹션이 활용하는 것")}
+                </p>
+                <ul className="mt-4 grid grid-cols-1 gap-3 text-sm leading-6 text-black/65 sm:grid-cols-3">
+                  {[
+                    t("User-provided case context", "사용자가 입력한 사례 맥락"),
+                    t("AMC structural reading", "AMC 구조 해석"),
+                    t("External evidence layer when available", "사용 가능한 경우 외부 근거 레이어"),
+                  ].map((item) => (
+                    <li key={item} className="border-l border-black/25 pl-3">{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="mt-7 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">External Signals</p>
               <div className="mt-7 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 {displayedExternalSnapshot.externalSignals.map((signal) => (
                   <div key={signal.label} className="pdf-keep-together border-t-2 border-black bg-[#f6f6f4] p-5">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/50">{signal.label}</p>
                       <span className="border border-black/15 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-black/55">
-                        {signal.direction}
+                        {externalDirectionLabel(signal.direction, isKo)}
                       </span>
                     </div>
                     <p className="mt-4 text-sm leading-6 text-black/70">{signal.reading}</p>
@@ -2746,13 +2797,19 @@ export default function AmcWebMvp() {
               <div className="mt-7 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="pdf-keep-together border-t border-black/20 pt-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Source Notes</p>
+                  <p className="mt-2 text-xs leading-5 text-black/50">
+                    {t(
+                      "These notes summarize the type of external evidence considered. In live mode, they should be backed by provider output. In fallback/mock mode, they are placeholders or normalized context.",
+                      "이 항목은 고려된 외부 근거 유형을 요약합니다. live 모드에서는 provider 결과를 기반으로 하며, fallback/mock 모드에서는 placeholder 또는 정규화된 맥락입니다.",
+                    )}
+                  </p>
                   <div className="mt-4 space-y-4">
                     {displayedExternalSnapshot.sourceNotes.map((source) => (
                       <div key={source.sourceLabel}>
                         <div className="flex items-baseline justify-between gap-3">
                           <p className="text-sm font-semibold">{source.sourceLabel}</p>
                           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-black/40">
-                            {source.evidenceType}
+                            {evidenceTypeLabel(source.evidenceType, isKo)}
                           </p>
                         </div>
                         <p className="mt-1 text-sm leading-6 text-black/65">{source.note}</p>
@@ -2762,6 +2819,12 @@ export default function AmcWebMvp() {
                 </div>
                 <div className="pdf-keep-together border-t border-black/20 pt-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">Uncertainty Notes</p>
+                  <p className="mt-2 text-xs leading-5 text-black/50">
+                    {t(
+                      "These are the areas that still need validation before stronger commitment.",
+                      "이 항목은 더 강한 실행 전에 추가 검증이 필요한 부분입니다.",
+                    )}
+                  </p>
                   <ul className="mt-4 space-y-3">
                     {displayedExternalSnapshot.uncertaintyNotes.map((note) => (
                       <li key={note} className="grid grid-cols-[16px_1fr] gap-2 text-sm leading-6 text-black/65">
@@ -2779,10 +2842,10 @@ export default function AmcWebMvp() {
                 </p>
                 <p className="mt-3 text-sm font-semibold leading-6">{displayedExternalSnapshot.implication}</p>
               </div>
-              <p className="mt-5 text-xs leading-5 text-black/48">
+              <p className="mt-5 border-t border-black/15 pt-4 text-xs font-semibold leading-5 text-black/58">
                 {t(
-                  "Live external search is connected when server-side Perplexity configuration is available. If unavailable, AMC uses fallback external context.",
-                  "서버 측 Perplexity 설정이 준비되어 있으면 live 외부 검색이 연결됩니다. 사용할 수 없는 경우 AMC는 fallback 외부 맥락을 사용합니다.",
+                  "External evidence pressure-tests the decision structure. User input is not external evidence, and external evidence is not a final recommendation.",
+                  "외부 근거는 결정 구조를 점검하기 위해 사용됩니다. 사용자 입력은 외부 근거와 같지 않으며, 외부 근거도 최종 추천이 아닙니다.",
                 )}
               </p>
               {externalSnapshotError ? <p className="mt-2 text-xs leading-5 text-black/48">{externalSnapshotError}</p> : null}
@@ -3713,34 +3776,31 @@ export default function AmcWebMvp() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="max-w-3xl">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                        External Snapshot
+                        External Evidence Snapshot
                       </p>
                       <h3 className="mt-2 text-xl font-semibold tracking-tight">
                         {t(
-                          "A preliminary external context layer for this decision.",
-                          "이 결정에 대한 예비 외부 맥락 레이어입니다.",
+                          "External context signals used to pressure-test this career decision.",
+                          "이 커리어 결정을 외부 맥락에서 점검하기 위한 근거 레이어입니다.",
                         )}
                       </h3>
                       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        {displayedExternalSnapshot.status === "live"
-                          ? t(
-                              "Live external context is normalized into AMC's external validation structure.",
-                              "Live 외부 맥락을 AMC의 External Validation 구조로 정리했습니다.",
-                            )
-                          : t(
-                              "Fallback context keeps the external validation agenda visible while live search is unavailable.",
-                              "Live 검색을 사용할 수 없는 동안 fallback 맥락으로 External Validation 항목을 유지합니다.",
-                            )}
+                        {displayedExternalStatusCopy}
                       </p>
+                      {externalSnapshotLoading ? (
+                        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                          {t("Checking live external context…", "Live 외부 맥락을 확인하고 있습니다…")}
+                        </p>
+                      ) : null}
                     </div>
                     <Tag>{displayedExternalStatus}</Tag>
                   </div>
 
                   <dl className="mt-5 grid grid-cols-1 overflow-hidden rounded-md border border-border bg-background sm:grid-cols-3">
                     {[
-                      ["Status", displayedExternalStatus],
+                      ["Snapshot Mode", displayedExternalStatus],
                       ["Confidence", confidenceLabel(displayedExternalSnapshot.confidence)],
-                      ["Context", displayedExternalSnapshot.generatedAtLabel],
+                      ["Generated", displayedExternalSnapshot.generatedAtLabel],
                     ].map(([label, value], index) => (
                       <div
                         key={label}
@@ -3754,6 +3814,24 @@ export default function AmcWebMvp() {
                     ))}
                   </dl>
 
+                  <div className="mt-5 rounded-md border border-border bg-background p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      {t("What this uses", "이 섹션이 활용하는 것")}
+                    </p>
+                    <ul className="mt-4 grid grid-cols-1 gap-3 text-sm leading-relaxed text-foreground sm:grid-cols-3">
+                      {[
+                        t("User-provided case context", "사용자가 입력한 사례 맥락"),
+                        t("AMC structural reading", "AMC 구조 해석"),
+                        t("External evidence layer when available", "사용 가능한 경우 외부 근거 레이어"),
+                      ].map((item) => (
+                        <li key={item} className="border-l border-border pl-3">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <p className="mt-6 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    External Signals
+                  </p>
                   <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
                     {displayedExternalSnapshot.externalSignals.map((signal) => (
                       <div key={signal.label} className="rounded-md border border-border bg-background p-5">
@@ -3764,7 +3842,7 @@ export default function AmcWebMvp() {
                           <span
                             className={`inline-flex shrink-0 rounded-sm border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] ${externalSignalTone(signal.direction)}`}
                           >
-                            {signal.direction}
+                            {externalDirectionLabel(signal.direction, isKo)}
                           </span>
                         </div>
                         <p className="mt-3 text-sm leading-relaxed text-foreground">{signal.reading}</p>
@@ -3777,13 +3855,19 @@ export default function AmcWebMvp() {
                       <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Source Notes
                       </p>
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        {t(
+                          "These notes summarize the type of external evidence considered. In live mode, they should be backed by provider output. In fallback/mock mode, they are placeholders or normalized context.",
+                          "이 항목은 고려된 외부 근거 유형을 요약합니다. live 모드에서는 provider 결과를 기반으로 하며, fallback/mock 모드에서는 placeholder 또는 정규화된 맥락입니다.",
+                        )}
+                      </p>
                       <div className="mt-4 space-y-4">
                         {displayedExternalSnapshot.sourceNotes.map((source) => (
                           <div key={source.sourceLabel}>
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
                               <p className="text-sm font-semibold">{source.sourceLabel}</p>
                               <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                                {source.evidenceType}
+                                {evidenceTypeLabel(source.evidenceType, isKo)}
                               </span>
                             </div>
                             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{source.note}</p>
@@ -3794,6 +3878,12 @@ export default function AmcWebMvp() {
                     <div className="rounded-md border border-border bg-background p-5">
                       <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Uncertainty Notes
+                      </p>
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        {t(
+                          "These are the areas that still need validation before stronger commitment.",
+                          "이 항목은 더 강한 실행 전에 추가 검증이 필요한 부분입니다.",
+                        )}
                       </p>
                       <ul className="mt-4 space-y-3">
                         {displayedExternalSnapshot.uncertaintyNotes.map((note) => (
@@ -3817,10 +3907,10 @@ export default function AmcWebMvp() {
                       {displayedExternalSnapshot.implication}
                     </p>
                   </div>
-                  <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                  <p className="mt-4 border-t border-border pt-4 text-xs font-medium leading-relaxed text-foreground/75">
                     {t(
-                      "Live external search is connected when server-side Perplexity configuration is available. If unavailable, AMC uses fallback external context.",
-                      "서버 측 Perplexity 설정이 준비되어 있으면 live 외부 검색이 연결됩니다. 사용할 수 없는 경우 AMC는 fallback 외부 맥락을 사용합니다.",
+                      "External evidence supports interpretation, but does not replace judgment or decide the outcome.",
+                      "외부 근거는 해석을 보조하지만, 판단을 대체하거나 결론을 대신 내리지는 않습니다.",
                     )}
                   </p>
                   {externalSnapshotError ? (
