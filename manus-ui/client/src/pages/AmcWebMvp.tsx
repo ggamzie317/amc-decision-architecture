@@ -31,6 +31,21 @@ type ExternalSnapshot = {
   uncertaintyNotes: string[];
   implication: string;
 };
+type ExecutiveQaMessage = {
+  id: number;
+  role: "user" | "amc";
+  text: string;
+};
+type ExecutiveQaContext = {
+  language: Language;
+  caseType: CaseType;
+  optionA: string;
+  optionB: string;
+  primaryRisk: string;
+  decisionConditions: string;
+  validationFocus: string;
+  externalSnapshot: ExternalSnapshot;
+};
 
 type PreviewAnswers = {
   decision: string;
@@ -2360,6 +2375,79 @@ function isExternalSnapshot(value: unknown): value is ExternalSnapshot {
   );
 }
 
+function buildExecutiveQaResponse(question: string, context: ExecutiveQaContext) {
+  const normalized = question.toLowerCase();
+  const hasAny = (keywords: string[]) => keywords.some((keyword) => normalized.includes(keyword));
+  const category = hasAny(["over-interpret", "limitation", "caution", "what should i not", "과도", "한계", "주의", "해석하면 안"])
+    ? "boundary"
+    : hasAny(["external", "evidence", "snapshot", "source", "market", "외부", "근거", "스냅샷", "시장", "소스"])
+      ? "external"
+      : hasAny(["case type", "classified", "classification", "분류", "케이스"])
+        ? "case"
+        : hasAny(["validate", "validation", "30 days", "next 30", "검증", "30일", "확인"])
+          ? "validation"
+          : hasAny(["risk", "main risk", "downside", "리스크", "위험", "가장 큰"])
+            ? "risk"
+            : hasAny(["condition", "defensible", "decide", "commitment", "조건", "방어 가능", "결정", "실행"])
+              ? "condition"
+              : "general";
+  const isKo = context.language === "ko";
+  const snapshot = context.externalSnapshot;
+  const mode = externalSnapshotStatusLabel(snapshot);
+  const signalSummary = snapshot.externalSignals
+    .slice(0, 2)
+    .map((signal) => `${signal.label} (${externalDirectionLabel(signal.direction, isKo)})`)
+    .join(", ");
+  const uncertainty = snapshot.uncertaintyNotes[0] || (isKo ? "추가 검증이 필요합니다." : "Further validation is required.");
+  const sourceSummary = snapshot.sourceNotes[0]?.sourceLabel || (isKo ? "출처 맥락 미확인" : "Source context unavailable");
+
+  const structuralReading = isKo
+    ? {
+        risk: `${context.caseType}에서는 선택 자체보다 ${context.primaryRisk}가 판단을 왜곡할 가능성을 먼저 봐야 합니다.`,
+        condition: `${context.optionB}의 실행 여부는 매력도보다 Decision Conditions가 실제로 충족되는지에 달려 있습니다.`,
+        validation: `${context.caseType}에서는 결정을 앞당기기보다 작은 검증으로 불확실성을 줄이는 순서가 중요합니다.`,
+        external: `External Evidence Snapshot은 내부 선호와 외부 맥락을 분리해 결정 구조를 점검하는 레이어입니다.`,
+        case: `현재 답변은 ${context.caseType}으로 분류되며, 이 분류는 핵심 리스크와 검증 순서를 정리하기 위한 프레임입니다.`,
+        boundary: `이 리포트는 결론을 대신 내리는 도구가 아니라, 근거와 불확실성의 경계를 보여주는 구조 해석입니다.`,
+        general: `${context.caseType}의 핵심은 ${context.optionA}와 ${context.optionB} 중 하나를 즉시 고르는 것이 아니라, 선택의 조건을 검증하는 것입니다.`,
+      }[category]
+    : {
+        risk: `For ${context.caseType}, the first issue is how ${context.primaryRisk} could distort the decision—not which option looks more attractive.`,
+        condition: `Movement toward ${context.optionB} depends on whether the Decision Conditions are evidenced, not on appeal alone.`,
+        validation: `For ${context.caseType}, sequencing small validation steps matters more than accelerating commitment.`,
+        external: `The External Evidence Snapshot pressure-tests internal preference against outside context; it is separate from the user-provided facts.`,
+        case: `The current answers are classified as ${context.caseType}; this is a frame for organizing risk and validation, not a fixed identity or verdict.`,
+        boundary: `This report is a structural interpretation that shows evidence and uncertainty boundaries; it does not decide the outcome.`,
+        general: `The central issue in ${context.caseType} is not choosing immediately between ${context.optionA} and ${context.optionB}, but validating the conditions for commitment.`,
+      }[category];
+
+  const externalReading = isKo
+    ? `현재 Snapshot Mode는 ${mode}, Confidence는 ${confidenceLabel(snapshot.confidence)}입니다. 주요 신호는 ${signalSummary || "아직 제한적"}이며, Source Notes의 첫 맥락은 ${sourceSummary}입니다. ${snapshot.implication} 불확실성: ${uncertainty}`
+    : `Snapshot Mode is ${mode} with ${confidenceLabel(snapshot.confidence)} confidence. Leading signals: ${signalSummary || "limited"}. First source context: ${sourceSummary}. ${snapshot.implication} Uncertainty: ${uncertainty}`;
+
+  if (isKo) {
+    return [
+      "AMC 리포트 기준으로 보면, 이 결정의 구조는 다음과 같습니다.",
+      `1. 구조 해석\n${structuralReading}`,
+      `2. 주요 리스크\n${context.primaryRisk}`,
+      `3. 결정 조건\n${context.decisionConditions}`,
+      `4. 외부 근거 해석\n${externalReading}`,
+      `5. 다음 검증 단계\n${context.validationFocus}`,
+      "6. 해석 시 주의할 점\n이 답변은 생성된 AMC 리포트 맥락만 정리합니다. Option A 또는 Option B를 대신 선택하지 않으며, 새로운 live 검색이나 법률·금융·이민·의료·세무·투자 자문을 제공하지 않습니다.",
+    ].join("\n\n");
+  }
+
+  return [
+    "Based on your AMC report, the structure suggests:",
+    `1. Structural reading\n${structuralReading}`,
+    `2. Main risk\n${context.primaryRisk}`,
+    `3. Decision condition\n${context.decisionConditions}`,
+    `4. External evidence reading\n${externalReading}`,
+    `5. Next validation step\n${context.validationFocus}`,
+    "6. Boundary / caution\nThis answer only organizes the generated AMC report context. It does not choose Option A or Option B, perform a new live search, or provide legal, financial, immigration, medical, tax, or investment advice.",
+  ].join("\n\n");
+}
+
 export default function AmcWebMvp() {
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
@@ -2376,7 +2464,10 @@ export default function AmcWebMvp() {
   const [externalSnapshot, setExternalSnapshot] = useState<ExternalSnapshot | null>(null);
   const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
   const [externalSnapshotError, setExternalSnapshotError] = useState<string | null>(null);
+  const [executiveQaDraft, setExecutiveQaDraft] = useState("");
+  const [executiveQaMessages, setExecutiveQaMessages] = useState<ExecutiveQaMessage[]>([]);
   const externalSnapshotRequestId = useRef(0);
+  const executiveQaMessageId = useRef(0);
 
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
@@ -2417,6 +2508,21 @@ export default function AmcWebMvp() {
   const displayedExternalSnapshot = externalSnapshot ?? mockExternalSnapshot;
   const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot);
   const displayedExternalStatusCopy = externalSnapshotStatusCopy(displayedExternalSnapshot.status, isKo);
+  const executiveQaSuggestedQuestions = isKo
+    ? [
+        "이 결정에서 가장 큰 리스크는 무엇인가요?",
+        "어떤 조건이 충족되면 Option B가 더 방어 가능해지나요?",
+        "앞으로 30일 동안 무엇을 검증해야 하나요?",
+        "External Evidence Snapshot을 어떻게 해석해야 하나요?",
+        "이 리포트에서 과도하게 해석하면 안 되는 부분은 무엇인가요?",
+      ]
+    : [
+        "What is the main risk in this decision?",
+        "What condition would make Option B more defensible?",
+        "What should I validate in the next 30 days?",
+        "How should I read the External Evidence Snapshot?",
+        "What should I not over-interpret from this report?",
+      ];
   const qaValidationStatus =
     answeredQuestionCount < totalFullIntakeQuestions
       ? "INCOMPLETE"
@@ -2483,6 +2589,8 @@ export default function AmcWebMvp() {
     setExternalSnapshot(null);
     setExternalSnapshotLoading(false);
     setExternalSnapshotError(null);
+    setExecutiveQaDraft("");
+    setExecutiveQaMessages([]);
     requestAnimationFrame(() => {
       document.getElementById("full-intake")?.scrollIntoView({ behavior: "smooth" });
     });
@@ -2494,6 +2602,8 @@ export default function AmcWebMvp() {
     setExternalSnapshot(mockExternalSnapshot);
     setExternalSnapshotLoading(true);
     setExternalSnapshotError(null);
+    setExecutiveQaDraft("");
+    setExecutiveQaMessages([]);
     setDashboardGenerated(true);
     requestAnimationFrame(() => {
       document.getElementById("full-dashboard")?.scrollIntoView({ behavior: "smooth" });
@@ -2540,6 +2650,38 @@ export default function AmcWebMvp() {
   const generateDetailedReport = () => {
     setShowPdfReportView(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const submitExecutiveQaQuestion = (suggestedQuestion?: string) => {
+    if (!dashboardGenerated) return;
+    const question = (suggestedQuestion ?? executiveQaDraft).trim();
+    if (!question) return;
+    const response = buildExecutiveQaResponse(question, {
+      language,
+      caseType: detectedCaseType,
+      optionA: optionALabel,
+      optionB: optionBLabel,
+      primaryRisk: isKo ? caseSpecificReading.primaryRisk.ko : caseSpecificReading.primaryRisk.en,
+      decisionConditions: isKo
+        ? caseSpecificReading.decisionConditions.ko
+        : caseSpecificReading.decisionConditions.en,
+      validationFocus: isKo ? caseSpecificReading.validationFocus.ko : caseSpecificReading.validationFocus.en,
+      externalSnapshot: displayedExternalSnapshot,
+    });
+    executiveQaMessageId.current += 1;
+    const userMessage: ExecutiveQaMessage = {
+      id: executiveQaMessageId.current,
+      role: "user",
+      text: question,
+    };
+    executiveQaMessageId.current += 1;
+    const amcMessage: ExecutiveQaMessage = {
+      id: executiveQaMessageId.current,
+      role: "amc",
+      text: response,
+    };
+    setExecutiveQaMessages((current) => [...current, userMessage, amcMessage]);
+    setExecutiveQaDraft("");
   };
 
   if (showPdfReportView) {
@@ -4177,76 +4319,162 @@ export default function AmcWebMvp() {
 
             <section className="border-b border-border py-12 sm:py-14">
               <SectionHeader
-                eyebrow="1-Day Report Q&A"
-                title={
-                  selectedTier === "executive"
-                    ? t(
-                        "A one-day report clarification window for Executive.",
-                        "Executive에 포함되는 1-Day Report Q&A입니다.",
-                      )
-                    : t(
-                        "1-Day Report Q&A is available with Executive.",
-                        "Executive에서 1-Day Report Q&A를 이용할 수 있습니다.",
-                      )
-                }
-                body={
-                  selectedTier === "executive"
-                    ? t(
-                        "Ask report-based questions for one day after receiving the report.",
-                        "리포트를 받은 당일, 리포트 내용을 바탕으로 추가 질문을 정리할 수 있습니다.",
-                      )
-                    : t(
-                        "Essential includes the dashboard and Detailed PDF Report. Executive adds report-based Q&A.",
-                        "Essential에는 Dashboard와 Detailed PDF Report가 포함되며, Executive에는 Report 기반 Q&A가 추가됩니다.",
-                      )
-                }
+                eyebrow="Executive Report Q&A"
+                title="Executive Report Q&A"
+                body={t(
+                  "Ask follow-up questions based on your generated AMC report.",
+                  "생성된 AMC 리포트를 바탕으로 추가 질문을 정리할 수 있습니다.",
+                )}
               />
-              <div className="rounded-lg border border-border bg-card p-6">
-                <div className="flex flex-col justify-between gap-4 border-b border-border pb-5 sm:flex-row sm:items-start">
+              <div className="overflow-hidden rounded-lg border border-border bg-card">
+                <div className="flex flex-col justify-between gap-4 border-b border-border p-6 sm:flex-row sm:items-start">
                   <div>
-                    <h3 className="text-2xl font-semibold tracking-tight">1-Day Report Q&A</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                      {t("Executive feature preview", "Executive 기능 Preview")}
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight">
+                      {t("Included in Executive: 1-Day Report Q&A", "Executive 포함: 1-Day Report Q&A")}
+                    </h3>
+                    <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
                       {t(
-                        "Executive access can later be handled through a private email link or time-limited access code.",
-                        "Executive 이용은 비공개 이메일 링크 또는 기간 제한 접근 코드로 제공됩니다.",
+                        "This MVP Q&A is grounded in the generated report context. It does not replace judgment or provide legal, financial, immigration, medical, tax, or investment advice.",
+                        "현재 MVP Q&A는 생성된 리포트 맥락을 기반으로 작동합니다. 판단을 대신하거나 법률, 금융, 이민, 의료, 세무, 투자 자문을 제공하지 않습니다.",
                       )}
                     </p>
                   </div>
-                  <Tag>
-                    {selectedTier === "executive" ? t("Unlocked", "이용 가능") : t("Executive only", "Executive 전용")}
-                  </Tag>
+                  <Tag>{t("Local report-grounded MVP", "Report 기반 Local MVP")}</Tag>
                 </div>
-                <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-                  {(isKo
-                    ? [
-                        "현재 결정의 Primary Risk는 무엇인가요?",
-                        "이 결정에서 External Validation이 중요한 이유는 무엇인가요?",
-                        "전환 범위를 확대하기 전에 확인해야 할 Decision Conditions는 무엇인가요?",
-                      ]
-                    : [
-                        "What is my primary structural risk?",
-                        "Why is external validation important here?",
-                        "What conditions make deeper commitment more defensible?",
-                      ]
-                  ).map((question) => (
-                    <div
-                      key={question}
-                      className="rounded-md border border-border bg-background p-4 text-sm leading-relaxed"
-                    >
-                      {question}
+
+                <div className="grid grid-cols-1 lg:grid-cols-[0.72fr_1.28fr]">
+                  <aside className="border-b border-border bg-secondary/15 p-5 lg:border-b-0 lg:border-r">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      {t("Suggested questions", "추천 질문")}
+                    </p>
+                    <div className="mt-4 space-y-2">
+                      {executiveQaSuggestedQuestions.map((question) => (
+                        <button
+                          key={question}
+                          type="button"
+                          onClick={() => submitExecutiveQaQuestion(question)}
+                          className="w-full rounded-md border border-border bg-card p-3 text-left text-sm leading-relaxed transition-colors hover:border-foreground/30 hover:bg-background"
+                        >
+                          {question}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setExecutiveQaMessages([])}
+                      disabled={executiveQaMessages.length === 0}
+                      className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {t("Clear chat", "대화 지우기")}
+                    </button>
+                  </aside>
+
+                  <div className="p-5 sm:p-6">
+                    <div className="max-h-[520px] min-h-56 space-y-4 overflow-y-auto rounded-md border border-border bg-background p-4">
+                      {executiveQaMessages.length === 0 ? (
+                        <div className="flex min-h-48 items-center justify-center px-4 text-center">
+                          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+                            {t(
+                              "Ask about risk, Decision Conditions, validation, Case Type, or the External Evidence Snapshot.",
+                              "리스크, Decision Conditions, 검증, Case Type, External Evidence Snapshot에 대해 질문할 수 있습니다.",
+                            )}
+                          </p>
+                        </div>
+                      ) : (
+                        executiveQaMessages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[92%] rounded-lg px-4 py-3 text-sm leading-relaxed sm:max-w-[82%] ${
+                                message.role === "user"
+                                  ? "bg-foreground text-background"
+                                  : "border border-border bg-card text-foreground"
+                              }`}
+                            >
+                              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-60">
+                                {message.role === "user" ? t("You", "사용자") : "AMC"}
+                              </p>
+                              <p className="whitespace-pre-line">{message.text}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="mt-4 rounded-md border border-border bg-background p-3">
+                      <label className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground" htmlFor="executive-qa-input">
+                        {t("Report-based question", "Report 기반 질문")}
+                      </label>
+                      <textarea
+                        id="executive-qa-input"
+                        value={executiveQaDraft}
+                        onChange={(event) => setExecutiveQaDraft(event.target.value)}
+                        placeholder={t(
+                          "Ask a question about the generated report…",
+                          "생성된 Report에 대해 질문을 입력해 주세요…",
+                        )}
+                        className="mt-2 h-24 w-full resize-none border-0 bg-transparent p-0 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
+                      />
+                      <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          {t("No new live search is performed during chat.", "대화 중 새로운 live 검색은 수행하지 않습니다.")}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => submitExecutiveQaQuestion()}
+                          disabled={!executiveQaDraft.trim()}
+                          className="inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-foreground px-4 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {t("Send", "보내기")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
           </>
         ) : null}
 
+        {!dashboardGenerated ? (
+          <section className="border-b border-border py-12 sm:py-14">
+            <SectionHeader
+              eyebrow="Executive Report Q&A"
+              title="Executive Report Q&A"
+              body={t(
+                "Ask follow-up questions based on your generated AMC report.",
+                "생성된 AMC 리포트를 바탕으로 추가 질문을 정리할 수 있습니다.",
+              )}
+            />
+            <div className="rounded-lg border border-border bg-card p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    {t("Executive feature preview", "Executive 기능 Preview")}
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold">
+                    {t(
+                      "Generate your Full Dashboard first to use report-based Q&A.",
+                      "리포트 기반 Q&A를 사용하려면 먼저 Full Dashboard를 생성해야 합니다.",
+                    )}
+                  </h3>
+                </div>
+                <Tag>{t("Waiting for report context", "Report context 대기 중")}</Tag>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         <section className="py-8">
           <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
             {t(
-              "Developer note: This MVP uses local flow state and an optional server-side External Snapshot endpoint. It does not include real payment, account login, chatbot, or production report generation.",
-              "개발 참고: 현재 MVP는 로컬 흐름 상태와 선택적 서버 측 External Snapshot endpoint를 사용합니다. 실제 결제, 계정 로그인, chatbot, 운영용 Report 생성은 포함하지 않습니다.",
+              "Developer note: This MVP uses local flow state, local report-grounded Q&A, and an optional server-side External Snapshot endpoint. It does not include real payment, account login, external AI chat calls, or production report generation.",
+              "개발 참고: 현재 MVP는 로컬 흐름 상태, Report 기반 Local Q&A, 선택적 서버 측 External Snapshot endpoint를 사용합니다. 실제 결제, 계정 로그인, 외부 AI chat 호출, 운영용 Report 생성은 포함하지 않습니다.",
             )}
           </p>
         </section>
