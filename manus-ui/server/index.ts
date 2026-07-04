@@ -9,6 +9,7 @@ import {
   parseWebExternalSnapshotRequest,
   resolveWebExternalSnapshot,
 } from "./externalSnapshotService";
+import { buildReportQaFallback, parseReportQaRequest, resolveReportQa } from "./reportQaService";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,6 +49,18 @@ async function startServer() {
 
     const snapshot = await resolveWebExternalSnapshot(request);
     res.status(200).json(snapshot);
+  });
+
+  app.post("/api/amc/report-qa", async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    const request = parseReportQaRequest(req.body);
+    if (!request) {
+      const language = req.body?.language === "kr" ? "kr" : "en";
+      res.status(400).json(buildReportQaFallback(language));
+      return;
+    }
+
+    res.status(200).json(await resolveReportQa(request));
   });
 
   app.post("/api/send-email", async (req, res) => {

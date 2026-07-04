@@ -35,6 +35,7 @@ type ExecutiveQaMessage = {
   id: number;
   role: "user" | "amc";
   text: string;
+  responseMode?: "api" | "local";
 };
 type ExecutiveQaContext = {
   language: Language;
@@ -45,6 +46,12 @@ type ExecutiveQaContext = {
   decisionConditions: string;
   validationFocus: string;
   externalSnapshot: ExternalSnapshot;
+};
+type ReportQaApiResponse = {
+  status: "live" | "fallback";
+  answer: string;
+  modelLabel: string;
+  boundaryNote: string;
 };
 
 type PreviewAnswers = {
@@ -2448,6 +2455,51 @@ function buildExecutiveQaResponse(question: string, context: ExecutiveQaContext)
   ].join("\n\n");
 }
 
+function buildReportQaContext({
+  caseType,
+  optionA,
+  optionB,
+  primaryRisk,
+  decisionConditions,
+  validationFocus,
+  externalEvidenceSnapshot,
+  dashboardSummary,
+  premiumReportSummary,
+}: {
+  caseType: CaseType;
+  optionA: string;
+  optionB: string;
+  primaryRisk: string;
+  decisionConditions: string[];
+  validationFocus: string[];
+  externalEvidenceSnapshot: ExternalSnapshot;
+  dashboardSummary: string;
+  premiumReportSummary: string;
+}) {
+  return {
+    caseType,
+    optionA,
+    optionB,
+    primaryRisk,
+    decisionConditions,
+    validationFocus,
+    externalEvidenceSnapshot,
+    dashboardSummary,
+    premiumReportSummary,
+  };
+}
+
+function isReportQaApiResponse(value: unknown): value is ReportQaApiResponse {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const response = value as Partial<ReportQaApiResponse>;
+  return (
+    (response.status === "live" || response.status === "fallback") &&
+    typeof response.answer === "string" &&
+    typeof response.modelLabel === "string" &&
+    typeof response.boundaryNote === "string"
+  );
+}
+
 export default function AmcWebMvp() {
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
@@ -2466,8 +2518,10 @@ export default function AmcWebMvp() {
   const [externalSnapshotError, setExternalSnapshotError] = useState<string | null>(null);
   const [executiveQaDraft, setExecutiveQaDraft] = useState("");
   const [executiveQaMessages, setExecutiveQaMessages] = useState<ExecutiveQaMessage[]>([]);
+  const [executiveQaLoading, setExecutiveQaLoading] = useState(false);
   const externalSnapshotRequestId = useRef(0);
   const executiveQaMessageId = useRef(0);
+  const executiveQaRequestId = useRef(0);
 
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
@@ -2581,6 +2635,7 @@ export default function AmcWebMvp() {
 
   const applyQaPreset = (preset: QaPreset) => {
     externalSnapshotRequestId.current += 1;
+    executiveQaRequestId.current += 1;
     setAnswers(preset.previewAnswers);
     setFullIntakeAnswers(preset.fullAnswers);
     setExpandedGroups(intakeGroups.map((group) => group.title));
@@ -2591,6 +2646,7 @@ export default function AmcWebMvp() {
     setExternalSnapshotError(null);
     setExecutiveQaDraft("");
     setExecutiveQaMessages([]);
+    setExecutiveQaLoading(false);
     requestAnimationFrame(() => {
       document.getElementById("full-intake")?.scrollIntoView({ behavior: "smooth" });
     });
@@ -2604,6 +2660,8 @@ export default function AmcWebMvp() {
     setExternalSnapshotError(null);
     setExecutiveQaDraft("");
     setExecutiveQaMessages([]);
+    executiveQaRequestId.current += 1;
+    setExecutiveQaLoading(false);
     setDashboardGenerated(true);
     requestAnimationFrame(() => {
       document.getElementById("full-dashboard")?.scrollIntoView({ behavior: "smooth" });
@@ -2652,11 +2710,11 @@ export default function AmcWebMvp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const submitExecutiveQaQuestion = (suggestedQuestion?: string) => {
-    if (!dashboardGenerated) return;
+  const submitExecutiveQaQuestion = async (suggestedQuestion?: string) => {
+    if (!dashboardGenerated || executiveQaLoading) return;
     const question = (suggestedQuestion ?? executiveQaDraft).trim();
     if (!question) return;
-    const response = buildExecutiveQaResponse(question, {
+    const localContext: ExecutiveQaContext = {
       language,
       caseType: detectedCaseType,
       optionA: optionALabel,
@@ -2667,21 +2725,72 @@ export default function AmcWebMvp() {
         : caseSpecificReading.decisionConditions.en,
       validationFocus: isKo ? caseSpecificReading.validationFocus.ko : caseSpecificReading.validationFocus.en,
       externalSnapshot: displayedExternalSnapshot,
-    });
+    };
+    const localResponse = buildExecutiveQaResponse(question, localContext);
+    const priorMessages = executiveQaMessages;
     executiveQaMessageId.current += 1;
     const userMessage: ExecutiveQaMessage = {
       id: executiveQaMessageId.current,
       role: "user",
       text: question,
     };
-    executiveQaMessageId.current += 1;
-    const amcMessage: ExecutiveQaMessage = {
-      id: executiveQaMessageId.current,
-      role: "amc",
-      text: response,
-    };
-    setExecutiveQaMessages((current) => [...current, userMessage, amcMessage]);
+    const requestId = executiveQaRequestId.current + 1;
+    executiveQaRequestId.current = requestId;
+    setExecutiveQaMessages((current) => [...current, userMessage]);
     setExecutiveQaDraft("");
+    setExecutiveQaLoading(true);
+
+    const appendAssistant = (text: string, responseMode: "api" | "local") => {
+      if (executiveQaRequestId.current !== requestId) return;
+      executiveQaMessageId.current += 1;
+      setExecutiveQaMessages((current) => [
+        ...current,
+        { id: executiveQaMessageId.current, role: "amc", text, responseMode },
+      ]);
+    };
+
+    try {
+      const response = await fetch("/api/amc/report-qa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          language: isKo ? "kr" : "en",
+          reportContext: buildReportQaContext({
+            caseType: detectedCaseType,
+            optionA: optionALabel,
+            optionB: optionBLabel,
+            primaryRisk: localContext.primaryRisk,
+            decisionConditions: isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en,
+            validationFocus: [localContext.validationFocus],
+            externalEvidenceSnapshot: displayedExternalSnapshot,
+            dashboardSummary: [
+              isKo ? caseTypeReading.ko : caseTypeReading.en,
+              isKo ? caseSpecificReading.decisionConditions.ko : caseSpecificReading.decisionConditions.en,
+            ].join(" "),
+            premiumReportSummary: [
+              isKo ? caseReportBranch.executiveSummary.ko : caseReportBranch.executiveSummary.en,
+              isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
+              isKo ? caseReportBranch.closingQuestion.ko : caseReportBranch.closingQuestion.en,
+            ].join(" "),
+          }),
+          chatHistory: priorMessages.slice(-10).map((message) => ({
+            role: message.role === "user" ? "user" : "assistant",
+            content: message.text,
+          })),
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+      if (!response.ok || !isReportQaApiResponse(payload) || payload.status !== "live" || !payload.answer.trim()) {
+        appendAssistant(localResponse, "local");
+        return;
+      }
+      appendAssistant(payload.answer.trim(), "api");
+    } catch {
+      appendAssistant(localResponse, "local");
+    } finally {
+      if (executiveQaRequestId.current === requestId) setExecutiveQaLoading(false);
+    }
   };
 
   if (showPdfReportView) {
@@ -4342,7 +4451,7 @@ export default function AmcWebMvp() {
                       )}
                     </p>
                   </div>
-                  <Tag>{t("Local report-grounded MVP", "Report 기반 Local MVP")}</Tag>
+                  <Tag>{t("API-assisted with local fallback", "API-assisted · Local fallback 지원")}</Tag>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-[0.72fr_1.28fr]">
@@ -4356,6 +4465,7 @@ export default function AmcWebMvp() {
                           key={question}
                           type="button"
                           onClick={() => submitExecutiveQaQuestion(question)}
+                          disabled={executiveQaLoading}
                           className="w-full rounded-md border border-border bg-card p-3 text-left text-sm leading-relaxed transition-colors hover:border-foreground/30 hover:bg-background"
                         >
                           {question}
@@ -4364,8 +4474,12 @@ export default function AmcWebMvp() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setExecutiveQaMessages([])}
-                      disabled={executiveQaMessages.length === 0}
+                      onClick={() => {
+                        executiveQaRequestId.current += 1;
+                        setExecutiveQaMessages([]);
+                        setExecutiveQaLoading(false);
+                      }}
+                      disabled={executiveQaMessages.length === 0 && !executiveQaLoading}
                       className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {t("Clear chat", "대화 지우기")}
@@ -4374,7 +4488,7 @@ export default function AmcWebMvp() {
 
                   <div className="p-5 sm:p-6">
                     <div className="max-h-[520px] min-h-56 space-y-4 overflow-y-auto rounded-md border border-border bg-background p-4">
-                      {executiveQaMessages.length === 0 ? (
+                      {executiveQaMessages.length === 0 && !executiveQaLoading ? (
                         <div className="flex min-h-48 items-center justify-center px-4 text-center">
                           <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
                             {t(
@@ -4384,25 +4498,42 @@ export default function AmcWebMvp() {
                           </p>
                         </div>
                       ) : (
-                        executiveQaMessages.map((message) => (
-                          <div
-                            key={message.id}
-                            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                          >
+                        <>
+                          {executiveQaMessages.map((message) => (
                             <div
-                              className={`max-w-[92%] rounded-lg px-4 py-3 text-sm leading-relaxed sm:max-w-[82%] ${
-                                message.role === "user"
-                                  ? "bg-foreground text-background"
-                                  : "border border-border bg-card text-foreground"
-                              }`}
+                              key={message.id}
+                              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                             >
-                              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-60">
-                                {message.role === "user" ? t("You", "사용자") : "AMC"}
-                              </p>
-                              <p className="whitespace-pre-line">{message.text}</p>
+                              <div
+                                className={`max-w-[92%] rounded-lg px-4 py-3 text-sm leading-relaxed sm:max-w-[82%] ${
+                                  message.role === "user"
+                                    ? "bg-foreground text-background"
+                                    : "border border-border bg-card text-foreground"
+                                }`}
+                              >
+                                <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-60">
+                                  <span>{message.role === "user" ? t("You", "사용자") : "AMC"}</span>
+                                  {message.role === "amc" && message.responseMode ? (
+                                    <span className="rounded-full border border-current/20 px-2 py-0.5">
+                                      {message.responseMode === "api"
+                                        ? t("API-assisted", "API-assisted")
+                                        : t("Local fallback", "Local fallback")}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="whitespace-pre-line">{message.text}</p>
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          ))}
+                          {executiveQaLoading ? (
+                            <div className="flex justify-start">
+                              <div className="max-w-[92%] rounded-lg border border-border bg-card px-4 py-3 text-sm leading-relaxed text-foreground sm:max-w-[82%]">
+                                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-60">AMC</p>
+                                <p>{t("Reviewing the report context…", "리포트 맥락을 검토하고 있습니다…")}</p>
+                              </div>
+                            </div>
+                          ) : null}
+                        </>
                       )}
                     </div>
 
@@ -4414,6 +4545,7 @@ export default function AmcWebMvp() {
                         id="executive-qa-input"
                         value={executiveQaDraft}
                         onChange={(event) => setExecutiveQaDraft(event.target.value)}
+                        disabled={executiveQaLoading}
                         placeholder={t(
                           "Ask a question about the generated report…",
                           "생성된 Report에 대해 질문을 입력해 주세요…",
@@ -4422,15 +4554,18 @@ export default function AmcWebMvp() {
                       />
                       <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
                         <p className="text-xs leading-relaxed text-muted-foreground">
-                          {t("No new live search is performed during chat.", "대화 중 새로운 live 검색은 수행하지 않습니다.")}
+                          {t(
+                            "AMC uses server-side AI Q&A when configured. If unavailable, it uses a local report-grounded fallback. No new live search is performed during chat.",
+                            "설정된 경우 서버 측 AI Q&A를 사용합니다. 사용할 수 없으면 리포트 기반 Local fallback으로 전환하며, 대화 중 새로운 live 검색은 수행하지 않습니다.",
+                          )}
                         </p>
                         <button
                           type="button"
                           onClick={() => submitExecutiveQaQuestion()}
-                          disabled={!executiveQaDraft.trim()}
+                          disabled={!executiveQaDraft.trim() || executiveQaLoading}
                           className="inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-foreground px-4 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {t("Send", "보내기")}
+                          {executiveQaLoading ? t("Reviewing…", "검토 중…") : t("Send", "보내기")}
                         </button>
                       </div>
                     </div>
@@ -4473,8 +4608,8 @@ export default function AmcWebMvp() {
         <section className="py-8">
           <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
             {t(
-              "Developer note: This MVP uses local flow state, local report-grounded Q&A, and an optional server-side External Snapshot endpoint. It does not include real payment, account login, external AI chat calls, or production report generation.",
-              "개발 참고: 현재 MVP는 로컬 흐름 상태, Report 기반 Local Q&A, 선택적 서버 측 External Snapshot endpoint를 사용합니다. 실제 결제, 계정 로그인, 외부 AI chat 호출, 운영용 Report 생성은 포함하지 않습니다.",
+              "Developer note: This MVP uses local flow state plus optional server-side External Snapshot and report Q&A endpoints. It does not include real payment, account login, or production report generation.",
+              "개발 참고: 현재 MVP는 로컬 흐름 상태와 선택적 서버 측 External Snapshot 및 Report Q&A endpoint를 사용합니다. 실제 결제, 계정 로그인, 운영용 Report 생성은 포함하지 않습니다.",
             )}
           </p>
         </section>
