@@ -53,6 +53,13 @@ type ReportQaApiResponse = {
   modelLabel: string;
   boundaryNote: string;
 };
+type QaDiagnosticStatus = "idle" | "testing" | "success" | "fallback" | "failed";
+type QaDiagnosticResult = {
+  status: QaDiagnosticStatus;
+  lastTestedAt: string | null;
+  resultSummary: string;
+  notes: string;
+};
 
 type PreviewAnswers = {
   decision: string;
@@ -72,6 +79,13 @@ const initialPreviewAnswers: PreviewAnswers = {
   constraint: "",
   risk: "",
   condition: "",
+};
+
+const initialQaDiagnosticResult: QaDiagnosticResult = {
+  status: "idle",
+  lastTestedAt: null,
+  resultSummary: "",
+  notes: "",
 };
 
 const previewQuestions: Array<{
@@ -2500,6 +2514,21 @@ function isReportQaApiResponse(value: unknown): value is ReportQaApiResponse {
   );
 }
 
+function qaDiagnosticStatusLabel(status: QaDiagnosticStatus, isKo: boolean) {
+  if (status === "testing") return isKo ? "Testing · 확인 중" : "Testing";
+  if (status === "success") return "Success";
+  if (status === "fallback") return "Fallback";
+  if (status === "failed") return "Failed";
+  return isKo ? "Not tested · 미실행" : "Not tested";
+}
+
+function qaDiagnosticStatusTone(status: QaDiagnosticStatus) {
+  if (status === "success") return "border-emerald-300 bg-emerald-50 text-emerald-800";
+  if (status === "fallback") return "border-amber-300 bg-amber-50 text-amber-800";
+  if (status === "failed") return "border-red-300 bg-red-50 text-red-800";
+  return "border-border bg-background text-muted-foreground";
+}
+
 export default function AmcWebMvp() {
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
@@ -2519,6 +2548,8 @@ export default function AmcWebMvp() {
   const [executiveQaDraft, setExecutiveQaDraft] = useState("");
   const [executiveQaMessages, setExecutiveQaMessages] = useState<ExecutiveQaMessage[]>([]);
   const [executiveQaLoading, setExecutiveQaLoading] = useState(false);
+  const [externalApiDiagnostic, setExternalApiDiagnostic] = useState<QaDiagnosticResult>(initialQaDiagnosticResult);
+  const [reportQaDiagnostic, setReportQaDiagnostic] = useState<QaDiagnosticResult>(initialQaDiagnosticResult);
   const externalSnapshotRequestId = useRef(0);
   const executiveQaMessageId = useRef(0);
   const executiveQaRequestId = useRef(0);
@@ -2790,6 +2821,111 @@ export default function AmcWebMvp() {
       appendAssistant(localResponse, "local");
     } finally {
       if (executiveQaRequestId.current === requestId) setExecutiveQaLoading(false);
+    }
+  };
+
+  const testExternalEvidenceApi = async () => {
+    if (!isQaMode || externalApiDiagnostic.status === "testing") return;
+    setExternalApiDiagnostic((current) => ({ ...current, status: "testing", notes: "" }));
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12_000);
+
+    try {
+      const response = await fetch("/api/amc/external-snapshot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          caseType: "Entrepreneurship",
+          optionA: "Stay in current corporate role",
+          optionB: "Test a small advisory business",
+          currentDecision: "Whether to test a small business while keeping career stability",
+          externalPressure: "AI tools and changing professional service markets",
+          validationNeed: "Validate real customer willingness to pay",
+          language: isKo ? "kr" : "en",
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+      if (!response.ok || !isExternalSnapshot(payload)) throw new Error("invalid_response");
+
+      setExternalApiDiagnostic({
+        status: payload.status === "fallback" ? "fallback" : "success",
+        lastTestedAt: new Date().toISOString(),
+        resultSummary: `${externalSnapshotStatusLabel(payload)} · ${confidenceLabel(payload.confidence)} confidence`,
+        notes: payload.implication,
+      });
+    } catch {
+      setExternalApiDiagnostic({
+        status: "failed",
+        lastTestedAt: new Date().toISOString(),
+        resultSummary: t("The internal endpoint could not be validated.", "내부 endpoint 응답을 확인하지 못했습니다."),
+        notes: t(
+          "Review route availability and normalized response handling. No sensitive error details are displayed.",
+          "Route 연결과 정규화된 응답 처리를 점검해 주세요. 민감한 오류 정보는 표시하지 않습니다.",
+        ),
+      });
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
+
+  const testExecutiveQaApi = async () => {
+    if (!isQaMode || reportQaDiagnostic.status === "testing") return;
+    setReportQaDiagnostic((current) => ({ ...current, status: "testing", notes: "" }));
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12_000);
+
+    try {
+      const response = await fetch("/api/amc/report-qa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          question: "What is the main risk in this decision?",
+          language: isKo ? "kr" : "en",
+          reportContext: {
+            caseType: "Entrepreneurship",
+            optionA: "Stay in current corporate role",
+            optionB: "Test a small advisory business",
+            primaryRisk: "Premature commitment before market validation",
+            decisionConditions: ["Clear customer demand", "Limited downside exposure", "Defined validation period"],
+            validationFocus: ["Customer willingness to pay", "Repeatable acquisition channel", "Time and energy burden"],
+            externalEvidenceSnapshot: {
+              status: "mock",
+              confidence: "medium",
+              externalSignals: [],
+              sourceNotes: [],
+              uncertaintyNotes: ["Market demand must be validated with real users"],
+              implication: "External context can support exploration, but commitment should depend on validation evidence.",
+            },
+            dashboardSummary: "The decision is better treated as staged validation rather than immediate full transition.",
+            premiumReportSummary: "AMC recommends pressure-testing the structure through limited, reversible validation steps.",
+          },
+          chatHistory: [],
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+      if (!response.ok || !isReportQaApiResponse(payload)) throw new Error("invalid_response");
+
+      const answerPreview = payload.answer.trim().slice(0, 280);
+      setReportQaDiagnostic({
+        status: payload.status === "fallback" ? "fallback" : "success",
+        lastTestedAt: new Date().toISOString(),
+        resultSummary: `${payload.status === "live" ? "Live" : "Fallback"} · ${payload.modelLabel}`,
+        notes: answerPreview || payload.boundaryNote,
+      });
+    } catch {
+      setReportQaDiagnostic({
+        status: "failed",
+        lastTestedAt: new Date().toISOString(),
+        resultSummary: t("The internal endpoint could not be validated.", "내부 endpoint 응답을 확인하지 못했습니다."),
+        notes: t(
+          "Review route availability and normalized response handling. No sensitive error details are displayed.",
+          "Route 연결과 정규화된 응답 처리를 점검해 주세요. 민감한 오류 정보는 표시하지 않습니다.",
+        ),
+      });
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
 
@@ -3747,6 +3883,119 @@ export default function AmcWebMvp() {
                 "현재 MVP Preview에서는 실제 결제가 활성화되어 있지 않습니다. 이 영역은 Unlock 흐름을 확인하기 위한 시뮬레이션입니다.",
               )}
             </p>
+          </section>
+        ) : null}
+
+        {isQaMode ? (
+          <section className="border-b border-border py-12 sm:py-14">
+            <SectionHeader
+              eyebrow="Internal QA only"
+              title="Production QA Diagnostics"
+              body={t(
+                "Internal checks for API reachability, fallback behavior, and launch readiness.",
+                "API 응답, fallback 동작, 런칭 준비 상태를 점검하기 위한 내부 QA 영역입니다.",
+              )}
+            />
+            <div className="rounded-lg border border-dashed border-foreground/30 bg-secondary/20 p-5 sm:p-6">
+              <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs font-medium leading-relaxed text-amber-900">
+                {t(
+                  "Internal QA only. Do not share this route with external testers.",
+                  "내부 QA 전용입니다. 이 route는 외부 테스터에게 공유하지 마세요.",
+                )}
+              </p>
+
+              <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {[
+                  {
+                    key: "external-evidence",
+                    title: "External Evidence API",
+                    description: t(
+                      "Checks the normalized External Evidence endpoint with a minimal, non-personal test case.",
+                      "개인정보가 없는 최소 테스트 사례로 정규화된 External Evidence endpoint를 확인합니다.",
+                    ),
+                    buttonLabel: t("Test External Evidence API", "External Evidence API 테스트"),
+                    result: externalApiDiagnostic,
+                    onTest: testExternalEvidenceApi,
+                  },
+                  {
+                    key: "executive-qa",
+                    title: "Executive Q&A API",
+                    description: t(
+                      "Checks the report-grounded Q&A endpoint with compact mock report context.",
+                      "간결한 mock 리포트 맥락으로 Report 기반 Q&A endpoint를 확인합니다.",
+                    ),
+                    buttonLabel: t("Test Executive Q&A API", "Executive Q&A API 테스트"),
+                    result: reportQaDiagnostic,
+                    onTest: testExecutiveQaApi,
+                  },
+                ].map((diagnostic) => (
+                  <article key={diagnostic.key} className="rounded-lg border border-border bg-card p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                          Production check
+                        </p>
+                        <h3 className="mt-2 text-lg font-semibold tracking-tight">{diagnostic.title}</h3>
+                      </div>
+                      <span
+                        className={`inline-flex w-fit rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] ${qaDiagnosticStatusTone(diagnostic.result.status)}`}
+                      >
+                        {qaDiagnosticStatusLabel(diagnostic.result.status, isKo)}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{diagnostic.description}</p>
+
+                    <dl className="mt-5 space-y-3 border-t border-border pt-4 text-xs">
+                      <div>
+                        <dt className="font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          {t("Last tested", "마지막 테스트")}
+                        </dt>
+                        <dd className="mt-1 leading-relaxed text-foreground">
+                          {diagnostic.result.lastTestedAt
+                            ? new Intl.DateTimeFormat(isKo ? "ko-KR" : "en", {
+                                dateStyle: "medium",
+                                timeStyle: "medium",
+                              }).format(new Date(diagnostic.result.lastTestedAt))
+                            : t("Not tested", "아직 테스트하지 않음")}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          {t("Result summary", "결과 요약")}
+                        </dt>
+                        <dd className="mt-1 break-words leading-relaxed text-foreground">
+                          {diagnostic.result.resultSummary || t("No result yet.", "아직 결과가 없습니다.")}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          {t("Notes", "참고")}
+                        </dt>
+                        <dd className="mt-1 break-words leading-relaxed text-muted-foreground">
+                          {diagnostic.result.notes || t("Run the check to inspect the normalized response.", "테스트를 실행해 정규화된 응답을 확인하세요.")}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    <button
+                      type="button"
+                      onClick={diagnostic.onTest}
+                      disabled={diagnostic.result.status === "testing"}
+                      className="mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {diagnostic.result.status === "testing" ? t("Testing…", "테스트 중…") : diagnostic.buttonLabel}
+                    </button>
+                  </article>
+                ))}
+              </div>
+
+              <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+                {t(
+                  "Success means the internal endpoint responded. Fallback is acceptable during controlled QA when provider keys are not configured. Failed means the route or response handling needs review before external tester sharing.",
+                  "Success는 내부 endpoint가 응답했다는 뜻입니다. provider key가 설정되지 않은 controlled QA 단계에서는 Fallback도 허용 가능합니다. Failed는 외부 테스터 공유 전 route 또는 응답 처리를 점검해야 한다는 뜻입니다.",
+                )}
+              </p>
+            </div>
           </section>
         ) : null}
 
