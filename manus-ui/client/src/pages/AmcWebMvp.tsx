@@ -4854,14 +4854,16 @@ export default function AmcWebMvp() {
           </section>
         ) : null}
 
-        <section className="py-8">
-          <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
-            {t(
-              "Developer note: This MVP uses local flow state plus optional server-side External Snapshot and report Q&A endpoints. It does not include real payment, account login, or production report generation.",
-              "개발 참고: 현재 MVP는 로컬 흐름 상태와 선택적 서버 측 External Snapshot 및 Report Q&A endpoint를 사용합니다. 실제 결제, 계정 로그인, 운영용 Report 생성은 포함하지 않습니다.",
-            )}
-          </p>
-        </section>
+        {isQaMode ? (
+          <section className="py-8">
+            <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
+              {t(
+                "Developer note: This MVP uses local flow state plus optional server-side External Snapshot and report Q&A endpoints. It does not include real payment, account login, or production report generation.",
+                "개발 참고: 현재 MVP는 로컬 흐름 상태와 선택적 서버 측 External Snapshot 및 Report Q&A endpoint를 사용합니다. 실제 결제, 계정 로그인, 운영용 Report 생성은 포함하지 않습니다.",
+              )}
+            </p>
+          </section>
+        ) : null}
       </main>
     </div>
   );
