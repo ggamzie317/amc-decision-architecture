@@ -517,6 +517,305 @@ const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
   },
 };
 
+type FullIntakeGuidance = {
+  en: { guide: string; example: string };
+  ko: { guide: string; example: string };
+};
+
+const fullIntakeGuidance: Record<number, FullIntakeGuidance> = {
+  1: {
+    en: {
+      guide: "State the decision in one sentence. Include both paths if you are comparing options.",
+      example:
+        "Example: I am deciding whether to stay in my current corporate role or test a small advisory business while keeping career stability.",
+    },
+    ko: {
+      guide: "현재 고민 중인 결정을 한 문장으로 적으세요. 비교 중인 선택지가 있다면 둘 다 포함하세요.",
+      example: "예: 현재 회사 역할을 유지할지, 안정성을 유지하면서 작은 자문 사업을 테스트할지 고민하고 있습니다.",
+    },
+  },
+  2: {
+    en: {
+      guide: "Explain what changed or became harder to ignore. Focus on the current tension, not your full career history.",
+      example: "Example: My role is stable, but learning has slowed and the gap with my long-term direction is becoming clearer.",
+    },
+    ko: {
+      guide: "무엇이 달라졌거나 더 이상 미루기 어려워졌는지 적으세요. 전체 경력보다 현재의 긴장에 집중하세요.",
+      example: "예: 역할은 안정적이지만 학습 속도가 느려졌고 장기 방향과의 간격이 더 분명해지고 있습니다.",
+    },
+  },
+  3: {
+    en: {
+      guide: "Name the concrete trigger, deadline, pressure, or opportunity creating urgency.",
+      example: "Example: A client pilot and an internal planning cycle create a three-month window to test the alternative.",
+    },
+    ko: {
+      guide: "결정을 앞당기는 구체적인 계기, 마감, 압력 또는 기회를 적으세요.",
+      example: "예: 고객 파일럿과 사내 계획 일정 때문에 대안을 테스트할 수 있는 기간이 3개월로 제한됩니다.",
+    },
+  },
+  4: {
+    en: {
+      guide: "Describe the practical benefit and cost of waiting 6 to 12 months.",
+      example: "Example: Waiting would protect income and create more evidence, but the current market window could narrow.",
+    },
+    ko: {
+      guide: "6개월에서 12개월 기다릴 때 생기는 현실적인 이점과 비용을 함께 적으세요.",
+      example: "예: 기다리면 소득을 보호하고 근거를 더 만들 수 있지만 현재의 시장 기회는 줄어들 수 있습니다.",
+    },
+  },
+  5: {
+    en: {
+      guide: "Describe Option A as a concrete path, not just a feeling.",
+      example: "Example: Stay in my current corporate role for the next 12 months while preparing external proof points.",
+    },
+    ko: {
+      guide: "Option A를 감정이 아니라 구체적인 경로로 설명하세요.",
+      example: "예: 향후 12개월 동안 현재 회사 역할을 유지하면서 외부 검증 근거를 준비합니다.",
+    },
+  },
+  6: {
+    en: {
+      guide: "List what Option A protects in practical terms, such as income, credibility, family stability, or time.",
+      example: "Example: It protects stable income, existing credibility, benefits, and predictable time for my family.",
+    },
+    ko: {
+      guide: "Option A가 보호하는 소득, 신뢰도, 가족 안정성, 시간 같은 현실적 요소를 적으세요.",
+      example: "예: 안정적인 소득, 기존 신뢰도, 복지, 가족을 위한 예측 가능한 시간을 보호합니다.",
+    },
+  },
+  7: {
+    en: {
+      guide: "Identify the opportunity, growth, identity, or energy that Option A may constrain.",
+      example: "Example: It may limit market exposure, decision authority, and time to build an independent platform.",
+    },
+    ko: {
+      guide: "Option A가 제한할 수 있는 기회, 성장, 정체성 또는 에너지를 적으세요.",
+      example: "예: 시장 노출, 의사결정 권한, 독립적인 플랫폼을 만들 시간이 제한될 수 있습니다.",
+    },
+  },
+  8: {
+    en: {
+      guide: "Describe Option B as a concrete path, including what would actually change.",
+      example: "Example: Start a small advisory service with 3 pilot clients before making a larger transition.",
+    },
+    ko: {
+      guide: "Option B를 실제로 무엇이 달라지는지 포함한 구체적인 경로로 설명하세요.",
+      example: "예: 더 큰 전환 전에 파일럿 고객 3명과 작은 자문 서비스를 시작합니다.",
+    },
+  },
+  9: {
+    en: {
+      guide: "Describe the specific opportunities, capabilities, or future options that Option B could create.",
+      example: "Example: It could create direct customer evidence, greater autonomy, and a second professional platform.",
+    },
+    ko: {
+      guide: "Option B가 만들 수 있는 구체적인 기회, 역량 또는 미래 선택지를 적으세요.",
+      example: "예: 실제 고객 근거, 더 큰 자율성, 두 번째 전문 플랫폼을 만들 수 있습니다.",
+    },
+  },
+  10: {
+    en: {
+      guide: "Name the downside Option B exposes if demand, execution, or timing does not work as expected.",
+      example: "Example: I could lose income and focus before proving repeatable demand or delivery capacity.",
+    },
+    ko: {
+      guide: "수요, 실행, 시기가 예상대로 작동하지 않을 때 Option B가 노출하는 하방 리스크를 적으세요.",
+      example: "예: 반복 가능한 수요와 실행 역량을 증명하기 전에 소득과 집중력을 잃을 수 있습니다.",
+    },
+  },
+  11: {
+    en: {
+      guide: "List observable market, industry, policy, or company changes affecting the decision.",
+      example: "Example: AI is changing advisory delivery, while buyers increasingly expect narrow expertise and measurable outcomes.",
+    },
+    ko: {
+      guide: "결정에 영향을 주는 관찰 가능한 시장, 산업, 정책 또는 회사 변화를 적으세요.",
+      example: "예: AI가 자문 서비스 방식을 바꾸고 있으며 고객은 더 좁은 전문성과 측정 가능한 결과를 요구합니다.",
+    },
+  },
+  12: {
+    en: {
+      guide: "Compare each option with the external direction. Separate observed signals from assumptions.",
+      example: "Example: Option B may fit specialist demand, but Option A has stronger evidence and access today.",
+    },
+    ko: {
+      guide: "각 선택지를 외부 환경의 방향과 비교하세요. 관찰한 신호와 가정을 구분하세요.",
+      example: "예: Option B는 전문 수요와 맞을 수 있지만 현재 근거와 접근성은 Option A가 더 강합니다.",
+    },
+  },
+  13: {
+    en: {
+      guide: "List what evidence currently supports your external reading.",
+      example: "Example: I have seen more demand for AI-enabled advisory work, but I have not yet tested paid demand directly.",
+    },
+    ko: {
+      guide: "현재의 외부 환경 해석을 뒷받침하는 근거를 적으세요.",
+      example: "예: AI 기반 자문 수요가 늘어나는 신호는 보았지만 유료 수요를 직접 테스트하지는 않았습니다.",
+    },
+  },
+  14: {
+    en: {
+      guide: "Name the external evidence still needed before deeper commitment.",
+      example: "Example: I still need paid pilots, pricing evidence, buyer feedback, and a repeatable acquisition channel.",
+    },
+    ko: {
+      guide: "더 깊이 실행하기 전에 필요한 External Validation을 구체적으로 적으세요.",
+      example: "예: 유료 파일럿, 가격 근거, 구매자 피드백, 반복 가능한 고객 확보 채널이 필요합니다.",
+    },
+  },
+  15: {
+    en: {
+      guide: "Describe which option better fits the work and identity you want over the long term, and why.",
+      example: "Example: Option B fits my long-term identity because it combines expertise, client impact, and ownership.",
+    },
+    ko: {
+      guide: "장기적으로 원하는 일과 정체성에 더 맞는 선택지와 그 이유를 적으세요.",
+      example: "예: Option B는 전문성, 고객 영향, 주도권을 결합하기 때문에 장기 정체성과 더 잘 맞습니다.",
+    },
+  },
+  16: {
+    en: {
+      guide: "Identify the routines, skills, role, relationships, or lifestyle that would need to change.",
+      example: "Example: Option B requires regular selling, delivery systems, stronger boundaries, and a new professional identity.",
+    },
+    ko: {
+      guide: "바뀌어야 할 일상, 역량, 역할, 관계 또는 생활 방식을 적으세요.",
+      example: "예: Option B에는 정기적인 영업, 실행 시스템, 더 명확한 경계, 새로운 전문 정체성이 필요합니다.",
+    },
+  },
+  17: {
+    en: {
+      guide: "List the capabilities, credentials, or proof points you do not yet have.",
+      example: "Example: I need paid case studies, clearer positioning, pricing evidence, and proof of repeatable delivery.",
+    },
+    ko: {
+      guide: "아직 부족한 역량, 자격 또는 검증 근거를 적으세요.",
+      example: "예: 유료 사례, 더 명확한 포지셔닝, 가격 근거, 반복 가능한 실행 증명이 필요합니다.",
+    },
+  },
+  18: {
+    en: {
+      guide: "Describe the emotional and cognitive load of each option separately.",
+      example: "Example: Option A creates stagnation pressure; Option B creates uncertainty, sales pressure, and execution load.",
+    },
+    ko: {
+      guide: "각 선택지가 만드는 감정적·인지적 부담을 구분해서 적으세요.",
+      example: "예: Option A는 정체 압력을 만들고 Option B는 불확실성, 영업 압력, 실행 부담을 만듭니다.",
+    },
+  },
+  19: {
+    en: {
+      guide: "Describe income stability, runway, or financial buffer in practical terms.",
+      example: "Example: I can keep stable income for 12 months, but I cannot absorb a long period with no revenue.",
+    },
+    ko: {
+      guide: "소득 안정성, 재정적 runway 또는 buffer를 현실적인 기간과 금액 관점에서 적으세요.",
+      example: "예: 12개월 동안 안정적인 소득을 유지할 수 있지만 수익이 없는 긴 기간은 감당하기 어렵습니다.",
+    },
+  },
+  20: {
+    en: {
+      guide: "Explain which option is easier to reverse and what recovery path remains available.",
+      example: "Example: Option A is more reversible because I can test demand while keeping income and professional access.",
+    },
+    ko: {
+      guide: "어느 선택지의 Reversibility가 더 높은지와 실패 시 남는 회복 경로를 적으세요.",
+      example: "예: Option A는 소득과 전문 네트워크를 유지하며 수요를 테스트할 수 있어 Reversibility가 더 높습니다.",
+    },
+  },
+  21: {
+    en: {
+      guide: "Name the downside that would be hardest to absorb and explain why.",
+      example: "Example: Leaving stable income before proving demand would be hardest because family obligations limit recovery time.",
+    },
+    ko: {
+      guide: "감당하기 가장 어려운 하방 리스크와 그 이유를 적으세요.",
+      example: "예: 가족 의무로 회복 시간이 제한되기 때문에 수요 검증 전 안정적 소득을 잃는 것이 가장 어렵습니다.",
+    },
+  },
+  22: {
+    en: {
+      guide: "Name the people or institutions that would support Option A and what support they can provide.",
+      example: "Example: My manager can reshape the role, and my family supports the income stability of Option A.",
+    },
+    ko: {
+      guide: "Option A를 지원할 사람이나 기관과 제공 가능한 지원을 적으세요.",
+      example: "예: 상사는 역할을 재설계할 수 있고 가족은 Option A의 소득 안정성을 지지합니다.",
+    },
+  },
+  23: {
+    en: {
+      guide: "Name the people or institutions that would support Option B and how committed that support is.",
+      example: "Example: Two potential clients will test a pilot, and an experienced advisor can review the offer monthly.",
+    },
+    ko: {
+      guide: "Option B를 지원할 사람이나 기관과 그 지원의 구체적인 수준을 적으세요.",
+      example: "예: 잠재 고객 2명이 파일럿을 테스트하고 경험 있는 자문가가 매월 제안을 검토할 수 있습니다.",
+    },
+  },
+  24: {
+    en: {
+      guide: "Identify the support that is still missing and the commitment you need from it.",
+      example: "Example: I still need a reliable referral partner, delivery backup, and a clear family operating agreement.",
+    },
+    ko: {
+      guide: "아직 부족한 지원과 그 지원에서 필요한 구체적인 약속을 적으세요.",
+      example: "예: 신뢰할 수 있는 소개 파트너, 실행 지원, 명확한 가족 운영 합의가 필요합니다.",
+    },
+  },
+  25: {
+    en: {
+      guide: "List the deadlines and constraints that materially change feasibility or timing.",
+      example: "Example: A contract renewal in June, family commitments, and a client budget cycle shape the next six months.",
+    },
+    ko: {
+      guide: "실행 가능성이나 시기를 실제로 바꾸는 마감과 제약을 적으세요.",
+      example: "예: 6월 계약 갱신, 가족 일정, 고객 예산 주기가 향후 6개월의 시기를 결정합니다.",
+    },
+  },
+  26: {
+    en: {
+      guide: "Identify which option loses access or feasibility if you wait, and why.",
+      example: "Example: Option B becomes harder if pilot clients allocate their budgets elsewhere before I test the offer.",
+    },
+    ko: {
+      guide: "기다릴 때 접근성이나 실행 가능성이 낮아지는 선택지와 그 이유를 적으세요.",
+      example: "예: 제안을 테스트하기 전에 파일럿 고객의 예산이 다른 곳에 배정되면 Option B가 더 어려워집니다.",
+    },
+  },
+  27: {
+    en: {
+      guide: "Describe what evidence, capacity, or resources could make an option safer while you wait.",
+      example: "Example: Option B becomes safer with paid pilots, stronger savings, and a repeatable delivery process.",
+    },
+    ko: {
+      guide: "기다리는 동안 어떤 근거, 실행 역량 또는 자원이 선택지를 더 안전하게 만드는지 적으세요.",
+      example: "예: 유료 파일럿, 더 충분한 저축, 반복 가능한 실행 프로세스가 있으면 Option B가 더 안전해집니다.",
+    },
+  },
+  28: {
+    en: {
+      guide: "State what would make Option B more defensible.",
+      example: "Example: Three paid customers, repeatable delivery, and clear time boundaries would make Option B more defensible.",
+    },
+    ko: {
+      guide: "Option B를 더 타당하게 만드는 Decision Conditions을 적으세요.",
+      example: "예: 유료 고객 3명, 반복 가능한 실행, 명확한 시간 경계가 있으면 Option B가 더 타당해집니다.",
+    },
+  },
+  29: {
+    en: {
+      guide: "State what would make Option A more defensible.",
+      example: "Example: A clearer internal role, stronger sponsorship, and reduced burnout would make Option A more defensible.",
+    },
+    ko: {
+      guide: "Option A를 더 타당하게 만드는 Decision Conditions을 적으세요.",
+      example: "예: 더 명확한 내부 역할, 강한 sponsorship, burnout 감소가 있으면 Option A가 더 타당해집니다.",
+    },
+  },
+};
+
 const totalFullIntakeQuestions = intakeGroups.reduce((total, group) => total + group.questions.length, 0);
 
 type QaPreset = {
@@ -4099,13 +4398,15 @@ export default function AmcWebMvp() {
               <div className="mt-4 h-2 rounded-full bg-secondary">
                 <div className="h-2 rounded-full bg-foreground/75" style={{ width: `${progress}%` }} />
               </div>
-              <button
-                type="button"
-                onClick={fillSampleAnswers}
-                className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground"
-              >
-                {t("Fill sample answers", "샘플 답변 입력")}
-              </button>
+              {isQaMode ? (
+                <button
+                  type="button"
+                  onClick={fillSampleAnswers}
+                  className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-muted-foreground"
+                >
+                  {t("Fill sample answers", "샘플 답변 입력")}
+                </button>
+              ) : null}
             </div>
 
             <div className="space-y-4">
@@ -4146,22 +4447,35 @@ export default function AmcWebMvp() {
                     {expanded ? (
                       <div className="border-t border-border bg-background/50 p-5">
                         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                          {group.questions.map((question) => (
-                            <label key={question.id} className="rounded-md border border-border bg-background p-4">
-                              <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                                {t("Question", "질문")} {question.id}
-                              </span>
-                              <span className="mt-2 block min-h-10 text-sm font-medium leading-snug">
-                                {isKo ? intakeQuestionsKo[question.id].text : question.text}
-                              </span>
-                              <textarea
-                                value={fullIntakeAnswers[question.id] || ""}
-                                onChange={(event) => updateFullIntakeAnswer(question.id, event.target.value)}
-                                placeholder={t("Add your structural evidence...", "결정에 영향을 주는 근거를 입력해 주세요.")}
-                                className="mt-3 h-24 w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
-                              />
-                            </label>
-                          ))}
+                          {group.questions.map((question) => {
+                            const guidance = isKo
+                              ? fullIntakeGuidance[question.id].ko
+                              : fullIntakeGuidance[question.id].en;
+
+                            return (
+                              <label key={question.id} className="rounded-md border border-border bg-background p-4">
+                                <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                  {t("Question", "질문")} {question.id}
+                                </span>
+                                <span className="mt-2 block min-h-10 text-sm font-medium leading-snug">
+                                  {isKo ? intakeQuestionsKo[question.id].text : question.text}
+                                </span>
+                                <span className="mt-3 block text-xs leading-relaxed text-muted-foreground">
+                                  <span className="font-medium text-foreground">{t("Guide", "가이드")}:</span>{" "}
+                                  {guidance.guide}
+                                </span>
+                                <span className="mt-2 block text-xs leading-relaxed text-muted-foreground">
+                                  {guidance.example}
+                                </span>
+                                <textarea
+                                  value={fullIntakeAnswers[question.id] || ""}
+                                  onChange={(event) => updateFullIntakeAnswer(question.id, event.target.value)}
+                                  placeholder={t("Write your answer here...", "답변을 입력해 주세요.")}
+                                  className="mt-4 h-24 w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+                                />
+                              </label>
+                            );
+                          })}
                         </div>
                       </div>
                     ) : null}
