@@ -4,6 +4,16 @@ This document records the production QA status of AMC Web MVP before controlled 
 
 This is not a marketing document. It is an internal launch-readiness record.
 
+## Latest Production Verification
+
+2026-08-09 production API verification completed after PR #66 redeploy.
+
+- Direct GET requests to `/api/amc/external-snapshot` and `/api/amc/report-qa` returned `405` JSON with `{"error":"Method not allowed."}`. Both route-availability checks passed.
+- The External Evidence API diagnostic returned `FALLBACK` with low confidence. This is acceptable for controlled QA while live external evidence is not configured or confirmed.
+- The Executive Q&A API diagnostic returned `FALLBACK` with `Local fallback`. This is acceptable for controlled QA while API-assisted OpenAI Q&A is not configured or confirmed.
+- The serverless function crash observed before PR #66 was not reproduced after redeploy.
+- No secrets were exposed in the visible production UI. Browser source, console, and network-response inspection remains separately pending in the checklist.
+
 ## Current Product Flow
 
 ```text
@@ -63,17 +73,18 @@ Real values must never be committed or displayed. Variables should be configured
 
 ## Production QA Checklist
 
-All statuses remain `PENDING` until the corresponding check has been executed against production and its result has been recorded.
+Statuses are updated only from confirmed production evidence. `FALLBACK` records an acceptable controlled-QA fallback; it does not verify live external evidence or API-assisted Q&A. Untested checks remain `PENDING`.
 
 | Area | Check | Status | Notes |
 | --- | --- | --- | --- |
 | Normal Route | `/amc-web-mvp` loads | PENDING | Verify on production. |
-| Normal Route | QA controls hidden | PENDING | Verify no internal QA controls appear. |
-| Normal Route | Production QA Diagnostics hidden | PENDING | Verify the diagnostics panel is not rendered. |
+| Normal Route | QA controls hidden | PASS | Confirmed on the normal production route. |
+| Normal Route | Production QA Diagnostics hidden | PASS | Confirmed on the normal production route. |
+| Normal Route | Developer note hidden | PASS | Confirmed on the normal production route. |
 | QA Route | `/amc-web-mvp?qa=1` loads | PENDING | Verify on production. |
-| QA Route | QA presets visible | PENDING | Verify internal preset controls appear. |
-| QA Route | QA validation visible | PENDING | Verify validation status appears as designed. |
-| QA Route | Production QA Diagnostics visible | PENDING | Verify the diagnostics panel is rendered. |
+| QA Route | QA presets visible | PASS | Confirmed on the internal production QA route. |
+| QA Route | QA validation visible | PASS | Confirmed on the internal production QA route. |
+| QA Route | Production QA Diagnostics visible | PASS | Confirmed on the internal production QA route. |
 | Core Flow | Landing page loads | PENDING | Verify normal production entry. |
 | Core Flow | EN/KR toggle works | PENDING | Verify language switching and state preservation. |
 | Core Flow | Free Preview works | PENDING | Complete the preview flow. |
@@ -85,10 +96,12 @@ All statuses remain `PENDING` until the corresponding check has been executed ag
 | Core Flow | Suggested Q&A works | PENDING | Run at least one suggested question. |
 | Core Flow | Custom Q&A works | PENDING | Run a report-grounded custom question. |
 | Core Flow | Clear chat works | PENDING | Clear the current conversation and verify reset. |
-| Diagnostics | External Evidence API diagnostic runs | PENDING | Run from the internal QA route. |
-| Diagnostics | External Evidence fallback/live status recorded | PENDING | Record the observed non-sensitive status. |
-| Diagnostics | Executive Q&A API diagnostic runs | PENDING | Run from the internal QA route. |
-| Diagnostics | Executive Q&A fallback/API-assisted status recorded | PENDING | Record the observed non-sensitive status. |
+| Diagnostics | External Evidence API route GET returns `405` JSON | PASS | Confirmed `{"error":"Method not allowed."}` after PR #66 redeploy. |
+| Diagnostics | Executive Q&A API route GET returns `405` JSON | PASS | Confirmed `{"error":"Method not allowed."}` after PR #66 redeploy. |
+| Diagnostics | External Evidence API diagnostic runs | PASS | Production diagnostic completed without a function crash. |
+| Diagnostics | External Evidence fallback/live status recorded | FALLBACK | `Fallback · low confidence`; acceptable for controlled QA. Live external evidence is not confirmed. |
+| Diagnostics | Executive Q&A API diagnostic runs | PASS | Production diagnostic completed without a function crash. |
+| Diagnostics | Executive Q&A fallback/API-assisted status recorded | FALLBACK | `Fallback · Local fallback`; acceptable for controlled QA. API-assisted Q&A is not confirmed. |
 | QA Presets | Entrepreneurship preset: `29 / 29`, `PASS` | PENDING | Confirm expected completion and validation result in production. |
 | QA Presets | MBA / EMBA / PhD Decision preset: `29 / 29`, `PASS` | PENDING | Confirm expected completion and validation result in production. |
 | QA Presets | Family Constraint-heavy Decision preset: `29 / 29`, `PASS` | PENDING | Confirm expected completion and validation result in production. |
@@ -96,7 +109,7 @@ All statuses remain `PENDING` until the corresponding check has been executed ag
 | Technical | 390px mobile layout works | PENDING | Verify the complete flow at 390px width. |
 | Technical | No horizontal overflow | PENDING | Check normal and QA routes. |
 | Technical | Console clean | PENDING | Record any warnings or errors. |
-| Technical | No secrets exposed in browser source, console, or network response | PENDING | Inspect without recording secret values. |
+| Technical | No secrets exposed in browser source, console, or network response | PENDING | Visible UI check passed on 2026-08-09; source, console, and network inspection still required. |
 
 ## Fallback Acceptance Rule
 
@@ -154,7 +167,7 @@ Hold if:
 - External Evidence may use fallback or mock output if Perplexity is not configured.
 - Executive Q&A may use local fallback if OpenAI is not configured.
 - The product is in controlled soft launch preparation, not full public launch.
-- Production QA still needs to be executed and recorded.
+- Full end-to-end production QA still needs to be executed and recorded.
 
 ## Next Launch Sequence
 
