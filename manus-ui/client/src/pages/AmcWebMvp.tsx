@@ -4756,35 +4756,6 @@ export default function AmcWebMvp() {
           </>
         ) : null}
 
-        {!dashboardGenerated ? (
-          <section className="border-b border-border py-12 sm:py-14">
-            <SectionHeader
-              eyebrow="Executive Report Q&A"
-              title="Executive Report Q&A"
-              body={t(
-                "Ask follow-up questions based on your generated AMC report.",
-                "생성된 AMC 리포트를 바탕으로 추가 질문을 정리할 수 있습니다.",
-              )}
-            />
-            <div className="rounded-lg border border-border bg-card p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                    {t("Executive feature preview", "Executive 기능 Preview")}
-                  </p>
-                  <h3 className="mt-2 text-lg font-semibold">
-                    {t(
-                      "Generate your Full Dashboard first to use report-based Q&A.",
-                      "리포트 기반 Q&A를 사용하려면 먼저 Full Dashboard를 생성해야 합니다.",
-                    )}
-                  </h3>
-                </div>
-                <Tag>{t("Waiting for report context", "Report context 대기 중")}</Tag>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
         {isQaMode ? (
           <section className="py-8">
             <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
