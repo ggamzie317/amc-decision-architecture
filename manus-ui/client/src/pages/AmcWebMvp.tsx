@@ -2416,7 +2416,24 @@ function isExternalSnapshot(value: unknown): value is ExternalSnapshot {
 function buildExecutiveQaResponse(question: string, context: ExecutiveQaContext) {
   const normalized = question.toLowerCase();
   const hasAny = (keywords: string[]) => keywords.some((keyword) => normalized.includes(keyword));
-  const category = hasAny(["over-interpret", "limitation", "caution", "what should i not", "과도", "한계", "주의", "해석하면 안"])
+  const category = hasAny([
+    "over-interpret",
+    "limitation",
+    "caution",
+    "what should i not",
+    "which option",
+    "tell me which",
+    "choose",
+    "recommend",
+    "pick",
+    "과도",
+    "한계",
+    "주의",
+    "해석하면 안",
+    "선택해",
+    "결정해",
+    "골라",
+  ])
     ? "boundary"
     : hasAny(["external", "evidence", "snapshot", "source", "market", "외부", "근거", "스냅샷", "시장", "소스"])
       ? "external"
@@ -2432,36 +2449,57 @@ function buildExecutiveQaResponse(question: string, context: ExecutiveQaContext)
   const isKo = context.language === "ko";
   const snapshot = context.externalSnapshot;
   const mode = externalSnapshotStatusLabel(snapshot);
+  const hasKoreanCopy = (value: string) => /[가-힣]/.test(value);
   const signalSummary = snapshot.externalSignals
     .slice(0, 2)
     .map((signal) => `${signal.label} (${externalDirectionLabel(signal.direction, isKo)})`)
     .join(", ");
-  const uncertainty = snapshot.uncertaintyNotes[0] || (isKo ? "추가 검증이 필요합니다." : "Further validation is required.");
-  const sourceSummary = snapshot.sourceNotes[0]?.sourceLabel || (isKo ? "출처 맥락 미확인" : "Source context unavailable");
+  const rawUncertainty = snapshot.uncertaintyNotes[0] || "";
+  const uncertainty = isKo
+    ? hasKoreanCopy(rawUncertainty)
+      ? rawUncertainty
+      : "현재 외부 근거 서비스의 응답을 확인하지 못했으므로 추가 검증이 필요합니다."
+    : rawUncertainty || "Further validation is required.";
+  const rawSourceSummary = snapshot.sourceNotes[0]?.sourceLabel || "";
+  const sourceSummary = isKo
+    ? hasKoreanCopy(rawSourceSummary)
+      ? rawSourceSummary
+      : rawSourceSummary
+        ? "AMC fallback 맥락"
+        : "출처 맥락 미확인"
+    : rawSourceSummary || "Source context unavailable";
+  const implication = isKo
+    ? hasKoreanCopy(snapshot.implication)
+      ? snapshot.implication
+      : "외부 근거가 충분하지 않은 경우, 이 Snapshot은 Decision Conditions를 보완하는 참고 맥락으로만 해석해야 합니다."
+    : snapshot.implication;
+  const confidence = isKo
+    ? { low: "낮음", medium: "보통", high: "높음" }[snapshot.confidence]
+    : confidenceLabel(snapshot.confidence);
 
   const structuralReading = isKo
     ? {
-        risk: `${context.caseType}에서는 선택 자체보다 ${context.primaryRisk}가 판단을 왜곡할 가능성을 먼저 봐야 합니다.`,
+        risk: `${context.caseType}에서 리포트가 식별한 주요 구조적 리스크는 다음과 같습니다: ${context.primaryRisk} 핵심은 이 리스크가 판단을 어떻게 왜곡할 수 있는지 확인하는 것입니다.`,
         condition: `${context.optionB}의 실행 여부는 매력도보다 Decision Conditions가 실제로 충족되는지에 달려 있습니다.`,
         validation: `${context.caseType}에서는 결정을 앞당기기보다 작은 검증으로 불확실성을 줄이는 순서가 중요합니다.`,
         external: `External Evidence Snapshot은 내부 선호와 외부 맥락을 분리해 결정 구조를 점검하는 레이어입니다.`,
         case: `현재 답변은 ${context.caseType}으로 분류되며, 이 분류는 핵심 리스크와 검증 순서를 정리하기 위한 프레임입니다.`,
-        boundary: `이 리포트는 결론을 대신 내리는 도구가 아니라, 근거와 불확실성의 경계를 보여주는 구조 해석입니다.`,
+        boundary: `아니요. AMC는 사용자를 대신해 Option A 또는 Option B를 선택하지 않습니다. 이 리포트는 결정의 구조, 리스크, 제약, Safety Margin, Decision Conditions를 정리합니다.`,
         general: `${context.caseType}의 핵심은 ${context.optionA}와 ${context.optionB} 중 하나를 즉시 고르는 것이 아니라, 선택의 조건을 검증하는 것입니다.`,
       }[category]
     : {
-        risk: `For ${context.caseType}, the first issue is how ${context.primaryRisk} could distort the decision—not which option looks more attractive.`,
+        risk: `For ${context.caseType}, the report identifies this primary structural risk: ${context.primaryRisk} The question is how that risk could distort the decision—not which option looks more attractive.`,
         condition: `Movement toward ${context.optionB} depends on whether the Decision Conditions are evidenced, not on appeal alone.`,
         validation: `For ${context.caseType}, sequencing small validation steps matters more than accelerating commitment.`,
         external: `The External Evidence Snapshot pressure-tests internal preference against outside context; it is separate from the user-provided facts.`,
         case: `The current answers are classified as ${context.caseType}; this is a frame for organizing risk and validation, not a fixed identity or verdict.`,
-        boundary: `This report is a structural interpretation that shows evidence and uncertainty boundaries; it does not decide the outcome.`,
+        boundary: `No. AMC does not choose Option A or Option B for the user. It organizes the decision structure, risks, constraints, Safety Margin, and Decision Conditions that should be validated before commitment.`,
         general: `The central issue in ${context.caseType} is not choosing immediately between ${context.optionA} and ${context.optionB}, but validating the conditions for commitment.`,
       }[category];
 
   const externalReading = isKo
-    ? `현재 Snapshot Mode는 ${mode}, Confidence는 ${confidenceLabel(snapshot.confidence)}입니다. 주요 신호는 ${signalSummary || "아직 제한적"}이며, Source Notes의 첫 맥락은 ${sourceSummary}입니다. ${snapshot.implication} 불확실성: ${uncertainty}`
-    : `Snapshot Mode is ${mode} with ${confidenceLabel(snapshot.confidence)} confidence. Leading signals: ${signalSummary || "limited"}. First source context: ${sourceSummary}. ${snapshot.implication} Uncertainty: ${uncertainty}`;
+    ? `현재 Snapshot Mode는 ${mode}, Confidence는 ${confidence}입니다. 주요 신호는 ${signalSummary || "아직 제한적"}이며, Source Notes의 첫 맥락은 ${sourceSummary}입니다. ${implication} 불확실성: ${uncertainty}`
+    : `Snapshot Mode is ${mode} with ${confidence} confidence. Leading signals: ${signalSummary || "limited"}. First source context: ${sourceSummary}. ${implication} Uncertainty: ${uncertainty}`;
 
   if (isKo) {
     return [
