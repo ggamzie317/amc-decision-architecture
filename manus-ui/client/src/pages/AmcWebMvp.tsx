@@ -2985,13 +2985,21 @@ export default function AmcWebMvp() {
             >
               {t("Back to Dashboard", "Dashboard로 돌아가기")}
             </button>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex h-10 items-center justify-center rounded-md bg-[#202326] px-4 text-sm font-medium text-white"
-            >
-              {t("Print / Save Report as PDF", "인쇄 / PDF로 저장")}
-            </button>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex h-10 items-center justify-center rounded-md bg-[#202326] px-4 text-sm font-medium text-white"
+              >
+                {t("Print / Save as PDF", "인쇄 / PDF로 저장")}
+              </button>
+              <p className="text-xs leading-relaxed text-black/55">
+                {t(
+                  'Use your browser print dialog and choose "Save as PDF."',
+                  '브라우저 인쇄 창에서 “PDF로 저장”을 선택하세요.',
+                )}
+              </p>
+            </div>
           </div>
         </div>
 
