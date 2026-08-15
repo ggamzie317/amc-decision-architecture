@@ -2973,6 +2973,27 @@ export default function AmcWebMvp() {
       ...baseClosingQuestions.slice(1),
     ];
     const reportConditions = isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en;
+    const structuralKeywords = [
+      { label: "Case Type", value: detectedCaseType },
+      {
+        label: "Core Tension",
+        value: t("Identity Pull vs Safety Margin", "장기 방향성과 단기 안정성"),
+      },
+      { label: "Primary Risk", value: caseReportBranch.primaryRisk.name },
+      {
+        label: "Safety Margin",
+        value: t(`Stronger in ${optionALabel}`, `${optionALabel}가 더 강함`),
+      },
+      {
+        label: "Decision Conditions",
+        value: t(`${reportConditions.length} conditions`, `${reportConditions.length}개 조건`),
+      },
+      {
+        label: "Validation Focus",
+        value: t("Evidence before commitment", "확정 전 근거 검증"),
+      },
+      { label: "External Evidence", value: displayedExternalStatus },
+    ];
 
     return (
       <div lang={isKo ? "ko" : "en"} className="pdf-report-shell min-h-screen bg-[#e9e9e7] text-[#202326]">
@@ -3011,16 +3032,19 @@ export default function AmcWebMvp() {
               <div className="flex items-center gap-4">
                 <span className="h-px w-10 bg-black/70" aria-hidden="true" />
                 <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-black/55">
-                  AMC - All of My Career
+                  AMC — All of My Career
                 </p>
               </div>
               <p className="mt-16 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/42">
                 {t("Private career decision architecture", "Private Career Decision Architecture")}
               </p>
-              <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-[-0.04em] sm:text-6xl">
-                Strategic Career Decision Report
+              <h1 className="mt-5 text-4xl font-semibold leading-[1.08] sm:text-6xl">
+                {t("Strategic Career Decision Report", "전략적 커리어 결정 리포트")}
               </h1>
-              <p className="mt-8 text-base font-medium tracking-[0.1em] text-black/58">Tip in. Decide. Value up.</p>
+              <p className="mt-8 text-base font-medium text-black/58">Tip in. Decide. Value up.</p>
+              <p className="mt-3 text-sm font-semibold text-black/72">
+                {t("AMC sees structure.", "AMC는 구조를 봅니다.")}
+              </p>
             </div>
             <div className="relative z-10 max-w-[64%]">
               <p className="border-l-2 border-black pl-4 text-sm font-semibold leading-6">
@@ -3033,7 +3057,7 @@ export default function AmcWebMvp() {
                 </div>
                 <div className="py-5 sm:pl-5">
                   <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">
-                    Decision type
+                    {t("Decision Type", "Decision Type")}
                   </dt>
                   <dd className="mt-2 font-medium">{t("Staged Reconfiguration", "단계적 전환 설계")}</dd>
                 </div>
@@ -3094,6 +3118,29 @@ export default function AmcWebMvp() {
                     </div>
                   ))}
                 </div>
+              </div>
+              <div className="pdf-structural-lens pdf-keep-together mt-9">
+                <div className="pdf-structural-lens-mark" aria-hidden="true">AMC</div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase text-white/55">Structural Lens</p>
+                  <h3 className="mt-3 text-xl font-semibold leading-6 text-white">
+                    {t("AMC sees structure.", "AMC는 구조를 봅니다.")}
+                  </h3>
+                  <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">
+                    {t(
+                      "This report does not choose for you. It highlights the structure behind your decision: the pressure, risks, constraints, safety margin, and conditions that should be validated before deeper commitment.",
+                      "이 리포트는 선택을 대신 내려주지 않습니다. 현재 결정 뒤에 있는 압력, 리스크, 제약, 안정성, 그리고 더 깊이 검증해야 할 조건을 구조적으로 보여줍니다.",
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="pdf-keyword-grid mt-5">
+                {structuralKeywords.map((keyword) => (
+                  <div key={keyword.label} className="pdf-keyword-chip pdf-keep-together">
+                    <p>{keyword.label}</p>
+                    <strong>{keyword.value}</strong>
+                  </div>
+                ))}
               </div>
             </section>
 
@@ -3343,6 +3390,20 @@ export default function AmcWebMvp() {
               <h2 className="pdf-section-heading mt-3">
                 {t("The safer path protects time; the growth path requires proof.", "Option A는 안정성을 보호하고, Option B는 더 강한 검증을 요구합니다.")}
               </h2>
+              <div className="pdf-highlight-box pdf-highlight-safety pdf-keep-together mt-7">
+                <p className="pdf-highlight-label">Safety Margin</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[0.72fr_1.28fr] sm:items-start">
+                  <p className="text-lg font-semibold leading-6">
+                    {t(`Stronger in ${optionALabel}`, `${optionALabel}가 더 강함`)}
+                  </p>
+                  <p className="text-sm leading-6 text-black/62">
+                    {t(
+                      "The current path protects runway and reversibility while the higher-upside path is tested against real evidence.",
+                      "현재 경로는 재정적 여유와 Reversibility를 보호하고, 더 큰 가능성이 있는 경로는 실제 근거를 통해 검증합니다.",
+                    )}
+                  </p>
+                </div>
+              </div>
               <div className="mt-7 grid grid-cols-1 gap-4 lg:grid-cols-3">
                 {(isKo
                   ? [
@@ -3386,6 +3447,13 @@ export default function AmcWebMvp() {
               <h2 className="pdf-section-heading mt-3">
                 {t("Risk sits in both action and inaction - but through different mechanisms.", "전환과 유지 모두 리스크가 있지만 작동 방식은 다릅니다.")}
               </h2>
+              <div className="pdf-highlight-box pdf-highlight-risk pdf-keep-together mt-7">
+                <p className="pdf-highlight-label">Primary Risk</p>
+                <p className="mt-3 text-xl font-semibold leading-6">{caseReportBranch.primaryRisk.name}</p>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-black/65">
+                  {isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en}
+                </p>
+              </div>
               <div className="pdf-risk-map mt-8">
                 {riskMapItems.map((risk, index) => (
                   <div key={risk.label} className="pdf-risk-card pdf-keep-together">
@@ -3425,7 +3493,7 @@ export default function AmcWebMvp() {
                   `${detectedCaseType}의 설명력을 높이는 세 가지 조건입니다.`,
                 )}
               </h2>
-              <div className="pdf-keep-together mt-7 border-t-2 border-black bg-[#f6f6f4] p-6">
+              <div className="pdf-highlight-box pdf-highlight-conditions pdf-keep-together mt-7">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
                   Case-Specific Decision Conditions
                 </p>
@@ -3445,6 +3513,18 @@ export default function AmcWebMvp() {
               <h2 className="pdf-section-heading mt-3">
                 {t("Sequence evidence before increasing commitment.", "결정을 앞당기기보다 근거를 순서대로 검증합니다.")}
               </h2>
+              <div className="pdf-highlight-box pdf-highlight-validation pdf-keep-together mt-7">
+                <p className="pdf-highlight-label">Validation Focus</p>
+                <p className="mt-3 text-lg font-semibold leading-6">
+                  {t("Convert the largest uncertainty into observable evidence.", "가장 큰 불확실성을 관찰 가능한 근거로 바꿉니다.")}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-black/62">
+                  {t(
+                    "Each stage should reduce uncertainty before time, money, identity, or family exposure increases.",
+                    "각 단계는 시간, 비용, 정체성, 가족 부담을 확대하기 전에 불확실성을 낮춰야 합니다.",
+                  )}
+                </p>
+              </div>
               <div className="pdf-timeline mt-10 grid grid-cols-1 lg:grid-cols-3">
                 {planItems.map((item, index) => (
                   <div key={item.period} className="pdf-timeline-step pdf-keep-together">
@@ -3498,8 +3578,17 @@ export default function AmcWebMvp() {
                   ))}
                 </ol>
               </div>
+              <div className="pdf-closing-reflection pdf-keep-together mt-10">
+                <p className="pdf-highlight-label text-white/55">Closing Reflection</p>
+                <p className="mt-3 text-xl font-semibold leading-7 text-white">
+                  {t(
+                    "A stronger decision is not the fastest decision. It is the decision whose conditions can be explained and tested.",
+                    "더 강한 결정은 가장 빠른 결정이 아닙니다. 조건을 설명하고 검증할 수 있는 결정입니다.",
+                  )}
+                </p>
+              </div>
               <div className="mt-14 flex items-end justify-between border-t border-black/20 pt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">
-                <span>AMC - All of My Career</span>
+                <span>AMC — All of My Career</span>
                 <span>{t("Private structural interpretation", "Private Structural Reading")}</span>
               </div>
             </section>
