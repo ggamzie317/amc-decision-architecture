@@ -389,10 +389,10 @@
 
 .pdf-section-heading {
   max-width: 46rem;
-  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  font-size: 2.35rem;
   font-weight: 650;
   line-height: 1.12;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 .pdf-report-view {
@@ -431,12 +431,12 @@
 
 .pdf-report-shell[lang="ko"] .pdf-section-heading {
   line-height: 1.25;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
 }
 
 .pdf-report-shell[lang="ko"] .pdf-executive-message {
   line-height: 1.18;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
 }
 
 .pdf-report-shell[lang="ko"] .pdf-snapshot-card,
@@ -452,14 +452,112 @@
 
 .pdf-executive-message {
   max-width: 48rem;
-  font-size: clamp(2rem, 4.3vw, 3.55rem);
+  font-size: 3.55rem;
   font-weight: 650;
   line-height: 1.02;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
 }
 
 .pdf-report-section {
+  position: relative;
   border-bottom: 1px solid rgba(32, 35, 38, 0.15);
+}
+
+.pdf-report-section::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4.5rem;
+  height: 3px;
+  background: #202326;
+  content: "";
+}
+
+.pdf-structural-lens {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+  border-left: 4px solid #9fb7ad;
+  background: #202326;
+  padding: 1.5rem;
+}
+
+.pdf-structural-lens-mark {
+  display: flex;
+  min-height: 5.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.pdf-keyword-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pdf-keyword-chip {
+  min-width: 0;
+  border: 1px solid rgba(32, 35, 38, 0.15);
+  border-top: 3px solid #202326;
+  background: #f6f6f4;
+  padding: 0.8rem;
+}
+
+.pdf-keyword-chip p,
+.pdf-highlight-label {
+  color: rgba(32, 35, 38, 0.48);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.pdf-keyword-chip strong {
+  display: block;
+  margin-top: 0.45rem;
+  overflow-wrap: anywhere;
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.pdf-highlight-box {
+  border: 1px solid rgba(32, 35, 38, 0.14);
+  border-left: 4px solid #202326;
+  padding: 1.25rem;
+}
+
+.pdf-highlight-risk {
+  border-left-color: #9b6f73;
+  background: #f3ecec;
+}
+
+.pdf-highlight-safety {
+  border-left-color: #6f8f82;
+  background: #eaf0ee;
+}
+
+.pdf-highlight-conditions {
+  border-top: 3px solid #887f58;
+  border-left-color: #887f58;
+  background: #f3f2ec;
+}
+
+.pdf-highlight-validation {
+  border-left-color: #6f7896;
+  background: #eef0f5;
+}
+
+.pdf-closing-reflection {
+  border-left: 4px solid #9fb7ad;
+  background: #202326;
+  padding: 1.5rem;
 }
 
 .pdf-snapshot-card {
@@ -597,6 +695,31 @@
   }
 }
 
+@media (max-width: 639px) {
+  .pdf-section-heading {
+    font-size: 1.55rem;
+    line-height: 1.25;
+  }
+
+  .pdf-executive-message {
+    font-size: 2rem;
+    line-height: 1.12;
+  }
+
+  .pdf-structural-lens {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-structural-lens-mark {
+    min-height: 2.75rem;
+    width: 4.5rem;
+  }
+
+  .pdf-keyword-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @page {
   size: A4;
   margin: 0;
@@ -647,6 +770,31 @@
 
   .pdf-report-section {
     padding: 14mm 15mm;
+  }
+
+  .pdf-structural-lens {
+    grid-template-columns: 22mm minmax(0, 1fr);
+    gap: 5mm;
+    padding: 6mm;
+  }
+
+  .pdf-structural-lens-mark {
+    min-height: 20mm;
+  }
+
+  .pdf-keyword-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2mm;
+  }
+
+  .pdf-keyword-chip {
+    padding: 3mm;
+  }
+
+  .pdf-highlight-box,
+  .pdf-closing-reflection {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .pdf-page-break {
