@@ -11,6 +11,7 @@ type VercelResponse = {
 };
 
 type Language = "en" | "kr";
+type RouteFallbackReason = "malformed_request" | "service_load_error";
 
 type ExternalSnapshotService = {
   parseWebExternalSnapshotRequest(raw: unknown): unknown | null;
@@ -21,7 +22,7 @@ type ExternalSnapshotService = {
 type LoadExternalSnapshotService = () => Promise<ExternalSnapshotService>;
 
 const loadExternalSnapshotService: LoadExternalSnapshotService = () =>
-  import("../../server/externalSnapshotService") as Promise<ExternalSnapshotService>;
+  import("../../server/externalSnapshotService.js") as Promise<ExternalSnapshotService>;
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   return handleExternalSnapshot(req, res);
@@ -49,6 +50,10 @@ export async function handleExternalSnapshot(
 
   const rawBody = typeof req.body === "string" ? safeJsonParse(req.body) : req.body;
   const language = requestLanguage(rawBody);
+  if (!isPotentialExternalSnapshotRequest(rawBody)) {
+    res.status(400).json(buildRouteFallbackSnapshot(language, "malformed_request"));
+    return;
+  }
 
   try {
     const { buildFallbackSnapshot, parseWebExternalSnapshotRequest, resolveWebExternalSnapshot } =
@@ -61,7 +66,7 @@ export async function handleExternalSnapshot(
 
     res.status(200).json(await resolveWebExternalSnapshot(request));
   } catch {
-    res.status(200).json(buildRouteFallbackSnapshot(language));
+    res.status(200).json(buildRouteFallbackSnapshot(language, "service_load_error"));
   }
 }
 
@@ -81,11 +86,36 @@ function requestLanguage(value: unknown): Language {
   return isRecord(value) && value.language === "kr" ? "kr" : "en";
 }
 
-function buildRouteFallbackSnapshot(language: Language) {
+function isPotentialExternalSnapshotRequest(value: unknown) {
+  if (!isRecord(value) || (value.language !== "en" && value.language !== "kr")) return false;
+
+  return (
+    isBoundedString(value.caseType, 120) &&
+    isBoundedString(value.optionA, 240) &&
+    isBoundedString(value.optionB, 240) &&
+    isBoundedString(value.currentDecision, 1200) &&
+    isOptionalBoundedString(value.externalPressure, 1200) &&
+    isOptionalBoundedString(value.validationNeed, 1200)
+  );
+}
+
+function isBoundedString(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim();
+  return normalized.length > 0 && normalized.length <= maxLength;
+}
+
+function isOptionalBoundedString(value: unknown, maxLength: number) {
+  return value === undefined || (typeof value === "string" && value.trim().length <= maxLength);
+}
+
+function buildRouteFallbackSnapshot(language: Language, reason: RouteFallbackReason) {
   const isKr = language === "kr";
+  const isMalformed = reason === "malformed_request";
   return {
     status: "fallback",
     confidence: "low",
+    reasonCode: reason,
     generatedAtLabel: isKr ? "Fallback · Live 검색 미적용" : "Fallback · Live search unavailable",
     externalSignals: [
       {
@@ -112,17 +142,25 @@ function buildRouteFallbackSnapshot(language: Language) {
     ],
     sourceNotes: [
       {
-        sourceLabel: "AMC fallback context",
-        note: isKr
-          ? "Live 외부 근거를 사용할 수 없어 안전한 fallback 맥락을 제공합니다."
-          : "Live external evidence is unavailable, so this response provides safe fallback context.",
+        sourceLabel: isMalformed ? "AMC request validation" : "AMC route fallback context",
+        note: isMalformed
+          ? isKr
+            ? "요청 맥락이 충분하지 않아 외부 근거를 생성하지 않았습니다."
+            : "The request context was incomplete, so external evidence was not generated."
+          : isKr
+            ? "외부 근거 서비스를 불러오지 못해 안전한 fallback 맥락을 제공합니다."
+            : "The external evidence service could not be loaded, so safe fallback context is in use.",
         evidenceType: "general",
       },
     ],
     uncertaintyNotes: [
-      isKr
-        ? "현재 외부 근거 서비스 상태를 확인할 수 없습니다."
-        : "The external evidence service could not be verified for this response.",
+      isMalformed
+        ? isKr
+          ? "요청에 필수 결정 맥락이 누락되었습니다."
+          : "Required decision context was missing from the request."
+        : isKr
+          ? "현재 외부 근거 서비스 모듈을 불러올 수 없습니다."
+          : "The external evidence service module could not be loaded for this response.",
     ],
     implication: isKr
       ? "외부 근거가 연결되기 전까지 이 Snapshot은 결정 조건을 보조하는 fallback으로 해석해야 합니다."

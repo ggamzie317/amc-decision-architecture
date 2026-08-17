@@ -2,6 +2,12 @@ export type WebExternalSnapshotStatus = "live" | "fallback";
 export type WebExternalSnapshotConfidence = "low" | "medium" | "high";
 export type WebExternalSignalDirection = "supportive" | "mixed" | "caution";
 export type WebExternalEvidenceType = "market" | "company" | "education" | "region" | "role" | "general";
+export type WebExternalSnapshotReasonCode =
+  | "live"
+  | "provider_not_configured"
+  | "provider_failure"
+  | "invalid_provider_response"
+  | "malformed_request";
 
 export interface WebExternalSnapshotRequest {
   caseType: string;
@@ -16,6 +22,7 @@ export interface WebExternalSnapshotRequest {
 export interface WebExternalSnapshot {
   status: WebExternalSnapshotStatus;
   confidence: WebExternalSnapshotConfidence;
+  reasonCode: WebExternalSnapshotReasonCode;
   generatedAtLabel: string;
   externalSignals: Array<{
     label: string;
@@ -172,6 +179,12 @@ export function buildFallbackSnapshot(
   reason: "missing_configuration" | "provider_unavailable" | "invalid_response" | "malformed_request",
 ): WebExternalSnapshot {
   const isKr = language === "kr";
+  const reasonCode: WebExternalSnapshotReasonCode = ({
+    missing_configuration: "provider_not_configured",
+    provider_unavailable: "provider_failure",
+    invalid_response: "invalid_provider_response",
+    malformed_request: "malformed_request",
+  } as const)[reason];
   const reasonNote = {
     missing_configuration: isKr
       ? "Live 외부 검색이 아직 설정되지 않았습니다."
@@ -190,6 +203,7 @@ export function buildFallbackSnapshot(
   return {
     status: "fallback",
     confidence: "low",
+    reasonCode,
     generatedAtLabel: isKr ? "Fallback · Live 검색 미적용" : "Fallback · Live search unavailable",
     externalSignals: [
       {
@@ -279,6 +293,7 @@ function normalizeLiveSnapshot(raw: unknown, language: "en" | "kr"): WebExternal
   return {
     status: "live",
     confidence,
+    reasonCode: "live",
     generatedAtLabel: `${language === "kr" ? "Live 검색" : "Live search"} · ${new Date().toISOString().slice(0, 10)}`,
     externalSignals,
     sourceNotes,
