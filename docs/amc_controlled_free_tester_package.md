@@ -76,7 +76,7 @@ Honest feedback, especially about anything confusing or difficult, is more valua
 8. External Evidence Snapshot과 표시된 상태를 확인합니다.
 9. Detailed PDF Report를 엽니다.
 10. 가능하면 Print / Save as PDF를 시도합니다.
-11. 리포트가 생성된 후 Executive Report Q&A에 질문해 봅니다.
+11. 놓치고 있을 수 있는 지점과 검토할 만한 대안 경로를 확인합니다.
 12. 아래 피드백 질문에 답해 결과를 전달합니다.
 
 테스터는 내부 테스트 경로를 사용하지 말고 공개 링크만 사용해 주세요. Guide / Example을 참고할 수 있지만 예시를 그대로 복사하지 마세요. 잘 다듬어진 긴 답변보다 짧아도 구체적인 답변이 좋습니다. AMC는 최종 조언이나 정답이 아니라 결정의 구조가 더 명확해지는지를 테스트합니다.
@@ -93,7 +93,7 @@ Honest feedback, especially about anything confusing or difficult, is more valua
 8. Review the External Evidence Snapshot and its displayed status.
 9. Open the Detailed PDF Report.
 10. Try Print / Save as PDF if possible.
-11. After the report appears, try Executive Report Q&A.
+11. Review What You May Be Missing and Alternative Path Worth Testing.
 12. Send feedback using the questions below.
 
 Use only the public product link, not an internal testing route. Guide / Example content can help you understand a question, but do not copy it too closely. Short, concrete answers are better than polished answers. AMC is testing structural clarity, not providing final advice.
@@ -111,13 +111,13 @@ Use only the public product link, not an internal testing route. Guide / Example
 9. External Evidence Snapshot은 도움이 되었나요, 아니면 혼란스러웠나요?
 10. Detailed PDF Report는 충분히 리포트답고 신뢰감이 있었나요?
 11. Print / Save as PDF 흐름은 이해되었나요?
-12. Executive Report Q&A는 리포트 해석 도구처럼 느껴졌나요?
-13. AMC가 선택을 대신해주지 않는다는 점이 명확했나요?
-14. 가장 가치 있었던 부분은 무엇인가요?
-15. 가장 혼란스러웠던 부분은 무엇인가요?
-16. 어느 단계에서 이탈하고 싶었나요?
-17. 유료라면 사용할 의향이 있나요?
-18. 있다면 Essential과 Executive 중 어느 쪽이 더 맞아 보이나요?
+12. 놓치고 있을 수 있는 지점은 본인의 질문을 다르게 보게 만들었나요?
+13. 검토할 만한 대안 경로는 현실적이고 검증 가능한 경로처럼 느껴졌나요?
+14. AMC가 선택을 대신해주지 않는다는 점이 명확했나요?
+15. 가장 가치 있었던 부분은 무엇인가요?
+16. 가장 혼란스러웠던 부분은 무엇인가요?
+17. 어느 단계에서 이탈하고 싶었나요?
+18. 유료라면 사용할 의향이 있나요?
 19. 적정 가격대는 어느 정도로 느껴지나요?
 20. 더 넓게 공개하기 전에 꼭 개선해야 할 한 가지는 무엇인가요?
 21. 전체 점수는 10점 만점에 몇 점인가요?
@@ -135,13 +135,13 @@ Use only the public product link, not an internal testing route. Guide / Example
 9. Was the External Evidence Snapshot helpful or confusing?
 10. Did the Detailed PDF Report feel like a credible, substantial report?
 11. Was the Print / Save as PDF flow understandable?
-12. Did Executive Report Q&A feel like a tool for interpreting the report?
-13. Was it clear that AMC does not make the choice for you?
-14. What was the most valuable part?
-15. What was the most confusing part?
-16. At which stage, if any, did you want to stop?
-17. Would you consider using AMC if it were paid?
-18. If yes, which option seems more suitable: Essential or Executive?
+12. Did What You May Be Missing help you see the stated question differently?
+13. Did Alternative Path Worth Testing feel realistic and useful for validation?
+14. Was it clear that AMC does not make the choice for you?
+15. What was the most valuable part?
+16. What was the most confusing part?
+17. At which stage, if any, did you want to stop?
+18. Would you consider using AMC if it were paid?
 19. What price range would feel appropriate?
 20. What is the one thing that must improve before a wider release?
 21. What overall score would you give AMC out of 10?
@@ -156,11 +156,11 @@ Use only the public product link, not an internal testing route. Guide / Example
 - [ ] Tester generated Full Dashboard.
 - [ ] Tester opened Detailed PDF Report.
 - [ ] Tester tried Print / Save as PDF.
-- [ ] Tester tried Executive Report Q&A.
+- [ ] Tester reviewed What You May Be Missing.
+- [ ] Tester reviewed Alternative Path Worth Testing.
 - [ ] Tester found Guide / Example useful.
 - [ ] Tester found the 29-question burden acceptable.
 - [ ] Tester found the report credible.
-- [ ] Tester found Q&A useful.
 - [ ] Tester understood AMC does not choose for them.
 - [ ] Tester showed willingness to pay later.
 - [ ] Tester suggested one clear improvement.
@@ -182,7 +182,7 @@ Use only the public product link, not an internal testing route. Guide / Example
 
 - Users cannot complete the 29 questions.
 - The report is not seen as valuable.
-- Executive Report Q&A causes confusion.
+- Missing Point or Alternative Path content causes material confusion.
 - Payment simulation wording causes too much confusion.
 - The mobile flow fails.
 - English or Korean language feels awkward enough to interfere with testing.

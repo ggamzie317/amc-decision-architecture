@@ -100,8 +100,8 @@ type EmailHandoff = {
     bodyText: string;
   };
   followUp: {
-    reportLinkedWindowDays: 0 | 7;
-    mode: "none" | "bounded_report_linked_chat";
+    reportLinkedWindowDays: 0;
+    mode: "none";
   };
 };
 
@@ -245,9 +245,8 @@ function toLanguageGreeting(name: string): string {
 }
 
 function toEmailSubject(tier: "essential" | "executive"): string {
-  return tier === "executive"
-    ? "[AMC] Your structural report and Executive follow-up details"
-    : "[AMC] Your AMC structural report is ready";
+  void tier;
+  return "[AMC] Your AMC Full Structural Report is ready";
 }
 
 function buildBodyText(tier: "essential" | "executive", recipientName: string): string {
@@ -256,17 +255,11 @@ function buildBodyText(tier: "essential" | "executive", recipientName: string): 
     greeting,
     "",
     "Your AMC report is now prepared.",
-    `Selected format: ${tier === "executive" ? "Executive" : "Essential"}`,
+    "Report: AMC Full Structural Report",
     "",
     "Your report is attached to this email.",
   ];
-  if (tier === "executive") {
-    lines.push(
-      "",
-      "Executive follow-up details are included with this delivery.",
-      "Executive follow-up is bounded and report-linked.",
-    );
-  }
+  void tier;
   lines.push("", "Thank you,", "AMC");
   return lines.join("\n");
 }
@@ -348,12 +341,10 @@ function buildReceiptBodyText(tier: "essential" | "executive", recipientName: st
     greeting,
     "",
     "Your AMC case has been received.",
-    `Selected format: ${tier === "executive" ? "Executive" : "Essential"}`,
+    "Report: AMC Full Structural Report",
     "Your report will be delivered by email within 3 hours.",
   ];
-  if (tier === "executive") {
-    lines.push("Executive follow-up details will arrive with delivery.");
-  }
+  void tier;
   lines.push("", "Thank you,", "AMC");
   return lines.join("\n");
 }
@@ -411,8 +402,8 @@ function buildEmailHandoff(
       bodyText: buildBodyText(handoff.tier, handoff.recipient.fullName),
     },
     followUp: {
-      reportLinkedWindowDays: handoff.tier === "executive" ? 7 : 0,
-      mode: handoff.tier === "executive" ? "bounded_report_linked_chat" : "none",
+      reportLinkedWindowDays: 0,
+      mode: "none",
     },
   };
 }

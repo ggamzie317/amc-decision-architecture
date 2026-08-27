@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 
-type Tier = "essential" | "executive";
 type Language = "en" | "ko";
 type CaseType =
   | "Corporate Stay vs Exit"
@@ -30,28 +29,6 @@ type ExternalSnapshot = {
   }>;
   uncertaintyNotes: string[];
   implication: string;
-};
-type ExecutiveQaMessage = {
-  id: number;
-  role: "user" | "amc";
-  text: string;
-  responseMode?: "api" | "local";
-};
-type ExecutiveQaContext = {
-  language: Language;
-  caseType: CaseType;
-  optionA: string;
-  optionB: string;
-  primaryRisk: string;
-  decisionConditions: string;
-  validationFocus: string;
-  externalSnapshot: ExternalSnapshot;
-};
-type ReportQaApiResponse = {
-  status: "live" | "fallback";
-  answer: string;
-  modelLabel: string;
-  boundaryNote: string;
 };
 type QaDiagnosticStatus = "idle" | "testing" | "success" | "fallback" | "failed";
 type QaDiagnosticResult = {
@@ -194,23 +171,19 @@ const lockedModules = [
     title: "Detailed PDF Report",
     reveals: "Deeper written interpretation and richer analysis for later review.",
   },
-  {
-    title: "1-Day Report Q&A",
-    reveals: "Ask report-based questions for one day after receiving the report.",
-  },
 ] as const;
 
 const detailedPdfSections = [
-  "Executive Summary",
-  "Situation and Decision Context",
-  "Option A / Option B Detailed Reading",
-  "External Comparative Analysis",
-  "Internal Readiness Analysis",
+  "Executive Structural Overview",
+  "What You May Be Missing",
+  "Inside View",
+  "Outside / Live External Evidence",
+  "Option A / Option B Structural Comparison",
+  "Alternative Path Worth Testing",
   "Safety Margin and Reversibility",
-  "Structural Risk Diagnosis",
+  "Primary Risks and Trade-offs",
   "Decision Conditions",
   "30 / 60 / 90-day Validation Plan",
-  "Reflection Questions",
 ] as const;
 
 const intakeGroups = [
@@ -1194,6 +1167,141 @@ const caseSpecificReadings: Record<
 };
 
 type LocalizedReportText = { en: string; ko: string };
+type LaunchInterpretation = {
+  missingPoint: LocalizedReportText;
+  whyItMatters: LocalizedReportText;
+  alternativePath: LocalizedReportText;
+};
+
+const launchInterpretations: Record<CaseType, LaunchInterpretation> = {
+  "Corporate Stay vs Exit": {
+    missingPoint: {
+      en: "Market portability may matter more than the timing of resignation.",
+      ko: "퇴사 시점보다 현재 커리어 자산이 외부 시장에서도 통하는지가 더 중요할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "If your experience is not yet portable, leaving changes exposure without resolving the underlying mobility question.",
+      ko: "현재 경험의 시장 이동성이 충분하지 않다면, 퇴사는 노출만 키울 뿐 근본적인 이동 가능성 문제를 해결하지 못합니다.",
+    },
+    alternativePath: {
+      en: "Stay for a defined period while testing role redesign and external market portability through targeted conversations or applications.",
+      ko: "기간을 정해 현재 역할의 재설계 가능성을 확인하면서, 외부 인터뷰나 지원을 통해 시장 이동성을 함께 검증합니다.",
+    },
+  },
+  "MBA / EMBA / PhD Decision": {
+    missingPoint: {
+      en: "The access or positioning gap may matter more than the degree itself.",
+      ko: "학위 자체보다 지금 부족한 접근 기회나 포지셔닝이 무엇인지가 더 중요할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "A degree is defensible only when it closes a specific network, credibility, research, or mobility gap more effectively than other paths.",
+      ko: "학위는 네트워크, 신뢰도, 연구 기회, 이동성의 구체적인 격차를 다른 경로보다 효과적으로 줄일 때 의미가 커집니다.",
+    },
+    alternativePath: {
+      en: "Test a narrower credential, research collaboration, or network-building path before committing to the full degree burden.",
+      ko: "전체 학위 과정에 몰입하기 전에 더 좁은 자격 과정, 연구 협업, 네트워크 경로를 먼저 시험합니다.",
+    },
+  },
+  "Overseas Relocation": {
+    missingPoint: {
+      en: "Role quality and sponsorship may matter more than choosing the geography first.",
+      ko: "지역을 먼저 정하는 것보다 역할의 질과 비자·조직 지원 가능성이 더 중요할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "A preferred location does not create career value unless the role, visa path, family fit, and financial structure work together.",
+      ko: "선호 지역이라도 역할, 비자 경로, 가족 적합성, 재정 구조가 함께 작동하지 않으면 커리어 가치를 만들기 어렵습니다.",
+    },
+    alternativePath: {
+      en: "Run a role-first search across a small set of feasible locations before making a geography commitment.",
+      ko: "지역을 확정하기 전에 실행 가능한 몇 개 지역을 대상으로 역할 중심의 탐색을 먼저 진행합니다.",
+    },
+  },
+  Entrepreneurship: {
+    missingPoint: {
+      en: "Paying demand and repeatable delivery may matter more than founder motivation.",
+      ko: "창업 의지보다 실제 지불 수요와 반복 가능한 제공 방식이 더 중요할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "Motivation can support exploration, but it cannot substitute for evidence that customers will pay and delivery can be repeated.",
+      ko: "의지는 탐색을 시작하게 하지만, 고객의 지불 의사와 반복 가능한 실행 근거를 대신할 수는 없습니다.",
+    },
+    alternativePath: {
+      en: "Keep the current income base while running a bounded paid pilot with a narrow customer and outcome definition.",
+      ko: "현재 소득 기반을 유지하면서 고객과 결과 범위를 좁힌 유료 파일럿을 제한적으로 실행합니다.",
+    },
+  },
+  "Industry Transition": {
+    missingPoint: {
+      en: "Translation of existing career capital may matter more than enthusiasm for the new industry.",
+      ko: "새 산업에 대한 관심보다 기존 커리어 자산을 새 시장의 언어로 전환할 수 있는지가 더 중요할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "The transition becomes credible when the new industry recognizes prior experience as relevant proof, not merely adjacent history.",
+      ko: "새 산업이 기존 경험을 단순한 과거 이력이 아니라 관련성 있는 근거로 인정할 때 전환의 설명력이 생깁니다.",
+    },
+    alternativePath: {
+      en: "Test a bridge project, secondment, advisory engagement, or role-adjacent move that makes prior value legible to the new industry.",
+      ko: "기존 가치를 새 산업에서 확인할 수 있는 브리지 프로젝트, 자문, 파견, 인접 역할을 먼저 시험합니다.",
+    },
+  },
+  "Role Upgrade / Downgrade": {
+    missingPoint: {
+      en: "Decision authority and capability growth may matter more than title direction.",
+      ko: "직급의 상승·하락보다 의사결정 권한과 역량 확장이 더 중요할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "A title change can look attractive while leaving scope, learning, sponsorship, and future mobility unchanged.",
+      ko: "직급이 바뀌어도 업무 범위, 학습, 스폰서십, 향후 이동성이 그대로라면 장기 커리어 가치는 달라지지 않을 수 있습니다.",
+    },
+    alternativePath: {
+      en: "Negotiate or pilot the target scope and authority before treating the formal title change as the decision itself.",
+      ko: "직급 변경 자체를 결정으로 보기 전에 목표 역할의 범위와 권한을 협상하거나 시험합니다.",
+    },
+  },
+  "Burnout-driven Decision": {
+    missingPoint: {
+      en: "Recovery need may be a separate problem from career direction.",
+      ko: "회복이 필요한 문제와 커리어 방향의 문제는 서로 분리해서 봐야 할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "A depleted state can make any alternative feel structurally stronger than it is, while hiding whether readiness and market evidence are sufficient.",
+      ko: "에너지가 고갈된 상태에서는 대안이 실제보다 더 좋아 보일 수 있고, 준비도와 시장 근거의 부족을 놓칠 수 있습니다.",
+    },
+    alternativePath: {
+      en: "Create a bounded recovery period while testing one low-load career experiment before making an irreversible transition.",
+      ko: "되돌리기 어려운 전환 전에 회복 기간을 정하고, 부담이 낮은 커리어 실험 한 가지를 함께 진행합니다.",
+    },
+  },
+  "Family Constraint-heavy Decision": {
+    missingPoint: {
+      en: "Operating fit with family reality may matter more than the career upside of either option.",
+      ko: "두 선택지의 커리어 기회보다 가족의 실제 생활 조건 안에서 작동 가능한지가 더 중요할 수 있습니다.",
+    },
+    whyItMatters: {
+      en: "A professionally attractive path is not structurally sustainable when location, care, timing, support, or finances remain unresolved.",
+      ko: "지역, 돌봄, 시기, 지원, 재정 조건이 해결되지 않으면 커리어 측면에서 매력적인 경로도 지속 가능하기 어렵습니다.",
+    },
+    alternativePath: {
+      en: "Test a staged, family-compatible version of the preferred path before committing to its full location, timing, or income consequences.",
+      ko: "지역, 시기, 소득 변화 전체를 확정하기 전에 가족 조건과 양립 가능한 단계적 경로를 먼저 시험합니다.",
+    },
+  },
+  "General Career Reconfiguration": {
+    missingPoint: {
+      en: "The decision may still be too broad; the highest-impact uncertainty needs to be named before comparing paths.",
+      ko: "현재 결정의 범위가 아직 넓을 수 있으므로, 경로를 비교하기 전에 가장 영향이 큰 불확실성을 먼저 특정해야 합니다.",
+    },
+    whyItMatters: {
+      en: "A broad A-versus-B frame can combine several different problems and make evidence difficult to interpret.",
+      ko: "넓은 A 대 B 구도는 서로 다른 문제를 한데 묶어 근거를 해석하기 어렵게 만들 수 있습니다.",
+    },
+    alternativePath: {
+      en: "Do not invent a third option yet. Narrow the decision and test one reversible assumption before expanding the path set.",
+      ko: "아직 세 번째 선택지를 만들지 않습니다. 결정 범위를 좁히고 되돌릴 수 있는 가정 한 가지를 먼저 검증합니다.",
+    },
+  },
+};
+
 type CaseReportBranch = {
   executiveSummary: LocalizedReportText;
   primaryRisk: {
@@ -2413,162 +2521,6 @@ function isExternalSnapshot(value: unknown): value is ExternalSnapshot {
   );
 }
 
-function buildExecutiveQaResponse(question: string, context: ExecutiveQaContext) {
-  const normalized = question.toLowerCase();
-  const hasAny = (keywords: string[]) => keywords.some((keyword) => normalized.includes(keyword));
-  const category = hasAny([
-    "over-interpret",
-    "limitation",
-    "caution",
-    "what should i not",
-    "which option",
-    "tell me which",
-    "choose",
-    "recommend",
-    "pick",
-    "과도",
-    "한계",
-    "주의",
-    "해석하면 안",
-    "선택해",
-    "결정해",
-    "골라",
-  ])
-    ? "boundary"
-    : hasAny(["external", "evidence", "snapshot", "source", "market", "외부", "근거", "스냅샷", "시장", "소스"])
-      ? "external"
-      : hasAny(["case type", "classified", "classification", "분류", "케이스"])
-        ? "case"
-        : hasAny(["validate", "validation", "30 days", "next 30", "검증", "30일", "확인"])
-          ? "validation"
-          : hasAny(["risk", "main risk", "downside", "리스크", "위험", "가장 큰"])
-            ? "risk"
-            : hasAny(["condition", "defensible", "decide", "commitment", "조건", "방어 가능", "결정", "실행"])
-              ? "condition"
-              : "general";
-  const isKo = context.language === "ko";
-  const snapshot = context.externalSnapshot;
-  const mode = externalSnapshotStatusLabel(snapshot);
-  const hasKoreanCopy = (value: string) => /[가-힣]/.test(value);
-  const signalSummary = snapshot.externalSignals
-    .slice(0, 2)
-    .map((signal) => `${signal.label} (${externalDirectionLabel(signal.direction, isKo)})`)
-    .join(", ");
-  const rawUncertainty = snapshot.uncertaintyNotes[0] || "";
-  const uncertainty = isKo
-    ? hasKoreanCopy(rawUncertainty)
-      ? rawUncertainty
-      : "현재 외부 근거 서비스의 응답을 확인하지 못했으므로 추가 검증이 필요합니다."
-    : rawUncertainty || "Further validation is required.";
-  const rawSourceSummary = snapshot.sourceNotes[0]?.sourceLabel || "";
-  const sourceSummary = isKo
-    ? hasKoreanCopy(rawSourceSummary)
-      ? rawSourceSummary
-      : rawSourceSummary
-        ? "AMC fallback 맥락"
-        : "출처 맥락 미확인"
-    : rawSourceSummary || "Source context unavailable";
-  const implication = isKo
-    ? hasKoreanCopy(snapshot.implication)
-      ? snapshot.implication
-      : "외부 근거가 충분하지 않은 경우, 이 Snapshot은 Decision Conditions를 보완하는 참고 맥락으로만 해석해야 합니다."
-    : snapshot.implication;
-  const confidence = isKo
-    ? { low: "낮음", medium: "보통", high: "높음" }[snapshot.confidence]
-    : confidenceLabel(snapshot.confidence);
-
-  const structuralReading = isKo
-    ? {
-        risk: `${context.caseType}에서 리포트가 식별한 주요 구조적 리스크는 다음과 같습니다: ${context.primaryRisk} 핵심은 이 리스크가 판단을 어떻게 왜곡할 수 있는지 확인하는 것입니다.`,
-        condition: `${context.optionB}의 실행 여부는 매력도보다 Decision Conditions가 실제로 충족되는지에 달려 있습니다.`,
-        validation: `${context.caseType}에서는 결정을 앞당기기보다 작은 검증으로 불확실성을 줄이는 순서가 중요합니다.`,
-        external: `External Evidence Snapshot은 내부 선호와 외부 맥락을 분리해 결정 구조를 점검하는 레이어입니다.`,
-        case: `현재 답변은 ${context.caseType}으로 분류되며, 이 분류는 핵심 리스크와 검증 순서를 정리하기 위한 프레임입니다.`,
-        boundary: `아니요. AMC는 사용자를 대신해 Option A 또는 Option B를 선택하지 않습니다. 이 리포트는 결정의 구조, 리스크, 제약, Safety Margin, Decision Conditions를 정리합니다.`,
-        general: `${context.caseType}의 핵심은 ${context.optionA}와 ${context.optionB} 중 하나를 즉시 고르는 것이 아니라, 선택의 조건을 검증하는 것입니다.`,
-      }[category]
-    : {
-        risk: `For ${context.caseType}, the report identifies this primary structural risk: ${context.primaryRisk} The question is how that risk could distort the decision—not which option looks more attractive.`,
-        condition: `Movement toward ${context.optionB} depends on whether the Decision Conditions are evidenced, not on appeal alone.`,
-        validation: `For ${context.caseType}, sequencing small validation steps matters more than accelerating commitment.`,
-        external: `The External Evidence Snapshot pressure-tests internal preference against outside context; it is separate from the user-provided facts.`,
-        case: `The current answers are classified as ${context.caseType}; this is a frame for organizing risk and validation, not a fixed identity or verdict.`,
-        boundary: `No. AMC does not choose Option A or Option B for the user. It organizes the decision structure, risks, constraints, Safety Margin, and Decision Conditions that should be validated before commitment.`,
-        general: `The central issue in ${context.caseType} is not choosing immediately between ${context.optionA} and ${context.optionB}, but validating the conditions for commitment.`,
-      }[category];
-
-  const externalReading = isKo
-    ? `현재 Snapshot Mode는 ${mode}, Confidence는 ${confidence}입니다. 주요 신호는 ${signalSummary || "아직 제한적"}이며, Source Notes의 첫 맥락은 ${sourceSummary}입니다. ${implication} 불확실성: ${uncertainty}`
-    : `Snapshot Mode is ${mode} with ${confidence} confidence. Leading signals: ${signalSummary || "limited"}. First source context: ${sourceSummary}. ${implication} Uncertainty: ${uncertainty}`;
-
-  if (isKo) {
-    return [
-      "AMC 리포트 기준으로 보면, 이 결정의 구조는 다음과 같습니다.",
-      `1. 구조 해석\n${structuralReading}`,
-      `2. 주요 리스크\n${context.primaryRisk}`,
-      `3. 결정 조건\n${context.decisionConditions}`,
-      `4. 외부 근거 해석\n${externalReading}`,
-      `5. 다음 검증 단계\n${context.validationFocus}`,
-      "6. 해석 시 주의할 점\n이 답변은 생성된 AMC 리포트 맥락만 정리합니다. Option A 또는 Option B를 대신 선택하지 않으며, 새로운 live 검색이나 법률·금융·이민·의료·세무·투자 자문을 제공하지 않습니다.",
-    ].join("\n\n");
-  }
-
-  return [
-    "Based on your AMC report, the structure suggests:",
-    `1. Structural reading\n${structuralReading}`,
-    `2. Main risk\n${context.primaryRisk}`,
-    `3. Decision condition\n${context.decisionConditions}`,
-    `4. External evidence reading\n${externalReading}`,
-    `5. Next validation step\n${context.validationFocus}`,
-    "6. Boundary / caution\nThis answer only organizes the generated AMC report context. It does not choose Option A or Option B, perform a new live search, or provide legal, financial, immigration, medical, tax, or investment advice.",
-  ].join("\n\n");
-}
-
-function buildReportQaContext({
-  caseType,
-  optionA,
-  optionB,
-  primaryRisk,
-  decisionConditions,
-  validationFocus,
-  externalEvidenceSnapshot,
-  dashboardSummary,
-  premiumReportSummary,
-}: {
-  caseType: CaseType;
-  optionA: string;
-  optionB: string;
-  primaryRisk: string;
-  decisionConditions: string[];
-  validationFocus: string[];
-  externalEvidenceSnapshot: ExternalSnapshot;
-  dashboardSummary: string;
-  premiumReportSummary: string;
-}) {
-  return {
-    caseType,
-    optionA,
-    optionB,
-    primaryRisk,
-    decisionConditions,
-    validationFocus,
-    externalEvidenceSnapshot,
-    dashboardSummary,
-    premiumReportSummary,
-  };
-}
-
-function isReportQaApiResponse(value: unknown): value is ReportQaApiResponse {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const response = value as Partial<ReportQaApiResponse>;
-  return (
-    (response.status === "live" || response.status === "fallback") &&
-    typeof response.answer === "string" &&
-    typeof response.modelLabel === "string" &&
-    typeof response.boundaryNote === "string"
-  );
-}
-
 function qaDiagnosticStatusLabel(status: QaDiagnosticStatus, isKo: boolean) {
   if (status === "testing") return isKo ? "Testing · 확인 중" : "Testing";
   if (status === "success") return "Success";
@@ -2590,7 +2542,7 @@ export default function AmcWebMvp() {
   const [language, setLanguage] = useState<Language>("en");
   const [previewStarted, setPreviewStarted] = useState(false);
   const [previewGenerated, setPreviewGenerated] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
+  const [fullIntakeUnlocked, setFullIntakeUnlocked] = useState(false);
   const [dashboardGenerated, setDashboardGenerated] = useState(false);
   const [showPdfReportView, setShowPdfReportView] = useState(false);
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
@@ -2599,14 +2551,8 @@ export default function AmcWebMvp() {
   const [externalSnapshot, setExternalSnapshot] = useState<ExternalSnapshot | null>(null);
   const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
   const [externalSnapshotError, setExternalSnapshotError] = useState<string | null>(null);
-  const [executiveQaDraft, setExecutiveQaDraft] = useState("");
-  const [executiveQaMessages, setExecutiveQaMessages] = useState<ExecutiveQaMessage[]>([]);
-  const [executiveQaLoading, setExecutiveQaLoading] = useState(false);
   const [externalApiDiagnostic, setExternalApiDiagnostic] = useState<QaDiagnosticResult>(initialQaDiagnosticResult);
-  const [reportQaDiagnostic, setReportQaDiagnostic] = useState<QaDiagnosticResult>(initialQaDiagnosticResult);
   const externalSnapshotRequestId = useRef(0);
-  const executiveQaMessageId = useRef(0);
-  const executiveQaRequestId = useRef(0);
 
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
@@ -2640,6 +2586,7 @@ export default function AmcWebMvp() {
   const caseTypeReading = caseTypeInterpretations[detectedCaseType];
   const caseSpecificReading = caseSpecificReadings[detectedCaseType];
   const caseReportBranch = caseReportBranches[detectedCaseType];
+  const launchInterpretation = launchInterpretations[detectedCaseType];
   const mockExternalSnapshot = useMemo(
     () => buildMockExternalSnapshot(detectedCaseType, optionALabel, optionBLabel, language),
     [detectedCaseType, language, optionALabel, optionBLabel],
@@ -2647,21 +2594,6 @@ export default function AmcWebMvp() {
   const displayedExternalSnapshot = externalSnapshot ?? mockExternalSnapshot;
   const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot);
   const displayedExternalStatusCopy = externalSnapshotStatusCopy(displayedExternalSnapshot.status, isKo);
-  const executiveQaSuggestedQuestions = isKo
-    ? [
-        "이 결정에서 가장 큰 리스크는 무엇인가요?",
-        "어떤 조건이 충족되면 Option B가 더 방어 가능해지나요?",
-        "앞으로 30일 동안 무엇을 검증해야 하나요?",
-        "External Evidence Snapshot을 어떻게 해석해야 하나요?",
-        "이 리포트에서 과도하게 해석하면 안 되는 부분은 무엇인가요?",
-      ]
-    : [
-        "What is the main risk in this decision?",
-        "What condition would make Option B more defensible?",
-        "What should I validate in the next 30 days?",
-        "How should I read the External Evidence Snapshot?",
-        "What should I not over-interpret from this report?",
-      ];
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
   };
@@ -2680,8 +2612,8 @@ export default function AmcWebMvp() {
     });
   };
 
-  const simulateUnlock = (tier: Tier) => {
-    setSelectedTier(tier);
+  const continueToFullReport = () => {
+    setFullIntakeUnlocked(true);
     setDashboardGenerated(false);
     requestAnimationFrame(() => {
       document.getElementById("full-intake")?.scrollIntoView({ behavior: "smooth" });
@@ -2717,10 +2649,6 @@ export default function AmcWebMvp() {
     setExternalSnapshot(mockExternalSnapshot);
     setExternalSnapshotLoading(true);
     setExternalSnapshotError(null);
-    setExecutiveQaDraft("");
-    setExecutiveQaMessages([]);
-    executiveQaRequestId.current += 1;
-    setExecutiveQaLoading(false);
     setDashboardGenerated(true);
     requestAnimationFrame(() => {
       document.getElementById("full-dashboard")?.scrollIntoView({ behavior: "smooth" });
@@ -2769,89 +2697,6 @@ export default function AmcWebMvp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const submitExecutiveQaQuestion = async (suggestedQuestion?: string) => {
-    if (!dashboardGenerated || executiveQaLoading) return;
-    const question = (suggestedQuestion ?? executiveQaDraft).trim();
-    if (!question) return;
-    const localContext: ExecutiveQaContext = {
-      language,
-      caseType: detectedCaseType,
-      optionA: optionALabel,
-      optionB: optionBLabel,
-      primaryRisk: isKo ? caseSpecificReading.primaryRisk.ko : caseSpecificReading.primaryRisk.en,
-      decisionConditions: isKo
-        ? caseSpecificReading.decisionConditions.ko
-        : caseSpecificReading.decisionConditions.en,
-      validationFocus: isKo ? caseSpecificReading.validationFocus.ko : caseSpecificReading.validationFocus.en,
-      externalSnapshot: displayedExternalSnapshot,
-    };
-    const localResponse = buildExecutiveQaResponse(question, localContext);
-    const priorMessages = executiveQaMessages;
-    executiveQaMessageId.current += 1;
-    const userMessage: ExecutiveQaMessage = {
-      id: executiveQaMessageId.current,
-      role: "user",
-      text: question,
-    };
-    const requestId = executiveQaRequestId.current + 1;
-    executiveQaRequestId.current = requestId;
-    setExecutiveQaMessages((current) => [...current, userMessage]);
-    setExecutiveQaDraft("");
-    setExecutiveQaLoading(true);
-
-    const appendAssistant = (text: string, responseMode: "api" | "local") => {
-      if (executiveQaRequestId.current !== requestId) return;
-      executiveQaMessageId.current += 1;
-      setExecutiveQaMessages((current) => [
-        ...current,
-        { id: executiveQaMessageId.current, role: "amc", text, responseMode },
-      ]);
-    };
-
-    try {
-      const response = await fetch("/api/amc/report-qa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          language: isKo ? "kr" : "en",
-          reportContext: buildReportQaContext({
-            caseType: detectedCaseType,
-            optionA: optionALabel,
-            optionB: optionBLabel,
-            primaryRisk: localContext.primaryRisk,
-            decisionConditions: isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en,
-            validationFocus: [localContext.validationFocus],
-            externalEvidenceSnapshot: displayedExternalSnapshot,
-            dashboardSummary: [
-              isKo ? caseTypeReading.ko : caseTypeReading.en,
-              isKo ? caseSpecificReading.decisionConditions.ko : caseSpecificReading.decisionConditions.en,
-            ].join(" "),
-            premiumReportSummary: [
-              isKo ? caseReportBranch.executiveSummary.ko : caseReportBranch.executiveSummary.en,
-              isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
-              isKo ? caseReportBranch.closingQuestion.ko : caseReportBranch.closingQuestion.en,
-            ].join(" "),
-          }),
-          chatHistory: priorMessages.slice(-10).map((message) => ({
-            role: message.role === "user" ? "user" : "assistant",
-            content: message.text,
-          })),
-        }),
-      });
-      const payload = (await response.json().catch(() => null)) as unknown;
-      if (!response.ok || !isReportQaApiResponse(payload) || payload.status !== "live" || !payload.answer.trim()) {
-        appendAssistant(localResponse, "local");
-        return;
-      }
-      appendAssistant(payload.answer.trim(), "api");
-    } catch {
-      appendAssistant(localResponse, "local");
-    } finally {
-      if (executiveQaRequestId.current === requestId) setExecutiveQaLoading(false);
-    }
-  };
-
   const testExternalEvidenceApi = async () => {
     if (!isQaMode || externalApiDiagnostic.status === "testing") return;
     setExternalApiDiagnostic((current) => ({ ...current, status: "testing", notes: "" }));
@@ -2884,66 +2729,6 @@ export default function AmcWebMvp() {
       });
     } catch {
       setExternalApiDiagnostic({
-        status: "failed",
-        lastTestedAt: new Date().toISOString(),
-        resultSummary: t("The internal endpoint could not be validated.", "내부 endpoint 응답을 확인하지 못했습니다."),
-        notes: t(
-          "Review route availability and normalized response handling. No sensitive error details are displayed.",
-          "Route 연결과 정규화된 응답 처리를 점검해 주세요. 민감한 오류 정보는 표시하지 않습니다.",
-        ),
-      });
-    } finally {
-      window.clearTimeout(timeout);
-    }
-  };
-
-  const testExecutiveQaApi = async () => {
-    if (!isQaMode || reportQaDiagnostic.status === "testing") return;
-    setReportQaDiagnostic((current) => ({ ...current, status: "testing", notes: "" }));
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 12_000);
-
-    try {
-      const response = await fetch("/api/amc/report-qa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          question: "What is the main risk in this decision?",
-          language: isKo ? "kr" : "en",
-          reportContext: {
-            caseType: "Entrepreneurship",
-            optionA: "Stay in current corporate role",
-            optionB: "Test a small advisory business",
-            primaryRisk: "Premature commitment before market validation",
-            decisionConditions: ["Clear customer demand", "Limited downside exposure", "Defined validation period"],
-            validationFocus: ["Customer willingness to pay", "Repeatable acquisition channel", "Time and energy burden"],
-            externalEvidenceSnapshot: {
-              status: "mock",
-              confidence: "medium",
-              externalSignals: [],
-              sourceNotes: [],
-              uncertaintyNotes: ["Market demand must be validated with real users"],
-              implication: "External context can support exploration, but commitment should depend on validation evidence.",
-            },
-            dashboardSummary: "The decision is better treated as staged validation rather than immediate full transition.",
-            premiumReportSummary: "AMC recommends pressure-testing the structure through limited, reversible validation steps.",
-          },
-          chatHistory: [],
-        }),
-      });
-      const payload = (await response.json().catch(() => null)) as unknown;
-      if (!response.ok || !isReportQaApiResponse(payload)) throw new Error("invalid_response");
-
-      const answerPreview = payload.answer.trim().slice(0, 280);
-      setReportQaDiagnostic({
-        status: payload.status === "fallback" ? "fallback" : "success",
-        lastTestedAt: new Date().toISOString(),
-        resultSummary: `${payload.status === "live" ? "Live" : "Fallback"} · ${payload.modelLabel}`,
-        notes: answerPreview || payload.boundaryNote,
-      });
-    } catch {
-      setReportQaDiagnostic({
         status: "failed",
         lastTestedAt: new Date().toISOString(),
         resultSummary: t("The internal endpoint could not be validated.", "내부 endpoint 응답을 확인하지 못했습니다."),
@@ -3112,7 +2897,7 @@ export default function AmcWebMvp() {
 
           <div className="pdf-report-body">
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
-              <p className="pdf-kicker">01 / Executive Summary</p>
+              <p className="pdf-kicker">01 / Executive Structural Overview</p>
               <div className="mt-5 border-y border-black/20 py-7">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">Core message</p>
                 <h2 className="pdf-executive-message mt-3">
@@ -3170,6 +2955,12 @@ export default function AmcWebMvp() {
                       "이 리포트는 선택을 대신 내려주지 않습니다. 현재 결정 뒤에 있는 압력, 리스크, 제약, 안정성, 그리고 더 깊이 검증해야 할 조건을 구조적으로 보여줍니다.",
                     )}
                   </p>
+                  <p className="mt-3 max-w-3xl text-xs leading-5 text-white/55">
+                    {t(
+                      "AMC applies one consistent structural decision architecture across cases: internal readiness, external pressure, Safety Margin, structural risk, missing variables, and Decision Conditions.",
+                      "AMC는 모든 사례에 동일한 구조적 의사결정 프레임을 적용해 내부 준비도, 외부 압력, Safety Margin, 구조적 리스크, 놓친 변수, Decision Conditions를 확인합니다.",
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="pdf-keyword-grid mt-5">
@@ -3177,6 +2968,25 @@ export default function AmcWebMvp() {
                   <div key={keyword.label} className="pdf-keyword-chip pdf-keep-together">
                     <p>{keyword.label}</p>
                     <strong>{keyword.value}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="pdf-report-section p-8 sm:p-12">
+              <p className="pdf-kicker">01A / What You May Be Missing</p>
+              <h2 className="pdf-section-heading mt-3">
+                {t("The stated question may not be the highest-impact variable.", "표면적인 질문보다 더 중요한 변수가 있을 수 있습니다.")}
+              </h2>
+              <div className="mt-7 grid gap-px bg-black/15 lg:grid-cols-3">
+                {[
+                  [t("Stated question", "현재 질문"), decisionContext],
+                  [t("Possible missing point", "놓치고 있을 수 있는 지점"), isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en],
+                  [t("Why it changes the structure", "결정 구조가 달라지는 이유"), isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en],
+                ].map(([label, value]) => (
+                  <div key={label} className="pdf-keep-together bg-[#f6f6f4] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-black/45">{label}</p>
+                    <p className="mt-3 text-sm font-semibold leading-6">{value}</p>
                   </div>
                 ))}
               </div>
@@ -3202,7 +3012,7 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
-              <p className="pdf-kicker">02A / External Evidence Snapshot</p>
+              <p className="pdf-kicker">02A / Outside / Live External Evidence</p>
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <h2 className="pdf-section-heading max-w-2xl">
                   {t(
@@ -3380,7 +3190,28 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section p-8 sm:p-12">
-              <p className="pdf-kicker">04 / External Pressure Map</p>
+              <p className="pdf-kicker">03A / Alternative Path Worth Testing</p>
+              <h2 className="pdf-section-heading mt-3">
+                {t("A reversible path can test the structure without deciding the outcome.", "되돌릴 수 있는 경로로 결론을 대신하지 않고 구조를 검증할 수 있습니다.")}
+              </h2>
+              <div className="pdf-keep-together mt-7 border-l-2 border-black bg-[#f6f6f4] p-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
+                  {t("Path to test", "검토할 만한 대안 경로")}
+                </p>
+                <p className="mt-4 text-lg font-semibold leading-7">
+                  {isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en}
+                </p>
+                <p className="mt-4 text-sm leading-6 text-black/60">
+                  {t(
+                    "This is a validation path, not a recommendation or an invented Option C.",
+                    "이 경로는 추천이나 임의의 Option C가 아니라 가정을 확인하기 위한 검증 경로입니다.",
+                  )}
+                </p>
+              </div>
+            </section>
+
+            <section className="pdf-report-section p-8 sm:p-12">
+              <p className="pdf-kicker">04 / Outside / External Pressure Map</p>
               <h2 className="pdf-section-heading mt-3">
                 {t(
                   "External signals support exploration more strongly than immediate conversion.",
@@ -3399,7 +3230,7 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
-              <p className="pdf-kicker">05 / Internal Readiness Map</p>
+              <p className="pdf-kicker">05 / Inside / Internal Readiness Map</p>
               <h2 className="pdf-section-heading mt-3">
                 {t(
                   "Readiness is mixed: the strategic pull is clear, but the operating base is incomplete.",
@@ -3924,7 +3755,7 @@ export default function AmcWebMvp() {
                 onClick={() => document.getElementById("unlock")?.scrollIntoView({ behavior: "smooth" })}
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
               >
-                {t("View Full Report Options", "Full Report 옵션 보기")}
+                  {t("Continue to Full Report", "Full Report로 계속하기")}
               </button>
             </div>
           </section>
@@ -3933,79 +3764,44 @@ export default function AmcWebMvp() {
         {previewGenerated ? (
           <section id="unlock" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
-              eyebrow="Unlock"
+              eyebrow="AMC Full Structural Report"
               title={t(
-                "Choose the report experience that fits your review needs.",
-                "필요한 검토 범위에 맞는 Report 옵션을 선택합니다.",
+                "One full report. One structured decision architecture.",
+                "하나의 Full Report로 결정의 구조를 끝까지 확인합니다.",
               )}
               body={t(
-                "Both options continue to the same detailed 29-question Full Intake.",
-                "두 옵션 모두 29개 질문으로 구성된 Full Intake로 이어집니다.",
+                "Continue to the 29-question Full Intake, Live External Evidence, Full Dashboard, and Detailed PDF Report.",
+                "29개 Full Intake, Live External Evidence, Full Dashboard, Detailed PDF Report로 이어집니다.",
               )}
             />
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="rounded-lg border border-border bg-card p-6">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Essential</p>
-                <h3 className="mt-3 text-xl font-semibold leading-snug">
-                  Full Web Dashboard + Detailed PDF Report
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  {t(
-                    "For users who want a complete structured reading of their career decision.",
-                    "커리어 결정을 구조적으로 정리한 전체 리포트를 받고 싶은 경우에 적합합니다.",
-                  )}
-                </p>
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
-                    Full Web Dashboard
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
-                    Detailed PDF Report
-                  </div>
+            <div className="rounded-lg border border-foreground/20 bg-card p-6 sm:p-7">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+                <div>
+                  <h3 className="text-2xl font-semibold leading-snug">AMC Full Structural Report</h3>
+                  <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    {t(
+                      "A complete structural reading of internal readiness, outside reality, Safety Margin, risks, missing variables, alternatives, and Decision Conditions.",
+                      "내부 준비도, 외부 현실, Safety Margin, 리스크, 놓친 변수, 대안 경로, Decision Conditions를 하나의 구조로 정리합니다.",
+                    )}
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => simulateUnlock("essential")}
-                  className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
-                >
-                  {t("Continue to Full Intake", "Full Intake로 계속하기")}
-                </button>
-              </div>
-              <div className="rounded-lg border border-foreground/20 bg-card p-6">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Executive</p>
-                <h3 className="mt-3 text-xl font-semibold leading-snug">
-                  Full Web Dashboard + Detailed PDF Report + 1-Day Report Q&A
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  {t(
-                    "For users who want to review the report and ask follow-up questions on the same day.",
-                    "리포트를 받은 당일, 리포트 내용을 바탕으로 추가 질문까지 정리하고 싶은 경우에 적합합니다.",
-                  )}
-                </p>
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
-                    Full Web Dashboard
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
-                    Detailed PDF Report
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">
-                    1-Day Report Q&A
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">Full Dashboard</div>
+                  <div className="rounded-md border border-border bg-background p-4 text-sm font-medium">Detailed PDF Report</div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => simulateUnlock("executive")}
-                  className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
-                >
-                  {t("Continue to Full Intake", "Full Intake로 계속하기")}
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={continueToFullReport}
+                className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background sm:w-auto"
+              >
+                {t("Continue to Full Intake", "Full Intake로 계속하기")}
+              </button>
             </div>
             <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
               {t(
-                "Payment is not active in this MVP preview. This section simulates the unlock flow.",
-                "현재 MVP Preview에서는 실제 결제가 활성화되어 있지 않습니다. 이 영역은 Unlock 흐름을 확인하기 위한 시뮬레이션입니다.",
+                "Payment is not active during this controlled launch stage. You can continue without payment.",
+                "현재 controlled launch 단계에서는 결제가 활성화되어 있지 않으며, 결제 없이 계속할 수 있습니다.",
               )}
             </p>
           </section>
@@ -4029,7 +3825,7 @@ export default function AmcWebMvp() {
                 )}
               </p>
 
-              <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="mt-5 max-w-2xl">
                 {[
                   {
                     key: "external-evidence",
@@ -4041,17 +3837,6 @@ export default function AmcWebMvp() {
                     buttonLabel: t("Test External Evidence API", "External Evidence API 테스트"),
                     result: externalApiDiagnostic,
                     onTest: testExternalEvidenceApi,
-                  },
-                  {
-                    key: "executive-qa",
-                    title: "Executive Q&A API",
-                    description: t(
-                      "Checks the report-grounded Q&A endpoint with compact mock report context.",
-                      "간결한 mock 리포트 맥락으로 Report 기반 Q&A endpoint를 확인합니다.",
-                    ),
-                    buttonLabel: t("Test Executive Q&A API", "Executive Q&A API 테스트"),
-                    result: reportQaDiagnostic,
-                    onTest: testExecutiveQaApi,
                   },
                 ].map((diagnostic) => (
                   <article key={diagnostic.key} className="rounded-lg border border-border bg-card p-5">
@@ -4124,7 +3909,7 @@ export default function AmcWebMvp() {
           </section>
         ) : null}
 
-        {selectedTier ? (
+        {fullIntakeUnlocked ? (
           <section id="full-intake" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
               eyebrow="Full Intake"
@@ -4134,6 +3919,20 @@ export default function AmcWebMvp() {
                 "Full Intake에서는 결정의 구조, 리스크, 실행 부담을 판단할 근거를 구체화합니다.",
               )}
             />
+            <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
+                {t(
+                  "Your responses may be securely stored to generate your report and improve AMC. Please avoid entering confidential company information or sensitive personal data.",
+                  "입력 내용은 리포트 생성과 AMC 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
+                )}
+              </p>
+              <p className="rounded-md border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
+                {t(
+                  "AMC uses a consistent structural decision framework rather than open-ended AI advice. It examines readiness, external pressure, Safety Margin, risk, missing variables, and Decision Conditions.",
+                  "AMC는 개방형 AI 조언이 아니라 일관된 구조적 의사결정 프레임을 사용해 준비도, 외부 압력, Safety Margin, 리스크, 놓친 변수, Decision Conditions를 확인합니다.",
+                )}
+              </p>
+            </div>
             <div className="mb-5 rounded-lg border border-border bg-card p-5">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
@@ -4267,6 +4066,31 @@ export default function AmcWebMvp() {
                 )}
               />
 
+              <section className="rounded-lg border border-foreground/20 bg-foreground p-6 text-background sm:p-7">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-background/55">
+                  {t("Executive Structural Overview", "Executive Structural Overview")}
+                </p>
+                <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-md bg-background/15 lg:grid-cols-4">
+                  {[
+                    [t("Structure AMC sees", "AMC가 보는 구조"), isKo ? caseReportBranch.executiveSummary.ko : caseReportBranch.executiveSummary.en],
+                    [t("Central structural issue", "핵심 구조적 이슈"), isKo ? caseTypeReading.ko : caseTypeReading.en],
+                    [t("What matters most", "가장 중요한 지점"), isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en],
+                    [t("What needs validation", "검증이 필요한 것"), isKo ? caseSpecificReading.validationFocus.ko : caseSpecificReading.validationFocus.en],
+                  ].map(([label, value]) => (
+                    <div key={label} className="bg-foreground p-4">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-background/50">{label}</p>
+                      <p className="mt-3 text-sm font-medium leading-relaxed text-background/90">{value}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-5 text-xs leading-relaxed text-background/60">
+                  {t(
+                    "AMC does not choose an option. It shows what would need to become true before deeper commitment is defensible.",
+                    "AMC는 선택을 대신하지 않습니다. 더 깊은 결정을 설명하려면 무엇이 사실이 되어야 하는지 보여줍니다.",
+                  )}
+                </p>
+              </section>
+
               <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                 {dashboardDeck.map((card, index) => (
                   <div key={card.section} className="rounded-lg border border-border bg-card p-4">
@@ -4314,6 +4138,24 @@ export default function AmcWebMvp() {
                   </div>
                 </section>
 
+                <section className="rounded-lg border border-foreground/25 bg-secondary/20 p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    {t("What You May Be Missing", "놓치고 있을 수 있는 지점")}
+                  </p>
+                  <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    {[
+                      [t("Stated question", "현재 질문"), decisionContext],
+                      [t("Possible missing point", "가능한 누락 지점"), isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en],
+                      [t("Why it changes the structure", "구조가 달라지는 이유"), isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en],
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-md border border-border bg-card p-5">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+                        <p className="mt-3 text-sm font-semibold leading-relaxed text-foreground">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
                 <section className="rounded-lg border border-border bg-card p-6">
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                     Case-Specific Reading
@@ -4342,7 +4184,7 @@ export default function AmcWebMvp() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="max-w-3xl">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                        External Evidence Snapshot
+                        {t("OUTSIDE / Live External Evidence", "OUTSIDE / Live External Evidence")}
                       </p>
                       <h3 className="mt-2 text-xl font-semibold tracking-tight">
                         {t(
@@ -4524,7 +4366,7 @@ export default function AmcWebMvp() {
                   <div className="flex flex-col gap-2 p-6 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                        02 / External Comparative Snapshot
+                        02 / A vs B Structural Comparison
                       </p>
                       <h3 className="mt-2 text-xl font-semibold tracking-tight">
                         {t("Option-level trade-offs", "Option별 trade-off")}
@@ -4572,11 +4414,35 @@ export default function AmcWebMvp() {
                   </div>
                 </section>
 
+                <section className="rounded-lg border border-foreground/20 bg-card p-6">
+                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    {t("Alternative Path Worth Testing", "검토할 만한 대안 경로")}
+                  </p>
+                  <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1.35fr_0.65fr]">
+                    <div className="rounded-md border border-border bg-background p-5">
+                      <p className="text-lg font-semibold leading-relaxed">
+                        {isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en}
+                      </p>
+                    </div>
+                    <div className="rounded-md border border-border bg-secondary/25 p-5">
+                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        {t("Interpretation boundary", "해석 기준")}
+                      </p>
+                      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                        {t(
+                          "This is a reversible validation path, not a recommendation or an automatic Option C.",
+                          "추천이나 자동으로 만든 Option C가 아니라, 가정을 확인하기 위한 되돌릴 수 있는 검증 경로입니다.",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
                 <section className="rounded-lg border border-border bg-card p-6">
                   <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                        03 / Internal Structural Snapshot
+                        03 / INSIDE / Internal Structural Snapshot
                       </p>
                       <h3 className="mt-2 text-xl font-semibold tracking-tight">
                         {t("Readiness and load signals", "준비도와 실행 부담 신호")}
@@ -4694,6 +4560,44 @@ export default function AmcWebMvp() {
                     )}
                   </p>
                 </section>
+
+                <section className="rounded-lg border border-border bg-card p-6">
+                  <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                        06 / 30 / 60 / 90 Validation Plan
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold tracking-tight">
+                        {t("Turn uncertainty into staged evidence.", "불확실성을 단계별 근거로 바꿉니다.")}
+                      </h3>
+                    </div>
+                    <Tag>{detectedCaseType}</Tag>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    {caseReportBranch.plan.map((item) => (
+                      <article key={item.period} className="rounded-md border border-border bg-background p-5">
+                        <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                          {item.period}
+                        </p>
+                        <h4 className="mt-2 text-lg font-semibold">{isKo ? item.title.ko : item.title.en}</h4>
+                        <dl className="mt-4 space-y-3 text-sm leading-relaxed">
+                          <div>
+                            <dt className="font-medium text-foreground">{t("Objective", "목표")}</dt>
+                            <dd className="mt-1 text-muted-foreground">{isKo ? item.objective.ko : item.objective.en}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-foreground">{t("Action", "실행")}</dt>
+                            <dd className="mt-1 text-muted-foreground">{isKo ? item.action.ko : item.action.en}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-foreground">{t("Output", "결과물")}</dt>
+                            <dd className="mt-1 text-muted-foreground">{isKo ? item.output.ko : item.output.en}</dd>
+                          </div>
+                        </dl>
+                      </article>
+                    ))}
+                  </div>
+                </section>
               </div>
             </section>
 
@@ -4741,153 +4645,6 @@ export default function AmcWebMvp() {
               </div>
             </section>
 
-            <section className="border-b border-border py-12 sm:py-14">
-              <SectionHeader
-                eyebrow="Executive Report Q&A"
-                title="Executive Report Q&A"
-                body={t(
-                  "Ask follow-up questions based on your generated AMC report.",
-                  "생성된 AMC 리포트를 바탕으로 추가 질문을 정리할 수 있습니다.",
-                )}
-              />
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
-                <div className="flex flex-col justify-between gap-4 border-b border-border p-6 sm:flex-row sm:items-start">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                      {t("Executive feature preview", "Executive 기능 Preview")}
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold tracking-tight">
-                      {t("Included in Executive: 1-Day Report Q&A", "Executive 포함: 1-Day Report Q&A")}
-                    </h3>
-                    <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                      {t(
-                        "This MVP Q&A is grounded in the generated report context. It does not replace judgment or provide legal, financial, immigration, medical, tax, or investment advice.",
-                        "현재 MVP Q&A는 생성된 리포트 맥락을 기반으로 작동합니다. 판단을 대신하거나 법률, 금융, 이민, 의료, 세무, 투자 자문을 제공하지 않습니다.",
-                      )}
-                    </p>
-                  </div>
-                  <Tag>{t("API-assisted with local fallback", "API-assisted · Local fallback 지원")}</Tag>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-[0.72fr_1.28fr]">
-                  <aside className="border-b border-border bg-secondary/15 p-5 lg:border-b-0 lg:border-r">
-                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                      {t("Suggested questions", "추천 질문")}
-                    </p>
-                    <div className="mt-4 space-y-2">
-                      {executiveQaSuggestedQuestions.map((question) => (
-                        <button
-                          key={question}
-                          type="button"
-                          onClick={() => submitExecutiveQaQuestion(question)}
-                          disabled={executiveQaLoading}
-                          className="w-full rounded-md border border-border bg-card p-3 text-left text-sm leading-relaxed transition-colors hover:border-foreground/30 hover:bg-background"
-                        >
-                          {question}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        executiveQaRequestId.current += 1;
-                        setExecutiveQaMessages([]);
-                        setExecutiveQaLoading(false);
-                      }}
-                      disabled={executiveQaMessages.length === 0 && !executiveQaLoading}
-                      className="mt-4 inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      {t("Clear chat", "대화 지우기")}
-                    </button>
-                  </aside>
-
-                  <div className="p-5 sm:p-6">
-                    <div className="max-h-[520px] min-h-56 space-y-4 overflow-y-auto rounded-md border border-border bg-background p-4">
-                      {executiveQaMessages.length === 0 && !executiveQaLoading ? (
-                        <div className="flex min-h-48 items-center justify-center px-4 text-center">
-                          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-                            {t(
-                              "Ask about risk, Decision Conditions, validation, Case Type, or the External Evidence Snapshot.",
-                              "리스크, Decision Conditions, 검증, Case Type, External Evidence Snapshot에 대해 질문할 수 있습니다.",
-                            )}
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          {executiveQaMessages.map((message) => (
-                            <div
-                              key={message.id}
-                              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                            >
-                              <div
-                                className={`max-w-[92%] rounded-lg px-4 py-3 text-sm leading-relaxed sm:max-w-[82%] ${
-                                  message.role === "user"
-                                    ? "bg-foreground text-background"
-                                    : "border border-border bg-card text-foreground"
-                                }`}
-                              >
-                                <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-60">
-                                  <span>{message.role === "user" ? t("You", "사용자") : "AMC"}</span>
-                                  {message.role === "amc" && message.responseMode ? (
-                                    <span className="rounded-full border border-current/20 px-2 py-0.5">
-                                      {message.responseMode === "api"
-                                        ? t("API-assisted", "API-assisted")
-                                        : t("Local fallback", "Local fallback")}
-                                    </span>
-                                  ) : null}
-                                </div>
-                                <p className="whitespace-pre-line">{message.text}</p>
-                              </div>
-                            </div>
-                          ))}
-                          {executiveQaLoading ? (
-                            <div className="flex justify-start">
-                              <div className="max-w-[92%] rounded-lg border border-border bg-card px-4 py-3 text-sm leading-relaxed text-foreground sm:max-w-[82%]">
-                                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] opacity-60">AMC</p>
-                                <p>{t("Reviewing the report context…", "리포트 맥락을 검토하고 있습니다…")}</p>
-                              </div>
-                            </div>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-
-                    <div className="mt-4 rounded-md border border-border bg-background p-3">
-                      <label className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground" htmlFor="executive-qa-input">
-                        {t("Report-based question", "Report 기반 질문")}
-                      </label>
-                      <textarea
-                        id="executive-qa-input"
-                        value={executiveQaDraft}
-                        onChange={(event) => setExecutiveQaDraft(event.target.value)}
-                        disabled={executiveQaLoading}
-                        placeholder={t(
-                          "Ask a question about the generated report…",
-                          "생성된 Report에 대해 질문을 입력해 주세요…",
-                        )}
-                        className="mt-2 h-24 w-full resize-none border-0 bg-transparent p-0 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground"
-                      />
-                      <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
-                        <p className="text-xs leading-relaxed text-muted-foreground">
-                          {t(
-                            "AMC uses server-side AI Q&A when configured. If unavailable, it uses a local report-grounded fallback. No new live search is performed during chat.",
-                            "설정된 경우 서버 측 AI Q&A를 사용합니다. 사용할 수 없으면 리포트 기반 Local fallback으로 전환하며, 대화 중 새로운 live 검색은 수행하지 않습니다.",
-                          )}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => submitExecutiveQaQuestion()}
-                          disabled={!executiveQaDraft.trim() || executiveQaLoading}
-                          className="inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-foreground px-4 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          {executiveQaLoading ? t("Reviewing…", "검토 중…") : t("Send", "보내기")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
           </>
         ) : null}
 
@@ -4895,12 +4652,24 @@ export default function AmcWebMvp() {
           <section className="py-8">
             <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
               {t(
-                "Developer note: This MVP uses local flow state plus optional server-side External Snapshot and report Q&A endpoints. It does not include real payment, account login, or production report generation.",
-                "개발 참고: 현재 MVP는 로컬 흐름 상태와 선택적 서버 측 External Snapshot 및 Report Q&A endpoint를 사용합니다. 실제 결제, 계정 로그인, 운영용 Report 생성은 포함하지 않습니다.",
+                "Developer note: This launch preview uses local flow state plus the server-side External Snapshot endpoint. It does not include real payment, account login, or production report generation.",
+                "개발 참고: 현재 Launch Preview는 로컬 흐름 상태와 서버 측 External Snapshot endpoint를 사용합니다. 실제 결제, 계정 로그인, 운영용 Report 생성은 포함하지 않습니다.",
               )}
             </p>
           </section>
         ) : null}
+
+        <footer className="border-t border-border py-8">
+          <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-medium">{t("Questions or feedback?", "문의 및 피드백")}</p>
+            <a
+              href="mailto:report@allofmycareer.com"
+              className="w-fit font-medium text-foreground underline decoration-border underline-offset-4"
+            >
+              report@allofmycareer.com
+            </a>
+          </div>
+        </footer>
       </main>
     </div>
   );

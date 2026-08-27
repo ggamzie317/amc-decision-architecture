@@ -28,8 +28,8 @@ const emailHandoffSchema = z.object({
     bodyText: z.string().min(1),
   }),
   followUp: z.object({
-    reportLinkedWindowDays: z.union([z.literal(0), z.literal(7)]),
-    mode: z.enum(["none", "bounded_report_linked_chat"]),
+    reportLinkedWindowDays: z.literal(0),
+    mode: z.literal("none"),
   }),
 });
 
