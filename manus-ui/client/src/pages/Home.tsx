@@ -11,11 +11,11 @@ const fitNotFor = [
 ] as const;
 
 const reportOutline = [
-  "External Context",
-  "Structural Risk",
-  "Value Logic",
-  "Mobility Logic",
-  "Strategic Temperament",
+  "Executive Structural Overview",
+  "Inside View and Safety Margin",
+  "Outside / Live External Evidence",
+  "What You May Be Missing",
+  "Alternative Path Worth Testing",
   "Decision Conditions",
 ] as const;
 
@@ -33,8 +33,8 @@ const howItWorks = [
     body: "You get a structured written output.",
   },
   {
-    title: "1-Day Report Q&A",
-    body: "Ask report-based questions for one day after receiving the report.",
+    title: "Validate Decision Conditions",
+    body: "Use the report to test what must become true before deeper commitment.",
   },
 ] as const;
 
@@ -52,16 +52,8 @@ const faqs = [
     a: "You receive a structured written report centered on structural exposure, value logic, mobility logic, temperament, and commitment conditions.",
   },
   {
-    q: "What is included in Essential and Executive?",
-    a: "Essential includes the report only. Executive includes the same report plus 1-Day Report Q&A.",
-  },
-  {
-    q: "Is the chat open-ended?",
-    a: "No. Executive chat is bounded and tied to report clarification and interpretation.",
-  },
-  {
     q: "Is AMC a generic AI chat tool?",
-    a: "No. The report is the core product. Chat is an optional, limited follow-up layer in Executive.",
+    a: "No. AMC applies a consistent structural decision framework and delivers one Full Structural Report.",
   },
   {
     q: "Do I need an account before I begin?",
@@ -145,7 +137,7 @@ export default function Home() {
                 AMC is delivered as a structured report.
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Essential includes the report. Executive adds 1-Day Report Q&A.
+                One Full Structural Report combines the dashboard, deeper written interpretation, and validation plan.
               </p>
             </div>
           </div>
@@ -155,7 +147,7 @@ export default function Home() {
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">What You Receive</h2>
           <p className="text-base text-foreground/90 mb-2">AMC delivers a structured report as the core product.</p>
           <p className="text-sm text-muted-foreground mb-8">
-            Executive adds bounded follow-up access to the same report.
+            The report combines internal structure, outside evidence, Safety Margin, risks, missing variables, and Decision Conditions.
           </p>
           <div className="border border-border rounded-lg bg-card p-7 sm:p-8 max-w-3xl">
             <div className="flex items-center justify-between mb-6">
@@ -202,25 +194,15 @@ export default function Home() {
         </section>
 
         <section className="py-16 lg:py-20 border-b border-border" id="formats">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">Available in Two Formats</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">One Full Structural Report</h2>
           <p className="text-sm text-muted-foreground mb-8">
-            Format selection happens after case intake. Both formats share the same core report.
+            AMC uses one report format so the dashboard and detailed written interpretation represent the same intelligence.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="border border-border rounded-lg p-6 bg-card">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">Essential</p>
-              <p className="text-lg font-medium mb-2">Structured AMC Report</p>
-              <p className="text-sm text-muted-foreground">Report-only delivery</p>
-            </div>
-            <div className="border border-border rounded-lg p-6 bg-card">
-              <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">Executive</p>
-              <p className="text-lg font-medium mb-2">Structured AMC Report</p>
-              <p className="text-sm text-muted-foreground">+ 1-Day Report Q&amp;A</p>
-            </div>
+          <div className="border border-border rounded-lg p-6 bg-card max-w-3xl">
+            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">AMC Full Structural Report</p>
+            <p className="text-lg font-medium mb-2">Full Dashboard + Detailed PDF Report</p>
+            <p className="text-sm text-muted-foreground">Structure, evidence, Safety Margin, risks, alternatives, and Decision Conditions.</p>
           </div>
-          <p className="text-sm text-muted-foreground mt-5">
-            Executive keeps the same report and adds a bounded interpretation layer after intake.
-          </p>
         </section>
 
         <section className="py-16 lg:py-20 border-b border-border" id="fit">

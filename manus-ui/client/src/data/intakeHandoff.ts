@@ -5,7 +5,9 @@ import {
   type IntakeAnswers,
 } from "../data/intakeQuestionnaire";
 
-export type AmcTier = "essential" | "executive";
+// The legacy handoff contract still uses the "essential" value internally.
+// Launch V2 exposes one Full Structural Report and no customer-facing tier choice.
+export type AmcTier = "essential";
 
 export type AmcSubmissionHandoff = {
   submissionId: string;
