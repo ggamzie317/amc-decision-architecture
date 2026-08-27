@@ -3,7 +3,11 @@ import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { registerAmcSubmissionBridge } from "./amcSubmissionBridge";
-import { resolveEmailHandoffPathFromSubmissionId, sendPreparedEmail } from "./emailSender";
+import {
+  resolveEmailHandoffPathFromSubmissionId,
+  sendPreparedEmail,
+} from "./emailSender";
+import { registerFounderOpsRoutes } from "./founderOpsExpress";
 import {
   buildFallbackSnapshot,
   parseWebExternalSnapshotRequest,
@@ -18,7 +22,10 @@ async function startServer() {
   const server = createServer(app);
   app.use(express.json({ limit: "2mb" }));
   app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", process.env.AMC_CORS_ORIGIN || "*");
+    res.setHeader(
+      "Access-Control-Allow-Origin",
+      process.env.AMC_CORS_ORIGIN || "*"
+    );
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     if (req.method === "OPTIONS") {
@@ -36,13 +43,16 @@ async function startServer() {
   const repoRoot = path.resolve(__dirname, "..", "..");
 
   registerAmcSubmissionBridge(app, __dirname);
+  registerFounderOpsRoutes(app);
 
   app.post("/api/amc/external-snapshot", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
     const request = parseWebExternalSnapshotRequest(req.body);
     if (!request) {
       const language = req.body?.language === "kr" ? "kr" : "en";
-      res.status(400).json(buildFallbackSnapshot(language, "malformed_request"));
+      res
+        .status(400)
+        .json(buildFallbackSnapshot(language, "malformed_request"));
       return;
     }
 
@@ -52,7 +62,10 @@ async function startServer() {
 
   app.post("/api/send-email", async (req, res) => {
     try {
-      const body = (req.body || {}) as { submissionId?: string; emailHandoffPath?: string };
+      const body = (req.body || {}) as {
+        submissionId?: string;
+        emailHandoffPath?: string;
+      };
       const submissionId = String(body.submissionId || "").trim();
       const customPath = String(body.emailHandoffPath || "").trim();
 
