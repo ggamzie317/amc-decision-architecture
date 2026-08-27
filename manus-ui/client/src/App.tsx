@@ -5,18 +5,19 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AmcWebMvp from "./pages/AmcWebMvp";
+import AmcAdmin from "./pages/AmcAdmin";
 import FormatHandoff from "./pages/FormatHandoff";
 import Home from "./pages/Home";
 import Intake from "./pages/Intake";
 import PaymentHandoff from "./pages/PaymentHandoff";
 import PaymentSuccess from "./pages/PaymentSuccess";
 
-
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/amc-web-mvp"} component={AmcWebMvp} />
+      <Route path={"/amc-admin"} component={AmcAdmin} />
       <Route path={"/intake"} component={Intake} />
       <Route path={"/format-handoff"} component={FormatHandoff} />
       <Route path={"/payment-handoff"} component={PaymentHandoff} />
@@ -31,9 +32,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />

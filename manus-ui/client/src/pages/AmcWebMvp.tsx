@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { trackAmcJourney } from "../data/amcFounderOps";
 
 type Language = "en" | "ko";
 type CaseType =
@@ -2552,6 +2553,8 @@ export default function AmcWebMvp() {
   const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
   const [externalSnapshotError, setExternalSnapshotError] = useState<string | null>(null);
   const [externalApiDiagnostic, setExternalApiDiagnostic] = useState<QaDiagnosticResult>(initialQaDiagnosticResult);
+  const [serviceStorageConsent, setServiceStorageConsent] = useState(false);
+  const [researchUseConsent, setResearchUseConsent] = useState(false);
   const externalSnapshotRequestId = useRef(0);
 
   const isKo = language === "ko";
@@ -2599,6 +2602,13 @@ export default function AmcWebMvp() {
   };
 
   const startPreview = () => {
+    const now = new Date().toISOString();
+    void trackAmcJourney({
+      eventType: "preview_started",
+      language,
+      serviceStorageConsent,
+      patch: { currentStage: "preview_started", previewStartedAt: now, serviceStorageConsent },
+    });
     setPreviewStarted(true);
     requestAnimationFrame(() => {
       document.getElementById("preview-intake")?.scrollIntoView({ behavior: "smooth" });
@@ -2606,6 +2616,12 @@ export default function AmcWebMvp() {
   };
 
   const generatePreview = () => {
+    void trackAmcJourney({
+      eventType: "preview_completed",
+      language,
+      serviceStorageConsent,
+      patch: { currentStage: "preview_completed", previewCompletedAt: new Date().toISOString() },
+    });
     setPreviewGenerated(true);
     requestAnimationFrame(() => {
       document.getElementById("preview-dashboard")?.scrollIntoView({ behavior: "smooth" });
@@ -2613,6 +2629,12 @@ export default function AmcWebMvp() {
   };
 
   const continueToFullReport = () => {
+    void trackAmcJourney({
+      eventType: "full_intake_started",
+      language,
+      serviceStorageConsent,
+      patch: { currentStage: "full_intake_started", fullIntakeStartedAt: new Date().toISOString(), researchUseConsent },
+    });
     setFullIntakeUnlocked(true);
     setDashboardGenerated(false);
     requestAnimationFrame(() => {
@@ -2644,6 +2666,67 @@ export default function AmcWebMvp() {
   };
 
   const generateDashboard = () => {
+    const generatedAt = new Date().toISOString();
+    const localizedConditions = isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en;
+    const localizedMissingPoint = isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en;
+    const localizedAlternativePath = isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en;
+    const structuralOutput = {
+      caseType: detectedCaseType,
+      executiveSummary: isKo ? caseReportBranch.executiveSummary.ko : caseReportBranch.executiveSummary.en,
+      primaryRisk: {
+        name: caseReportBranch.primaryRisk.name,
+        meaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
+      },
+      comparisonRows: matrixRows,
+      internalSignals,
+      validationPlan: caseReportBranch.plan,
+    };
+    void trackAmcJourney({
+      eventType: "full_intake_completed",
+      language,
+      serviceStorageConsent,
+      patch: {
+        currentStage: "full_intake_completed",
+        fullIntakeCompletedAt: generatedAt,
+        researchUseConsent,
+        answersJson: Object.fromEntries(Object.entries(fullIntakeAnswers).map(([key, value]) => [key, value])),
+      },
+    });
+    void trackAmcJourney({
+      eventType: "external_evidence_requested",
+      language,
+      serviceStorageConsent,
+      patch: { caseType: detectedCaseType },
+    });
+    void trackAmcJourney({
+      eventType: "dashboard_generated",
+      language,
+      serviceStorageConsent,
+      patch: {
+        currentStage: "report_generated",
+        reportGeneratedAt: generatedAt,
+        language,
+        caseType: detectedCaseType,
+        researchUseConsent,
+        structuralOutputJson: structuralOutput,
+        missingPoint: localizedMissingPoint,
+        alternativePath: localizedAlternativePath,
+        decisionConditionsJson: localizedConditions,
+        safetyMarginStructuredData: {
+          band: internalSignals.find((signal) => signal.label === "Safety Margin")?.status || "Unknown",
+          signal: internalSignals.find((signal) => signal.label === "Safety Margin") || null,
+          reversibility: matrixRows.find((row) => row.dimension === "Reversibility") || null,
+        },
+        existingFifwmStructuredData: {
+          signals: dashboardDeck.map((card) => ({ label: card.section, value: card.keyword, interpretation: card.reading })),
+          comparisonRows: matrixRows,
+          internalSignals,
+        },
+        externalEvidenceMode: mockExternalSnapshot.status,
+        externalEvidenceConfidence: mockExternalSnapshot.confidence,
+        externalEvidenceJson: mockExternalSnapshot,
+      },
+    });
     const requestId = externalSnapshotRequestId.current + 1;
     externalSnapshotRequestId.current = requestId;
     setExternalSnapshot(mockExternalSnapshot);
@@ -2672,10 +2755,32 @@ export default function AmcWebMvp() {
       .then(async (response) => {
         const payload = (await response.json().catch(() => null)) as unknown;
         if (!isExternalSnapshot(payload)) throw new Error("External snapshot response was unavailable.");
-        if (externalSnapshotRequestId.current === requestId) setExternalSnapshot(payload);
+        if (externalSnapshotRequestId.current === requestId) {
+          setExternalSnapshot(payload);
+          void trackAmcJourney({
+            eventType: payload.status === "live" ? "external_evidence_live" : "external_evidence_fallback",
+            language,
+            serviceStorageConsent,
+            patch: {
+              externalEvidenceMode: payload.status,
+              externalEvidenceConfidence: payload.confidence,
+              externalEvidenceJson: payload,
+            },
+          });
+        }
       })
       .catch(() => {
         if (externalSnapshotRequestId.current !== requestId) return;
+        void trackAmcJourney({
+          eventType: "external_evidence_fallback",
+          language,
+          serviceStorageConsent,
+          patch: {
+            externalEvidenceMode: mockExternalSnapshot.status,
+            externalEvidenceConfidence: mockExternalSnapshot.confidence,
+            externalEvidenceJson: mockExternalSnapshot,
+          },
+        });
         setExternalSnapshotError(
           isKo
             ? "Live 외부 맥락을 불러오지 못해 Mock Snapshot을 유지합니다."
@@ -2689,10 +2794,23 @@ export default function AmcWebMvp() {
 
   const selectLanguage = (nextLanguage: Language) => {
     if (nextLanguage === language) return;
+    void trackAmcJourney({
+      eventType: "language_changed",
+      language: nextLanguage,
+      serviceStorageConsent,
+      patch: { language: nextLanguage },
+      metadata: { from: language, to: nextLanguage },
+    });
     setLanguage(nextLanguage);
   };
 
   const generateDetailedReport = () => {
+    void trackAmcJourney({
+      eventType: "detailed_report_opened",
+      language,
+      serviceStorageConsent,
+      patch: { currentStage: "detailed_report_opened" },
+    });
     setShowPdfReportView(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -2832,7 +2950,15 @@ export default function AmcWebMvp() {
             <div className="flex flex-col gap-2 sm:items-end">
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => {
+                  void trackAmcJourney({
+                    eventType: "print_save_clicked",
+                    language,
+                    serviceStorageConsent,
+                    patch: { printSaveClickedAt: new Date().toISOString() },
+                  });
+                  window.print();
+                }}
                 className="inline-flex h-10 items-center justify-center rounded-md bg-[#202326] px-4 text-sm font-medium text-white"
               >
                 {t("Print / Save as PDF", "인쇄 / PDF로 저장")}
@@ -3524,7 +3650,8 @@ export default function AmcWebMvp() {
               <button
                 type="button"
                 onClick={startPreview}
-                className="inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background"
+                disabled={!serviceStorageConsent}
+                className="inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {t("Start Free Preview", "Free Preview 시작하기")}
               </button>
@@ -3535,6 +3662,20 @@ export default function AmcWebMvp() {
                 {t("See how AMC works", "AMC 진행 방식 보기")}
               </a>
             </div>
+            <label className="mt-5 flex max-w-2xl items-start gap-3 text-xs leading-relaxed text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={serviceStorageConsent}
+                onChange={(event) => setServiceStorageConsent(event.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0"
+              />
+              <span>
+                {t(
+                  "I agree that my responses may be stored to generate my report, operate the service, and improve AMC. I will not enter confidential company information or sensitive personal data.",
+                  "리포트 생성, 서비스 운영 및 AMC 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
+                )}
+              </span>
+            </label>
           </div>
 
           <aside className="rounded-lg border border-border bg-card p-5 shadow-sm sm:p-7">
@@ -3933,6 +4074,20 @@ export default function AmcWebMvp() {
                 )}
               </p>
             </div>
+            <label className="mb-5 flex items-start gap-3 rounded-md border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={researchUseConsent}
+                onChange={(event) => setResearchUseConsent(event.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0"
+              />
+              <span>
+                {t(
+                  "Optional: I agree that my de-identified responses may be used in aggregated form for AMC research, education, and service development.",
+                  "선택: 익명화된 응답이 AMC의 연구, 교육 및 서비스 개선을 위해 집계 형태로 활용되는 것에 동의합니다.",
+                )}
+              </span>
+            </label>
             <div className="mb-5 rounded-lg border border-border bg-card p-5">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
