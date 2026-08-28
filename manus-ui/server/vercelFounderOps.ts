@@ -15,6 +15,7 @@ import {
   trackFounderOps,
 } from "./founderOpsApi";
 import { sendFounderReportNotification } from "./founderNotification";
+import { founderHealth, type DatabaseInspection } from "./founderOpsHealth";
 import { getFounderOpsStore } from "./founderOpsStore";
 import type { SubmissionPatch } from "./founderOpsTypes";
 import type { FounderOpsStore } from "./founderOpsTypes";
@@ -161,6 +162,17 @@ export async function handleAdminSummary(
   }
 }
 
+export async function handleAdminHealth(
+  req: ApiRequest,
+  res: ApiResponse,
+  store: FounderOpsStore = getFounderOpsStore(),
+  inspection?: DatabaseInspection
+) {
+  res.setHeader("Cache-Control", "no-store");
+  if (!method(req, res, ["GET"]) || !requireAdmin(req, res)) return;
+  res.status(200).json(await founderHealth(store, inspection));
+}
+
 export async function handleAdminSubmissions(
   req: ApiRequest,
   res: ApiResponse,
@@ -199,12 +211,16 @@ export async function handleAdminSubmission(
     res.status(503).json({ error: "Data backend not configured" });
     return;
   }
-  const detail = await store.getSubmission(id);
-  if (!detail) {
-    res.status(404).json({ error: "Submission not found" });
-    return;
+  try {
+    const detail = await store.getSubmission(id);
+    if (!detail) {
+      res.status(404).json({ error: "Submission not found" });
+      return;
+    }
+    res.status(200).json(detail);
+  } catch {
+    res.status(503).json({ error: "Data backend unavailable" });
   }
-  res.status(200).json(detail);
 }
 
 export async function handleAdminExport(
@@ -218,18 +234,22 @@ export async function handleAdminExport(
     res.status(503).json({ error: "Data backend not configured" });
     return;
   }
-  const full = req.query?.mode === "full";
-  const rows = await store.listSubmissions(
-    parseSubmissionFilters(req.query || {}),
-    10_000
-  );
-  res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="amc-${full ? "full-responses" : "summary"}.csv"`
-  );
-  const csv = buildSubmissionsCsv(rows, full);
-  res.status(200).send(csv);
+  try {
+    const full = req.query?.mode === "full";
+    const rows = await store.listSubmissions(
+      parseSubmissionFilters(req.query || {}),
+      10_000
+    );
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="amc-${full ? "full-responses-sensitive" : "summary"}.csv"`
+    );
+    const csv = buildSubmissionsCsv(rows, full);
+    res.status(200).send(csv);
+  } catch {
+    res.status(503).json({ error: "Data backend unavailable" });
+  }
 }
 
 export const requireAdminSession = requireAdmin;
