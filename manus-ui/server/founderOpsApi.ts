@@ -1,7 +1,7 @@
 import {
   buildOperationsSummary,
   buildResearchSummary,
-} from "./founderOpsAnalytics";
+} from "./founderOpsAnalytics.js";
 import {
   usageEventTypes,
   type AmcLanguage,
@@ -9,7 +9,7 @@ import {
   type SubmissionFilters,
   type SubmissionPatch,
   type UsageEventType,
-} from "./founderOpsTypes";
+} from "./founderOpsTypes.js";
 
 type TrackBody = {
   submissionId?: unknown;

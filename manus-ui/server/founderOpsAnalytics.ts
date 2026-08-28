@@ -3,7 +3,7 @@ import type {
   ResearchSummary,
   SubmissionRecord,
   UsageEventRecord,
-} from "./founderOpsTypes";
+} from "./founderOpsTypes.js";
 
 function increment(
   target: Record<string, number>,
