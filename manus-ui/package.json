@@ -11,6 +11,9 @@
     "preview": "vite preview --host",
     "test:submission-bridge": "tsx scripts/post_submission_fixture.ts",
     "send:email-handoff": "tsx scripts/send_email_handoff.ts",
+    "db:migrate": "node --import tsx scripts/db_migrate.ts",
+    "db:check": "node --import tsx scripts/db_check.ts",
+    "test:founder-ops": "vitest run --root .. manus-ui/tests/founder-ops.test.ts",
     "check": "tsc --noEmit",
     "format": "prettier --write ."
   },

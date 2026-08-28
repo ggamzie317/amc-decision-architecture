@@ -38,6 +38,28 @@ type Detail = {
   submission: Submission;
   events: Array<{ eventId: string; eventType: string; createdAt: string }>;
 };
+type Health = {
+  database: "connected" | "not_configured" | "error";
+  schema: "ready" | "missing_migration";
+  submissionStorage: "ready" | "unavailable";
+  usageEvents: "ready" | "unavailable";
+  adminSession: "ready" | "not_configured";
+  emailNotification: "configured" | "not_configured";
+  externalEvidence: "configured" | "not_configured";
+  dataQuality: null | {
+    totalSubmissions: number;
+    productVersionPresent: number;
+    frameworkVersionPresent: number;
+    completeFullIntake: number;
+    structuralOutputSaved: number;
+    safetyMarginSaved: number;
+    externalEvidenceSaved: number;
+    missingPointSaved: number;
+    alternativePathStateSaved: number;
+    decisionConditionsSaved: number;
+    researchConsentRate: number;
+  };
+};
 type Tab = "operations" | "research" | "submissions";
 
 const metricLabels: Record<string, string> = {
@@ -105,6 +127,7 @@ export default function AmcAdmin() {
   const [research, setResearch] = useState<Summary | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [detail, setDetail] = useState<Detail | null>(null);
+  const [health, setHealth] = useState<Health | null>(null);
   const [filters, setFilters] = useState({
     language: "",
     caseType: "",
@@ -124,7 +147,7 @@ export default function AmcAdmin() {
 
   const load = async () => {
     try {
-      const [ops, patterns, list] = await Promise.all([
+      const [ops, patterns, list, status] = await Promise.all([
         api<Summary>(
           `/api/amc/admin/summary?${new URLSearchParams({ ...(windowDays !== "all" ? { window: windowDays } : {}) })}`
         ),
@@ -134,11 +157,13 @@ export default function AmcAdmin() {
         api<{ backendAvailable: boolean; submissions: Submission[] }>(
           `/api/amc/admin/submissions?${query}`
         ),
+        api<Health>("/api/amc/admin/health"),
       ]);
       setAuthenticated(true);
       setSummary(ops);
       setResearch(patterns);
       setSubmissions(list.submissions);
+      setHealth(status);
     } catch (error) {
       if (error instanceof Error && error.message === "Unauthorized")
         setAuthenticated(false);
@@ -181,6 +206,7 @@ export default function AmcAdmin() {
     setResearch(null);
     setSubmissions([]);
     setDetail(null);
+    setHealth(null);
   };
 
   const openDetail = async (submissionId: string) => {
@@ -244,7 +270,8 @@ export default function AmcAdmin() {
     );
   }
 
-  const backendAvailable = summary?.backendAvailable !== false;
+  const backendAvailable =
+    health?.database === "connected" && health.schema === "ready";
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border px-5 py-5 sm:px-8">
@@ -267,8 +294,11 @@ export default function AmcAdmin() {
       <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8">
         {!backendAvailable ? (
           <p className="mb-6 border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-            Data backend not configured. Configure the server-side database and
-            run the migration.
+            {health?.database === "not_configured"
+              ? "Data backend not configured. Configure DATABASE_URL and run the migration."
+              : health?.database === "error"
+                ? "Data backend unavailable. Check the server-side database configuration and connectivity."
+                : "Database schema is not ready. Run the founder operations migration."}
           </p>
         ) : null}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
@@ -300,6 +330,99 @@ export default function AmcAdmin() {
 
         {tab === "operations" ? (
           <div className="mt-6 space-y-6">
+            <section className="border border-border bg-card p-5">
+              <h2 className="text-base font-semibold">
+                Founder Operations Health
+              </h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  ["Database", health?.database],
+                  ["Schema", health?.schema],
+                  ["Submission storage", health?.submissionStorage],
+                  ["Usage events", health?.usageEvents],
+                  ["Admin session", health?.adminSession],
+                  ["Email notification", health?.emailNotification],
+                  ["External Evidence", health?.externalEvidence],
+                ].map(([label, value]) => (
+                  <div key={label} className="border border-border p-3 text-sm">
+                    <p className="text-muted-foreground">{label}</p>
+                    <p className="mt-1 font-semibold capitalize">
+                      {String(value || "checking").replaceAll("_", " ")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <section className="border border-border bg-card p-5">
+              <h2 className="text-base font-semibold">Data Quality</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Completeness indicators only; no research interpretation or new
+                AI analysis.
+              </p>
+              {health?.dataQuality ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    [
+                      "Product version present",
+                      health.dataQuality.productVersionPresent,
+                    ],
+                    [
+                      "Framework version present",
+                      health.dataQuality.frameworkVersionPresent,
+                    ],
+                    [
+                      "Complete Full Intake",
+                      health.dataQuality.completeFullIntake,
+                    ],
+                    [
+                      "Structural output saved",
+                      health.dataQuality.structuralOutputSaved,
+                    ],
+                    [
+                      "Safety Margin saved",
+                      health.dataQuality.safetyMarginSaved,
+                    ],
+                    [
+                      "External Evidence saved",
+                      health.dataQuality.externalEvidenceSaved,
+                    ],
+                    [
+                      "Missing Point saved",
+                      health.dataQuality.missingPointSaved,
+                    ],
+                    [
+                      "Alternative Path state saved",
+                      health.dataQuality.alternativePathStateSaved,
+                    ],
+                    [
+                      "Decision Conditions saved",
+                      health.dataQuality.decisionConditionsSaved,
+                    ],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="flex justify-between gap-4 border-b border-border pb-2 text-sm"
+                    >
+                      <span className="text-muted-foreground">{label}</span>
+                      <strong>
+                        {value} / {health.dataQuality?.totalSubmissions}
+                      </strong>
+                    </div>
+                  ))}
+                  <div className="flex justify-between gap-4 border-b border-border pb-2 text-sm">
+                    <span className="text-muted-foreground">
+                      Research consent rate
+                    </span>
+                    <strong>{health.dataQuality.researchConsentRate}%</strong>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Unavailable until the database is connected and the migration
+                  is ready.
+                </p>
+              )}
+            </section>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {Object.entries(summary?.totals || {}).map(([key, value]) => (
                 <div key={key} className="border border-border bg-card p-4">

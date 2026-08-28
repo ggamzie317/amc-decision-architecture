@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFile } from "node:fs/promises";
 
 import {
   ADMIN_COOKIE_NAME,
@@ -8,16 +9,19 @@ import {
 } from "../server/founderAdminAuth";
 import { buildResearchSummary } from "../server/founderOpsAnalytics";
 import { trackFounderOps } from "../server/founderOpsApi";
+import { inspectFounderOpsDatabase } from "../server/founderOpsHealth";
 import {
   getFounderOpsStore,
   MemoryFounderOpsStore,
 } from "../server/founderOpsStore";
 import {
   handleAdminExport,
+  handleAdminHealth,
   handleAdminLogout,
   handleAdminSubmission,
   handleAdminSubmissions,
   handleAdminSummary,
+  handleTrack,
   type ApiResponse,
 } from "../server/vercelFounderOps";
 
@@ -53,6 +57,8 @@ describe("founder operations storage", () => {
 
     const detail = await store.getSubmission(created.submissionId!);
     expect(detail?.submission.currentStage).toBe("full_intake_started");
+    expect(detail?.submission.productVersion).toBe("AMC-LAUNCH-V2");
+    expect(detail?.submission.frameworkVersion).toBe("FIFWM-SM-V1");
     expect(detail?.events.map(event => event.eventType)).toEqual([
       "preview_started",
       "full_intake_started",
@@ -74,6 +80,61 @@ describe("founder operations storage", () => {
       stored: false,
       reason: "backend_unavailable",
     });
+  });
+
+  it("reports a missing DATABASE_URL without exposing connection details", async () => {
+    const result = await inspectFounderOpsDatabase("");
+    expect(result).toEqual({
+      database: "not_configured",
+      schema: "missing_migration",
+      submissionStorage: "unavailable",
+      usageEvents: "unavailable",
+      missing: ["submissions", "usage_events"],
+    });
+    expect(JSON.stringify(result)).not.toContain("DATABASE_URL");
+  });
+
+  it("keeps the public tracking route non-blocking when the database fails", async () => {
+    const response = responseRecorder();
+    const store = {
+      available: true,
+      createSubmission: vi
+        .fn()
+        .mockRejectedValue(new Error("connection detail")),
+      updateSubmission: vi.fn(),
+      addEvent: vi.fn(),
+      listSubmissions: vi.fn(),
+      getSubmission: vi.fn(),
+    };
+    await handleTrack(
+      {
+        method: "POST",
+        body: {
+          language: "en",
+          serviceStorageConsent: true,
+          eventType: "preview_started",
+        },
+      },
+      response.response,
+      store
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      ok: true,
+      stored: false,
+      reason: "storage_unavailable",
+    });
+    expect(JSON.stringify(response.body)).not.toContain("connection detail");
+  });
+
+  it("keeps the bootstrap migration non-destructive and repeatable", async () => {
+    const sql = await readFile(
+      new URL("../db/001_amc_founder_ops.sql", import.meta.url),
+      "utf8"
+    );
+    expect(sql.match(/CREATE TABLE IF NOT EXISTS/g)).toHaveLength(2);
+    expect(sql.match(/CREATE INDEX IF NOT EXISTS/g)?.length).toBeGreaterThan(0);
+    expect(sql).not.toMatch(/\b(DROP|TRUNCATE|DELETE\s+FROM)\b/i);
   });
 
   it("excludes research-consent false records from research analytics", async () => {
@@ -120,12 +181,15 @@ describe("founder admin security", () => {
     const summary = responseRecorder();
     const csv = responseRecorder();
     const logout = responseRecorder();
+    const health = responseRecorder();
     await handleAdminSummary({ method: "GET", headers: {} }, summary.response);
     await handleAdminExport({ method: "GET", headers: {} }, csv.response);
     await handleAdminLogout({ method: "POST", headers: {} }, logout.response);
+    await handleAdminHealth({ method: "GET", headers: {} }, health.response);
     expect(summary.statusCode).toBe(401);
     expect(csv.statusCode).toBe(401);
     expect(logout.statusCode).toBe(401);
+    expect(health.statusCode).toBe(401);
     expect(summary.body).toEqual({ ok: false, error: "Unauthorized" });
     expect(csv.headers["Content-Type"]).toBeUndefined();
   });
@@ -142,7 +206,8 @@ describe("founder admin security", () => {
     await store.updateSubmission(submission.submissionId, {
       researchUseConsent: true,
       caseType: "Entrepreneurship",
-      answersJson: { "1": "A bounded test answer" },
+      answersJson: { "1": '한국어, comma\n"quoted" answer' },
+      missingPoint: '검증, "인용"\n줄',
       currentStage: "report_generated",
       reportGeneratedAt: new Date().toISOString(),
     });
@@ -200,9 +265,103 @@ describe("founder admin security", () => {
     expect(detail.body).toMatchObject({
       submission: { submissionId: submission.submissionId },
     });
-    expect(String(summaryCsv.body)).not.toContain("A bounded test answer");
-    expect(String(fullCsv.body)).toContain("A bounded test answer");
+    expect(String(summaryCsv.body)).not.toContain("한국어");
+    expect(String(fullCsv.body)).toContain("한국어, comma");
+    expect(String(summaryCsv.body)).toContain('""인용""');
+    expect(String(fullCsv.body).charCodeAt(0)).toBe(0xfeff);
     expect(summaryCsv.headers["Content-Type"]).toContain("text/csv");
+  });
+
+  it("returns authenticated health and data-quality indicators", async () => {
+    vi.stubEnv(
+      "AMC_ADMIN_SESSION_SECRET",
+      "test-session-secret-value-with-length"
+    );
+    vi.stubEnv("AMC_ADMIN_PASSWORD", "test-password-value");
+    const token = createAdminSession();
+    const store = new MemoryFounderOpsStore();
+    const submission = await store.createSubmission("ko", true);
+    await store.updateSubmission(submission.submissionId, {
+      researchUseConsent: true,
+      fullIntakeCompletedAt: new Date().toISOString(),
+      answersJson: Object.fromEntries(
+        Array.from({ length: 29 }, (_, index) => [
+          String(index + 1),
+          `답변 ${index + 1}`,
+        ])
+      ),
+      structuralOutputJson: { saved: true },
+      safetyMarginStructuredData: { band: "moderate" },
+      externalEvidenceJson: { status: "live" },
+      missingPoint: "검증 지점",
+      alternativePath: "",
+      decisionConditionsJson: ["조건"],
+    });
+    const response = responseRecorder();
+    await handleAdminHealth(
+      {
+        method: "GET",
+        headers: { cookie: `${ADMIN_COOKIE_NAME}=${token}` },
+      },
+      response.response,
+      store,
+      {
+        database: "connected",
+        schema: "ready",
+        submissionStorage: "ready",
+        usageEvents: "ready",
+        missing: [],
+      }
+    );
+    expect(response.body).toMatchObject({
+      database: "connected",
+      schema: "ready",
+      adminSession: "ready",
+      dataQuality: {
+        totalSubmissions: 1,
+        completeFullIntake: 1,
+        structuralOutputSaved: 1,
+        safetyMarginSaved: 1,
+        externalEvidenceSaved: 1,
+        missingPointSaved: 1,
+        alternativePathStateSaved: 1,
+        decisionConditionsSaved: 1,
+        researchConsentRate: 100,
+      },
+    });
+  });
+
+  it("returns a clean admin error when an available database becomes unreachable", async () => {
+    vi.stubEnv(
+      "AMC_ADMIN_SESSION_SECRET",
+      "test-session-secret-value-with-length"
+    );
+    const token = createAdminSession();
+    const store = {
+      available: true,
+      createSubmission: vi.fn(),
+      updateSubmission: vi.fn(),
+      addEvent: vi.fn(),
+      listSubmissions: vi
+        .fn()
+        .mockRejectedValue(new Error("sensitive host detail")),
+      getSubmission: vi
+        .fn()
+        .mockRejectedValue(new Error("sensitive host detail")),
+    };
+    const csv = responseRecorder();
+    await handleAdminExport(
+      {
+        method: "GET",
+        headers: { cookie: `${ADMIN_COOKIE_NAME}=${token}` },
+        query: { mode: "summary" },
+      },
+      csv.response,
+      store
+    );
+    expect(csv.statusCode).toBe(503);
+    expect(csv.body).toEqual({ error: "Data backend unavailable" });
+    expect(JSON.stringify(csv.body)).not.toContain("sensitive host detail");
   });
 });
 
