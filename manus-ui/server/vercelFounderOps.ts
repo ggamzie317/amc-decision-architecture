@@ -7,18 +7,18 @@ import {
   readCookie,
   validateAdminPassword,
   verifyAdminSession,
-} from "./founderAdminAuth";
+} from "./founderAdminAuth.js";
 import {
   buildSubmissionsCsv,
   founderSummary,
   parseSubmissionFilters,
   trackFounderOps,
-} from "./founderOpsApi";
-import { sendFounderReportNotification } from "./founderNotification";
-import { founderHealth, type DatabaseInspection } from "./founderOpsHealth";
-import { getFounderOpsStore } from "./founderOpsStore";
-import type { SubmissionPatch } from "./founderOpsTypes";
-import type { FounderOpsStore } from "./founderOpsTypes";
+} from "./founderOpsApi.js";
+import { sendFounderReportNotification } from "./founderNotification.js";
+import { founderHealth, type DatabaseInspection } from "./founderOpsHealth.js";
+import { getFounderOpsStore } from "./founderOpsStore.js";
+import type { SubmissionPatch } from "./founderOpsTypes.js";
+import type { FounderOpsStore } from "./founderOpsTypes.js";
 
 export type ApiRequest = {
   method?: string;

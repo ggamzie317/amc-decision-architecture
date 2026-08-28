@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
-import { adminAuthConfigured } from "./founderAdminAuth";
-import type { FounderOpsStore, SubmissionRecord } from "./founderOpsTypes";
+import { adminAuthConfigured } from "./founderAdminAuth.js";
+import type { FounderOpsStore, SubmissionRecord } from "./founderOpsTypes.js";
 
 export const REQUIRED_SCHEMA: Record<string, readonly string[]> = {
   submissions: [

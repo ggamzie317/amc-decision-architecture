@@ -11,7 +11,7 @@ import {
   type SubmissionRecord,
   type UsageEventRecord,
   type UsageEventType,
-} from "./founderOpsTypes";
+} from "./founderOpsTypes.js";
 
 const jsonFields = new Set([
   "answers_json",

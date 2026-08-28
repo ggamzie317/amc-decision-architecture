@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-import type { SubmissionPatch } from "./founderOpsTypes";
+import type { SubmissionPatch } from "./founderOpsTypes.js";
 
 function env(name: string) {
   return String(process.env[name] || "").trim();
