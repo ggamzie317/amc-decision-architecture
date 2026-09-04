@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -14,6 +16,9 @@ import {
   type StructuralSignal,
 } from "../client/src/data/amcProductApplicationV3";
 import { AMC_FRAMEWORK_VERSION, AMC_PRODUCT_VERSION } from "../server/founderOpsTypes";
+import { ProductApplicationDashboard, ProductApplicationReport } from "../client/src/components/ProductApplicationViews";
+
+(globalThis as typeof globalThis & { React: typeof React }).React = React;
 
 const fifwm = (score: 0 | 1 | 2 = 1): FifwmStructure => ({
   formal: { score, reading: "Formal authority and decision rights are mapped." },
@@ -260,19 +265,97 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(result.safetyMargin.reading).toContain("constrains exposure");
   });
 
-  it("allows zero to three Changing Plays and never forces Option C", () => {
-    expect(buildProductApplicationV3(input({ changingMoves: [] })).changingPlays).toHaveLength(0);
-    const plays = buildProductApplicationV3(input({ changingMoves: ["Capability test", "Positioning test", "Resource recombination", "Ignored fourth"] })).changingPlays;
-    expect(plays).toHaveLength(3);
-    expect(plays.map((play) => play.move).join(" ")).not.toContain("Option C");
+  it("derives zero, one, and two-to-three distinct Changing Plays without forcing Option C", () => {
+    const fullySupported = buildProductApplicationV3(input({
+      fifwm: fifwm(2),
+      structuralSignals: {
+        externalValidation: signal("strong"), internalReadiness: signal("strong"), safetyMargin: signal("strong"),
+        reversibility: signal("strong"), optionBSupport: signal("strong"), structuralRisk: signal("low"),
+        constraintLoad: signal("light"), missingPointImpact: signal("resolved"),
+      },
+    }));
+    const onePlay = buildProductApplicationV3(input({
+      structuralSignals: {
+        externalValidation: signal("developing"), internalReadiness: signal("strong"), safetyMargin: signal("strong"),
+        reversibility: signal("strong"), optionBSupport: signal("strong"), structuralRisk: signal("low"),
+        constraintLoad: signal("light"), missingPointImpact: signal("resolved"),
+      },
+    }));
+    const threePlays = buildProductApplicationV3(input({
+      caseType: "Corporate Stay vs Exit",
+      structuralSignals: { ...baseSignals, safetyMargin: signal("weak"), structuralRisk: signal("high") },
+    }));
+    expect(fullySupported.changingPlays).toHaveLength(0);
+    expect(onePlay.changingPlays).toHaveLength(1);
+    expect(threePlays.changingPlays).toHaveLength(3);
+    expect(new Set(threePlays.changingPlays.map((play) => play.family)).size).toBe(3);
+    expect(threePlays.changingPlays.map((play) => play.move).join(" ")).not.toContain("Option C");
+  });
+
+  it("creates case-aware Changing families instead of replaying the legacy alternative path", () => {
+    const cases = ["Corporate Stay vs Exit", "MBA / EMBA / PhD Decision", "Entrepreneurship", "Overseas Relocation"];
+    const firstFamilies = cases.map((caseType) => buildProductApplicationV3(input({ caseType, changingMoves: ["LEGACY STATIC ALTERNATIVE"] })).changingPlays[0]?.family);
+    expect(firstFamilies).toEqual(["role-scope", "pathway", "parallel-validation", "timing"]);
+    expect(firstFamilies.every(Boolean)).toBe(true);
+    expect(cases.flatMap((caseType) => buildProductApplicationV3(input({ caseType })).changingPlays.map((play) => play.move))).not.toContain("LEGACY STATIC ALTERNATIVE");
+  });
+
+  it("produces distinct visual summaries and reconfigurations for four representative case structures", () => {
+    const cases = [
+      { caseType: "Corporate Stay vs Exit", safety: "strong", downside: "low", condition: "The redesigned role receives written approval." },
+      { caseType: "MBA / EMBA / PhD Decision", safety: "developing", downside: "moderate", condition: "Alumni outcomes show differentiated access." },
+      { caseType: "Entrepreneurship", safety: "weak", downside: "high", condition: "Three buyers fund a repeatable pilot." },
+      { caseType: "Overseas Relocation", safety: "unknown", downside: "unknown", condition: "Visa and family logistics are workable." },
+    ] as const;
+    const results = cases.map(({ caseType, safety, downside, condition }) => buildProductApplicationV3(input({
+      caseType,
+      safetyMarginInputs: {
+        financialRoom: { band: safety, source: "current-user-structured" },
+        reversibility: { band: safety, source: "current-user-structured" },
+        downsideExposure: { band: downside, source: "current-user-structured" },
+      },
+      structuralSignals: { ...baseSignals, safetyMargin: signal(safety), reversibility: signal(safety), structuralRisk: signal(downside) },
+      decisionConditions: [condition],
+    })));
+    expect(new Set(results.map((result) => result.presentation.missingPointKeyword)).size).toBe(4);
+    expect(new Set(results.map((result) => result.presentation.coreTradeoffKeyword)).size).toBe(4);
+    expect(new Set(results.map((result) => result.presentation.nextTestKeyword)).size).toBe(4);
+    expect(new Set(results.map((result) => result.presentation.safetyMarginKeyword)).size).toBe(4);
+    expect(results.map((result) => result.changingPlays[0]?.family)).toEqual(["role-scope", "pathway", "parallel-validation", "timing"]);
+    expect(results.map((result) => result.decisionSwitches[0]?.signal)).toEqual(cases.map((item) => item.condition));
+    expect(results.every((result) => result.nextStepExperiment.stages.length === 3)).toBe(true);
+  });
+
+  it("builds five explicit dashboard keywords and distinct concise/detailed renderers from one intelligence object", () => {
+    const result = buildProductApplicationV3(input());
+    expect(Object.keys(result.presentation).filter((key) => key.endsWith("Keyword"))).toEqual([
+      "postureKeyword", "missingPointKeyword", "safetyMarginKeyword", "coreTradeoffKeyword", "nextTestKeyword",
+    ]);
+    const props = { intelligence: result, translate: (en: string) => en, externalEvidenceUsed: true };
+    const dashboard = renderToStaticMarkup(React.createElement(ProductApplicationDashboard, props));
+    const report = renderToStaticMarkup(React.createElement(ProductApplicationReport, props));
+    expect(dashboard).toContain('data-executive-decision-map="true"');
+    expect(dashboard).toContain('data-decision-structure-visual="true"');
+    expect(dashboard).toContain('data-safety-margin-visual="true"');
+    expect(dashboard).toContain("If");
+    expect(dashboard).toContain("Then");
+    expect(dashboard).toContain("30 days");
+    expect(dashboard).not.toMatch(/\d+%/);
+    expect(dashboard).not.toContain(result.why.biggestRisk);
+    expect(report).toContain('data-report-executive-summary="true"');
+    expect(report).toContain('data-report-detail="true"');
+    expect(report.length).toBeGreaterThan(dashboard.length);
   });
 
   it("uses live-case or explicit unknown wiring with no historical fixture or fixed posture bands", () => {
     const root = path.basename(process.cwd()) === "manus-ui" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
     const page = fs.readFileSync(path.join(root, "manus-ui/client/src/pages/AmcWebMvp.tsx"), "utf8");
-    expect(page.match(/<ProductApplicationSections intelligence=\{productApplicationV3\}/g)).toHaveLength(2);
+    expect(page.match(/<ProductApplicationDashboard intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
+    expect(page.match(/<ProductApplicationReport intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
     expect(page).not.toMatch(/import\s+reportPayload\s+from/);
     expect(page).not.toContain("buildFifwmFromReportPayload(reportPayload");
+    expect(page).not.toContain("launchInterpretation.alternativePath");
+    expect(page).not.toContain("changingMoves:");
     expect(page).toContain("buildUnavailableFifwm(language)");
     expect(page).toContain("externalValidationSignal(displayedExternalSnapshot)");
     expect(page).toContain('externalSnapshot ?? (isQaMode ? mockExternalSnapshot : neutralExternalSnapshot)');
@@ -284,6 +367,7 @@ describe("AMC Product Application Layer V3 correction", () => {
     ]) expect(page).not.toContain(fixedBand);
     expect(page).toContain("productApplicationV3.decisionStructure.fifwm");
     expect(page).toContain("structuralOutputJson: structuralOutput");
+    expect(page).toContain("changingPlays: productApplicationV3.changingPlays");
     expect(page).toContain("answersJson:");
     expect(page).toContain("safetyMarginInputs: productApplicationV3.safetyMargin.inputs");
     expect(page).toContain('source: "current-user-structured"');

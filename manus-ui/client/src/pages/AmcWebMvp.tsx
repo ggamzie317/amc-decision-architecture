@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { ProductApplicationDashboard, ProductApplicationReport } from "../components/ProductApplicationViews";
 import { trackAmcJourney } from "../data/amcFounderOps";
 import {
   buildUnavailableFifwm,
@@ -2882,7 +2883,6 @@ export default function AmcWebMvp() {
         structuralSignals: currentCaseStructuralSignals,
         missingPoint: isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en,
         missingPointWhy: isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en,
-        changingMoves: [isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en],
         primaryRisk: caseReportBranch.primaryRisk.name,
         primaryRiskMeaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
         decisionConditions: isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en,
@@ -3352,7 +3352,7 @@ export default function AmcWebMvp() {
           </section>
 
           <div className="pdf-report-body">
-            <ProductApplicationSections intelligence={productApplicationV3} translate={t} report externalEvidenceUsed={displayedExternalSnapshot.status === "live"} />
+            <ProductApplicationReport intelligence={productApplicationV3} translate={t} externalEvidenceUsed={displayedExternalSnapshot.status === "live"} />
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
               <p className="pdf-kicker">Supporting Detail / Structural Evidence Map</p>
               <div className="mt-5 border-y border-black/20 py-7">
@@ -3640,19 +3640,23 @@ export default function AmcWebMvp() {
               <h2 className="pdf-section-heading mt-3">
                 {t("A reversible path can test the structure without deciding the outcome.", "되돌릴 수 있는 경로로 결론을 대신하지 않고 구조를 검증할 수 있습니다.")}
               </h2>
-              <div className="pdf-keep-together mt-7 border-l-2 border-black bg-[#f6f6f4] p-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
-                  {t("Move to test", "검증할 변화")}
-                </p>
-                <p className="mt-4 text-lg font-semibold leading-7">
-                  {isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en}
-                </p>
-                <p className="mt-4 text-sm leading-6 text-black/60">
-                  {t(
-                    "This is a validation path, not a recommendation or an invented Option C.",
-                    "이 경로는 추천이나 임의의 Option C가 아니라 가정을 확인하기 위한 검증 경로입니다.",
-                  )}
-                </p>
+              <div className="mt-7 space-y-4">
+                {productApplicationV3.changingPlays.length ? productApplicationV3.changingPlays.map((play, index) => (
+                  <article key={play.family} className="pdf-keep-together border-l-2 border-black bg-[#f6f6f4] p-6">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
+                      {t("Changing Play", "Changing Play")} {String(index + 1).padStart(2, "0")}
+                    </p>
+                    <h3 className="mt-3 text-lg font-semibold">{play.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-black/70">{play.move}</p>
+                    <p className="mt-4 text-sm leading-6 text-black/60">
+                      {t("Needs", "필요 근거")}: {play.needs} · {t("Exposure", "노출")}: {play.exposure}
+                    </p>
+                  </article>
+                )) : (
+                  <p className="pdf-keep-together border-l-2 border-black bg-[#f6f6f4] p-6 text-sm leading-6 text-black/65">
+                    {t("No additional configuration is structurally justified yet.", "아직 추가 구성을 정당화할 구조적 근거가 없습니다.")}
+                  </p>
+                )}
               </div>
             </section>
 
@@ -4556,8 +4560,9 @@ export default function AmcWebMvp() {
                 )}
               />
 
-              <ProductApplicationSections intelligence={productApplicationV3} translate={t} externalEvidenceUsed={displayedExternalSnapshot.status === "live"} />
+              <ProductApplicationDashboard intelligence={productApplicationV3} translate={t} externalEvidenceUsed={displayedExternalSnapshot.status === "live"} />
 
+              {false ? <>
               <section className="mt-5 rounded-lg border border-foreground/20 bg-foreground p-6 text-background sm:p-7">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-background/55">
                   {t("Supporting Structural Detail", "구조적 세부 근거")}
@@ -4896,9 +4901,9 @@ export default function AmcWebMvp() {
                   </p>
                   <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1.35fr_0.65fr]">
                     <div className="rounded-md border border-border bg-background p-5">
-                      <p className="text-lg font-semibold leading-relaxed">
-                        {isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en}
-                      </p>
+                      {productApplicationV3.changingPlays.map((play) => (
+                        <p key={play.family} className="text-lg font-semibold leading-relaxed">{play.title}</p>
+                      ))}
                     </div>
                     <div className="rounded-md border border-border bg-secondary/25 p-5">
                       <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -5071,6 +5076,7 @@ export default function AmcWebMvp() {
                   </div>
                 </section>
               </div>
+              </> : null}
             </section>
 
             <section className="border-b border-border py-12 sm:py-14">
