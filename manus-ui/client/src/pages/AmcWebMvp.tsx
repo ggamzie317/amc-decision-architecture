@@ -1,5 +1,17 @@
 import { useMemo, useRef, useState } from "react";
 import { trackAmcJourney } from "../data/amcFounderOps";
+import {
+  buildUnavailableFifwm,
+  buildProductApplicationV3,
+  deriveSafetyMarginCore,
+  type SafetyMarginInputs,
+  type ProductApplicationV3,
+  type StructuralLoad,
+  type StructuralRisk,
+  type StructuralSignal,
+  type StructuralStrength,
+  type MissingPointImpact,
+} from "../data/amcProductApplicationV3";
 
 type Language = "en" | "ko";
 type CaseType =
@@ -48,6 +60,40 @@ type PreviewAnswers = {
   risk: string;
   condition: string;
 };
+
+type SafetyMarginQuestionId = 19 | 20 | 21;
+type SafetyMarginSelections = {
+  19: StructuralStrength | null;
+  20: StructuralStrength | null;
+  21: StructuralRisk | null;
+};
+
+const safetyMarginQuestionIds = [19, 20, 21] as const;
+const initialSafetyMarginSelections: SafetyMarginSelections = { 19: null, 20: null, 21: null };
+const safetyMarginBandOptions: Record<SafetyMarginQuestionId, Array<{ value: string; en: string; ko: string }>> = {
+  19: [
+    { value: "strong", en: "Strong", ko: "Strong" },
+    { value: "developing", en: "Developing", ko: "Developing" },
+    { value: "weak", en: "Weak", ko: "Weak" },
+    { value: "unknown", en: "Not sure", ko: "잘 모르겠음" },
+  ],
+  20: [
+    { value: "strong", en: "Strong", ko: "Strong" },
+    { value: "developing", en: "Developing", ko: "Developing" },
+    { value: "weak", en: "Weak", ko: "Weak" },
+    { value: "unknown", en: "Not sure", ko: "잘 모르겠음" },
+  ],
+  21: [
+    { value: "low", en: "Low", ko: "Low" },
+    { value: "moderate", en: "Moderate", ko: "Moderate" },
+    { value: "high", en: "High", ko: "High" },
+    { value: "unknown", en: "Not sure", ko: "잘 모르겠음" },
+  ],
+};
+
+function isSafetyMarginQuestionId(questionId: number): questionId is SafetyMarginQuestionId {
+  return safetyMarginQuestionIds.includes(questionId as SafetyMarginQuestionId);
+}
 
 const initialPreviewAnswers: PreviewAnswers = {
   decision: "",
@@ -165,8 +211,8 @@ const lockedModules = [
     reveals: "Primary, secondary, and distortion risks.",
   },
   {
-    title: "Decision Conditions",
-    reveals: "What makes deeper commitment more defensible.",
+    title: "Decision Switches",
+    reveals: "Observable evidence that would change the current posture.",
   },
   {
     title: "Detailed PDF Report",
@@ -175,16 +221,14 @@ const lockedModules = [
 ] as const;
 
 const detailedPdfSections = [
-  "Executive Structural Overview",
+  "Current Structural Posture",
+  "Why This Posture",
+  "Decision Structure / FIFWM",
   "What You May Be Missing",
-  "Inside View",
-  "Outside / Live External Evidence",
-  "Option A / Option B Structural Comparison",
-  "Alternative Path Worth Testing",
-  "Safety Margin and Reversibility",
-  "Primary Risks and Trade-offs",
-  "Decision Conditions",
-  "30 / 60 / 90-day Validation Plan",
+  "Changing Plays",
+  "Safety Margin — Room to Be Wrong",
+  "Decision Switches",
+  "Next-Step Experiment",
 ] as const;
 
 const intakeGroups = [
@@ -295,17 +339,17 @@ const intakeGroups = [
     questions: [
       {
         id: 19,
-        text: "How much financial runway or income stability do you have?",
+        text: "How much financial or income room can you protect while testing this decision?",
         sample: "The current role provides strong stability, while a transition would require a protected 12-month runway.",
       },
       {
         id: 20,
-        text: "Which option gives you more reversibility if things do not work out?",
+        text: "What recovery or re-entry path remains if the test does not work?",
         sample: "Option A is currently more reversible because exploration can continue while income is protected.",
       },
       {
         id: 21,
-        text: "What downside exposure would be hardest to absorb?",
+        text: "What downside would reduce your room to test, recover, or try again?",
         sample: "A transition that weakens income without producing academic or advisory validation.",
       },
     ],
@@ -351,7 +395,7 @@ const intakeGroups = [
     ],
   },
   {
-    title: "Decision Conditions",
+    title: "Decision Switches",
     questions: [
       {
         id: 28,
@@ -375,7 +419,7 @@ const intakeGroupTitlesKo: Record<string, string> = {
   "Safety Margin": "Safety Margin",
   "Support System": "Support System",
   "Timing and Constraints": "Timing and Constraints",
-  "Decision Conditions": "Decision Conditions",
+  "Decision Switches": "Decision Switches",
 };
 
 const intakeQuestionsKo: Record<number, { text: string; sample: string }> = {
@@ -774,7 +818,7 @@ const fullIntakeGuidance: Record<number, FullIntakeGuidance> = {
       example: "Example: Three paid customers, repeatable delivery, and clear time boundaries would make Option B more defensible.",
     },
     ko: {
-      guide: "Option B를 더 타당하게 만드는 Decision Conditions을 적으세요.",
+      guide: "Option B 쪽으로 현재 자세를 바꿀 관찰 가능한 근거를 적으세요.",
       example: "예: 유료 고객 3명, 반복 가능한 실행, 명확한 시간 경계가 있으면 Option B가 더 타당해집니다.",
     },
   },
@@ -784,7 +828,7 @@ const fullIntakeGuidance: Record<number, FullIntakeGuidance> = {
       example: "Example: A clearer internal role, stronger sponsorship, and reduced burnout would make Option A more defensible.",
     },
     ko: {
-      guide: "Option A를 더 타당하게 만드는 Decision Conditions을 적으세요.",
+      guide: "Option A 쪽으로 현재 자세를 바꿀 관찰 가능한 근거를 적으세요.",
       example: "예: 더 명확한 내부 역할, 강한 sponsorship, burnout 감소가 있으면 Option A가 더 타당해집니다.",
     },
   },
@@ -828,9 +872,9 @@ const matrixRows = [
   { dimension: "Reversibility", optionA: "Higher", optionB: "Moderate", reading: "Staging protects optionality." },
 ] as const;
 
-const internalSignals = [
+const baseInternalSignals = [
   { marker: "C", label: "Decision Clarity", status: "Partial", width: "56%" },
-  { marker: "S", label: "Safety Margin", status: "Stronger in Option A", width: "76%" },
+  { marker: "S", label: "Safety Margin", status: "Unknown", width: "40%" },
   { marker: "N", label: "Support System", status: "Emerging", width: "50%" },
   { marker: "L", label: "Execution Load", status: "Elevated", width: "70%" },
   { marker: "T", label: "Timing Pressure", status: "Moderate", width: "48%" },
@@ -2471,6 +2515,22 @@ function externalSnapshotStatusLabel(snapshot: ExternalSnapshot) {
   return "Mock / Preview";
 }
 
+function unavailableStructuralSignal<TBand extends string>(): StructuralSignal<TBand> {
+  return { band: "unknown" as TBand, source: "unavailable" };
+}
+
+function externalValidationSignal(snapshot: ExternalSnapshot): StructuralSignal<StructuralStrength> {
+  if (snapshot.status !== "live") return unavailableStructuralSignal<StructuralStrength>();
+  const supportive = snapshot.externalSignals.filter((signal) => signal.direction === "supportive").length;
+  const caution = snapshot.externalSignals.filter((signal) => signal.direction === "caution").length;
+  const band = snapshot.confidence === "high" && supportive > caution
+    ? "strong"
+    : snapshot.confidence === "low" && caution > supportive
+      ? "weak"
+      : "developing";
+  return { band, source: "live-external-evidence" };
+}
+
 function confidenceLabel(confidence: ExternalSnapshot["confidence"]) {
   return confidence;
 }
@@ -2537,6 +2597,176 @@ function qaDiagnosticStatusTone(status: QaDiagnosticStatus) {
   return "border-border bg-background text-muted-foreground";
 }
 
+function ProductApplicationSections({
+  intelligence,
+  translate,
+  report = false,
+}: {
+  intelligence: ProductApplicationV3;
+  translate: (en: string, ko: string) => string;
+  report?: boolean;
+}) {
+  const shell = report
+    ? "pdf-report-section pdf-page-break space-y-7 p-8 sm:p-12"
+    : "space-y-5";
+  const card = report
+    ? "pdf-keep-together border-t-2 border-black bg-[#f6f6f4] p-5"
+    : "rounded-lg border border-border bg-card p-6";
+  return (
+    <div className={shell} data-product-application="AMC-LAUNCH-V3">
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">01 / Current Structural Posture</p>
+        <p className="mt-3 text-sm font-semibold uppercase tracking-[0.12em] opacity-60">
+          {intelligence.currentStructuralPosture.label}
+        </p>
+        <p className="mt-2 text-xs uppercase tracking-[0.12em] opacity-55">
+          {translate("Evidence coverage", "근거 범위")}: {intelligence.postureEvidenceCoverage}
+        </p>
+        <h2 className="mt-3 text-xl font-semibold leading-relaxed sm:text-2xl">
+          {intelligence.currentStructuralPosture.sentence}
+        </h2>
+      </section>
+
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">02 / Why This Posture</p>
+        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div>
+            <h3 className="text-sm font-semibold">{translate("Top Drivers", "핵심 동인")}</h3>
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed opacity-70">
+              {intelligence.why.topDrivers.map((driver) => <li key={driver}>— {driver}</li>)}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">{translate("Biggest Risk", "가장 큰 리스크")}</h3>
+            <p className="mt-3 text-sm leading-relaxed opacity-70">{intelligence.why.biggestRisk}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">{translate("Strongest Counterargument", "가장 강한 반론")}</h3>
+            <p className="mt-3 text-sm leading-relaxed opacity-70">{intelligence.why.strongestCounterargument}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">03 / Decision Structure</p>
+        <h3 className="mt-4 text-sm font-semibold uppercase tracking-[0.12em]">
+          {translate("FIFWM · Core Structural Read", "FIFWM · 핵심 구조 해석")}
+        </h3>
+        {intelligence.decisionStructure.fifwmSource === "unavailable" ? (
+          <p className="mt-2 text-xs leading-relaxed opacity-60">
+            {translate("— means this factor was not canonically scored from the current intake; it is not a negative score.", "— 표시는 현재 Intake에서 canonical scoring이 이뤄지지 않았다는 뜻이며, 부정적 점수가 아닙니다.")}
+          </p>
+        ) : null}
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {([
+            [translate("Formal", "Formal"), intelligence.decisionStructure.fifwm.formal],
+            [translate("Informal", "Informal"), intelligence.decisionStructure.fifwm.informal],
+            [translate("Framework", "Framework"), intelligence.decisionStructure.fifwm.framework],
+            [translate("Workflow", "Workflow"), intelligence.decisionStructure.fifwm.workflow],
+            [translate("Market / Policy", "Market / Policy"), intelligence.decisionStructure.fifwm.marketPolicy],
+          ] as const).map(([label, factor]) => (
+            <div key={label} className="border-t-2 border-current/60 pt-3">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold">{label}</h4>
+                <span className="text-xs opacity-55">{factor.score === null ? "—" : `${factor.score} / 2`}</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed opacity-65">{factor.reading}</p>
+            </div>
+          ))}
+        </div>
+        <h3 className="mt-6 text-sm font-semibold uppercase tracking-[0.12em]">
+          {translate("Supporting Structure", "보조 구조")}
+        </h3>
+        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {[
+            [translate("Inside Reality", "내부 현실"), intelligence.decisionStructure.insideReality],
+            [translate("Live Outside Evidence", "실시간 외부 근거"), intelligence.decisionStructure.outsideEvidence],
+            [translate("Constraints", "제약"), intelligence.decisionStructure.constraints],
+            [translate("Trade-offs", "트레이드오프"), intelligence.decisionStructure.tradeOffs],
+          ].map(([label, value]) => (
+            <div key={label} className="border-t border-current/20 pt-3">
+              <h3 className="text-sm font-semibold">{label}</h3>
+              <p className="mt-2 text-sm leading-relaxed opacity-70">{value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">04 / What You May Be Missing</p>
+        <p className="mt-4 text-lg font-semibold leading-relaxed">{intelligence.missingPoint}</p>
+      </section>
+
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">05 / Changing Plays</p>
+        <div className="mt-5 space-y-5">
+          {intelligence.changingPlays.length === 0 ? (
+            <p className="text-sm leading-relaxed opacity-70">
+              {translate("No additional Changing Play is structurally justified by the current evidence.", "현재 근거로 정당화되는 추가 Changing Play는 없습니다.")}
+            </p>
+          ) : intelligence.changingPlays.map((play) => (
+            <div key={play.move} className="border-t border-current/20 pt-4">
+              <h3 className="text-lg font-semibold leading-relaxed">{play.move}</h3>
+              <dl className="mt-3 grid grid-cols-1 gap-3 text-sm leading-relaxed sm:grid-cols-2">
+                <div><dt className="font-semibold">{translate("What it changes", "바꾸는 구조")}</dt><dd className="opacity-70">{play.changes}</dd></div>
+                <div><dt className="font-semibold">{translate("Option strengthened", "강화되는 선택지")}</dt><dd className="opacity-70">{play.optionStrengthened}</dd></div>
+                <div><dt className="font-semibold">{translate("Evidence to create", "만들 근거")}</dt><dd className="opacity-70">{play.evidence}</dd></div>
+                <div><dt className="font-semibold">{translate("Time / exposure", "시간 / 노출")}</dt><dd className="opacity-70">{play.timeExposure}</dd></div>
+              </dl>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">06 / Safety Margin · Room to Be Wrong</p>
+        <p className="mt-2 text-sm opacity-65">{translate("How much room do you have to be wrong?", "틀렸을 때 감당하고 다시 시도할 여지가 얼마나 있나요?")}</p>
+        <p className="mt-4 text-lg font-semibold leading-relaxed">{intelligence.safetyMargin.reading}</p>
+        <dl className="mt-5 grid grid-cols-1 gap-4 text-sm leading-relaxed sm:grid-cols-2">
+          {[
+            [translate("Financial Room", "재정 / 소득 여유"), `${intelligence.safetyMargin.inputs.financialRoom.band} — ${intelligence.safetyMargin.financialRoomReading}`],
+            [translate("Recovery / Re-entry", "회복 / 재진입"), `${intelligence.safetyMargin.inputs.reversibility.band} — ${intelligence.safetyMargin.recoveryReentryReading}`],
+            [translate("Downside Exposure", "하방 노출"), `${intelligence.safetyMargin.inputs.downsideExposure.band} — ${intelligence.safetyMargin.downsideExposureReading}`],
+            [translate("Room to Be Wrong", "틀릴 수 있는 여지"), intelligence.safetyMargin.roomToBeWrong],
+            [translate("Strongest Protection", "가장 강한 보호") , intelligence.safetyMargin.strongestProtection],
+            [translate("Weakest Margin", "가장 약한 여지"), intelligence.safetyMargin.weakestMargin],
+            [translate("What Must Be Protected", "보호해야 할 역량"), intelligence.safetyMargin.protectedCapacity],
+            [translate("Exposure Not to Increase Yet", "아직 늘리지 않을 노출"), intelligence.safetyMargin.exposureBoundary],
+          ].map(([label, value]) => <div key={label}><dt className="font-semibold">{label}</dt><dd className="mt-1 opacity-70">{value}</dd></div>)}
+        </dl>
+      </section>
+
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">07 / Decision Switches</p>
+        <p className="mt-3 text-sm leading-relaxed opacity-70">
+          {translate("The current posture is explicit, and so is the evidence that would justify changing it.", "현재 자세와 그 자세를 바꿀 근거를 모두 명확히 합니다.")}
+        </p>
+        <ul className="mt-4 space-y-4">
+          {intelligence.decisionSwitches.map((item) => <li key={item.signal} className="border-t border-current/20 pt-3 text-sm leading-relaxed"><strong>{item.signal}</strong><br /><span className="opacity-70">{item.direction}</span></li>)}
+        </ul>
+      </section>
+
+      <section className={card}>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">08 / Next-Step Experiment</p>
+        <dl className="mt-5 grid grid-cols-1 gap-4 text-sm leading-relaxed sm:grid-cols-2">
+          {[
+            [translate("What to test", "검증할 것"), intelligence.nextStepExperiment.whatToTest],
+            [translate("Build / learn", "만들거나 배울 것"), intelligence.nextStepExperiment.buildOrLearn],
+            [translate("Evidence to collect", "수집할 근거"), intelligence.nextStepExperiment.evidenceToCollect],
+            [translate("Exposure boundary", "노출 경계") , intelligence.nextStepExperiment.exposureBoundary],
+            [translate("Continue if", "계속할 조건"), intelligence.nextStepExperiment.continueCondition],
+            [translate("Pause / redesign if", "중단 / 재설계 조건"), intelligence.nextStepExperiment.pauseCondition],
+            [translate("Reassess", "재평가 시점"), intelligence.nextStepExperiment.reassessAt],
+          ].map(([label, value]) => <div key={label}><dt className="font-semibold">{label}</dt><dd className="mt-1 opacity-70">{value}</dd></div>)}
+        </dl>
+        <div className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {intelligence.nextStepExperiment.stages.map((stage) => <div key={stage.period} className="border-t border-current/20 pt-3"><p className="text-xs font-semibold uppercase tracking-[0.12em] opacity-55">{stage.period}</p><h3 className="mt-2 text-sm font-semibold">{stage.title}</h3><p className="mt-2 text-sm leading-relaxed opacity-70">{stage.action}</p><p className="mt-2 text-xs leading-relaxed opacity-60">{stage.output}</p></div>)}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function AmcWebMvp() {
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
@@ -2548,6 +2778,7 @@ export default function AmcWebMvp() {
   const [showPdfReportView, setShowPdfReportView] = useState(false);
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
   const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
+  const [safetyMarginSelections, setSafetyMarginSelections] = useState<SafetyMarginSelections>(initialSafetyMarginSelections);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
   const [externalSnapshot, setExternalSnapshot] = useState<ExternalSnapshot | null>(null);
   const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
@@ -2575,10 +2806,12 @@ export default function AmcWebMvp() {
     [isKo],
   );
   const requiredPreviewReady = Boolean(answers.decision.trim() && answers.optionA.trim() && answers.optionB.trim());
-  const answeredQuestionCount = useMemo(
-    () => Object.values(fullIntakeAnswers).filter((value) => value.trim()).length,
-    [fullIntakeAnswers],
-  );
+  const answeredQuestionCount = useMemo(() => intakeGroups.reduce((count, group) => count + group.questions.filter((question) => {
+    const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
+    if (!hasExplanation) return false;
+    const structuredQuestionId = question.id;
+    return !isSafetyMarginQuestionId(structuredQuestionId) || safetyMarginSelections[structuredQuestionId] !== null;
+  }).length, 0), [fullIntakeAnswers, safetyMarginSelections]);
   const progress = Math.round((answeredQuestionCount / totalFullIntakeQuestions) * 100);
   const fullIntakeComplete = answeredQuestionCount === totalFullIntakeQuestions;
   const expandedGroupSet = useMemo(() => new Set(expandedGroups), [expandedGroups]);
@@ -2597,6 +2830,81 @@ export default function AmcWebMvp() {
   const displayedExternalSnapshot = externalSnapshot ?? mockExternalSnapshot;
   const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot);
   const displayedExternalStatusCopy = externalSnapshotStatusCopy(displayedExternalSnapshot.status, isKo);
+  const fifwm = useMemo(
+    () => buildUnavailableFifwm(language),
+    [language],
+  );
+  const safetyMarginInputs = useMemo<SafetyMarginInputs>(() => ({
+    financialRoom: { band: safetyMarginSelections[19] ?? "unknown", source: "current-user-structured" },
+    reversibility: { band: safetyMarginSelections[20] ?? "unknown", source: "current-user-structured" },
+    downsideExposure: { band: safetyMarginSelections[21] ?? "unknown", source: "current-user-structured" },
+  }), [safetyMarginSelections]);
+  const safetyMarginCore = useMemo(() => deriveSafetyMarginCore(safetyMarginInputs), [safetyMarginInputs]);
+  const internalSignals = useMemo(() => baseInternalSignals.map((signal) => signal.label === "Safety Margin"
+    ? {
+        ...signal,
+        status: safetyMarginCore.band === "unknown"
+          ? t("Unknown · not assumed safe", "Unknown · 안전하다고 가정하지 않음")
+          : `${safetyMarginCore.band.charAt(0).toUpperCase()}${safetyMarginCore.band.slice(1)} · current case`,
+        width: safetyMarginCore.band === "strong" ? "82%" : safetyMarginCore.band === "developing" ? "58%" : safetyMarginCore.band === "weak" ? "28%" : "40%",
+      }
+    : signal), [isKo, safetyMarginCore]);
+  const currentCaseStructuralSignals = useMemo(
+    () => ({
+      externalValidation: externalValidationSignal(displayedExternalSnapshot),
+      internalReadiness: unavailableStructuralSignal<StructuralStrength>(),
+      safetyMargin: { band: safetyMarginCore.band, source: safetyMarginCore.source },
+      reversibility: safetyMarginInputs.reversibility,
+      optionBSupport: unavailableStructuralSignal<StructuralStrength>(),
+      structuralRisk: safetyMarginInputs.downsideExposure,
+      constraintLoad: unavailableStructuralSignal<StructuralLoad>(),
+      missingPointImpact: unavailableStructuralSignal<MissingPointImpact>(),
+    }),
+    [displayedExternalSnapshot, safetyMarginCore, safetyMarginInputs],
+  );
+  const productApplicationV3 = useMemo(
+    () =>
+      buildProductApplicationV3({
+        language,
+        caseType: detectedCaseType,
+        optionA: optionALabel,
+        optionB: optionBLabel,
+        answers: fullIntakeAnswers,
+        fifwm,
+        fifwmSource: "unavailable",
+        safetyMarginInputs,
+        structuralSignals: currentCaseStructuralSignals,
+        missingPoint: isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en,
+        missingPointWhy: isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en,
+        changingMoves: [isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en],
+        primaryRisk: caseReportBranch.primaryRisk.name,
+        primaryRiskMeaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
+        decisionConditions: isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en,
+        validationFocus: isKo ? caseSpecificReading.validationFocus.ko : caseSpecificReading.validationFocus.en,
+        externalImplication: displayedExternalSnapshot.implication,
+        plan: caseReportBranch.plan.map((item) => ({
+          period: item.period,
+          title: isKo ? item.title.ko : item.title.en,
+          action: isKo ? item.action.ko : item.action.en,
+          output: isKo ? item.output.ko : item.output.en,
+        })),
+      }),
+    [
+      caseReportBranch,
+      caseSpecificReading,
+      detectedCaseType,
+      displayedExternalSnapshot,
+      fullIntakeAnswers,
+      fifwm,
+      currentCaseStructuralSignals,
+      isKo,
+      language,
+      launchInterpretation,
+      optionALabel,
+      optionBLabel,
+      safetyMarginInputs,
+    ],
+  );
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
   };
@@ -2646,6 +2954,10 @@ export default function AmcWebMvp() {
     setFullIntakeAnswers((current) => ({ ...current, [questionId]: value }));
   };
 
+  const updateSafetyMarginSelection = (questionId: SafetyMarginQuestionId, value: string) => {
+    setSafetyMarginSelections((current) => ({ ...current, [questionId]: value } as SafetyMarginSelections));
+  };
+
   const toggleGroup = (title: string) => {
     setExpandedGroups((current) =>
       current.includes(title) ? current.filter((item) => item !== title) : [...current, title],
@@ -2662,6 +2974,7 @@ export default function AmcWebMvp() {
       ),
     ) as Record<number, string>;
     setFullIntakeAnswers(sampleAnswers);
+    setSafetyMarginSelections({ 19: "strong", 20: "strong", 21: "high" });
     setExpandedGroups(intakeGroups.map((group) => group.title));
   };
 
@@ -2669,17 +2982,24 @@ export default function AmcWebMvp() {
     const generatedAt = new Date().toISOString();
     const localizedConditions = isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en;
     const localizedMissingPoint = isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en;
-    const localizedAlternativePath = isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en;
     const structuralOutput = {
       caseType: detectedCaseType,
-      executiveSummary: isKo ? caseReportBranch.executiveSummary.ko : caseReportBranch.executiveSummary.en,
+      currentStructuralPosture: productApplicationV3.currentStructuralPosture,
+      postureEvidenceCoverage: productApplicationV3.postureEvidenceCoverage,
+      postureBasis: productApplicationV3.postureBasis,
+      why: productApplicationV3.why,
+      changingPlays: productApplicationV3.changingPlays,
+      safetyMargin: productApplicationV3.safetyMargin,
+      decisionSwitches: productApplicationV3.decisionSwitches,
+      nextStepExperiment: productApplicationV3.nextStepExperiment,
+      analysisSequence: productApplicationV3.analysisSequence,
       primaryRisk: {
         name: caseReportBranch.primaryRisk.name,
         meaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
       },
       comparisonRows: matrixRows,
       internalSignals,
-      validationPlan: caseReportBranch.plan,
+      decisionStructure: productApplicationV3.decisionStructure,
     };
     void trackAmcJourney({
       eventType: "full_intake_completed",
@@ -2710,21 +3030,22 @@ export default function AmcWebMvp() {
         researchUseConsent,
         structuralOutputJson: structuralOutput,
         missingPoint: localizedMissingPoint,
-        alternativePath: localizedAlternativePath,
+        alternativePath: productApplicationV3.changingPlays[0]?.move,
         decisionConditionsJson: localizedConditions,
         safetyMarginStructuredData: {
-          band: internalSignals.find((signal) => signal.label === "Safety Margin")?.status || "Unknown",
-          signal: internalSignals.find((signal) => signal.label === "Safety Margin") || null,
-          reversibility: matrixRows.find((row) => row.dimension === "Reversibility") || null,
+          ...productApplicationV3.safetyMargin,
+          safetyMarginInputs: productApplicationV3.safetyMargin.inputs,
+          band: productApplicationV3.postureBasis.safetyMargin.band,
+          source: productApplicationV3.postureBasis.safetyMargin.source,
+          reversibility: productApplicationV3.postureBasis.reversibility,
         },
         existingFifwmStructuredData: {
-          signals: dashboardDeck.map((card) => ({ label: card.section, value: card.keyword, interpretation: card.reading })),
-          comparisonRows: matrixRows,
-          internalSignals,
+          ...productApplicationV3.decisionStructure.fifwm,
+          source: productApplicationV3.decisionStructure.fifwmSource,
         },
-        externalEvidenceMode: mockExternalSnapshot.status,
-        externalEvidenceConfidence: mockExternalSnapshot.confidence,
-        externalEvidenceJson: mockExternalSnapshot,
+        externalEvidenceMode: displayedExternalSnapshot.status,
+        externalEvidenceConfidence: displayedExternalSnapshot.confidence,
+        externalEvidenceJson: displayedExternalSnapshot,
       },
     });
     const requestId = externalSnapshotRequestId.current + 1;
@@ -2879,8 +3200,8 @@ export default function AmcWebMvp() {
       },
       {
         label: "Safety Margin",
-        value: t(`Stronger in ${optionALabel}`, `${optionALabel}가 더 강함`),
-        reading: t("The current path protects runway and reversibility.", "현재 경로가 소득 안정성과 되돌릴 수 있는 여지를 보호합니다."),
+        value: productApplicationV3.safetyMargin.band,
+        reading: productApplicationV3.safetyMargin.reading,
       },
       {
         label: "Commitment Condition",
@@ -2923,10 +3244,10 @@ export default function AmcWebMvp() {
       { label: "Primary Risk", value: caseReportBranch.primaryRisk.name },
       {
         label: "Safety Margin",
-        value: t(`Stronger in ${optionALabel}`, `${optionALabel}가 더 강함`),
+        value: productApplicationV3.safetyMargin.band,
       },
       {
-        label: "Decision Conditions",
+        label: "Decision Switches",
         value: t(`${reportConditions.length} conditions`, `${reportConditions.length}개 조건`),
       },
       {
@@ -3022,8 +3343,9 @@ export default function AmcWebMvp() {
           </section>
 
           <div className="pdf-report-body">
+            <ProductApplicationSections intelligence={productApplicationV3} translate={t} report />
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
-              <p className="pdf-kicker">01 / Executive Structural Overview</p>
+              <p className="pdf-kicker">Supporting Detail / Structural Evidence Map</p>
               <div className="mt-5 border-y border-black/20 py-7">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/45">Core message</p>
                 <h2 className="pdf-executive-message mt-3">
@@ -3083,8 +3405,8 @@ export default function AmcWebMvp() {
                   </p>
                   <p className="mt-3 max-w-3xl text-xs leading-5 text-white/55">
                     {t(
-                      "AMC applies one consistent structural decision architecture across cases: internal readiness, external pressure, Safety Margin, structural risk, missing variables, and Decision Conditions.",
-                      "AMC는 모든 사례에 동일한 구조적 의사결정 프레임을 적용해 내부 준비도, 외부 압력, Safety Margin, 구조적 리스크, 놓친 변수, Decision Conditions를 확인합니다.",
+                      "AMC applies one consistent structural decision architecture across cases: FIFWM, internal readiness, live external evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
+                      "AMC는 모든 사례에 동일한 구조적 의사결정 프레임을 적용해 FIFWM, 내부 준비도, 실시간 외부 근거, 놓친 변수, Changing, Safety Margin, Decision Switches를 확인합니다.",
                     )}
                   </p>
                 </div>
@@ -3316,13 +3638,13 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section p-8 sm:p-12">
-              <p className="pdf-kicker">03A / Alternative Path Worth Testing</p>
+              <p className="pdf-kicker">Supporting Detail / Changing Play</p>
               <h2 className="pdf-section-heading mt-3">
                 {t("A reversible path can test the structure without deciding the outcome.", "되돌릴 수 있는 경로로 결론을 대신하지 않고 구조를 검증할 수 있습니다.")}
               </h2>
               <div className="pdf-keep-together mt-7 border-l-2 border-black bg-[#f6f6f4] p-6">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
-                  {t("Path to test", "검토할 만한 대안 경로")}
+                  {t("Move to test", "검증할 변화")}
                 </p>
                 <p className="mt-4 text-lg font-semibold leading-7">
                   {isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en}
@@ -3381,9 +3703,9 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section p-8 sm:p-12">
-              <p className="pdf-kicker">06 / Safety Margin &amp; Reversibility</p>
+              <p className="pdf-kicker">Supporting Detail / Safety Margin Evidence</p>
               <h2 className="pdf-section-heading mt-3">
-                {t("The safer path protects time; the growth path requires proof.", "Option A는 안정성을 보호하고, Option B는 더 강한 검증을 요구합니다.")}
+                {t("Protect enough room to try, learn, recover, and change again.", "시도하고 배우고 회복해 다시 바꿀 수 있는 여지를 보호합니다.")}
               </h2>
               <div className="pdf-highlight-box pdf-highlight-safety pdf-keep-together mt-7">
                 <p className="pdf-highlight-label">Safety Margin</p>
@@ -3403,7 +3725,7 @@ export default function AmcWebMvp() {
                 {(isKo
                   ? [
                       {
-                        label: "What the safer path protects",
+                        label: "What protects room to change",
                         text: `${optionALabel}는 소득의 연속성, 현재의 신뢰도, 전환 전 검증 시간을 보호합니다.`,
                       },
                       {
@@ -3417,7 +3739,7 @@ export default function AmcWebMvp() {
                     ]
                   : [
                   {
-                    label: "What the safer path protects",
+                    label: "What protects room to change",
                     text: `${optionALabel} protects income continuity, existing credibility, and the capacity to validate a second platform without immediate conversion pressure.`,
                   },
                   {
@@ -3481,7 +3803,7 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section p-8 sm:p-12">
-              <p className="pdf-kicker">08 / Decision Conditions</p>
+              <p className="pdf-kicker">Supporting Detail / Decision Switch Evidence</p>
               <h2 className="pdf-section-heading mt-3">
                 {t(
                   `Three conditions make ${detectedCaseType} more defensible.`,
@@ -3490,7 +3812,7 @@ export default function AmcWebMvp() {
               </h2>
               <div className="pdf-highlight-box pdf-highlight-conditions pdf-keep-together mt-7">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/45">
-                  Case-Specific Decision Conditions
+                  Case-Specific Observable Signals
                 </p>
                 <ol className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
                   {reportConditions.map((condition, index) => (
@@ -3504,7 +3826,7 @@ export default function AmcWebMvp() {
             </section>
 
             <section className="pdf-report-section pdf-page-break p-8 sm:p-12">
-              <p className="pdf-kicker">09 / 30 / 60 / 90-Day Validation Plan</p>
+              <p className="pdf-kicker">Supporting Detail / Experiment Stages</p>
               <h2 className="pdf-section-heading mt-3">
                 {t("Sequence evidence before increasing commitment.", "결정을 앞당기기보다 근거를 순서대로 검증합니다.")}
               </h2>
@@ -3553,8 +3875,8 @@ export default function AmcWebMvp() {
                 <div>
                   <h2 className="pdf-section-heading">
                     {t(
-                      "The next move is to improve the quality of the decision conditions.",
-                      "다음 단계는 결정을 확정하는 것이 아니라 Decision Conditions를 더 명확히 만드는 것입니다.",
+                      "The next move is to test the evidence that could change the current posture.",
+                      "다음 단계는 현재 자세를 바꿀 수 있는 근거를 검증하는 것입니다.",
                     )}
                   </h2>
                   <p className="mt-5 text-sm leading-7 text-black/60">
@@ -3683,7 +4005,7 @@ export default function AmcWebMvp() {
               {t("What AMC shows", "AMC가 보여주는 것")}
             </p>
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {["Decision Type", "Core Tension", "Risk Diagnosis", "Decision Conditions"].map(
+              {["Decision Type", "Core Tension", "Risk Diagnosis", "Decision Switches"].map(
                 (item, index) => (
                   <div key={item} className="rounded-md border border-border bg-background p-4">
                     <p className="text-xs font-medium text-muted-foreground">{String(index + 1).padStart(2, "0")}</p>
@@ -3921,8 +4243,8 @@ export default function AmcWebMvp() {
                   <h3 className="text-2xl font-semibold leading-snug">AMC Full Structural Report</h3>
                   <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                     {t(
-                      "A complete structural reading of internal readiness, outside reality, Safety Margin, risks, missing variables, alternatives, and Decision Conditions.",
-                      "내부 준비도, 외부 현실, Safety Margin, 리스크, 놓친 변수, 대안 경로, Decision Conditions를 하나의 구조로 정리합니다.",
+                      "A complete structural reading of FIFWM, inside reality, live outside evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
+                      "FIFWM, 내부 현실, 실시간 외부 근거, 놓친 변수, Changing, Safety Margin, Decision Switches를 하나의 구조로 정리합니다.",
                     )}
                   </p>
                 </div>
@@ -3939,12 +4261,6 @@ export default function AmcWebMvp() {
                 {t("Continue to Full Intake", "Full Intake로 계속하기")}
               </button>
             </div>
-            <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-              {t(
-                "Payment is not active during this controlled launch stage. You can continue without payment.",
-                "현재 controlled launch 단계에서는 결제가 활성화되어 있지 않으며, 결제 없이 계속할 수 있습니다.",
-              )}
-            </p>
           </section>
         ) : null}
 
@@ -4069,8 +4385,8 @@ export default function AmcWebMvp() {
               </p>
               <p className="rounded-md border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
                 {t(
-                  "AMC uses a consistent structural decision framework rather than open-ended AI advice. It examines readiness, external pressure, Safety Margin, risk, missing variables, and Decision Conditions.",
-                  "AMC는 개방형 AI 조언이 아니라 일관된 구조적 의사결정 프레임을 사용해 준비도, 외부 압력, Safety Margin, 리스크, 놓친 변수, Decision Conditions를 확인합니다.",
+                  "AMC uses a repeatable structural decision architecture rather than open-ended AI advice. It examines FIFWM, live evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
+                  "AMC는 개방형 AI 조언이 아니라 반복 가능한 구조적 의사결정 아키텍처로 FIFWM, 실시간 근거, 놓친 변수, Changing, Safety Margin, Decision Switches를 확인합니다.",
                 )}
               </p>
             </div>
@@ -4118,9 +4434,10 @@ export default function AmcWebMvp() {
             <div className="space-y-4">
               {intakeGroups.map((group, index) => {
                 const expanded = expandedGroupSet.has(group.title);
-                const answeredInGroup = group.questions.filter((question) =>
-                  String(fullIntakeAnswers[question.id] || "").trim(),
-                ).length;
+                const answeredInGroup = group.questions.filter((question) => {
+                  const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
+                  return hasExplanation && (!isSafetyMarginQuestionId(question.id) || safetyMarginSelections[question.id] !== null);
+                }).length;
                 const complete = answeredInGroup === group.questions.length;
 
                 return (
@@ -4157,15 +4474,39 @@ export default function AmcWebMvp() {
                             const guidance = isKo
                               ? fullIntakeGuidance[question.id].ko
                               : fullIntakeGuidance[question.id].en;
+                            const structuredQuestionId = isSafetyMarginQuestionId(question.id) ? question.id : null;
 
                             return (
-                              <label key={question.id} className="rounded-md border border-border bg-background p-4">
+                              <div key={question.id} className="rounded-md border border-border bg-background p-4">
                                 <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                                   {t("Question", "질문")} {question.id}
                                 </span>
-                                <span className="mt-2 block min-h-10 text-sm font-medium leading-snug">
+                                <label htmlFor={`full-intake-${question.id}`} className="mt-2 block min-h-10 text-sm font-medium leading-snug">
                                   {isKo ? intakeQuestionsKo[question.id].text : question.text}
-                                </span>
+                                </label>
+                                {structuredQuestionId !== null ? (
+                                  <fieldset className="mt-3">
+                                    <legend className="text-xs font-medium text-foreground">
+                                      {t("Select the current structural band", "현재 구조적 수준을 선택하세요")}
+                                    </legend>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                      {safetyMarginBandOptions[structuredQuestionId].map((option) => {
+                                        const selected = safetyMarginSelections[structuredQuestionId] === option.value;
+                                        return (
+                                          <button
+                                            key={option.value}
+                                            type="button"
+                                            aria-pressed={selected}
+                                            onClick={() => updateSafetyMarginSelection(structuredQuestionId, option.value)}
+                                            className={`min-h-10 rounded-md border px-2 py-2 text-xs font-medium ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"}`}
+                                          >
+                                            {isKo ? option.ko : option.en}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </fieldset>
+                                ) : null}
                                 <span className="mt-3 block text-xs leading-relaxed text-muted-foreground">
                                   <span className="font-medium text-foreground">{t("Guide", "가이드")}:</span>{" "}
                                   {guidance.guide}
@@ -4174,12 +4515,13 @@ export default function AmcWebMvp() {
                                   {guidance.example}
                                 </span>
                                 <textarea
+                                  id={`full-intake-${question.id}`}
                                   value={fullIntakeAnswers[question.id] || ""}
                                   onChange={(event) => updateFullIntakeAnswer(question.id, event.target.value)}
                                   placeholder={t("Write your answer here...", "답변을 입력해 주세요.")}
                                   className="mt-4 h-24 w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
                                 />
-                              </label>
+                              </div>
                             );
                           })}
                         </div>
@@ -4214,16 +4556,18 @@ export default function AmcWebMvp() {
             <section id="full-dashboard" className="border-b border-border py-12 sm:py-14">
               <SectionHeader
                 eyebrow="Full Web Dashboard"
-                title={t("A compact structural map of the decision.", "결정의 구조를 한눈에 보여주는 Dashboard입니다.")}
+                title={t("Your Full Structural Dashboard.", "Full Structural Dashboard입니다.")}
                 body={t(
-                  "The dashboard keeps the core tension, trade-offs, risks, and conditions visual and scannable.",
-                  "Core Tension, trade-off, 리스크, Decision Conditions를 빠르게 확인합니다.",
+                  "See the current posture, why it is supported, what may be missing, and what evidence would change it.",
+                  "현재 자세, 그 근거, 놓치고 있을 수 있는 변수, 자세를 바꿀 근거를 빠르게 확인합니다.",
                 )}
               />
 
-              <section className="rounded-lg border border-foreground/20 bg-foreground p-6 text-background sm:p-7">
+              <ProductApplicationSections intelligence={productApplicationV3} translate={t} />
+
+              <section className="mt-5 rounded-lg border border-foreground/20 bg-foreground p-6 text-background sm:p-7">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-background/55">
-                  {t("Executive Structural Overview", "Executive Structural Overview")}
+                  {t("Supporting Structural Detail", "구조적 세부 근거")}
                 </p>
                 <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-md bg-background/15 lg:grid-cols-4">
                   {[
@@ -4318,7 +4662,7 @@ export default function AmcWebMvp() {
                   <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
                     {[
                       ["Primary Risk", caseSpecificReading.primaryRisk],
-                      ["Decision Conditions", caseSpecificReading.decisionConditions],
+                      ["Decision Switches", caseSpecificReading.decisionConditions],
                       ["Validation Focus", caseSpecificReading.validationFocus],
                     ].map(([label, reading]) => (
                       <div key={String(label)} className="rounded-md border border-border bg-background p-5">
@@ -4571,7 +4915,7 @@ export default function AmcWebMvp() {
 
                 <section className="rounded-lg border border-foreground/20 bg-card p-6">
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    {t("Alternative Path Worth Testing", "검토할 만한 대안 경로")}
+                    {t("Supporting Changing Play", "Changing Play 보조 근거")}
                   </p>
                   <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1.35fr_0.65fr]">
                     <div className="rounded-md border border-border bg-background p-5">
@@ -4662,14 +5006,14 @@ export default function AmcWebMvp() {
 
                 <section className="rounded-lg border border-border bg-card p-6">
                   <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    05 / Decision Conditions
+                    Supporting Detail / Decision Switches
                   </p>
                   <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
                     <div className="rounded-md border border-border bg-background p-5">
                       <h3 className="max-w-md text-lg font-semibold leading-snug">
                         {t(
                           `A deeper move toward ${optionBLabel} becomes more supportable if...`,
-                          `${optionBLabel} 선택을 뒷받침하는 Decision Conditions`,
+                          `${optionBLabel} 쪽으로 자세를 바꿀 근거`,
                         )}
                       </h3>
                       <ul className="mt-4 space-y-3">
@@ -4690,7 +5034,7 @@ export default function AmcWebMvp() {
                       <h3 className="max-w-md text-lg font-semibold leading-snug">
                         {t(
                           `Remaining in ${optionALabel} becomes more supportable if...`,
-                          `${optionALabel} 선택을 뒷받침하는 Decision Conditions`,
+                          `${optionALabel} 쪽으로 자세를 바꿀 근거`,
                         )}
                       </h3>
                       <ul className="mt-4 space-y-3">
@@ -4720,7 +5064,7 @@ export default function AmcWebMvp() {
                   <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                        06 / 30 / 60 / 90 Validation Plan
+                        Supporting Detail / Experiment Stages
                       </p>
                       <h3 className="mt-2 text-xl font-semibold tracking-tight">
                         {t("Turn uncertainty into staged evidence.", "불확실성을 단계별 근거로 바꿉니다.")}
@@ -4807,8 +5151,8 @@ export default function AmcWebMvp() {
           <section className="py-8">
             <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
               {t(
-                "Developer note: This launch preview uses local flow state plus the server-side External Snapshot endpoint. It does not include real payment, account login, or production report generation.",
-                "개발 참고: 현재 Launch Preview는 로컬 흐름 상태와 서버 측 External Snapshot endpoint를 사용합니다. 실제 결제, 계정 로그인, 운영용 Report 생성은 포함하지 않습니다.",
+                "Developer note: This launch preview uses local flow state plus the server-side External Snapshot endpoint. Production report generation remains outside this QA view.",
+                "개발 참고: 현재 Launch Preview는 로컬 흐름 상태와 서버 측 External Snapshot endpoint를 사용합니다. 운영용 Report 생성은 이 QA 화면의 범위 밖입니다.",
               )}
             </p>
           </section>

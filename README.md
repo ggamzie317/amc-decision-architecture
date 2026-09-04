@@ -197,9 +197,6 @@ pnpm dev
 - Language continuity note:
   AMC language is not a UI-only toggle. In v1, selected language should consistently drive UI, report, email, and follow-up language.
 
-- Executive note:
-  Executive is a bounded report-linked interpretation layer, not open-ended coaching.
-
 ### Sync generated payload to Manus UI
 
 After generating the latest AMC payload, sync it to the Manus UI data file:
@@ -258,25 +255,8 @@ Optional path from Perplexity-style raw text:
    `python3 src/merge_external_layer.py --payload output/report_payload_latest.json --external output/external_layer_latest.json --out output/report_payload_merged.json`
    `python3 src/sync_payload_to_ui.py --src output/report_payload_merged.json`
 
-### Tier and Delivery Note
+### Product and Delivery Note
 
-- Essential tier includes report only.
-- Executive tier includes the report plus 1-Day Report Q&A after delivery.
+- AMC Launch V3 has one customer product: AMC Full Structural Report.
+- The product includes the Full Structural Dashboard and Detailed Report, both generated from the same structural intelligence.
 - AMC delivery maintains Korean / English / Chinese language-toggle readiness.
-
-### AMC chatbot scaffold (report interpreter layer)
-
-AMC chatbot behavior is defined as a report-grounded interpretation layer, not a recommendation engine.
-
-Behavior files:
-
-- System prompt: `prompts/amc_chatbot_system_prompt_v1.txt`
-- Fallback responses: `prompts/amc_chatbot_fallbacks_v1.json`
-- FAQ seed scaffold: `prompts/amc_faq_seed_v1.json`
-
-Scope:
-
-- Interprets report sections, trade-offs, and conditions.
-- Handles scope boundaries consistently for off-report questions.
-- Provides structured FAQ seed entries for later retrieval or chat routing.
-- Future integration steps: payload-grounded chat context wiring, FAQ seed set, and UI/chat integration.

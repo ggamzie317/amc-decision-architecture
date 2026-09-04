@@ -1,5 +1,5 @@
-export const AMC_PRODUCT_VERSION = "AMC-LAUNCH-V2";
-export const AMC_FRAMEWORK_VERSION = "FIFWM-SM-V1";
+export const AMC_PRODUCT_VERSION = "AMC-LAUNCH-V3";
+export const AMC_FRAMEWORK_VERSION = "FIFWM-SM-V2";
 
 export const usageEventTypes = [
   "preview_started",

@@ -8,7 +8,6 @@ export interface AmcInputSummary {
     location: string;
     currentRoleCompany: string;
     yearsExperience: string;
-    tier: string;
   };
 
   decisionSnapshot: {
@@ -160,11 +159,6 @@ const YEARS_EXPERIENCE_LABELS: LabelMap = {
   "16_plus": "16+ years",
 };
 
-const TIER_LABELS: LabelMap = {
-  essential: "Essential",
-  executive: "Executive",
-};
-
 const URGENCY_LABELS: LabelMap = {
   within_1m: "Within 1 month",
   within_3m: "Within 3 months",
@@ -265,7 +259,6 @@ export function buildInputSummary(
       location: intake.location,
       currentRoleCompany: intake.currentRoleCompany,
       yearsExperience: toReadable(intake.yearsExperience, YEARS_EXPERIENCE_LABELS),
-      tier: toReadable(intake.tier, TIER_LABELS),
     },
 
     decisionSnapshot: {

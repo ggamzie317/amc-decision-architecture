@@ -103,7 +103,6 @@ async function startServer() {
         messageId: sent.result.messageId,
         to: sent.result.to,
         language: sent.result.language,
-        tier: sent.result.tier,
         resultPath: path.relative(repoRoot, sent.resultPath),
       });
     } catch (error) {

@@ -252,13 +252,10 @@ const sampleIntake: AmcNormalizedIntake = {
   reportValueExpectation: ["clarity"],
   mustAnswerQuestion: "Is this move defensible now?",
   consent: true,
-  tier: "essential",
   submittedAt: "2026-03-15T10:00:00Z",
   reportDate: "2026-03-15",
   betaMode: true,
   lang: "en",
-  chatbotAccessToken: "",
-  chatbotAccessExpiresAt: "",
 };
 
 const flags = deriveFlags(sampleIntake);

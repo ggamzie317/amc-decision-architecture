@@ -1,16 +1,16 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Redirect, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AmcWebMvp from "./pages/AmcWebMvp";
 import AmcAdmin from "./pages/AmcAdmin";
-import FormatHandoff from "./pages/FormatHandoff";
 import Home from "./pages/Home";
-import Intake from "./pages/Intake";
-import PaymentHandoff from "./pages/PaymentHandoff";
-import PaymentSuccess from "./pages/PaymentSuccess";
+
+function LegacyProductRedirect() {
+  return <Redirect to="/amc-web-mvp" replace />;
+}
 
 function Router() {
   return (
@@ -18,10 +18,10 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/amc-web-mvp"} component={AmcWebMvp} />
       <Route path={"/amc-admin"} component={AmcAdmin} />
-      <Route path={"/intake"} component={Intake} />
-      <Route path={"/format-handoff"} component={FormatHandoff} />
-      <Route path={"/payment-handoff"} component={PaymentHandoff} />
-      <Route path={"/payment-success"} component={PaymentSuccess} />
+      <Route path={"/intake"} component={LegacyProductRedirect} />
+      <Route path={"/format-handoff"} component={LegacyProductRedirect} />
+      <Route path={"/payment-handoff"} component={LegacyProductRedirect} />
+      <Route path={"/payment-success"} component={LegacyProductRedirect} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
