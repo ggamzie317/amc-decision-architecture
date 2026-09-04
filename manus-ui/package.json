@@ -18,6 +18,7 @@
     "test:founder-ops-esm": "node scripts/check_founder_ops_esm.mjs",
     "test:external-evidence": "vitest run --root .. manus-ui/tests/external-snapshot-route.test.ts",
     "test:product-application-v3": "vitest run --root .. manus-ui/tests/product-application-v3.test.ts",
+    "test:public-bundle-privacy": "vitest run --root .. manus-ui/tests/public-bundle-privacy.test.ts",
     "check": "tsc --noEmit",
     "format": "prettier --write ."
   },

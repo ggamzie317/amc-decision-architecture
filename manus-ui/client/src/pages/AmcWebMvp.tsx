@@ -1,12 +1,15 @@
 import { useMemo, useRef, useState } from "react";
 import { trackAmcJourney } from "../data/amcFounderOps";
 import {
-  buildFifwmFromReportPayload,
+  buildUnavailableFifwm,
   buildProductApplicationV3,
   type ProductApplicationV3,
+  type StructuralLoad,
+  type StructuralRisk,
+  type StructuralSignal,
   type StructuralStrength,
+  type MissingPointImpact,
 } from "../data/amcProductApplicationV3";
-import reportPayload from "../data/reportPayload.json";
 
 type Language = "en" | "ko";
 type CaseType =
@@ -2476,13 +2479,20 @@ function externalSnapshotStatusLabel(snapshot: ExternalSnapshot) {
   return "Mock / Preview";
 }
 
-function externalValidationStrength(snapshot: ExternalSnapshot): StructuralStrength {
-  if (snapshot.status !== "live") return "developing";
+function unavailableStructuralSignal<TBand extends string>(): StructuralSignal<TBand> {
+  return { band: "unknown" as TBand, source: "unavailable" };
+}
+
+function externalValidationSignal(snapshot: ExternalSnapshot): StructuralSignal<StructuralStrength> {
+  if (snapshot.status !== "live") return unavailableStructuralSignal<StructuralStrength>();
   const supportive = snapshot.externalSignals.filter((signal) => signal.direction === "supportive").length;
   const caution = snapshot.externalSignals.filter((signal) => signal.direction === "caution").length;
-  if (snapshot.confidence === "high" && supportive > caution) return "strong";
-  if (snapshot.confidence === "low" && caution > supportive) return "weak";
-  return "developing";
+  const band = snapshot.confidence === "high" && supportive > caution
+    ? "strong"
+    : snapshot.confidence === "low" && caution > supportive
+      ? "weak"
+      : "developing";
+  return { band, source: "live-external-evidence" };
 }
 
 function confidenceLabel(confidence: ExternalSnapshot["confidence"]) {
@@ -2770,8 +2780,21 @@ export default function AmcWebMvp() {
   const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot);
   const displayedExternalStatusCopy = externalSnapshotStatusCopy(displayedExternalSnapshot.status, isKo);
   const fifwm = useMemo(
-    () => buildFifwmFromReportPayload(reportPayload as Record<string, unknown>),
-    [],
+    () => buildUnavailableFifwm(language),
+    [language],
+  );
+  const currentCaseStructuralSignals = useMemo(
+    () => ({
+      externalValidation: externalValidationSignal(displayedExternalSnapshot),
+      internalReadiness: unavailableStructuralSignal<StructuralStrength>(),
+      safetyMargin: unavailableStructuralSignal<StructuralStrength>(),
+      reversibility: unavailableStructuralSignal<StructuralStrength>(),
+      optionBSupport: unavailableStructuralSignal<StructuralStrength>(),
+      structuralRisk: unavailableStructuralSignal<StructuralRisk>(),
+      constraintLoad: unavailableStructuralSignal<StructuralLoad>(),
+      missingPointImpact: unavailableStructuralSignal<MissingPointImpact>(),
+    }),
+    [displayedExternalSnapshot],
   );
   const productApplicationV3 = useMemo(
     () =>
@@ -2782,16 +2805,8 @@ export default function AmcWebMvp() {
         optionB: optionBLabel,
         answers: fullIntakeAnswers,
         fifwm,
-        structuralSignals: {
-          externalValidation: externalValidationStrength(displayedExternalSnapshot),
-          internalReadiness: "developing",
-          safetyMargin: "strong",
-          reversibility: "developing",
-          optionBSupport: "developing",
-          structuralRisk: "high",
-          constraintLoad: "material",
-          missingPointImpact: "material",
-        },
+        fifwmSource: "unavailable",
+        structuralSignals: currentCaseStructuralSignals,
         missingPoint: isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en,
         missingPointWhy: isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en,
         changingMoves: [isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en],
@@ -2814,6 +2829,7 @@ export default function AmcWebMvp() {
       displayedExternalSnapshot,
       fullIntakeAnswers,
       fifwm,
+      currentCaseStructuralSignals,
       isKo,
       language,
       launchInterpretation,
@@ -2944,19 +2960,17 @@ export default function AmcWebMvp() {
         decisionConditionsJson: localizedConditions,
         safetyMarginStructuredData: {
           ...productApplicationV3.safetyMargin,
-          band: internalSignals.find((signal) => signal.label === "Safety Margin")?.status || "Unknown",
-          signal: internalSignals.find((signal) => signal.label === "Safety Margin") || null,
-          reversibility: matrixRows.find((row) => row.dimension === "Reversibility") || null,
+          band: productApplicationV3.postureBasis.safetyMargin.band,
+          source: productApplicationV3.postureBasis.safetyMargin.source,
+          reversibility: productApplicationV3.postureBasis.reversibility,
         },
         existingFifwmStructuredData: {
           ...productApplicationV3.decisionStructure.fifwm,
-          signals: dashboardDeck.map((card) => ({ label: card.section, value: card.keyword, interpretation: card.reading })),
-          comparisonRows: matrixRows,
-          internalSignals,
+          source: productApplicationV3.decisionStructure.fifwmSource,
         },
-        externalEvidenceMode: mockExternalSnapshot.status,
-        externalEvidenceConfidence: mockExternalSnapshot.confidence,
-        externalEvidenceJson: mockExternalSnapshot,
+        externalEvidenceMode: displayedExternalSnapshot.status,
+        externalEvidenceConfidence: displayedExternalSnapshot.confidence,
+        externalEvidenceJson: displayedExternalSnapshot,
       },
     });
     const requestId = externalSnapshotRequestId.current + 1;

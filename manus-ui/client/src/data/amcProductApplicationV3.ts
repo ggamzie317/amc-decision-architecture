@@ -8,6 +8,13 @@ export type StructuralStrength = "strong" | "developing" | "weak" | "unknown";
 export type StructuralRisk = "low" | "moderate" | "high" | "unknown";
 export type StructuralLoad = "light" | "material" | "heavy" | "unknown";
 export type MissingPointImpact = "resolved" | "material" | "critical" | "unknown";
+export type StructuralSignalSource =
+  | "canonical-current-case"
+  | "current-user-structured"
+  | "live-external-evidence"
+  | "current-case-derived"
+  | "unavailable";
+export type StructuralSignal<TBand extends string> = { band: TBand; source: StructuralSignalSource };
 export type FifwmFactor = { score: 0 | 1 | 2 | null; reading: string };
 export type FifwmStructure = {
   formal: FifwmFactor;
@@ -28,6 +35,7 @@ export type ProductApplicationV3 = {
   analysisSequence: typeof AMC_ANALYSIS_SEQUENCE;
   decisionStructure: {
     fifwm: FifwmStructure;
+    fifwmSource: "canonical-current-case" | "unavailable";
     insideReality: string;
     outsideEvidence: string;
     constraints: string;
@@ -66,15 +74,16 @@ export type ProductApplicationBuildInput = {
   optionB: string;
   answers: Record<number, string>;
   fifwm: FifwmStructure;
+  fifwmSource: "canonical-current-case" | "unavailable";
   structuralSignals: {
-    externalValidation: StructuralStrength;
-    internalReadiness: StructuralStrength;
-    safetyMargin: StructuralStrength;
-    reversibility: StructuralStrength;
-    optionBSupport: StructuralStrength;
-    structuralRisk: StructuralRisk;
-    constraintLoad: StructuralLoad;
-    missingPointImpact: MissingPointImpact;
+    externalValidation: StructuralSignal<StructuralStrength>;
+    internalReadiness: StructuralSignal<StructuralStrength>;
+    safetyMargin: StructuralSignal<StructuralStrength>;
+    reversibility: StructuralSignal<StructuralStrength>;
+    optionBSupport: StructuralSignal<StructuralStrength>;
+    structuralRisk: StructuralSignal<StructuralRisk>;
+    constraintLoad: StructuralSignal<StructuralLoad>;
+    missingPointImpact: StructuralSignal<MissingPointImpact>;
   };
   missingPoint: string;
   missingPointWhy: string;
@@ -113,24 +122,32 @@ export function buildFifwmFromReportPayload(payload: Record<string, unknown>): F
   ) as FifwmStructure;
 }
 
-const strengthScore: Record<StructuralStrength, number> = { strong: 2, developing: 1, weak: 0, unknown: 0.5 };
+/** Used when the live intake has not passed through the canonical AMC FIFWM scorer. */
+export function buildUnavailableFifwm(language: "en" | "ko"): FifwmStructure {
+  const reading = language === "ko"
+    ? "현재 사례가 canonical FIFWM scorer를 통과하지 않아 판단할 근거가 충분하지 않습니다."
+    : "Insufficient current-case evidence: this intake has not passed through the canonical FIFWM scorer.";
+  return Object.fromEntries(Object.keys(scoreKeys).map((factor) => [factor, { score: null, reading }])) as FifwmStructure;
+}
+
+const strengthScore: Record<StructuralStrength, number> = { strong: 2, developing: 1, weak: 0, unknown: 1 };
 const riskPenalty: Record<StructuralRisk, number> = { low: 0, moderate: 1, high: 2, unknown: 1 };
 const loadPenalty: Record<StructuralLoad, number> = { light: 0, material: 1, heavy: 2, unknown: 1 };
 const missingPenalty: Record<MissingPointImpact, number> = { resolved: 0, material: 1, critical: 2, unknown: 1 };
 
 function derivePostureFamily(input: ProductApplicationBuildInput) {
   const scores = Object.values(input.fifwm).map((factor) => factor.score).filter((score): score is 0 | 1 | 2 => score !== null);
-  const fifwmSupport = scores.length ? scores.reduce<number>((total, score) => total + score, 0) / scores.length : 0.5;
+  const fifwmSupport = scores.length ? scores.reduce<number>((total, score) => total + score, 0) / scores.length : 1;
   const signals = input.structuralSignals;
   const support = fifwmSupport
-    + strengthScore[signals.externalValidation] * 2
-    + strengthScore[signals.internalReadiness] * 2
-    + strengthScore[signals.safetyMargin]
-    + strengthScore[signals.reversibility]
-    + strengthScore[signals.optionBSupport]
-    - riskPenalty[signals.structuralRisk]
-    - loadPenalty[signals.constraintLoad]
-    - missingPenalty[signals.missingPointImpact];
+    + strengthScore[signals.externalValidation.band] * 2
+    + strengthScore[signals.internalReadiness.band] * 2
+    + strengthScore[signals.safetyMargin.band]
+    + strengthScore[signals.reversibility.band]
+    + strengthScore[signals.optionBSupport.band]
+    - riskPenalty[signals.structuralRisk.band]
+    - loadPenalty[signals.constraintLoad.band]
+    - missingPenalty[signals.missingPointImpact.band];
   if (support >= 8) return "transition" as const;
   if (support <= 1) return "reconfigure" as const;
   return "validate" as const;
@@ -182,16 +199,19 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     timeExposure: ko ? "현재 기반을 유지하는 제한된 검증 기간" : "A bounded validation period while the current base remains protected",
   }));
 
-  const safetyReading = input.structuralSignals.safetyMargin === "strong"
+  const safetyReading = input.structuralSignals.safetyMargin.band === "strong"
     ? (ko ? "현재 Safety Margin은 제한된 실험을 가능하게 합니다. 시도하고 배우고 회복해 다시 바꿀 공간을 보호합니다." : "The current Safety Margin enables bounded experimentation by protecting room to try, learn, recover, and change again.")
-    : input.structuralSignals.safetyMargin === "weak"
+    : input.structuralSignals.safetyMargin.band === "weak"
       ? (ko ? "현재 Safety Margin은 실험을 막지는 않지만 노출 경계를 좁혀야 합니다. 회복과 재시도 역량을 먼저 보호합니다." : "The current Safety Margin does not prohibit experimentation, but it constrains exposure so recovery and retry capacity remain protected.")
-      : (ko ? "Safety Margin은 더 안전한 선택을 고르는 것이 아니라 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin protects the space to change again; it does not simply identify the safer option.");
+      : input.structuralSignals.safetyMargin.band === "unknown"
+        ? (ko ? "현재 사례의 재정 여유, 회복 경로, 재시도 역량을 구조적으로 확인하지 못했습니다. Safety Margin을 안전하다고 가정하지 않고 노출 확대 전에 확인합니다." : "Financial room, recovery path, and retry capacity are not yet available as structured current-case evidence. Safety Margin is not assumed safe and must be established before exposure increases.")
+        : (ko ? "Safety Margin은 더 안전한 선택을 고르는 것이 아니라 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin protects the space to change again; it does not simply identify the safer option.");
 
   return {
     analysisSequence: AMC_ANALYSIS_SEQUENCE,
     decisionStructure: {
       fifwm: input.fifwm,
+      fifwmSource: input.fifwmSource,
       insideReality: `${internalReadiness} ${answer(input.answers, 18, "")}`.trim(),
       outsideEvidence: input.externalImplication,
       constraints: constraint,

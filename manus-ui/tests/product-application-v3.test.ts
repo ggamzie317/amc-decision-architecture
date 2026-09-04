@@ -6,8 +6,10 @@ import {
   AMC_ANALYSIS_SEQUENCE,
   buildFifwmFromReportPayload,
   buildProductApplicationV3,
+  buildUnavailableFifwm,
   type FifwmStructure,
   type ProductApplicationBuildInput,
+  type StructuralSignal,
 } from "../client/src/data/amcProductApplicationV3";
 import { AMC_FRAMEWORK_VERSION, AMC_PRODUCT_VERSION } from "../server/founderOpsTypes";
 
@@ -19,15 +21,18 @@ const fifwm = (score: 0 | 1 | 2 = 1): FifwmStructure => ({
   marketPolicy: { score, reading: "Market and policy exposure are mapped." },
 });
 
+const signal = <TBand extends string>(band: TBand): StructuralSignal<TBand> => ({ band, source: "current-case-derived" });
+const unavailableSignal = <TBand extends string>(): StructuralSignal<TBand> => ({ band: "unknown" as TBand, source: "unavailable" });
+
 const baseSignals: ProductApplicationBuildInput["structuralSignals"] = {
-  externalValidation: "developing",
-  internalReadiness: "developing",
-  safetyMargin: "strong",
-  reversibility: "developing",
-  optionBSupport: "developing",
-  structuralRisk: "moderate",
-  constraintLoad: "material",
-  missingPointImpact: "material",
+  externalValidation: signal("developing"),
+  internalReadiness: signal("developing"),
+  safetyMargin: signal("strong"),
+  reversibility: signal("developing"),
+  optionBSupport: signal("developing"),
+  structuralRisk: signal("moderate"),
+  constraintLoad: signal("material"),
+  missingPointImpact: signal("material"),
 };
 
 const input = (overrides: Partial<ProductApplicationBuildInput> = {}): ProductApplicationBuildInput => ({
@@ -37,6 +42,7 @@ const input = (overrides: Partial<ProductApplicationBuildInput> = {}): ProductAp
   optionB: "advisory practice",
   answers: {},
   fifwm: fifwm(),
+  fifwmSource: "canonical-current-case",
   structuralSignals: baseSignals,
   missingPoint: "The stated choice hides an untested demand assumption.",
   missingPointWhy: "Without buyer evidence, the transition case cannot carry its exposure.",
@@ -64,28 +70,28 @@ describe("AMC Product Application Layer V3 correction", () => {
       fifwm: fifwm(0),
       structuralSignals: {
         ...baseSignals,
-        externalValidation: "weak",
-        internalReadiness: "weak",
-        safetyMargin: "weak",
-        reversibility: "weak",
-        optionBSupport: "weak",
-        structuralRisk: "high",
-        constraintLoad: "heavy",
-        missingPointImpact: "critical",
+        externalValidation: signal("weak"),
+        internalReadiness: signal("weak"),
+        safetyMargin: signal("weak"),
+        reversibility: signal("weak"),
+        optionBSupport: signal("weak"),
+        structuralRisk: signal("high"),
+        constraintLoad: signal("heavy"),
+        missingPointImpact: signal("critical"),
       },
     }));
     const strong = buildProductApplicationV3(input({
       fifwm: fifwm(2),
       structuralSignals: {
         ...baseSignals,
-        externalValidation: "strong",
-        internalReadiness: "strong",
-        safetyMargin: "strong",
-        reversibility: "strong",
-        optionBSupport: "strong",
-        structuralRisk: "low",
-        constraintLoad: "light",
-        missingPointImpact: "resolved",
+        externalValidation: signal("strong"),
+        internalReadiness: signal("strong"),
+        safetyMargin: signal("strong"),
+        reversibility: signal("strong"),
+        optionBSupport: signal("strong"),
+        structuralRisk: signal("low"),
+        constraintLoad: signal("light"),
+        missingPointImpact: signal("resolved"),
       },
     }));
     expect(weak.currentStructuralPosture.label).toBe("Stay and Reconfigure");
@@ -114,6 +120,34 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(mapped.marketPolicy.reading).toBe("Market / Policy read");
   });
 
+  it("keeps all canonical factors explicitly unknown when no current-case scorer output exists", () => {
+    const unknown = buildUnavailableFifwm("en");
+    expect(Object.keys(unknown)).toEqual(["formal", "informal", "framework", "workflow", "marketPolicy"]);
+    expect(Object.values(unknown).every((factor) => factor.score === null)).toBe(true);
+    expect(Object.values(unknown).every((factor) => factor.reading.includes("Insufficient current-case evidence"))).toBe(true);
+  });
+
+  it("keeps unavailable live-case structure neutral and never treats unknown Safety Margin as safe", () => {
+    const result = buildProductApplicationV3(input({
+      fifwm: buildUnavailableFifwm("en"),
+      fifwmSource: "unavailable",
+      structuralSignals: {
+        externalValidation: unavailableSignal(),
+        internalReadiness: unavailableSignal(),
+        safetyMargin: unavailableSignal(),
+        reversibility: unavailableSignal(),
+        optionBSupport: unavailableSignal(),
+        structuralRisk: unavailableSignal(),
+        constraintLoad: unavailableSignal(),
+        missingPointImpact: unavailableSignal(),
+      },
+    }));
+    expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
+    expect(result.safetyMargin.reading).toContain("not assumed safe");
+    expect(result.decisionStructure.fifwmSource).toBe("unavailable");
+    expect(Object.values(result.postureBasis).every((item) => item.source === "unavailable")).toBe(true);
+  });
+
   it("keeps genuine FIFWM and supporting context together without conflating them", () => {
     const result = buildProductApplicationV3(input());
     expect(result.decisionStructure.fifwm).toEqual(fifwm());
@@ -138,7 +172,7 @@ describe("AMC Product Application Layer V3 correction", () => {
 
   it("uses weak Safety Margin to constrain exposure without automatically forcing stay", () => {
     const result = buildProductApplicationV3(input({
-      structuralSignals: { ...baseSignals, safetyMargin: "weak" },
+      structuralSignals: { ...baseSignals, safetyMargin: signal("weak") },
     }));
     expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
     expect(result.safetyMargin.reading).toContain("constrains exposure");
@@ -151,12 +185,22 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(plays.map((play) => play.move).join(" ")).not.toContain("Option C");
   });
 
-  it("uses one corrected intelligence object for dashboard and detailed report and preserves V3 operations", () => {
+  it("uses live-case or explicit unknown wiring with no historical fixture or fixed posture bands", () => {
     const root = path.basename(process.cwd()) === "manus-ui" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
     const page = fs.readFileSync(path.join(root, "manus-ui/client/src/pages/AmcWebMvp.tsx"), "utf8");
     expect(page.match(/<ProductApplicationSections intelligence=\{productApplicationV3\}/g)).toHaveLength(2);
-    expect(page).toContain("buildFifwmFromReportPayload(reportPayload");
+    expect(page).not.toMatch(/import\s+reportPayload\s+from/);
+    expect(page).not.toContain("buildFifwmFromReportPayload(reportPayload");
+    expect(page).toContain("buildUnavailableFifwm(language)");
+    expect(page).toContain("externalValidationSignal(displayedExternalSnapshot)");
+    for (const fixedBand of [
+      'internalReadiness: "developing"', 'safetyMargin: "strong"', 'reversibility: "developing"',
+      'optionBSupport: "developing"', 'structuralRisk: "high"', 'constraintLoad: "material"',
+      'missingPointImpact: "material"',
+    ]) expect(page).not.toContain(fixedBand);
     expect(page).toContain("productApplicationV3.decisionStructure.fifwm");
+    expect(page).toContain("structuralOutputJson: structuralOutput");
+    expect(page).toContain("answersJson:");
     expect(AMC_PRODUCT_VERSION).toBe("AMC-LAUNCH-V3");
     expect(AMC_FRAMEWORK_VERSION).toBe("FIFWM-SM-V2");
   });
