@@ -82,6 +82,10 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(ids).toEqual(Array.from({ length: 29 }, (_, index) => index + 1));
     expect(page).toContain("const safetyMarginQuestionIds = [19, 20, 21]");
     expect(page).toContain("safetyMarginBandOptions[structuredQuestionId]");
+    expect(page).toContain('{ value: "weak", en: "Constrained"');
+    expect(page).toContain('{ value: "low", en: "Contained"');
+    expect(page).toContain('{ value: "high", en: "Elevated"');
+    expect(page).toContain('{ value: "unknown", en: "Not Yet Established"');
     expect(page).toContain('id={`full-intake-${question.id}`}');
   });
 
@@ -215,7 +219,8 @@ describe("AMC Product Application Layer V3 correction", () => {
       },
     }));
     expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
-    expect(result.safetyMargin.reading).toContain("not assumed safe");
+    expect(result.safetyMargin.reading).toContain("not yet established");
+    expect(result.safetyMargin.reading).toContain("before increasing exposure");
     expect(result.decisionStructure.fifwmSource).toBe("unavailable");
     expect(Object.values(result.postureBasis).every((item) => item.source === "unavailable")).toBe(true);
   });
@@ -270,6 +275,8 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(page).not.toContain("buildFifwmFromReportPayload(reportPayload");
     expect(page).toContain("buildUnavailableFifwm(language)");
     expect(page).toContain("externalValidationSignal(displayedExternalSnapshot)");
+    expect(page).toContain('externalSnapshot ?? (isQaMode ? mockExternalSnapshot : neutralExternalSnapshot)');
+    expect(page).toContain('setExternalSnapshot(isQaMode ? mockExternalSnapshot : null)');
     for (const fixedBand of [
       'internalReadiness: "developing"', 'safetyMargin: "strong"', 'reversibility: "developing"',
       'optionBSupport: "developing"', 'structuralRisk: "high"', 'constraintLoad: "material"',
