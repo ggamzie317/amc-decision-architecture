@@ -12,7 +12,7 @@ import {
 import Home from "../client/src/pages/Home";
 import ErrorBoundary from "../client/src/components/ErrorBoundary";
 import { customerSafeExternalSnapshot } from "../client/src/data/customerLanguageFirewall";
-import { ProductApplicationSections } from "../client/src/pages/AmcWebMvp";
+import { ProductApplicationDashboard, ProductApplicationReport } from "../client/src/components/ProductApplicationViews";
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
@@ -119,27 +119,20 @@ describe("AMC customer-language firewall", () => {
     ]);
 
     for (const journey of journeys) {
-      for (const report of [false, true]) {
+      for (const [index, View] of [ProductApplicationDashboard, ProductApplicationReport].entries()) {
         const translate = journey === journeys[2] ? translateKo : translateEn;
         const text = customerText(renderToStaticMarkup(
-          <ProductApplicationSections
+          <View
             intelligence={journey}
             translate={translate}
-            report={report}
             externalEvidenceUsed
           />,
         ));
         expectCustomerSafe(text);
-        for (const section of [
-          "Current Structural Posture",
-          "Why This Posture",
-          "Decision Structure",
-          "What You May Be Missing",
-          "Changing Plays",
-          "Safety Margin",
-          "Decision Switches",
-          "Next-Step Experiment",
-        ]) expect(text).toContain(section);
+        const expectedSections = index === 0
+          ? ["Decision Structure", "What You May Be Missing", "Changing", "Safety Margin", "Decision Switches", "Next-Step Experiment"]
+          : ["Current Structural Posture", "Why This Posture", "Decision Structure", "What You May Be Missing", "Changing", "Safety Margin", "Decision Switches", "Next-Step Experiment"];
+        for (const section of expectedSections) expect(text).toContain(section);
       }
     }
   });
