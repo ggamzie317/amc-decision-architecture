@@ -1,9 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { trackAmcJourney } from "../data/amcFounderOps";
 import {
+  buildFifwmFromReportPayload,
   buildProductApplicationV3,
   type ProductApplicationV3,
+  type StructuralStrength,
 } from "../data/amcProductApplicationV3";
+import reportPayload from "../data/reportPayload.json";
 
 type Language = "en" | "ko";
 type CaseType =
@@ -2473,6 +2476,15 @@ function externalSnapshotStatusLabel(snapshot: ExternalSnapshot) {
   return "Mock / Preview";
 }
 
+function externalValidationStrength(snapshot: ExternalSnapshot): StructuralStrength {
+  if (snapshot.status !== "live") return "developing";
+  const supportive = snapshot.externalSignals.filter((signal) => signal.direction === "supportive").length;
+  const caution = snapshot.externalSignals.filter((signal) => signal.direction === "caution").length;
+  if (snapshot.confidence === "high" && supportive > caution) return "strong";
+  if (snapshot.confidence === "low" && caution > supportive) return "weak";
+  return "developing";
+}
+
 function confidenceLabel(confidence: ExternalSnapshot["confidence"]) {
   return confidence;
 }
@@ -2587,13 +2599,36 @@ function ProductApplicationSections({
       </section>
 
       <section className={card}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">03 / Decision Structure · FIFWM</p>
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">03 / Decision Structure</p>
+        <h3 className="mt-4 text-sm font-semibold uppercase tracking-[0.12em]">
+          {translate("FIFWM · Core Structural Read", "FIFWM · 핵심 구조 해석")}
+        </h3>
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {([
+            [translate("Formal", "Formal"), intelligence.decisionStructure.fifwm.formal],
+            [translate("Informal", "Informal"), intelligence.decisionStructure.fifwm.informal],
+            [translate("Framework", "Framework"), intelligence.decisionStructure.fifwm.framework],
+            [translate("Workflow", "Workflow"), intelligence.decisionStructure.fifwm.workflow],
+            [translate("Market / Policy", "Market / Policy"), intelligence.decisionStructure.fifwm.marketPolicy],
+          ] as const).map(([label, factor]) => (
+            <div key={label} className="border-t-2 border-current/60 pt-3">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold">{label}</h4>
+                <span className="text-xs opacity-55">{factor.score === null ? "—" : `${factor.score} / 2`}</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed opacity-65">{factor.reading}</p>
+            </div>
+          ))}
+        </div>
+        <h3 className="mt-6 text-sm font-semibold uppercase tracking-[0.12em]">
+          {translate("Supporting Structure", "보조 구조")}
+        </h3>
+        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[
-            [translate("Inside Reality", "내부 현실"), intelligence.fifwm.insideReality],
-            [translate("Live Outside Evidence", "실시간 외부 근거"), intelligence.fifwm.outsideEvidence],
-            [translate("Constraints", "제약"), intelligence.fifwm.constraints],
-            [translate("Trade-off", "트레이드오프"), intelligence.fifwm.tradeOff],
+            [translate("Inside Reality", "내부 현실"), intelligence.decisionStructure.insideReality],
+            [translate("Live Outside Evidence", "실시간 외부 근거"), intelligence.decisionStructure.outsideEvidence],
+            [translate("Constraints", "제약"), intelligence.decisionStructure.constraints],
+            [translate("Trade-offs", "트레이드오프"), intelligence.decisionStructure.tradeOffs],
           ].map(([label, value]) => (
             <div key={label} className="border-t border-current/20 pt-3">
               <h3 className="text-sm font-semibold">{label}</h3>
@@ -2611,7 +2646,11 @@ function ProductApplicationSections({
       <section className={card}>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">05 / Changing Plays</p>
         <div className="mt-5 space-y-5">
-          {intelligence.changingPlays.map((play) => (
+          {intelligence.changingPlays.length === 0 ? (
+            <p className="text-sm leading-relaxed opacity-70">
+              {translate("No additional Changing Play is structurally justified by the current evidence.", "현재 근거로 정당화되는 추가 Changing Play는 없습니다.")}
+            </p>
+          ) : intelligence.changingPlays.map((play) => (
             <div key={play.move} className="border-t border-current/20 pt-4">
               <h3 className="text-lg font-semibold leading-relaxed">{play.move}</h3>
               <dl className="mt-3 grid grid-cols-1 gap-3 text-sm leading-relaxed sm:grid-cols-2">
@@ -2730,6 +2769,10 @@ export default function AmcWebMvp() {
   const displayedExternalSnapshot = externalSnapshot ?? mockExternalSnapshot;
   const displayedExternalStatus = externalSnapshotStatusLabel(displayedExternalSnapshot);
   const displayedExternalStatusCopy = externalSnapshotStatusCopy(displayedExternalSnapshot.status, isKo);
+  const fifwm = useMemo(
+    () => buildFifwmFromReportPayload(reportPayload as Record<string, unknown>),
+    [],
+  );
   const productApplicationV3 = useMemo(
     () =>
       buildProductApplicationV3({
@@ -2738,9 +2781,20 @@ export default function AmcWebMvp() {
         optionA: optionALabel,
         optionB: optionBLabel,
         answers: fullIntakeAnswers,
+        fifwm,
+        structuralSignals: {
+          externalValidation: externalValidationStrength(displayedExternalSnapshot),
+          internalReadiness: "developing",
+          safetyMargin: "strong",
+          reversibility: "developing",
+          optionBSupport: "developing",
+          structuralRisk: "high",
+          constraintLoad: "material",
+          missingPointImpact: "material",
+        },
         missingPoint: isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en,
         missingPointWhy: isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en,
-        changingMove: isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en,
+        changingMoves: [isKo ? launchInterpretation.alternativePath.ko : launchInterpretation.alternativePath.en],
         primaryRisk: caseReportBranch.primaryRisk.name,
         primaryRiskMeaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
         decisionConditions: isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en,
@@ -2757,8 +2811,9 @@ export default function AmcWebMvp() {
       caseReportBranch,
       caseSpecificReading,
       detectedCaseType,
-      displayedExternalSnapshot.implication,
+      displayedExternalSnapshot,
       fullIntakeAnswers,
+      fifwm,
       isKo,
       language,
       launchInterpretation,
@@ -2841,6 +2896,7 @@ export default function AmcWebMvp() {
     const structuralOutput = {
       caseType: detectedCaseType,
       currentStructuralPosture: productApplicationV3.currentStructuralPosture,
+      postureBasis: productApplicationV3.postureBasis,
       why: productApplicationV3.why,
       changingPlays: productApplicationV3.changingPlays,
       safetyMargin: productApplicationV3.safetyMargin,
@@ -2853,7 +2909,7 @@ export default function AmcWebMvp() {
       },
       comparisonRows: matrixRows,
       internalSignals,
-      fifwm: productApplicationV3.fifwm,
+      decisionStructure: productApplicationV3.decisionStructure,
     };
     void trackAmcJourney({
       eventType: "full_intake_completed",
@@ -2893,7 +2949,7 @@ export default function AmcWebMvp() {
           reversibility: matrixRows.find((row) => row.dimension === "Reversibility") || null,
         },
         existingFifwmStructuredData: {
-          ...productApplicationV3.fifwm,
+          ...productApplicationV3.decisionStructure.fifwm,
           signals: dashboardDeck.map((card) => ({ label: card.section, value: card.keyword, interpretation: card.reading })),
           comparisonRows: matrixRows,
           internalSignals,
