@@ -13,7 +13,7 @@ const fitNotFor = [
 const reportOutline = [
   "Current Structural Posture",
   "Why This Posture",
-  "Decision Structure / FIFWM",
+  "Decision Structure",
   "What You May Be Missing",
   "Changing Plays",
   "Safety Margin — Room to Be Wrong",
@@ -55,7 +55,7 @@ const faqs = [
   },
   {
     q: "Is AMC a generic AI chat tool?",
-    a: "No. AMC applies a consistent structural decision framework and delivers one Full Structural Report.",
+    a: "No. AMC applies a consistent structural decision approach and delivers one Full Structural Report.",
   },
   {
     q: "Do I need an account before I begin?",
@@ -205,7 +205,7 @@ export default function Home() {
           <div className="border border-border rounded-lg p-6 bg-card max-w-3xl">
             <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">AMC Full Structural Report</p>
             <p className="text-lg font-medium mb-2">Full Dashboard + Detailed PDF Report</p>
-            <p className="text-sm text-muted-foreground">Full Structural Dashboard + Detailed Report, built from the same FIFWM intelligence.</p>
+            <p className="text-sm text-muted-foreground">Full Structural Dashboard + Detailed Report, built from the same AMC structural analysis.</p>
           </div>
         </section>
 

@@ -245,7 +245,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     : input.structuralSignals.safetyMargin.band === "weak"
       ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 구조는 변화를 막지는 않지만, 회복과 재시도 역량을 위해 노출 경계를 좁혀야 합니다." : "Safety Margin protects the space to change. The current structure does not prohibit experimentation, but it constrains exposure so recovery and retry capacity remain protected.")
       : input.structuralSignals.safetyMargin.band === "unknown"
-        ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 사례의 재정 여유, 회복 경로, 재시도 역량이 구조적으로 확인되지 않았으므로 안전하다고 가정하지 않습니다." : "Safety Margin protects the space to change. Financial room, recovery path, and retry capacity are not yet available as structured current-case evidence, so Safety Margin is not assumed safe.")
+        ? (ko ? "Safety Margin이 아직 확인되지 않았습니다. 노출을 늘리기 전에 재정 여유와 회복 역량을 명확히 하세요. Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin is not yet established. Clarify financial room and recovery capacity before increasing exposure. Safety Margin protects the space to change.")
         : (ko ? "Safety Margin은 더 안전한 선택을 고르는 것이 아니라 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin protects the space to change; it does not simply identify the safer option.");
 
   return {
