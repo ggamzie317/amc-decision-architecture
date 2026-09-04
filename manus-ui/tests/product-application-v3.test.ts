@@ -47,6 +47,22 @@ const baseSafetyMarginInputs: SafetyMarginInputs = {
   downsideExposure: { band: "low", source: "current-user-structured" },
 };
 
+const webRuntimeSignals = (
+  externalValidation: "strong" | "developing" | "weak" | "unknown",
+  safetyMargin: "strong" | "developing" | "weak" | "unknown",
+  reversibility: "strong" | "developing" | "weak" | "unknown",
+  structuralRisk: "low" | "moderate" | "high" | "unknown",
+): ProductApplicationBuildInput["structuralSignals"] => ({
+  externalValidation: externalValidation === "unknown" ? unavailableSignal() : signal(externalValidation),
+  internalReadiness: unavailableSignal(),
+  safetyMargin: safetyMargin === "unknown" ? unavailableSignal() : signal(safetyMargin),
+  reversibility: reversibility === "unknown" ? unavailableSignal() : signal(reversibility),
+  optionBSupport: unavailableSignal(),
+  structuralRisk: structuralRisk === "unknown" ? unavailableSignal() : signal(structuralRisk),
+  constraintLoad: unavailableSignal(),
+  missingPointImpact: unavailableSignal(),
+});
+
 const input = (overrides: Partial<ProductApplicationBuildInput> = {}): ProductApplicationBuildInput => ({
   language: "en",
   caseType: "Entrepreneurship",
@@ -265,37 +281,30 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(result.safetyMargin.reading).toContain("constrains exposure");
   });
 
-  it("derives zero, one, and two-to-three distinct Changing Plays without forcing Option C", () => {
-    const fullySupported = buildProductApplicationV3(input({
-      fifwm: fifwm(2),
-      structuralSignals: {
-        externalValidation: signal("strong"), internalReadiness: signal("strong"), safetyMargin: signal("strong"),
-        reversibility: signal("strong"), optionBSupport: signal("strong"), structuralRisk: signal("low"),
-        constraintLoad: signal("light"), missingPointImpact: signal("resolved"),
-      },
-    }));
-    const onePlay = buildProductApplicationV3(input({
-      structuralSignals: {
-        externalValidation: signal("developing"), internalReadiness: signal("strong"), safetyMargin: signal("strong"),
-        reversibility: signal("strong"), optionBSupport: signal("strong"), structuralRisk: signal("low"),
-        constraintLoad: signal("light"), missingPointImpact: signal("resolved"),
-      },
-    }));
-    const threePlays = buildProductApplicationV3(input({
-      caseType: "Corporate Stay vs Exit",
-      structuralSignals: { ...baseSignals, safetyMargin: signal("weak"), structuralRisk: signal("high") },
-    }));
-    expect(fullySupported.changingPlays).toHaveLength(0);
+  it("derives zero, one, and two-to-three plays from the actual web-runtime availability shape", () => {
+    const zeroPlays = buildProductApplicationV3(input({ structuralSignals: webRuntimeSignals("strong", "strong", "strong", "low") }));
+    const onePlay = buildProductApplicationV3(input({ structuralSignals: webRuntimeSignals("developing", "strong", "strong", "low") }));
+    const threePlays = buildProductApplicationV3(input({ structuralSignals: webRuntimeSignals("weak", "weak", "developing", "high") }));
+    expect(zeroPlays.changingPlays).toHaveLength(0);
     expect(onePlay.changingPlays).toHaveLength(1);
+    expect(onePlay.changingPlays[0].family).toBe("parallel-validation");
     expect(threePlays.changingPlays).toHaveLength(3);
     expect(new Set(threePlays.changingPlays.map((play) => play.family)).size).toBe(3);
     expect(threePlays.changingPlays.map((play) => play.move).join(" ")).not.toContain("Option C");
   });
 
-  it("creates case-aware Changing families instead of replaying the legacy alternative path", () => {
+  it("keeps unknown neutral and uses case type only to select a family after a known trigger", () => {
     const cases = ["Corporate Stay vs Exit", "MBA / EMBA / PhD Decision", "Entrepreneurship", "Overseas Relocation"];
-    const firstFamilies = cases.map((caseType) => buildProductApplicationV3(input({ caseType, changingMoves: ["LEGACY STATIC ALTERNATIVE"] })).changingPlays[0]?.family);
-    expect(firstFamilies).toEqual(["role-scope", "pathway", "parallel-validation", "timing"]);
+    const caseOnly = cases.map((caseType) => buildProductApplicationV3(input({ caseType, structuralSignals: webRuntimeSignals("strong", "strong", "strong", "low") })));
+    expect(caseOnly.every((result) => result.changingPlays.length === 0)).toBe(true);
+    const allUnknown = buildProductApplicationV3(input({ structuralSignals: webRuntimeSignals("unknown", "unknown", "unknown", "unknown") }));
+    expect(allUnknown.changingPlays).toHaveLength(0);
+    const zeroState = renderToStaticMarkup(React.createElement(ProductApplicationDashboard, {
+      intelligence: allUnknown, translate: (en: string) => en, externalEvidenceUsed: false,
+    }));
+    expect(zeroState).toContain("No additional configuration is justified by the current structure");
+    const firstFamilies = cases.map((caseType) => buildProductApplicationV3(input({ caseType, changingMoves: ["LEGACY STATIC ALTERNATIVE"], structuralSignals: webRuntimeSignals("developing", "strong", "strong", "low") })).changingPlays[0]?.family);
+    expect(firstFamilies).toEqual(["role-scope", "pathway", "parallel-validation", "pathway"]);
     expect(firstFamilies.every(Boolean)).toBe(true);
     expect(cases.flatMap((caseType) => buildProductApplicationV3(input({ caseType })).changingPlays.map((play) => play.move))).not.toContain("LEGACY STATIC ALTERNATIVE");
   });
@@ -321,7 +330,7 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(new Set(results.map((result) => result.presentation.coreTradeoffKeyword)).size).toBe(4);
     expect(new Set(results.map((result) => result.presentation.nextTestKeyword)).size).toBe(4);
     expect(new Set(results.map((result) => result.presentation.safetyMarginKeyword)).size).toBe(4);
-    expect(results.map((result) => result.changingPlays[0]?.family)).toEqual(["role-scope", "pathway", "parallel-validation", "timing"]);
+    expect(results.map((result) => result.changingPlays[0]?.family)).toEqual(["role-scope", "pathway", "parallel-validation", "pathway"]);
     expect(results.map((result) => result.decisionSwitches[0]?.signal)).toEqual(cases.map((item) => item.condition));
     expect(results.every((result) => result.nextStepExperiment.stages.length === 3)).toBe(true);
   });
@@ -352,6 +361,13 @@ describe("AMC Product Application Layer V3 correction", () => {
     const page = fs.readFileSync(path.join(root, "manus-ui/client/src/pages/AmcWebMvp.tsx"), "utf8");
     expect(page.match(/<ProductApplicationDashboard intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
     expect(page.match(/<ProductApplicationReport intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
+    expect(page).not.toContain("ProductApplicationSections");
+    expect(page).not.toContain("{false ? <>");
+    for (const duplicateSection of [
+      "01A / What You May Be Missing", "02 / Decision Snapshot", "Supporting Detail / Changing Play",
+      "Supporting Detail / Safety Margin Evidence", "Supporting Detail / Decision Switch Evidence",
+      "Supporting Detail / Experiment Stages",
+    ]) expect(page).not.toContain(duplicateSection);
     expect(page).not.toMatch(/import\s+reportPayload\s+from/);
     expect(page).not.toContain("buildFifwmFromReportPayload(reportPayload");
     expect(page).not.toContain("launchInterpretation.alternativePath");

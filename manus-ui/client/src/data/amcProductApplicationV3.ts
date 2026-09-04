@@ -282,17 +282,16 @@ function casePresentation(input: ProductApplicationBuildInput) {
   return casePresentations[input.caseType] || casePresentations["General Career Reconfiguration"];
 }
 
-function deriveChangingPlays(input: ProductApplicationBuildInput, postureFamily: "transition" | "reconfigure" | "validate", presentation: CasePresentation, missingValidation: string, optionAProtection: string): ChangingPlay[] {
+function deriveChangingPlays(input: ProductApplicationBuildInput, presentation: CasePresentation, missingValidation: string, optionAProtection: string): ChangingPlay[] {
   const ko = input.language === "ko";
   const optionA = cleanOptionLabel(input.optionA);
   const optionB = cleanOptionLabel(input.optionB);
   const signals = input.structuralSignals;
-  const fullySupported = postureFamily === "transition"
-    && signals.externalValidation.band === "strong" && signals.internalReadiness.band === "strong"
-    && signals.safetyMargin.band === "strong" && signals.reversibility.band === "strong"
-    && signals.optionBSupport.band === "strong" && signals.structuralRisk.band === "low"
-    && signals.constraintLoad.band === "light" && signals.missingPointImpact.band === "resolved";
-  if (fullySupported) return [];
+  const externalNeedsValidation = signals.externalValidation.band === "weak" || signals.externalValidation.band === "developing";
+  const safetyNeedsProtection = signals.safetyMargin.band === "weak" || signals.safetyMargin.band === "developing";
+  const reversibilityNeedsProtection = signals.reversibility.band === "weak" || signals.reversibility.band === "developing";
+  const downsideNeedsProtection = signals.structuralRisk.band === "high";
+  const hasKnownTrigger = externalNeedsValidation || safetyNeedsProtection || reversibilityNeedsProtection || downsideNeedsProtection;
 
   const plays: ChangingPlay[] = [];
   const add = (family: ChangingPlay["family"], title: [string, string], move: [string, string], changes: [string, string], protects: [string, string], needs: [string, string], exposure: [string, string]) => {
@@ -303,20 +302,15 @@ function deriveChangingPlays(input: ProductApplicationBuildInput, postureFamily:
       optionStrengthened: optionB, evidence: missingValidation, timeExposure: exposure[ko ? 1 : 0],
     });
   };
-  const primaryFamily: ChangingPlay["family"] =
-    input.caseType === "Corporate Stay vs Exit" || input.caseType === "Role Upgrade / Downgrade" ? "role-scope"
-      : input.caseType === "MBA / EMBA / PhD Decision" || input.caseType === "Industry Transition" ? "pathway"
-        : input.caseType === "Overseas Relocation" || input.caseType === "Family Constraint-heavy Decision" ? "timing"
-          : input.caseType === "Burnout-driven Decision" ? "resource" : "parallel-validation";
+  const roleScopeEligible = input.caseType === "Corporate Stay vs Exit" || input.caseType === "Role Upgrade / Downgrade";
+  const pathwayEligible = input.caseType === "MBA / EMBA / PhD Decision" || input.caseType === "Industry Transition" || input.caseType === "Overseas Relocation";
 
-  if (primaryFamily === "role-scope") add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"], [`Test whether ${optionA} can be redesigned before treating departure as necessary.`, `${optionA}를 유지하면서 역할과 범위를 재설계할 수 있는지 먼저 검증합니다.`], ["Exit decision → role redesign test", "퇴사 결정 → 역할 재설계 검증"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
-  if (primaryFamily === "pathway") add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Test an intermediate route that can create evidence for ${optionB} before full conversion.`, `${optionB}로 완전히 전환하기 전에 근거를 만들 수 있는 중간 경로를 검증합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One bounded pathway test", "한 번의 제한된 경로 검증"]);
-  if (primaryFamily === "timing") add("timing", ["Timing Reconfiguration", "시기 재구성"], [`Sequence ${optionB} after its operating constraints are verified rather than committing on the current timetable.`, `현재 일정에 바로 확정하지 않고 실행 제약을 확인한 뒤 ${optionB}의 시기를 정합니다.`], ["Immediate move → condition-led timing", "즉시 이동 → 조건 기반 시기"], presentation.protects, ["Constraint clearance", "핵심 제약 해소"], ["Commit only after review", "검토 후에만 확정"]);
-  if (primaryFamily === "resource") add("resource", ["Resource Reconfiguration", "자원 재구성"], [`Strengthen time, support, or recovery capacity before increasing exposure to ${optionB}.`, `${optionB}에 대한 노출을 늘리기 전에 시간, 지원 또는 회복 역량을 강화합니다.`], ["Fixed capacity → protected capacity", "고정된 여력 → 보호된 여력"], presentation.protects, ["Protected time and support", "보호된 시간과 지원"], ["No added load before recovery", "회복 전 추가 부담 없음"]);
-  if (primaryFamily === "parallel-validation") add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as the base while testing ${optionB} with real evidence.`, `${optionA}를 기반으로 유지하면서 실제 근거로 ${optionB}를 검증합니다.`], ["Binary choice → staged test", "이분법적 선택 → 단계적 검증"], presentation.protects, ["Observable external evidence", "관찰 가능한 외부 근거"], ["One bounded validation cycle", "한 번의 제한된 검증 주기"]);
-  if (signals.externalValidation.band !== "strong" || signals.optionBSupport.band !== "strong") add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep the current base while creating real evidence for ${optionB}.`, `현재 기반을 유지하면서 ${optionB}에 필요한 실제 근거를 만듭니다.`], ["Assumption → observable test", "가정 → 관찰 가능한 검증"], presentation.protects, ["External proof", "외부 근거"], ["One bounded validation cycle", "한 번의 제한된 검증 주기"]);
-  if (signals.safetyMargin.band === "weak" || signals.safetyMargin.band === "developing" || signals.structuralRisk.band === "high") add("resource", ["Resource Reconfiguration", "자원 재구성"], ["Increase protected capacity before increasing commitment.", "몰입을 늘리기 전에 보호된 여력을 강화합니다."], ["Current capacity → protected capacity", "현재 여력 → 보호된 여력"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible exposure yet", "아직 되돌릴 수 없는 노출 없음"]);
-  if (signals.reversibility.band === "weak" || signals.reversibility.band === "developing" || signals.constraintLoad.band === "material" || signals.constraintLoad.band === "heavy") add("timing", ["Timing Reconfiguration", "시기 재구성"], ["Move the commitment point until the critical constraint or recovery path is clearer.", "핵심 제약이나 회복 경로가 명확해질 때까지 확정 시점을 조정합니다."], ["Fixed date → evidence-led timing", "고정된 시점 → 근거 기반 시기"], presentation.protects, ["A clear recovery path", "명확한 회복 경로"], ["Review before commitment", "확정 전 재검토"]);
+  if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"], [`Test whether ${optionA} can be redesigned before treating departure as necessary.`, `${optionA}를 유지하면서 역할과 범위를 재설계할 수 있는지 먼저 검증합니다.`], ["Exit decision → role redesign test", "퇴사 결정 → 역할 재설계 검증"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
+  else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Test an intermediate route that can create evidence for ${optionB} before full conversion.`, `${optionB}로 완전히 전환하기 전에 근거를 만들 수 있는 중간 경로를 검증합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One bounded pathway test", "한 번의 제한된 경로 검증"]);
+  else if (externalNeedsValidation) add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as the base while testing ${optionB} with real evidence.`, `${optionA}를 기반으로 유지하면서 실제 근거로 ${optionB}를 검증합니다.`], ["Assumption → observable test", "가정 → 관찰 가능한 검증"], presentation.protects, ["External proof", "외부 근거"], ["One bounded validation cycle", "한 번의 제한된 검증 주기"]);
+
+  if (safetyNeedsProtection || downsideNeedsProtection) add("resource", ["Resource Reconfiguration", "자원 재구성"], ["Increase protected capacity before increasing commitment.", "몰입을 늘리기 전에 보호된 여력을 강화합니다."], ["Current capacity → protected capacity", "현재 여력 → 보호된 여력"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible exposure yet", "아직 되돌릴 수 없는 노출 없음"]);
+  if (reversibilityNeedsProtection) add("timing", ["Timing Reconfiguration", "시기 재구성"], ["Move the commitment point until the recovery path is clearer.", "회복 경로가 명확해질 때까지 확정 시점을 조정합니다."], ["Fixed date → evidence-led timing", "고정된 시점 → 근거 기반 시기"], presentation.protects, ["A clear recovery path", "명확한 회복 경로"], ["Review before commitment", "확정 전 재검토"]);
   return plays;
 }
 
@@ -361,7 +355,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
         : (ko ? `약해지면 현재 자세를 재평가하고 ${optionA}의 보호 범위를 넓힙니다.` : `If it weakens, reassess the posture and expand the protection retained in ${optionA}.`),
   }));
 
-  const changingPlays = deriveChangingPlays(input, postureFamily, concise, missingValidation, optionAProtection);
+  const changingPlays = deriveChangingPlays(input, concise, missingValidation, optionAProtection);
 
   const safetyReading = input.structuralSignals.safetyMargin.band === "strong"
     ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 구조는 제한된 실험을 가능하게 하며, 시도하고 배우고 회복해 다시 선택할 여지를 지킵니다." : "Safety Margin protects the space to change. The current structure enables bounded experimentation by preserving room to try, learn, recover, and choose again.")

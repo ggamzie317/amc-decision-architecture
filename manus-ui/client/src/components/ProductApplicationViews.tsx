@@ -166,7 +166,7 @@ export function ProductApplicationDashboard({ intelligence, translate, externalE
           <p className="text-xs text-muted-foreground">{intelligence.changingPlays.length} / 3</p>
         </div>
         {intelligence.changingPlays.length === 0 ? (
-          <p className="mt-5 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">{translate("No additional configuration is structurally justified yet.", "아직 추가 구성을 정당화할 구조적 근거가 없습니다.")}</p>
+          <p className="mt-5 border-t border-border pt-5 text-sm leading-6 text-muted-foreground">{translate("No additional configuration is justified by the current structure. The priority is to strengthen or act on the evidence already visible.", "현재 구조에서는 추가 구성이 정당화되지 않습니다. 이미 확인된 근거를 강화하거나 그 근거에 따라 움직이는 것이 우선입니다.")}</p>
         ) : (
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {intelligence.changingPlays.map((play, index) => (
@@ -353,7 +353,7 @@ export function ProductApplicationReport({ intelligence, translate, externalEvid
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm opacity-70">{translate("No additional configuration is structurally justified yet.", "아직 추가 구성을 정당화할 구조적 근거가 없습니다.")}</p>
+            <p className="mt-4 text-sm opacity-70">{translate("No additional configuration is justified by the current structure. The priority is to strengthen or act on the evidence already visible.", "현재 구조에서는 추가 구성이 정당화되지 않습니다. 이미 확인된 근거를 강화하거나 그 근거에 따라 움직이는 것이 우선입니다.")}</p>
           )}
         </section>
         <section className={card}>
