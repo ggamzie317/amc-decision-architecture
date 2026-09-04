@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import postgres, { type Sql } from "postgres";
+import postgres, { type JSONValue, type Sql } from "postgres";
 
 import {
   AMC_FRAMEWORK_VERSION,
@@ -162,12 +162,12 @@ export class PostgresFounderOpsStore implements FounderOpsStore {
       ([, value]) => value !== undefined
     );
     if (entries.length === 0) return true;
-    const values: Array<string | number | boolean | null> = [];
+    const values: NonNullable<Parameters<Sql["unsafe"]>[1]> = [];
     const assignments = entries.map(([key, value], index) => {
       const column = patchColumns[key as keyof SubmissionPatch];
       values.push(
         jsonFields.has(column)
-          ? JSON.stringify(value)
+          ? this.sql.json(value as JSONValue)
           : typeof value === "string" ||
               typeof value === "number" ||
               typeof value === "boolean" ||
@@ -192,7 +192,7 @@ export class PostgresFounderOpsStore implements FounderOpsStore {
   ) {
     await this.sql`
       INSERT INTO usage_events (event_id, submission_id, event_type, metadata_json)
-      VALUES (${randomUUID()}, ${submissionId}, ${eventType}, ${JSON.stringify(metadata)}::jsonb)
+      VALUES (${randomUUID()}, ${submissionId}, ${eventType}, ${this.sql.json(metadata as JSONValue)})
     `;
   }
 

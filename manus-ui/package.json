@@ -14,6 +14,7 @@
     "db:migrate": "node --import tsx scripts/db_migrate.ts",
     "db:check": "node --import tsx scripts/db_check.ts",
     "test:founder-ops": "vitest run --root .. manus-ui/tests/founder-ops.test.ts",
+    "test:founder-ops-jsonb": "vitest run --root .. manus-ui/tests/founder-ops-jsonb.test.ts",
     "test:founder-ops-esm": "node scripts/check_founder_ops_esm.mjs",
     "check": "tsc --noEmit",
     "format": "prettier --write ."
