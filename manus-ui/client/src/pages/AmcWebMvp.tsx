@@ -3,6 +3,8 @@ import { trackAmcJourney } from "../data/amcFounderOps";
 import {
   buildUnavailableFifwm,
   buildProductApplicationV3,
+  deriveSafetyMarginCore,
+  type SafetyMarginInputs,
   type ProductApplicationV3,
   type StructuralLoad,
   type StructuralRisk,
@@ -58,6 +60,40 @@ type PreviewAnswers = {
   risk: string;
   condition: string;
 };
+
+type SafetyMarginQuestionId = 19 | 20 | 21;
+type SafetyMarginSelections = {
+  19: StructuralStrength | null;
+  20: StructuralStrength | null;
+  21: StructuralRisk | null;
+};
+
+const safetyMarginQuestionIds = [19, 20, 21] as const;
+const initialSafetyMarginSelections: SafetyMarginSelections = { 19: null, 20: null, 21: null };
+const safetyMarginBandOptions: Record<SafetyMarginQuestionId, Array<{ value: string; en: string; ko: string }>> = {
+  19: [
+    { value: "strong", en: "Strong", ko: "Strong" },
+    { value: "developing", en: "Developing", ko: "Developing" },
+    { value: "weak", en: "Weak", ko: "Weak" },
+    { value: "unknown", en: "Not sure", ko: "잘 모르겠음" },
+  ],
+  20: [
+    { value: "strong", en: "Strong", ko: "Strong" },
+    { value: "developing", en: "Developing", ko: "Developing" },
+    { value: "weak", en: "Weak", ko: "Weak" },
+    { value: "unknown", en: "Not sure", ko: "잘 모르겠음" },
+  ],
+  21: [
+    { value: "low", en: "Low", ko: "Low" },
+    { value: "moderate", en: "Moderate", ko: "Moderate" },
+    { value: "high", en: "High", ko: "High" },
+    { value: "unknown", en: "Not sure", ko: "잘 모르겠음" },
+  ],
+};
+
+function isSafetyMarginQuestionId(questionId: number): questionId is SafetyMarginQuestionId {
+  return safetyMarginQuestionIds.includes(questionId as SafetyMarginQuestionId);
+}
 
 const initialPreviewAnswers: PreviewAnswers = {
   decision: "",
@@ -836,9 +872,9 @@ const matrixRows = [
   { dimension: "Reversibility", optionA: "Higher", optionB: "Moderate", reading: "Staging protects optionality." },
 ] as const;
 
-const internalSignals = [
+const baseInternalSignals = [
   { marker: "C", label: "Decision Clarity", status: "Partial", width: "56%" },
-  { marker: "S", label: "Safety Margin", status: "Stronger in Option A", width: "76%" },
+  { marker: "S", label: "Safety Margin", status: "Unknown", width: "40%" },
   { marker: "N", label: "Support System", status: "Emerging", width: "50%" },
   { marker: "L", label: "Execution Load", status: "Elevated", width: "70%" },
   { marker: "T", label: "Timing Pressure", status: "Moderate", width: "48%" },
@@ -2583,6 +2619,9 @@ function ProductApplicationSections({
         <p className="mt-3 text-sm font-semibold uppercase tracking-[0.12em] opacity-60">
           {intelligence.currentStructuralPosture.label}
         </p>
+        <p className="mt-2 text-xs uppercase tracking-[0.12em] opacity-55">
+          {translate("Evidence coverage", "근거 범위")}: {intelligence.postureEvidenceCoverage}
+        </p>
         <h2 className="mt-3 text-xl font-semibold leading-relaxed sm:text-2xl">
           {intelligence.currentStructuralPosture.sentence}
         </h2>
@@ -2613,6 +2652,11 @@ function ProductApplicationSections({
         <h3 className="mt-4 text-sm font-semibold uppercase tracking-[0.12em]">
           {translate("FIFWM · Core Structural Read", "FIFWM · 핵심 구조 해석")}
         </h3>
+        {intelligence.decisionStructure.fifwmSource === "unavailable" ? (
+          <p className="mt-2 text-xs leading-relaxed opacity-60">
+            {translate("— means this factor was not canonically scored from the current intake; it is not a negative score.", "— 표시는 현재 Intake에서 canonical scoring이 이뤄지지 않았다는 뜻이며, 부정적 점수가 아닙니다.")}
+          </p>
+        ) : null}
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {([
             [translate("Formal", "Formal"), intelligence.decisionStructure.fifwm.formal],
@@ -2676,9 +2720,13 @@ function ProductApplicationSections({
 
       <section className={card}>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] opacity-55">06 / Safety Margin · Room to Be Wrong</p>
+        <p className="mt-2 text-sm opacity-65">{translate("How much room do you have to be wrong?", "틀렸을 때 감당하고 다시 시도할 여지가 얼마나 있나요?")}</p>
         <p className="mt-4 text-lg font-semibold leading-relaxed">{intelligence.safetyMargin.reading}</p>
         <dl className="mt-5 grid grid-cols-1 gap-4 text-sm leading-relaxed sm:grid-cols-2">
           {[
+            [translate("Financial Room", "재정 / 소득 여유"), `${intelligence.safetyMargin.inputs.financialRoom.band} — ${intelligence.safetyMargin.financialRoomReading}`],
+            [translate("Recovery / Re-entry", "회복 / 재진입"), `${intelligence.safetyMargin.inputs.reversibility.band} — ${intelligence.safetyMargin.recoveryReentryReading}`],
+            [translate("Downside Exposure", "하방 노출"), `${intelligence.safetyMargin.inputs.downsideExposure.band} — ${intelligence.safetyMargin.downsideExposureReading}`],
             [translate("Room to Be Wrong", "틀릴 수 있는 여지"), intelligence.safetyMargin.roomToBeWrong],
             [translate("Strongest Protection", "가장 강한 보호") , intelligence.safetyMargin.strongestProtection],
             [translate("Weakest Margin", "가장 약한 여지"), intelligence.safetyMargin.weakestMargin],
@@ -2730,6 +2778,7 @@ export default function AmcWebMvp() {
   const [showPdfReportView, setShowPdfReportView] = useState(false);
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
   const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
+  const [safetyMarginSelections, setSafetyMarginSelections] = useState<SafetyMarginSelections>(initialSafetyMarginSelections);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
   const [externalSnapshot, setExternalSnapshot] = useState<ExternalSnapshot | null>(null);
   const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
@@ -2757,10 +2806,12 @@ export default function AmcWebMvp() {
     [isKo],
   );
   const requiredPreviewReady = Boolean(answers.decision.trim() && answers.optionA.trim() && answers.optionB.trim());
-  const answeredQuestionCount = useMemo(
-    () => Object.values(fullIntakeAnswers).filter((value) => value.trim()).length,
-    [fullIntakeAnswers],
-  );
+  const answeredQuestionCount = useMemo(() => intakeGroups.reduce((count, group) => count + group.questions.filter((question) => {
+    const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
+    if (!hasExplanation) return false;
+    const structuredQuestionId = question.id;
+    return !isSafetyMarginQuestionId(structuredQuestionId) || safetyMarginSelections[structuredQuestionId] !== null;
+  }).length, 0), [fullIntakeAnswers, safetyMarginSelections]);
   const progress = Math.round((answeredQuestionCount / totalFullIntakeQuestions) * 100);
   const fullIntakeComplete = answeredQuestionCount === totalFullIntakeQuestions;
   const expandedGroupSet = useMemo(() => new Set(expandedGroups), [expandedGroups]);
@@ -2783,18 +2834,33 @@ export default function AmcWebMvp() {
     () => buildUnavailableFifwm(language),
     [language],
   );
+  const safetyMarginInputs = useMemo<SafetyMarginInputs>(() => ({
+    financialRoom: { band: safetyMarginSelections[19] ?? "unknown", source: "current-user-structured" },
+    reversibility: { band: safetyMarginSelections[20] ?? "unknown", source: "current-user-structured" },
+    downsideExposure: { band: safetyMarginSelections[21] ?? "unknown", source: "current-user-structured" },
+  }), [safetyMarginSelections]);
+  const safetyMarginCore = useMemo(() => deriveSafetyMarginCore(safetyMarginInputs), [safetyMarginInputs]);
+  const internalSignals = useMemo(() => baseInternalSignals.map((signal) => signal.label === "Safety Margin"
+    ? {
+        ...signal,
+        status: safetyMarginCore.band === "unknown"
+          ? t("Unknown · not assumed safe", "Unknown · 안전하다고 가정하지 않음")
+          : `${safetyMarginCore.band.charAt(0).toUpperCase()}${safetyMarginCore.band.slice(1)} · current case`,
+        width: safetyMarginCore.band === "strong" ? "82%" : safetyMarginCore.band === "developing" ? "58%" : safetyMarginCore.band === "weak" ? "28%" : "40%",
+      }
+    : signal), [isKo, safetyMarginCore]);
   const currentCaseStructuralSignals = useMemo(
     () => ({
       externalValidation: externalValidationSignal(displayedExternalSnapshot),
       internalReadiness: unavailableStructuralSignal<StructuralStrength>(),
-      safetyMargin: unavailableStructuralSignal<StructuralStrength>(),
-      reversibility: unavailableStructuralSignal<StructuralStrength>(),
+      safetyMargin: { band: safetyMarginCore.band, source: safetyMarginCore.source },
+      reversibility: safetyMarginInputs.reversibility,
       optionBSupport: unavailableStructuralSignal<StructuralStrength>(),
-      structuralRisk: unavailableStructuralSignal<StructuralRisk>(),
+      structuralRisk: safetyMarginInputs.downsideExposure,
       constraintLoad: unavailableStructuralSignal<StructuralLoad>(),
       missingPointImpact: unavailableStructuralSignal<MissingPointImpact>(),
     }),
-    [displayedExternalSnapshot],
+    [displayedExternalSnapshot, safetyMarginCore, safetyMarginInputs],
   );
   const productApplicationV3 = useMemo(
     () =>
@@ -2806,6 +2872,7 @@ export default function AmcWebMvp() {
         answers: fullIntakeAnswers,
         fifwm,
         fifwmSource: "unavailable",
+        safetyMarginInputs,
         structuralSignals: currentCaseStructuralSignals,
         missingPoint: isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en,
         missingPointWhy: isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en,
@@ -2835,6 +2902,7 @@ export default function AmcWebMvp() {
       launchInterpretation,
       optionALabel,
       optionBLabel,
+      safetyMarginInputs,
     ],
   );
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
@@ -2886,6 +2954,10 @@ export default function AmcWebMvp() {
     setFullIntakeAnswers((current) => ({ ...current, [questionId]: value }));
   };
 
+  const updateSafetyMarginSelection = (questionId: SafetyMarginQuestionId, value: string) => {
+    setSafetyMarginSelections((current) => ({ ...current, [questionId]: value } as SafetyMarginSelections));
+  };
+
   const toggleGroup = (title: string) => {
     setExpandedGroups((current) =>
       current.includes(title) ? current.filter((item) => item !== title) : [...current, title],
@@ -2902,6 +2974,7 @@ export default function AmcWebMvp() {
       ),
     ) as Record<number, string>;
     setFullIntakeAnswers(sampleAnswers);
+    setSafetyMarginSelections({ 19: "strong", 20: "strong", 21: "high" });
     setExpandedGroups(intakeGroups.map((group) => group.title));
   };
 
@@ -2912,6 +2985,7 @@ export default function AmcWebMvp() {
     const structuralOutput = {
       caseType: detectedCaseType,
       currentStructuralPosture: productApplicationV3.currentStructuralPosture,
+      postureEvidenceCoverage: productApplicationV3.postureEvidenceCoverage,
       postureBasis: productApplicationV3.postureBasis,
       why: productApplicationV3.why,
       changingPlays: productApplicationV3.changingPlays,
@@ -2960,6 +3034,7 @@ export default function AmcWebMvp() {
         decisionConditionsJson: localizedConditions,
         safetyMarginStructuredData: {
           ...productApplicationV3.safetyMargin,
+          safetyMarginInputs: productApplicationV3.safetyMargin.inputs,
           band: productApplicationV3.postureBasis.safetyMargin.band,
           source: productApplicationV3.postureBasis.safetyMargin.source,
           reversibility: productApplicationV3.postureBasis.reversibility,
@@ -3125,8 +3200,8 @@ export default function AmcWebMvp() {
       },
       {
         label: "Safety Margin",
-        value: t(`Stronger in ${optionALabel}`, `${optionALabel}가 더 강함`),
-        reading: t("The current path protects runway and reversibility.", "현재 경로가 소득 안정성과 되돌릴 수 있는 여지를 보호합니다."),
+        value: productApplicationV3.safetyMargin.band,
+        reading: productApplicationV3.safetyMargin.reading,
       },
       {
         label: "Commitment Condition",
@@ -3169,7 +3244,7 @@ export default function AmcWebMvp() {
       { label: "Primary Risk", value: caseReportBranch.primaryRisk.name },
       {
         label: "Safety Margin",
-        value: t(`Stronger in ${optionALabel}`, `${optionALabel}가 더 강함`),
+        value: productApplicationV3.safetyMargin.band,
       },
       {
         label: "Decision Switches",
@@ -4359,9 +4434,10 @@ export default function AmcWebMvp() {
             <div className="space-y-4">
               {intakeGroups.map((group, index) => {
                 const expanded = expandedGroupSet.has(group.title);
-                const answeredInGroup = group.questions.filter((question) =>
-                  String(fullIntakeAnswers[question.id] || "").trim(),
-                ).length;
+                const answeredInGroup = group.questions.filter((question) => {
+                  const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
+                  return hasExplanation && (!isSafetyMarginQuestionId(question.id) || safetyMarginSelections[question.id] !== null);
+                }).length;
                 const complete = answeredInGroup === group.questions.length;
 
                 return (
@@ -4398,15 +4474,39 @@ export default function AmcWebMvp() {
                             const guidance = isKo
                               ? fullIntakeGuidance[question.id].ko
                               : fullIntakeGuidance[question.id].en;
+                            const structuredQuestionId = isSafetyMarginQuestionId(question.id) ? question.id : null;
 
                             return (
-                              <label key={question.id} className="rounded-md border border-border bg-background p-4">
+                              <div key={question.id} className="rounded-md border border-border bg-background p-4">
                                 <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                                   {t("Question", "질문")} {question.id}
                                 </span>
-                                <span className="mt-2 block min-h-10 text-sm font-medium leading-snug">
+                                <label htmlFor={`full-intake-${question.id}`} className="mt-2 block min-h-10 text-sm font-medium leading-snug">
                                   {isKo ? intakeQuestionsKo[question.id].text : question.text}
-                                </span>
+                                </label>
+                                {structuredQuestionId !== null ? (
+                                  <fieldset className="mt-3">
+                                    <legend className="text-xs font-medium text-foreground">
+                                      {t("Select the current structural band", "현재 구조적 수준을 선택하세요")}
+                                    </legend>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                      {safetyMarginBandOptions[structuredQuestionId].map((option) => {
+                                        const selected = safetyMarginSelections[structuredQuestionId] === option.value;
+                                        return (
+                                          <button
+                                            key={option.value}
+                                            type="button"
+                                            aria-pressed={selected}
+                                            onClick={() => updateSafetyMarginSelection(structuredQuestionId, option.value)}
+                                            className={`min-h-10 rounded-md border px-2 py-2 text-xs font-medium ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"}`}
+                                          >
+                                            {isKo ? option.ko : option.en}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </fieldset>
+                                ) : null}
                                 <span className="mt-3 block text-xs leading-relaxed text-muted-foreground">
                                   <span className="font-medium text-foreground">{t("Guide", "가이드")}:</span>{" "}
                                   {guidance.guide}
@@ -4415,12 +4515,13 @@ export default function AmcWebMvp() {
                                   {guidance.example}
                                 </span>
                                 <textarea
+                                  id={`full-intake-${question.id}`}
                                   value={fullIntakeAnswers[question.id] || ""}
                                   onChange={(event) => updateFullIntakeAnswer(question.id, event.target.value)}
                                   placeholder={t("Write your answer here...", "답변을 입력해 주세요.")}
                                   className="mt-4 h-24 w-full resize-none rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
                                 />
-                              </label>
+                              </div>
                             );
                           })}
                         </div>

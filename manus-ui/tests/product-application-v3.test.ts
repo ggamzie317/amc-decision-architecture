@@ -7,8 +7,10 @@ import {
   buildFifwmFromReportPayload,
   buildProductApplicationV3,
   buildUnavailableFifwm,
+  deriveSafetyMarginCore,
   type FifwmStructure,
   type ProductApplicationBuildInput,
+  type SafetyMarginInputs,
   type StructuralSignal,
 } from "../client/src/data/amcProductApplicationV3";
 import { AMC_FRAMEWORK_VERSION, AMC_PRODUCT_VERSION } from "../server/founderOpsTypes";
@@ -34,6 +36,11 @@ const baseSignals: ProductApplicationBuildInput["structuralSignals"] = {
   constraintLoad: signal("material"),
   missingPointImpact: signal("material"),
 };
+const baseSafetyMarginInputs: SafetyMarginInputs = {
+  financialRoom: { band: "strong", source: "current-user-structured" },
+  reversibility: { band: "strong", source: "current-user-structured" },
+  downsideExposure: { band: "low", source: "current-user-structured" },
+};
 
 const input = (overrides: Partial<ProductApplicationBuildInput> = {}): ProductApplicationBuildInput => ({
   language: "en",
@@ -43,6 +50,7 @@ const input = (overrides: Partial<ProductApplicationBuildInput> = {}): ProductAp
   answers: {},
   fifwm: fifwm(),
   fifwmSource: "canonical-current-case",
+  safetyMarginInputs: baseSafetyMarginInputs,
   structuralSignals: baseSignals,
   missingPoint: "The stated choice hides an untested demand assumption.",
   missingPointWhy: "Without buyer evidence, the transition case cannot carry its exposure.",
@@ -65,6 +73,32 @@ const input = (overrides: Partial<ProductApplicationBuildInput> = {}): ProductAp
 });
 
 describe("AMC Product Application Layer V3 correction", () => {
+  it("keeps exactly 29 questions and adds structured bands inside the existing Q19-Q21 cards", () => {
+    const root = path.basename(process.cwd()) === "manus-ui" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
+    const page = fs.readFileSync(path.join(root, "manus-ui/client/src/pages/AmcWebMvp.tsx"), "utf8");
+    const intakeSource = page.slice(page.indexOf("const intakeGroups ="), page.indexOf("const intakeGroupTitlesKo"));
+    const ids = [...intakeSource.matchAll(/\bid:\s*(\d+)/g)].map((match) => Number(match[1]));
+    expect(ids).toHaveLength(29);
+    expect(ids).toEqual(Array.from({ length: 29 }, (_, index) => index + 1));
+    expect(page).toContain("const safetyMarginQuestionIds = [19, 20, 21]");
+    expect(page).toContain("safetyMarginBandOptions[structuredQuestionId]");
+    expect(page).toContain('id={`full-intake-${question.id}`}');
+  });
+
+  it("derives strong, weak, and unknown Safety Margin only from structured dimensions", () => {
+    expect(deriveSafetyMarginCore(baseSafetyMarginInputs)).toMatchObject({ band: "strong", knownDimensions: 3 });
+    expect(deriveSafetyMarginCore({
+      financialRoom: { band: "weak", source: "current-user-structured" },
+      reversibility: { band: "weak", source: "current-user-structured" },
+      downsideExposure: { band: "high", source: "current-user-structured" },
+    })).toMatchObject({ band: "weak", knownDimensions: 3 });
+    expect(deriveSafetyMarginCore({
+      financialRoom: { band: "strong", source: "current-user-structured" },
+      reversibility: { band: "unknown", source: "current-user-structured" },
+      downsideExposure: { band: "unknown", source: "current-user-structured" },
+    })).toMatchObject({ band: "unknown", knownDimensions: 1 });
+  });
+
   it("changes posture when structured FIFWM, Safety Margin, and validation signals change under identical wording", () => {
     const weak = buildProductApplicationV3(input({
       fifwm: fifwm(0),
@@ -96,6 +130,39 @@ describe("AMC Product Application Layer V3 correction", () => {
     }));
     expect(weak.currentStructuralPosture.label).toBe("Stay and Reconfigure");
     expect(strong.currentStructuralPosture.label).toBe("Stronger Transition Case");
+  });
+
+  it("reaches all posture families from live evidence and current-user Safety Margin structure with FIFWM unavailable", () => {
+    const currentCase = (
+      external: "strong" | "developing" | "weak",
+      safety: "strong" | "developing" | "weak",
+      reversibility: "strong" | "developing" | "weak",
+      downside: "low" | "moderate" | "high",
+    ) => buildProductApplicationV3(input({
+      fifwm: buildUnavailableFifwm("en"),
+      fifwmSource: "unavailable",
+      safetyMarginInputs: {
+        financialRoom: { band: safety, source: "current-user-structured" },
+        reversibility: { band: reversibility, source: "current-user-structured" },
+        downsideExposure: { band: downside, source: "current-user-structured" },
+      },
+      structuralSignals: {
+        externalValidation: { band: external, source: "live-external-evidence" },
+        internalReadiness: unavailableSignal(),
+        safetyMargin: { band: safety, source: "current-user-structured" },
+        reversibility: { band: reversibility, source: "current-user-structured" },
+        optionBSupport: unavailableSignal(),
+        structuralRisk: { band: downside, source: "current-user-structured" },
+        constraintLoad: unavailableSignal(),
+        missingPointImpact: unavailableSignal(),
+      },
+    }));
+
+    expect(currentCase("strong", "strong", "strong", "low").currentStructuralPosture.label).toBe("Stronger Transition Case");
+    expect(currentCase("weak", "weak", "weak", "high").currentStructuralPosture.label).toBe("Stay and Reconfigure");
+    const mixed = currentCase("developing", "developing", "developing", "moderate");
+    expect(mixed.currentStructuralPosture.label).toBe("Preserve and Validate");
+    expect(mixed.postureEvidenceCoverage).toBe("partial");
   });
 
   it("keeps posture stable when wording changes but structured signals remain equivalent", () => {
@@ -131,6 +198,11 @@ describe("AMC Product Application Layer V3 correction", () => {
     const result = buildProductApplicationV3(input({
       fifwm: buildUnavailableFifwm("en"),
       fifwmSource: "unavailable",
+      safetyMarginInputs: {
+        financialRoom: unavailableSignal(),
+        reversibility: unavailableSignal(),
+        downsideExposure: unavailableSignal(),
+      },
       structuralSignals: {
         externalValidation: unavailableSignal(),
         internalReadiness: unavailableSignal(),
@@ -172,6 +244,11 @@ describe("AMC Product Application Layer V3 correction", () => {
 
   it("uses weak Safety Margin to constrain exposure without automatically forcing stay", () => {
     const result = buildProductApplicationV3(input({
+      safetyMarginInputs: {
+        financialRoom: { band: "weak", source: "current-user-structured" },
+        reversibility: { band: "weak", source: "current-user-structured" },
+        downsideExposure: { band: "high", source: "current-user-structured" },
+      },
       structuralSignals: { ...baseSignals, safetyMargin: signal("weak") },
     }));
     expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
@@ -201,6 +278,8 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(page).toContain("productApplicationV3.decisionStructure.fifwm");
     expect(page).toContain("structuralOutputJson: structuralOutput");
     expect(page).toContain("answersJson:");
+    expect(page).toContain("safetyMarginInputs: productApplicationV3.safetyMargin.inputs");
+    expect(page).toContain('source: "current-user-structured"');
     expect(AMC_PRODUCT_VERSION).toBe("AMC-LAUNCH-V3");
     expect(AMC_FRAMEWORK_VERSION).toBe("FIFWM-SM-V2");
   });

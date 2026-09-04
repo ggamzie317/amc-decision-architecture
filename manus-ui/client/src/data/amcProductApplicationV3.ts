@@ -15,6 +15,12 @@ export type StructuralSignalSource =
   | "current-case-derived"
   | "unavailable";
 export type StructuralSignal<TBand extends string> = { band: TBand; source: StructuralSignalSource };
+export type SafetyMarginInputs = {
+  financialRoom: StructuralSignal<StructuralStrength>;
+  reversibility: StructuralSignal<StructuralStrength>;
+  downsideExposure: StructuralSignal<StructuralRisk>;
+};
+export type SafetyMarginCore = StructuralSignal<StructuralStrength> & { knownDimensions: number };
 export type FifwmFactor = { score: 0 | 1 | 2 | null; reading: string };
 export type FifwmStructure = {
   formal: FifwmFactor;
@@ -43,11 +49,18 @@ export type ProductApplicationV3 = {
   };
   missingPoint: string;
   currentStructuralPosture: { label: string; sentence: string };
+  postureEvidenceCoverage: "limited" | "partial" | "stronger";
   postureBasis: ProductApplicationBuildInput["structuralSignals"];
   why: { topDrivers: string[]; biggestRisk: string; strongestCounterargument: string };
   changingPlays: ChangingPlay[];
   safetyMargin: {
+    band: StructuralStrength;
+    source: StructuralSignalSource;
+    inputs: SafetyMarginInputs;
     reading: string;
+    financialRoomReading: string;
+    recoveryReentryReading: string;
+    downsideExposureReading: string;
     roomToBeWrong: string;
     strongestProtection: string;
     weakestMargin: string;
@@ -75,6 +88,7 @@ export type ProductApplicationBuildInput = {
   answers: Record<number, string>;
   fifwm: FifwmStructure;
   fifwmSource: "canonical-current-case" | "unavailable";
+  safetyMarginInputs: SafetyMarginInputs;
   structuralSignals: {
     externalValidation: StructuralSignal<StructuralStrength>;
     internalReadiness: StructuralSignal<StructuralStrength>;
@@ -134,6 +148,33 @@ const strengthScore: Record<StructuralStrength, number> = { strong: 2, developin
 const riskPenalty: Record<StructuralRisk, number> = { low: 0, moderate: 1, high: 2, unknown: 1 };
 const loadPenalty: Record<StructuralLoad, number> = { light: 0, material: 1, heavy: 2, unknown: 1 };
 const missingPenalty: Record<MissingPointImpact, number> = { resolved: 0, material: 1, critical: 2, unknown: 1 };
+
+/** Deterministic current-case Safety Margin core; unknown dimensions do not affect the average. */
+export function deriveSafetyMarginCore(inputs: SafetyMarginInputs): SafetyMarginCore {
+  const values = [
+    inputs.financialRoom.band === "unknown" ? null : strengthScore[inputs.financialRoom.band],
+    inputs.reversibility.band === "unknown" ? null : strengthScore[inputs.reversibility.band],
+    inputs.downsideExposure.band === "unknown" ? null : 2 - riskPenalty[inputs.downsideExposure.band],
+  ].filter((value): value is number => value !== null);
+  const source = Object.values(inputs).some((input) => input.source === "current-user-structured")
+    ? "current-user-structured"
+    : "unavailable";
+  if (values.length < 2) return { band: "unknown", source, knownDimensions: values.length };
+  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+  return {
+    band: average >= 1.5 ? "strong" : average >= 0.75 ? "developing" : "weak",
+    source,
+    knownDimensions: values.length,
+  };
+}
+
+function deriveEvidenceCoverage(input: ProductApplicationBuildInput): ProductApplicationV3["postureEvidenceCoverage"] {
+  const canonicalFactors = Object.values(input.fifwm).filter((factor) => factor.score !== null).length;
+  const knownSignals = Object.values(input.structuralSignals).filter((signal) => signal.band !== "unknown").length;
+  if (canonicalFactors >= 3 && knownSignals >= 4) return "stronger";
+  if (knownSignals >= 2) return "partial";
+  return "limited";
+}
 
 function derivePostureFamily(input: ProductApplicationBuildInput) {
   const scores = Object.values(input.fifwm).map((factor) => factor.score).filter((score): score is 0 | 1 | 2 => score !== null);
@@ -200,12 +241,12 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
   }));
 
   const safetyReading = input.structuralSignals.safetyMargin.band === "strong"
-    ? (ko ? "현재 Safety Margin은 제한된 실험을 가능하게 합니다. 시도하고 배우고 회복해 다시 바꿀 공간을 보호합니다." : "The current Safety Margin enables bounded experimentation by protecting room to try, learn, recover, and change again.")
+    ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 구조는 제한된 실험을 가능하게 하며, 시도하고 배우고 회복해 다시 선택할 여지를 지킵니다." : "Safety Margin protects the space to change. The current structure enables bounded experimentation by preserving room to try, learn, recover, and choose again.")
     : input.structuralSignals.safetyMargin.band === "weak"
-      ? (ko ? "현재 Safety Margin은 실험을 막지는 않지만 노출 경계를 좁혀야 합니다. 회복과 재시도 역량을 먼저 보호합니다." : "The current Safety Margin does not prohibit experimentation, but it constrains exposure so recovery and retry capacity remain protected.")
+      ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 구조는 변화를 막지는 않지만, 회복과 재시도 역량을 위해 노출 경계를 좁혀야 합니다." : "Safety Margin protects the space to change. The current structure does not prohibit experimentation, but it constrains exposure so recovery and retry capacity remain protected.")
       : input.structuralSignals.safetyMargin.band === "unknown"
-        ? (ko ? "현재 사례의 재정 여유, 회복 경로, 재시도 역량을 구조적으로 확인하지 못했습니다. Safety Margin을 안전하다고 가정하지 않고 노출 확대 전에 확인합니다." : "Financial room, recovery path, and retry capacity are not yet available as structured current-case evidence. Safety Margin is not assumed safe and must be established before exposure increases.")
-        : (ko ? "Safety Margin은 더 안전한 선택을 고르는 것이 아니라 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin protects the space to change again; it does not simply identify the safer option.");
+        ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 사례의 재정 여유, 회복 경로, 재시도 역량이 구조적으로 확인되지 않았으므로 안전하다고 가정하지 않습니다." : "Safety Margin protects the space to change. Financial room, recovery path, and retry capacity are not yet available as structured current-case evidence, so Safety Margin is not assumed safe.")
+        : (ko ? "Safety Margin은 더 안전한 선택을 고르는 것이 아니라 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin protects the space to change; it does not simply identify the safer option.");
 
   return {
     analysisSequence: AMC_ANALYSIS_SEQUENCE,
@@ -219,6 +260,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     },
     missingPoint: `${input.missingPoint} ${input.missingPointWhy}`,
     currentStructuralPosture,
+    postureEvidenceCoverage: deriveEvidenceCoverage(input),
     postureBasis: input.structuralSignals,
     why: {
       topDrivers: [optionAProtection, input.externalImplication, internalReadiness].filter(Boolean).slice(0, 3),
@@ -231,7 +273,13 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     },
     changingPlays,
     safetyMargin: {
+      band: input.structuralSignals.safetyMargin.band,
+      source: input.structuralSignals.safetyMargin.source,
+      inputs: input.safetyMarginInputs,
       reading: safetyReading,
+      financialRoomReading: financialRoom,
+      recoveryReentryReading: recoveryPath,
+      downsideExposureReading: downside,
       roomToBeWrong: `${financialRoom} ${recoveryPath}`,
       strongestProtection: optionAProtection,
       weakestMargin: downside,
