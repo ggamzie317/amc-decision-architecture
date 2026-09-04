@@ -42,14 +42,12 @@ const validateAmcManusRenderPackageV1 = resolveInteropExport<ValidateFn>(
 );
 
 const languageSchema = z.enum(["ko", "en", "zh"]);
-const tierSchema = z.enum(["essential", "executive"]);
 
 const submissionHandoffSchema = z.object({
   submissionId: z.string().min(1),
   createdAt: z.string().min(1),
   source: z.string().min(1),
   language: languageSchema,
-  tier: tierSchema,
   recipient: z.object({
     email: z.string().optional().default(""),
     fullName: z.string().optional().default(""),
@@ -57,7 +55,6 @@ const submissionHandoffSchema = z.object({
   delivery: z.object({
     channel: z.literal("email"),
     language: languageSchema,
-    tier: tierSchema,
   }),
   intakeRaw: z.record(z.string(), z.unknown()),
   intakeMeta: z
@@ -76,7 +73,7 @@ type RunnerResult = {
   stderr: string;
 };
 
-type EmailTemplateType = "report_delivery_essential" | "report_delivery_executive";
+type EmailTemplateType = "report_delivery_full_structural";
 type ReceiptTemplateType = "submission_received_receipt";
 
 type EmailHandoff = {
@@ -87,7 +84,6 @@ type EmailHandoff = {
     email: string;
     fullName: string;
   };
-  tier: "essential" | "executive";
   language: "ko" | "en" | "zh";
   artifacts: {
     reportDocxPath: string;
@@ -113,7 +109,6 @@ type ReceiptEmailHandoff = {
     email: string;
     fullName: string;
   };
-  tier: "essential" | "executive";
   language: "ko" | "en" | "zh";
   email: {
     templateType: ReceiptTemplateType;
@@ -244,12 +239,11 @@ function toLanguageGreeting(name: string): string {
   return name ? `${name},` : "Hello,";
 }
 
-function toEmailSubject(tier: "essential" | "executive"): string {
-  void tier;
+function toEmailSubject(): string {
   return "[AMC] Your AMC Full Structural Report is ready";
 }
 
-function buildBodyText(tier: "essential" | "executive", recipientName: string): string {
+function buildBodyText(recipientName: string): string {
   const greeting = toLanguageGreeting(recipientName);
   const lines = [
     greeting,
@@ -259,7 +253,6 @@ function buildBodyText(tier: "essential" | "executive", recipientName: string): 
     "",
     "Your report is attached to this email.",
   ];
-  void tier;
   lines.push("", "Thank you,", "AMC");
   return lines.join("\n");
 }
@@ -335,7 +328,7 @@ function toReceiptSubject(): string {
   return "[AMC] Your case has been received";
 }
 
-function buildReceiptBodyText(tier: "essential" | "executive", recipientName: string): string {
+function buildReceiptBodyText(recipientName: string): string {
   const greeting = toLanguageGreeting(recipientName);
   const lines = [
     greeting,
@@ -344,7 +337,6 @@ function buildReceiptBodyText(tier: "essential" | "executive", recipientName: st
     "Report: AMC Full Structural Report",
     "Your report will be delivered by email within 3 hours.",
   ];
-  void tier;
   lines.push("", "Thank you,", "AMC");
   return lines.join("\n");
 }
@@ -358,12 +350,11 @@ function buildReceiptEmailHandoff(handoff: SubmissionHandoff): ReceiptEmailHando
       email: handoff.recipient.email,
       fullName: handoff.recipient.fullName,
     },
-    tier: handoff.tier,
     language: handoff.language,
     email: {
       templateType: "submission_received_receipt",
       subject: toReceiptSubject(),
-      bodyText: buildReceiptBodyText(handoff.tier, handoff.recipient.fullName),
+      bodyText: buildReceiptBodyText(handoff.recipient.fullName),
     },
   };
 }
@@ -375,8 +366,7 @@ function buildEmailHandoff(
   pdfPath: string,
   payloadPath: string,
 ): EmailHandoff {
-  const templateType: EmailTemplateType =
-    handoff.tier === "executive" ? "report_delivery_executive" : "report_delivery_essential";
+  const templateType: EmailTemplateType = "report_delivery_full_structural";
   const relativeDocxPath = toRepoRelative(repoRoot, docxPath);
   const relativePdfPath = toRepoRelative(repoRoot, pdfPath);
   const relativePayloadPath = toRepoRelative(repoRoot, payloadPath);
@@ -389,7 +379,6 @@ function buildEmailHandoff(
       email: handoff.recipient.email,
       fullName: handoff.recipient.fullName,
     },
-    tier: handoff.tier,
     language: handoff.language,
     artifacts: {
       reportDocxPath: relativeDocxPath,
@@ -398,8 +387,8 @@ function buildEmailHandoff(
     },
     email: {
       templateType,
-      subject: toEmailSubject(handoff.tier),
-      bodyText: buildBodyText(handoff.tier, handoff.recipient.fullName),
+      subject: toEmailSubject(),
+      bodyText: buildBodyText(handoff.recipient.fullName),
     },
     followUp: {
       reportLinkedWindowDays: 0,
@@ -508,7 +497,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
           ok: true,
           submissionId: handoff.submissionId,
           status: "already_delivered",
-          tier: handoff.tier,
           language: handoff.language,
           recipient: handoff.recipient,
           emailDelivery: {
@@ -570,7 +558,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
           ok: false,
           submissionId: handoff.submissionId,
           status: "generation_failed",
-          tier: handoff.tier,
           language: handoff.language,
           recipient: handoff.recipient,
           artifacts: {
@@ -599,7 +586,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
           ok: false,
           submissionId: handoff.submissionId,
           status: "generation_failed",
-          tier: handoff.tier,
           language: handoff.language,
           recipient: handoff.recipient,
           artifacts: {
@@ -630,7 +616,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
           ok: false,
           submissionId: handoff.submissionId,
           status: "generation_failed",
-          tier: handoff.tier,
           language: handoff.language,
           recipient: handoff.recipient,
           artifacts: {
@@ -682,7 +667,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
             ok: false,
             submissionId: handoff.submissionId,
             status: "report_email_failed",
-            tier: handoff.tier,
             language: handoff.language,
             recipient: handoff.recipient,
             email: {
@@ -714,7 +698,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         ok: true,
         submissionId: handoff.submissionId,
         status: params.sendEmail ? "report_email_sent" : "report_prepared_for_delivery",
-        tier: handoff.tier,
         language: handoff.language,
         recipient: handoff.recipient,
         summary,
@@ -797,7 +780,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         ok: false,
         submissionId: handoff.submissionId,
         status: "generation_failed",
-        tier: handoff.tier,
         language: handoff.language,
         recipient: handoff.recipient,
         artifacts: {
@@ -823,7 +805,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         ok: false,
         submissionId: handoff.submissionId,
         status: "generation_failed",
-        tier: handoff.tier,
         language: handoff.language,
         recipient: handoff.recipient,
         artifacts: {
@@ -851,7 +832,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
         ok: false,
         submissionId: handoff.submissionId,
         status: "generation_failed",
-        tier: handoff.tier,
         language: handoff.language,
         recipient: handoff.recipient,
         artifacts: {
@@ -900,7 +880,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
       ok: true,
       submissionId: handoff.submissionId,
       status: "report_generated",
-      tier: handoff.tier,
       language: handoff.language,
       recipient: handoff.recipient,
       delivery: handoff.delivery,
@@ -979,7 +958,6 @@ export function registerAmcSubmissionBridge(app: Express, serverDir: string): vo
       ok: true,
       submissionId: handoff.submissionId,
       status: "case_received",
-      tier: handoff.tier,
       language: handoff.language,
       recipient: handoff.recipient,
       email: {

@@ -39,13 +39,10 @@ export interface AmcNormalizedIntake {
   mustAnswerQuestion: string;
   consent: boolean;
 
-  tier: string;
   submittedAt: string;
   reportDate: string;
   betaMode: boolean;
   lang: string;
-  chatbotAccessToken: string;
-  chatbotAccessExpiresAt: string;
 }
 
 type EnumMap = Record<string, string>;
@@ -119,17 +116,6 @@ function normalizeConsent(value: unknown): boolean {
     "yes, i understand and agree",
   ]);
   return affirmative.has(text);
-}
-
-function normalizeTier(value: unknown): string {
-  const text = normalizeText(value).toLowerCase();
-  if (text === "executive") {
-    return "executive";
-  }
-  if (text === "essential") {
-    return "essential";
-  }
-  return "essential";
 }
 
 function normalizeBooleanWithDefaultTrue(value: unknown): boolean {
@@ -284,13 +270,10 @@ export function normalizeIntake(raw: Record<string, any>): AmcNormalizedIntake {
     mustAnswerQuestion: normalizeText(raw.mustAnswerQuestion),
     consent: normalizeConsent(raw.consent),
 
-    tier: normalizeTier(raw.tier),
     submittedAt: normalizeText(raw.submittedAt),
     reportDate: normalizeText(raw.reportDate),
     betaMode: normalizeBooleanWithDefaultTrue(raw.betaMode),
     lang: normalizeText(raw.lang) || "en",
-    chatbotAccessToken: normalizeText(raw.chatbotAccessToken),
-    chatbotAccessExpiresAt: normalizeText(raw.chatbotAccessExpiresAt),
   };
 }
 
@@ -302,7 +285,6 @@ const raw = {
   topPriorities: ["Income stability", "Income stability", "Long-term growth"],
   yearsExperience: "6–10 years",
   urgency: "Within 3 months",
-  tier: "executive",
 };
 
 const normalized = normalizeIntake(raw);
@@ -312,7 +294,6 @@ const normalized = normalizeIntake(raw);
 //   topPriorities: ["Income stability", "Long-term growth"],
 //   yearsExperience: "6_10",
 //   urgency: "within_3m",
-//   tier: "executive",
 //   ...
 // }
 */

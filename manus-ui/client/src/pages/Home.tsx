@@ -11,12 +11,14 @@ const fitNotFor = [
 ] as const;
 
 const reportOutline = [
-  "Executive Structural Overview",
-  "Inside View and Safety Margin",
-  "Outside / Live External Evidence",
+  "Current Structural Posture",
+  "Why This Posture",
+  "Decision Structure / FIFWM",
   "What You May Be Missing",
-  "Alternative Path Worth Testing",
-  "Decision Conditions",
+  "Changing Plays",
+  "Safety Margin — Room to Be Wrong",
+  "Decision Switches",
+  "Next-Step Experiment",
 ] as const;
 
 const howItWorks = [
@@ -33,8 +35,8 @@ const howItWorks = [
     body: "You get a structured written output.",
   },
   {
-    title: "Validate Decision Conditions",
-    body: "Use the report to test what must become true before deeper commitment.",
+    title: "Run the Next Experiment",
+    body: "Test the evidence that would change the current structural posture before deeper commitment.",
   },
 ] as const;
 
@@ -45,7 +47,7 @@ const faqs = [
   },
   {
     q: "Will AMC tell me what to do?",
-    a: "AMC does not force a recommendation posture. It clarifies burden, fit, risk, and decision conditions so you can decide with structure visible.",
+    a: "AMC establishes a clear, non-prescriptive Current Structural Posture and shows what evidence would justify changing it.",
   },
   {
     q: "What do I receive?",
@@ -62,10 +64,12 @@ const faqs = [
 ] as const;
 
 const differences = [
-  "Structure before decision",
-  "Report before conversation",
-  "Serious and restrained",
-  "Built for complex crossroads",
+  "See the structure",
+  "Find what you may be missing",
+  "Change what can be changed",
+  "Protect room to try again",
+  "Know what would change the posture",
+  "Test before deeper commitment",
 ] as const;
 
 const reportCoverage = [
@@ -90,8 +94,8 @@ const reportCoverage = [
     body: "Portability, timing, and conversion friction",
   },
   {
-    title: "Commitment Conditions",
-    body: "What must be true before stronger commitment",
+    title: "Decision Switches",
+    body: "Observable evidence that would change the posture",
   },
 ] as const;
 
@@ -110,12 +114,12 @@ export default function Home() {
                 You receive a structured written report.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed mb-8">
-                We do not look at decisions first. We look at structure first.
+                We do not look at decisions first. We look at structure first. AMC sees structure.
               </p>
               <p className="text-sm uppercase tracking-[0.14em] text-muted-foreground mb-8">Tip in. Decide. Value up.</p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
-                  href="/intake"
+                  href="/amc-web-mvp"
                   className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
                 >
                   Start Your AMC Case
@@ -147,7 +151,7 @@ export default function Home() {
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">What You Receive</h2>
           <p className="text-base text-foreground/90 mb-2">AMC delivers a structured report as the core product.</p>
           <p className="text-sm text-muted-foreground mb-8">
-            The report combines internal structure, outside evidence, Safety Margin, risks, missing variables, and Decision Conditions.
+            We help you see the structure behind today’s decision — including what you may be missing — so you can make a better-supported decision and preserve the capacity to change again.
           </p>
           <div className="border border-border rounded-lg bg-card p-7 sm:p-8 max-w-3xl">
             <div className="flex items-center justify-between mb-6">
@@ -201,7 +205,7 @@ export default function Home() {
           <div className="border border-border rounded-lg p-6 bg-card max-w-3xl">
             <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">AMC Full Structural Report</p>
             <p className="text-lg font-medium mb-2">Full Dashboard + Detailed PDF Report</p>
-            <p className="text-sm text-muted-foreground">Structure, evidence, Safety Margin, risks, alternatives, and Decision Conditions.</p>
+            <p className="text-sm text-muted-foreground">Full Structural Dashboard + Detailed Report, built from the same FIFWM intelligence.</p>
           </div>
         </section>
 
@@ -280,7 +284,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <a
-                href="/intake"
+                href="/amc-web-mvp"
                 className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
               >
                 Start Your AMC Case
@@ -289,7 +293,7 @@ export default function Home() {
                 href="#formats"
                 className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
               >
-                View Available Formats
+                See the Full Structural Report
               </a>
             </div>
           </div>

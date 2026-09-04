@@ -5,7 +5,6 @@ import nodemailer from "nodemailer";
 import { z } from "zod";
 
 const languageSchema = z.enum(["ko", "en", "zh"]);
-const tierSchema = z.enum(["essential", "executive"]);
 
 const emailHandoffSchema = z.object({
   submissionId: z.string().min(1),
@@ -15,7 +14,6 @@ const emailHandoffSchema = z.object({
     email: z.string().min(1),
     fullName: z.string().optional().default(""),
   }),
-  tier: tierSchema,
   language: languageSchema,
   artifacts: z.object({
     reportDocxPath: z.string().min(1),
@@ -23,7 +21,7 @@ const emailHandoffSchema = z.object({
     reportPayloadPath: z.string().min(1),
   }),
   email: z.object({
-    templateType: z.enum(["report_delivery_essential", "report_delivery_executive"]),
+    templateType: z.literal("report_delivery_full_structural"),
     subject: z.string().min(1),
     bodyText: z.string().min(1),
   }),
@@ -43,7 +41,6 @@ const receiptEmailHandoffSchema = z.object({
     email: z.string().min(1),
     fullName: z.string().optional().default(""),
   }),
-  tier: tierSchema,
   language: languageSchema,
   email: z.object({
     templateType: z.literal("submission_received_receipt"),
@@ -64,7 +61,6 @@ export type EmailDeliveryResult = {
   to: string;
   from?: string;
   language: "ko" | "en" | "zh";
-  tier: "essential" | "executive";
   reportAttachmentPath: string;
   reportAttachmentFormat: "pdf" | "docx";
   reportDocxPath: string;
@@ -82,7 +78,6 @@ export type ReceiptEmailDeliveryResult = {
   to: string;
   from?: string;
   language: "ko" | "en" | "zh";
-  tier: "essential" | "executive";
   error?: string;
 };
 
@@ -206,7 +201,6 @@ export async function sendPreparedEmail(params: {
       emailHandoffPath: path.relative(params.repoRoot, params.emailHandoffPath),
       to: handoff.recipient.email,
       language: handoff.language,
-      tier: handoff.tier,
       reportAttachmentPath: reportAttachment.relativePath,
       reportAttachmentFormat: reportAttachment.format,
       reportDocxPath: handoff.artifacts.reportDocxPath,
@@ -255,7 +249,6 @@ export async function sendPreparedEmail(params: {
       to: handoff.recipient.email,
       from: smtp.from,
       language: handoff.language,
-      tier: handoff.tier,
       reportAttachmentPath: reportAttachment.relativePath,
       reportAttachmentFormat: reportAttachment.format,
       reportDocxPath: handoff.artifacts.reportDocxPath,
@@ -272,7 +265,6 @@ export async function sendPreparedEmail(params: {
       emailHandoffPath: path.relative(params.repoRoot, params.emailHandoffPath),
       to: handoff.recipient.email,
       language: handoff.language,
-      tier: handoff.tier,
       reportAttachmentPath: reportAttachment.relativePath,
       reportAttachmentFormat: reportAttachment.format,
       reportDocxPath: handoff.artifacts.reportDocxPath,
@@ -319,7 +311,6 @@ export async function sendSubmissionReceiptEmail(params: {
       to: handoff.recipient.email,
       from: smtp.from,
       language: handoff.language,
-      tier: handoff.tier,
     };
     writeReceiptDeliveryResult(resultPath, success);
     return { handoff, result: success, resultPath };
@@ -332,7 +323,6 @@ export async function sendSubmissionReceiptEmail(params: {
       receiptEmailHandoffPath: path.relative(params.repoRoot, params.receiptEmailHandoffPath),
       to: handoff.recipient.email,
       language: handoff.language,
-      tier: handoff.tier,
       error: error instanceof Error ? error.message : String(error),
     };
     writeReceiptDeliveryResult(resultPath, failed);

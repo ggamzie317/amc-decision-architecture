@@ -164,6 +164,6 @@ function buildRouteFallbackSnapshot(language: Language, reason: RouteFallbackRea
     ],
     implication: isKr
       ? "외부 근거가 연결되기 전까지 이 Snapshot은 결정 조건을 보조하는 fallback으로 해석해야 합니다."
-      : "Until external evidence is available, read this snapshot as fallback context supporting the decision conditions.",
+      : "Until external evidence is available, read this snapshot as fallback context for the decision structure; it does not determine the current posture.",
   };
 }

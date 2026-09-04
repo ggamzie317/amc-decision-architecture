@@ -15,6 +15,8 @@ type Summary = {
 type Submission = {
   submissionId: string;
   createdAt: string;
+  productVersion: string;
+  frameworkVersion: string;
   language: string;
   caseType: string | null;
   currentStage: string;
@@ -391,11 +393,11 @@ export default function AmcAdmin() {
                       health.dataQuality.missingPointSaved,
                     ],
                     [
-                      "Alternative Path state saved",
+                      "Changing Play state saved",
                       health.dataQuality.alternativePathStateSaved,
                     ],
                     [
-                      "Decision Conditions saved",
+                      "Decision Switches saved",
                       health.dataQuality.decisionConditionsSaved,
                     ],
                   ].map(([label, value]) => (
@@ -644,6 +646,9 @@ export default function AmcAdmin() {
                 <h2 className="mt-2 text-xl font-semibold">
                   {detail.submission.submissionId}
                 </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {detail.submission.productVersion} · {detail.submission.frameworkVersion}
+                </p>
               </div>
               <button
                 onClick={() => setDetail(null)}
@@ -674,16 +679,27 @@ export default function AmcAdmin() {
                 <h3 className="font-semibold">AMC DERIVED ANALYSIS</h3>
                 <dl className="mt-4 space-y-4 text-sm">
                   <div>
+                    <dt className="text-muted-foreground">
+                      Current Structural Posture
+                    </dt>
+                    <dd>
+                      {JSON.stringify(
+                        detail.submission.structuralOutputJson
+                          .currentStructuralPosture || "—"
+                      )}
+                    </dd>
+                  </div>
+                  <div>
                     <dt className="text-muted-foreground">Missing Point</dt>
                     <dd>{detail.submission.missingPoint || "—"}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">Alternative Path</dt>
+                    <dt className="text-muted-foreground">Changing Play</dt>
                     <dd>{detail.submission.alternativePath || "—"}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">
-                      Decision Conditions
+                      Decision Switches
                     </dt>
                     <dd>
                       {detail.submission.decisionConditionsJson.join(" · ") ||

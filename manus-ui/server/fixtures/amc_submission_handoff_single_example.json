@@ -3,15 +3,13 @@
   "createdAt": "2026-04-11T12:00:00.000Z",
   "source": "manus_ui_intake_v1",
   "language": "ko",
-  "tier": "essential",
   "recipient": {
     "email": "minsoo.park@example.com",
     "fullName": "Minsoo Park"
   },
   "delivery": {
     "channel": "email",
-    "language": "ko",
-    "tier": "essential"
+    "language": "ko"
   },
   "intakeRaw": {
     "fullName": "Minsoo Park",
@@ -53,13 +51,10 @@
     ],
     "mustAnswerQuestion": "Is the 12–18 month post-exit structure truly survivable without forced low-quality re-entry?",
     "consent": "yes, i understand and agree",
-    "tier": "essential",
     "submittedAt": "2026-04-05T12:20:00Z",
     "reportDate": "2026-04-05",
     "betaMode": true,
-    "lang": "ko",
-    "chatbotAccessToken": "",
-    "chatbotAccessExpiresAt": ""
+    "lang": "ko"
   },
   "intakeMeta": {
     "completedAt": "2026-04-11T11:58:00.000Z"

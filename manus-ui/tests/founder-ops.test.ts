@@ -57,8 +57,8 @@ describe("founder operations storage", () => {
 
     const detail = await store.getSubmission(created.submissionId!);
     expect(detail?.submission.currentStage).toBe("full_intake_started");
-    expect(detail?.submission.productVersion).toBe("AMC-LAUNCH-V2");
-    expect(detail?.submission.frameworkVersion).toBe("FIFWM-SM-V1");
+    expect(detail?.submission.productVersion).toBe("AMC-LAUNCH-V3");
+    expect(detail?.submission.frameworkVersion).toBe("FIFWM-SM-V2");
     expect(detail?.events.map(event => event.eventType)).toEqual([
       "preview_started",
       "full_intake_started",

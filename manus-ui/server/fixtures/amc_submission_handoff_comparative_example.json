@@ -3,15 +3,13 @@
   "createdAt": "2026-04-11T12:10:00.000Z",
   "source": "manus_ui_intake_v1",
   "language": "ko",
-  "tier": "executive",
   "recipient": {
     "email": "kwon@example.com",
     "fullName": "Kwon"
   },
   "delivery": {
     "channel": "email",
-    "language": "ko",
-    "tier": "executive"
+    "language": "ko"
   },
   "intakeRaw": {
     "fullName": "Kwon",
@@ -53,13 +51,10 @@
     ],
     "mustAnswerQuestion": "Under what conditions would an overseas Asia move be structurally defensible for both my career and my family?",
     "consent": "yes, i understand and agree",
-    "tier": "executive",
     "submittedAt": "2026-04-04T09:55:00Z",
     "reportDate": "2026-04-04",
     "betaMode": true,
-    "lang": "ko",
-    "chatbotAccessToken": "",
-    "chatbotAccessExpiresAt": ""
+    "lang": "ko"
   },
   "intakeMeta": {
     "completedAt": "2026-04-11T12:08:00.000Z"

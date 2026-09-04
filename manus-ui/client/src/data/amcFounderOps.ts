@@ -1,4 +1,4 @@
-const SUBMISSION_STORAGE_KEY = "amc_launch_v2_submission_id";
+const SUBMISSION_STORAGE_KEY = "amc_launch_v3_submission_id";
 
 export type JourneyEventType =
   | "preview_started"
