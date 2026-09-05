@@ -37,7 +37,7 @@ export type SubmissionPatch = {
   structuralOutputJson?: Record<string, unknown>;
   externalEvidenceJson?: Record<string, unknown>;
   missingPoint?: string;
-  alternativePath?: string;
+  alternativePath?: string | null;
   decisionConditionsJson?: string[];
   safetyMarginStructuredData?: Record<string, unknown>;
   existingFifwmStructuredData?: Record<string, unknown>;

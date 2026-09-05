@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ProductApplicationDashboard, ProductApplicationReport } from "../components/ProductApplicationViews";
 import { trackAmcJourney } from "../data/amcFounderOps";
+import { buildFounderOpsDerivedPatch, founderOpsDerivedFingerprint } from "../data/amcFounderOpsDerived";
 import {
   buildUnavailableFifwm,
   buildProductApplicationV3,
@@ -2630,6 +2631,7 @@ export default function AmcWebMvp() {
   const [serviceStorageConsent, setServiceStorageConsent] = useState(false);
   const [researchUseConsent, setResearchUseConsent] = useState(false);
   const externalSnapshotRequestId = useRef(0);
+  const lastDerivedSyncFingerprint = useRef("");
 
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
@@ -2666,6 +2668,8 @@ export default function AmcWebMvp() {
   const caseSpecificReading = caseSpecificReadings[detectedCaseType];
   const caseReportBranch = caseReportBranches[detectedCaseType];
   const launchInterpretation = launchInterpretations[detectedCaseType];
+  const localizedDecisionConditions = isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en;
+  const localizedMissingPoint = isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en;
   const mockExternalSnapshot = useMemo(
     () => buildMockExternalSnapshot(detectedCaseType, optionALabel, optionBLabel, language),
     [detectedCaseType, language, optionALabel, optionBLabel],
@@ -2727,11 +2731,11 @@ export default function AmcWebMvp() {
         fifwmSource: "unavailable",
         safetyMarginInputs,
         structuralSignals: currentCaseStructuralSignals,
-        missingPoint: isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en,
+        missingPoint: localizedMissingPoint,
         missingPointWhy: isKo ? launchInterpretation.whyItMatters.ko : launchInterpretation.whyItMatters.en,
         primaryRisk: caseReportBranch.primaryRisk.name,
         primaryRiskMeaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
-        decisionConditions: isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en,
+        decisionConditions: localizedDecisionConditions,
         validationFocus: isKo ? caseSpecificReading.validationFocus.ko : caseSpecificReading.validationFocus.en,
         externalImplication: displayedExternalSnapshot.implication,
         plan: caseReportBranch.plan.map((item) => ({
@@ -2752,11 +2756,73 @@ export default function AmcWebMvp() {
       isKo,
       language,
       launchInterpretation,
+      localizedDecisionConditions,
+      localizedMissingPoint,
       optionALabel,
       optionBLabel,
       safetyMarginInputs,
     ],
   );
+  const founderOpsDerivedPatch = useMemo(
+    () => buildFounderOpsDerivedPatch({
+      productApplication: productApplicationV3,
+      externalSnapshot: displayedExternalSnapshot,
+      language,
+      caseType: detectedCaseType,
+      missingPoint: localizedMissingPoint,
+      decisionConditions: localizedDecisionConditions,
+      primaryRisk: {
+        name: caseReportBranch.primaryRisk.name,
+        meaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
+      },
+      comparisonRows: matrixRows,
+      internalSignals,
+    }),
+    [
+      caseReportBranch,
+      detectedCaseType,
+      displayedExternalSnapshot,
+      internalSignals,
+      isKo,
+      language,
+      localizedDecisionConditions,
+      localizedMissingPoint,
+      productApplicationV3,
+    ],
+  );
+  const derivedSyncFingerprint = useMemo(
+    () => founderOpsDerivedFingerprint(founderOpsDerivedPatch),
+    [founderOpsDerivedPatch],
+  );
+
+  useEffect(() => {
+    if (!dashboardGenerated || externalSnapshotLoading) return;
+    const terminalEvent = displayedExternalSnapshot.status === "live"
+      ? "external_evidence_live"
+      : displayedExternalSnapshot.status === "fallback" || displayedExternalSnapshot.status === "unverified"
+        ? "external_evidence_fallback"
+        : null;
+    if (!terminalEvent || lastDerivedSyncFingerprint.current === derivedSyncFingerprint) return;
+    lastDerivedSyncFingerprint.current = derivedSyncFingerprint;
+    void trackAmcJourney({
+      eventType: terminalEvent,
+      language,
+      serviceStorageConsent,
+      metadata: {
+        derivedAnalysisSynced: true,
+        externalEvidenceMode: displayedExternalSnapshot.status,
+      },
+      patch: founderOpsDerivedPatch,
+    });
+  }, [
+    dashboardGenerated,
+    derivedSyncFingerprint,
+    displayedExternalSnapshot.status,
+    externalSnapshotLoading,
+    founderOpsDerivedPatch,
+    language,
+    serviceStorageConsent,
+  ]);
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
     setAnswers((current) => ({ ...current, [field]: value }));
   };
@@ -2767,6 +2833,7 @@ export default function AmcWebMvp() {
       eventType: "preview_started",
       language,
       serviceStorageConsent,
+      newSubmission: true,
       patch: { currentStage: "preview_started", previewStartedAt: now, serviceStorageConsent },
     });
     setPreviewStarted(true);
@@ -2832,27 +2899,6 @@ export default function AmcWebMvp() {
 
   const generateDashboard = () => {
     const generatedAt = new Date().toISOString();
-    const localizedConditions = isKo ? caseReportBranch.conditions.ko : caseReportBranch.conditions.en;
-    const localizedMissingPoint = isKo ? launchInterpretation.missingPoint.ko : launchInterpretation.missingPoint.en;
-    const structuralOutput = {
-      caseType: detectedCaseType,
-      currentStructuralPosture: productApplicationV3.currentStructuralPosture,
-      postureEvidenceCoverage: productApplicationV3.postureEvidenceCoverage,
-      postureBasis: productApplicationV3.postureBasis,
-      why: productApplicationV3.why,
-      changingPlays: productApplicationV3.changingPlays,
-      safetyMargin: productApplicationV3.safetyMargin,
-      decisionSwitches: productApplicationV3.decisionSwitches,
-      nextStepExperiment: productApplicationV3.nextStepExperiment,
-      analysisSequence: productApplicationV3.analysisSequence,
-      primaryRisk: {
-        name: caseReportBranch.primaryRisk.name,
-        meaning: isKo ? caseReportBranch.primaryRisk.meaning.ko : caseReportBranch.primaryRisk.meaning.en,
-      },
-      comparisonRows: matrixRows,
-      internalSignals,
-      decisionStructure: productApplicationV3.decisionStructure,
-    };
     void trackAmcJourney({
       eventType: "full_intake_completed",
       language,
@@ -2875,29 +2921,10 @@ export default function AmcWebMvp() {
       language,
       serviceStorageConsent,
       patch: {
+        ...founderOpsDerivedPatch,
         currentStage: "report_generated",
         reportGeneratedAt: generatedAt,
-        language,
-        caseType: detectedCaseType,
         researchUseConsent,
-        structuralOutputJson: structuralOutput,
-        missingPoint: localizedMissingPoint,
-        alternativePath: productApplicationV3.changingPlays[0]?.move,
-        decisionConditionsJson: localizedConditions,
-        safetyMarginStructuredData: {
-          ...productApplicationV3.safetyMargin,
-          safetyMarginInputs: productApplicationV3.safetyMargin.inputs,
-          band: productApplicationV3.postureBasis.safetyMargin.band,
-          source: productApplicationV3.postureBasis.safetyMargin.source,
-          reversibility: productApplicationV3.postureBasis.reversibility,
-        },
-        existingFifwmStructuredData: {
-          ...productApplicationV3.decisionStructure.fifwm,
-          source: productApplicationV3.decisionStructure.fifwmSource,
-        },
-        externalEvidenceMode: displayedExternalSnapshot.status,
-        externalEvidenceConfidence: displayedExternalSnapshot.confidence,
-        externalEvidenceJson: displayedExternalSnapshot,
       },
     });
     const requestId = externalSnapshotRequestId.current + 1;
@@ -2930,30 +2957,10 @@ export default function AmcWebMvp() {
         if (!isExternalSnapshot(payload)) throw new Error("External snapshot response was unavailable.");
         if (externalSnapshotRequestId.current === requestId) {
           setExternalSnapshot(payload.status === "fallback" ? buildNeutralExternalSnapshot("fallback", language) : customerSafeExternalSnapshot(payload));
-          void trackAmcJourney({
-            eventType: payload.status === "live" ? "external_evidence_live" : "external_evidence_fallback",
-            language,
-            serviceStorageConsent,
-            patch: {
-              externalEvidenceMode: payload.status,
-              externalEvidenceConfidence: payload.confidence,
-              externalEvidenceJson: payload,
-            },
-          });
         }
       })
       .catch(() => {
         if (externalSnapshotRequestId.current !== requestId) return;
-        void trackAmcJourney({
-          eventType: "external_evidence_fallback",
-          language,
-          serviceStorageConsent,
-          patch: {
-            externalEvidenceMode: isQaMode ? mockExternalSnapshot.status : "unverified",
-            externalEvidenceConfidence: isQaMode ? mockExternalSnapshot.confidence : "low",
-            externalEvidenceJson: isQaMode ? mockExternalSnapshot : {},
-          },
-        });
         setExternalSnapshotError(
           isQaMode
             ? (isKo ? "QA Preview 외부 맥락을 유지합니다." : "The QA preview context remains in use.")
@@ -2985,7 +2992,7 @@ export default function AmcWebMvp() {
       eventType: "detailed_report_opened",
       language,
       serviceStorageConsent,
-      patch: { currentStage: "detailed_report_opened" },
+      patch: { ...founderOpsDerivedPatch, currentStage: "detailed_report_opened" },
     });
     setShowPdfReportView(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3131,7 +3138,10 @@ export default function AmcWebMvp() {
                     eventType: "print_save_clicked",
                     language,
                     serviceStorageConsent,
-                    patch: { printSaveClickedAt: new Date().toISOString() },
+                    patch: {
+                      ...founderOpsDerivedPatch,
+                      printSaveClickedAt: new Date().toISOString(),
+                    },
                   });
                   window.print();
                 }}
