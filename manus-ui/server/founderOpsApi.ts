@@ -13,6 +13,7 @@ import {
 
 type TrackBody = {
   submissionId?: unknown;
+  newSubmission?: unknown;
   language?: unknown;
   serviceStorageConsent?: unknown;
   eventType?: unknown;
@@ -116,14 +117,20 @@ export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
     ? (body.eventType as UsageEventType)
     : null;
   if (!eventType) return { ok: false, stored: false, reason: "invalid_event" };
+  const startsNewJourney =
+    eventType === "preview_started" && body.newSubmission === true;
   let submissionId =
     typeof body.submissionId === "string" &&
     /^AMC-\d{8}-[A-F0-9]{8}$/.test(body.submissionId)
       ? body.submissionId
       : "";
-  if (submissionId && !(await store.getSubmission(submissionId)))
+  if (startsNewJourney) {
+    const submission = await store.createSubmission(language, true);
+    submissionId = submission.submissionId;
+  } else if (submissionId && !(await store.getSubmission(submissionId))) {
     submissionId = "";
-  if (!submissionId) {
+  }
+  if (!startsNewJourney && !submissionId) {
     const submission = await store.createSubmission(language, true);
     submissionId = submission.submissionId;
   }

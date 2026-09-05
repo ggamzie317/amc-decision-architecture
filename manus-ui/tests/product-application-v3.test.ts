@@ -359,6 +359,10 @@ describe("AMC Product Application Layer V3 correction", () => {
   it("uses live-case or explicit unknown wiring with no historical fixture or fixed posture bands", () => {
     const root = path.basename(process.cwd()) === "manus-ui" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
     const page = fs.readFileSync(path.join(root, "manus-ui/client/src/pages/AmcWebMvp.tsx"), "utf8");
+    const founderOpsDerived = fs.readFileSync(
+      path.join(root, "manus-ui/client/src/data/amcFounderOpsDerived.ts"),
+      "utf8",
+    );
     expect(page.match(/<ProductApplicationDashboard intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
     expect(page.match(/<ProductApplicationReport intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
     expect(page).not.toContain("ProductApplicationSections");
@@ -381,11 +385,12 @@ describe("AMC Product Application Layer V3 correction", () => {
       'optionBSupport: "developing"', 'structuralRisk: "high"', 'constraintLoad: "material"',
       'missingPointImpact: "material"',
     ]) expect(page).not.toContain(fixedBand);
-    expect(page).toContain("productApplicationV3.decisionStructure.fifwm");
-    expect(page).toContain("structuralOutputJson: structuralOutput");
-    expect(page).toContain("changingPlays: productApplicationV3.changingPlays");
+    expect(page).toContain("buildFounderOpsDerivedPatch({");
+    expect(founderOpsDerived).toContain("productApplication.decisionStructure.fifwm");
+    expect(founderOpsDerived).toContain("structuralOutputJson: {");
+    expect(founderOpsDerived).toContain("changingPlays: productApplication.changingPlays");
     expect(page).toContain("answersJson:");
-    expect(page).toContain("safetyMarginInputs: productApplicationV3.safetyMargin.inputs");
+    expect(founderOpsDerived).toContain("safetyMarginInputs: productApplication.safetyMargin.inputs");
     expect(page).toContain('source: "current-user-structured"');
     expect(AMC_PRODUCT_VERSION).toBe("AMC-LAUNCH-V3");
     expect(AMC_FRAMEWORK_VERSION).toBe("FIFWM-SM-V2");
