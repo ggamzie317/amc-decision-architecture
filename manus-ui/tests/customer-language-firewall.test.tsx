@@ -114,7 +114,7 @@ describe("AMC customer-language firewall", () => {
     ];
     expect(journeys.map((journey) => journey.currentStructuralPosture.label)).toEqual([
       "Stronger Transition Case",
-      "Stay and Reconfigure",
+      "Protect and Reconfigure",
       "보존하며 검증",
     ]);
 

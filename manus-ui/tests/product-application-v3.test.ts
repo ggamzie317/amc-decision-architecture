@@ -9,6 +9,7 @@ import {
   buildFifwmFromReportPayload,
   buildProductApplicationV3,
   buildUnavailableFifwm,
+  derivePostureAssessment,
   deriveSafetyMarginCore,
   type FifwmStructure,
   type ProductApplicationBuildInput,
@@ -153,8 +154,149 @@ describe("AMC Product Application Layer V3 correction", () => {
         missingPointImpact: signal("resolved"),
       },
     }));
-    expect(weak.currentStructuralPosture.label).toBe("Stay and Reconfigure");
+    expect(weak.currentStructuralPosture.label).toBe("Protect and Reconfigure");
     expect(strong.currentStructuralPosture.label).toBe("Stronger Transition Case");
+  });
+
+  it("guards a transition candidate only when weak Safety Margin combines with weak reversibility or high downside", () => {
+    const transitionSignals: ProductApplicationBuildInput["structuralSignals"] = {
+      externalValidation: signal("strong"),
+      internalReadiness: signal("strong"),
+      safetyMargin: signal("strong"),
+      reversibility: signal("strong"),
+      optionBSupport: signal("strong"),
+      structuralRisk: signal("low"),
+      constraintLoad: signal("light"),
+      missingPointImpact: signal("resolved"),
+    };
+    const guardedCases = [
+      {
+        structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), reversibility: signal("weak"), structuralRisk: signal("high") },
+        triggers: ["weak-safety-margin", "weak-reversibility", "high-structural-risk"],
+        expectedSupport: 10,
+        reason: /weak Safety Margin, weak reversibility, and high downside exposure/,
+      },
+      {
+        structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), reversibility: signal("weak") },
+        triggers: ["weak-safety-margin", "weak-reversibility"],
+        expectedSupport: 12,
+        reason: /weak Safety Margin and weak reversibility/,
+      },
+      {
+        structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), structuralRisk: signal("high") },
+        triggers: ["weak-safety-margin", "high-structural-risk"],
+        expectedSupport: 12,
+        reason: /weak Safety Margin and high downside exposure/,
+      },
+    ] as const;
+
+    for (const guardedCase of guardedCases) {
+      const guardedInput = input({ fifwm: fifwm(2), structuralSignals: guardedCase.structuralSignals });
+      const assessment = derivePostureAssessment(guardedInput);
+      const result = buildProductApplicationV3(guardedInput);
+      expect(assessment.candidatePosture).toBe("transition");
+      expect(assessment.support).toBe(guardedCase.expectedSupport);
+      expect(assessment.effectivePosture).toBe("validate");
+      expect(assessment.guardrailApplied).toBe(true);
+      expect(assessment.guardrailTriggers).toEqual(guardedCase.triggers);
+      expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
+      expect(result.currentStructuralPosture.sentence).toContain("Opportunity evidence for advisory practice remains present");
+      expect(result.currentStructuralPosture.sentence).toMatch(guardedCase.reason);
+      expect(result.why.topDrivers[0]).toBe(result.currentStructuralPosture.sentence);
+    }
+  });
+
+  it("does not guard weak Safety Margin alone and preserves normal posture families and exact thresholds", () => {
+    const transitionSignals: ProductApplicationBuildInput["structuralSignals"] = {
+      externalValidation: signal("strong"),
+      internalReadiness: signal("strong"),
+      safetyMargin: signal("weak"),
+      reversibility: signal("developing"),
+      optionBSupport: signal("strong"),
+      structuralRisk: signal("moderate"),
+      constraintLoad: signal("light"),
+      missingPointImpact: signal("resolved"),
+    };
+    const weakSafetyOnly = derivePostureAssessment(input({ fifwm: fifwm(2), structuralSignals: transitionSignals }));
+    expect(weakSafetyOnly.candidatePosture).toBe("transition");
+    expect(weakSafetyOnly.support).toBe(12);
+    expect(weakSafetyOnly.effectivePosture).toBe("transition");
+    expect(weakSafetyOnly.guardrailApplied).toBe(false);
+
+    const atEight = derivePostureAssessment(input({ structuralSignals: { ...baseSignals, externalValidation: signal("strong") } }));
+    const atOne = derivePostureAssessment(input({ structuralSignals: {
+      ...baseSignals,
+      externalValidation: signal("weak"),
+      internalReadiness: signal("weak"),
+      safetyMargin: signal("weak"),
+      structuralRisk: signal("low"),
+    } }));
+    const allUnknown = derivePostureAssessment(input({
+      fifwm: buildUnavailableFifwm("en"),
+      fifwmSource: "unavailable",
+      structuralSignals: webRuntimeSignals("unknown", "unknown", "unknown", "unknown"),
+    }));
+    expect(atEight).toMatchObject({ support: 8, candidatePosture: "transition", effectivePosture: "transition" });
+    expect(atOne).toMatchObject({ support: 1, candidatePosture: "reconfigure", effectivePosture: "reconfigure" });
+    expect(derivePostureAssessment(input())).toMatchObject({ support: 6, candidatePosture: "validate", effectivePosture: "validate" });
+    expect(allUnknown).toMatchObject({ support: 5, candidatePosture: "validate", effectivePosture: "validate", guardrailApplied: false });
+    expect(buildProductApplicationV3(input({ structuralSignals: transitionSignals })).currentStructuralPosture.label).toBe("Stronger Transition Case");
+  });
+
+  it("aligns English and Korean reconfigure language without prescribing employer stay", () => {
+    const reconfigureSignals: ProductApplicationBuildInput["structuralSignals"] = {
+      externalValidation: signal("weak"),
+      internalReadiness: signal("weak"),
+      safetyMargin: signal("weak"),
+      reversibility: signal("weak"),
+      optionBSupport: signal("weak"),
+      structuralRisk: signal("high"),
+      constraintLoad: signal("heavy"),
+      missingPointImpact: signal("critical"),
+    };
+    const en = buildProductApplicationV3(input({ fifwm: fifwm(0), structuralSignals: reconfigureSignals }));
+    const ko = buildProductApplicationV3(input({ language: "ko", fifwm: fifwm(0), structuralSignals: reconfigureSignals }));
+    expect(en.currentStructuralPosture.label).toBe("Protect and Reconfigure");
+    expect(ko.currentStructuralPosture.label).toBe("기반을 보호하며 재구성");
+    expect(en.currentStructuralPosture.sentence).not.toMatch(/stay|employer|current role/i);
+    expect(ko.currentStructuralPosture.sentence).not.toMatch(/직장|고용주|남아|유지해야/);
+    expect(derivePostureAssessment(input({ fifwm: fifwm(0), structuralSignals: reconfigureSignals })).effectivePosture).toBe("reconfigure");
+    expect(derivePostureAssessment(input({ fifwm: fifwm(0), structuralSignals: reconfigureSignals })).support).toBe(-6);
+    expect(derivePostureAssessment(input({ language: "ko", fifwm: fifwm(0), structuralSignals: reconfigureSignals })).effectivePosture).toBe("reconfigure");
+  });
+
+  it("uses the same guarded posture in Dashboard and Report with safety-consistent switches and experiment", () => {
+    const guardedInput = input({
+      fifwm: fifwm(2),
+      structuralSignals: {
+        externalValidation: signal("strong"),
+        internalReadiness: signal("strong"),
+        safetyMargin: signal("weak"),
+        reversibility: signal("weak"),
+        optionBSupport: signal("strong"),
+        structuralRisk: signal("high"),
+        constraintLoad: signal("light"),
+        missingPointImpact: signal("resolved"),
+      },
+    });
+    const first = buildProductApplicationV3(guardedInput);
+    const second = buildProductApplicationV3(guardedInput);
+    const korean = buildProductApplicationV3({ ...guardedInput, language: "ko" });
+    expect(second).toEqual(first);
+    expect(korean.currentStructuralPosture.label).toBe("보존하며 검증");
+    expect(korean.currentStructuralPosture.sentence).toContain("약한 Safety Margin, 약한 가역성 및 높은 하방 노출");
+    expect(derivePostureAssessment({ ...guardedInput, language: "ko" }).effectivePosture).toBe(derivePostureAssessment(guardedInput).effectivePosture);
+    expect(first.decisionSwitches.every((item) => item.direction.includes("requires weak Safety Margin, weak reversibility, and high downside exposure to be reassessed"))).toBe(true);
+    expect(first.nextStepExperiment.continueCondition).toContain("Increasing commitment also requires weak Safety Margin, weak reversibility, and high downside exposure to be reassessed");
+    expect(first.nextStepExperiment.pauseCondition).toContain("remain constrained");
+    const props = { intelligence: first, translate: (en: string) => en, externalEvidenceUsed: true };
+    const dashboard = renderToStaticMarkup(React.createElement(ProductApplicationDashboard, props));
+    const report = renderToStaticMarkup(React.createElement(ProductApplicationReport, props));
+    expect(dashboard).toContain("Preserve and Validate");
+    expect(report).toContain("Preserve and Validate");
+    expect(dashboard).toContain("Opportunity evidence for advisory practice remains present");
+    expect(report).toContain("Opportunity evidence for advisory practice remains present");
+    expect(first.changingPlays.length).toBeLessThanOrEqual(3);
   });
 
   it("reaches all posture families from live evidence and current-user Safety Margin structure with FIFWM unavailable", () => {
@@ -184,7 +326,7 @@ describe("AMC Product Application Layer V3 correction", () => {
     }));
 
     expect(currentCase("strong", "strong", "strong", "low").currentStructuralPosture.label).toBe("Stronger Transition Case");
-    expect(currentCase("weak", "weak", "weak", "high").currentStructuralPosture.label).toBe("Stay and Reconfigure");
+    expect(currentCase("weak", "weak", "weak", "high").currentStructuralPosture.label).toBe("Protect and Reconfigure");
     const mixed = currentCase("developing", "developing", "developing", "moderate");
     expect(mixed.currentStructuralPosture.label).toBe("Preserve and Validate");
     expect(mixed.postureEvidenceCoverage).toBe("partial");
