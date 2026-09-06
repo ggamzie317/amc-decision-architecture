@@ -346,24 +346,64 @@ describe("AMC Product Application Layer V3 correction", () => {
         constraintLoad: signal("light"),
         missingPointImpact: signal("resolved"),
       },
+      decisionConditions: [
+        "Three relevant buyers confirm the problem is urgent enough to fund.",
+        "The current role stops providing sufficient runway for a bounded test.",
+      ],
     });
     const first = buildProductApplicationV3(guardedInput);
     const second = buildProductApplicationV3(guardedInput);
-    const korean = buildProductApplicationV3({ ...guardedInput, language: "ko" });
+    const korean = buildProductApplicationV3({
+      ...guardedInput,
+      language: "ko",
+      decisionConditions: [
+        "관련 구매자 세 곳이 이 문제에 비용을 지불할 만큼 시급하다고 확인합니다.",
+        "현재 기반이 제한된 실험을 위한 충분한 여력을 더 이상 제공하지 못합니다.",
+      ],
+    });
+    const assessment = derivePostureAssessment(guardedInput);
     expect(second).toEqual(first);
+    expect(assessment).toMatchObject({
+      support: 10,
+      candidatePosture: "transition",
+      effectivePosture: "validate",
+      guardrailApplied: true,
+      guardrailTriggers: ["weak-safety-margin", "weak-reversibility", "high-structural-risk"],
+    });
     expect(korean.currentStructuralPosture.label).toBe("보존하며 검증");
     expect(korean.currentStructuralPosture.sentence).toContain("약한 Safety Margin, 약한 가역성 및 높은 하방 노출");
     expect(derivePostureAssessment({ ...guardedInput, language: "ko" }).effectivePosture).toBe(derivePostureAssessment(guardedInput).effectivePosture);
-    expect(first.decisionSwitches.every((item) => item.direction.includes("requires weak Safety Margin, weak reversibility, and high downside exposure to be reassessed"))).toBe(true);
+    expect(first.decisionSwitches.map((item) => item.signal)).toEqual(guardedInput.decisionConditions);
+    expect(first.decisionSwitches.every((item) => item.direction.includes("calls for reassessing the opportunity evidence for advisory practice and downside exposure together"))).toBe(true);
+    expect(first.decisionSwitches.every((item) => item.direction.includes("protection around weak Safety Margin, weak reversibility, and high downside exposure is confirmed"))).toBe(true);
+    const worseningSwitch = first.decisionSwitches.find((item) => item.signal.includes("stops providing sufficient runway"));
+    expect(worseningSwitch?.direction).not.toMatch(/strengthens? the opportunity/i);
+    expect(worseningSwitch?.direction).toContain("reassessing the opportunity evidence");
+    expect(korean.decisionSwitches[1].direction).not.toContain("기회 근거를 강화");
+    expect(korean.decisionSwitches[1].direction).toContain("기회 근거와 하방 노출을 함께 재평가");
     expect(first.nextStepExperiment.continueCondition).toContain("Increasing commitment also requires weak Safety Margin, weak reversibility, and high downside exposure to be reassessed");
-    expect(first.nextStepExperiment.pauseCondition).toContain("remain constrained");
+    expect(first.nextStepExperiment.pauseCondition).toContain("exceeds the established exposure boundary or weakens recovery capacity");
+    expect(first.nextStepExperiment.pauseCondition).toContain("Bounded validation and learning can continue within confirmed protection");
+    expect(first.nextStepExperiment.pauseCondition).toContain("if that protection is not yet established, clarify it first");
+    expect(first.nextStepExperiment.pauseCondition).not.toMatch(/pause (all )?validation/i);
+    expect(korean.nextStepExperiment.pauseCondition).toContain("해당 실험 또는 실행 노출을 중단하거나 재설계");
+    expect(korean.nextStepExperiment.pauseCondition).toContain("제한된 검증과 학습을 계속할 수 있으며");
+    expect(korean.nextStepExperiment.pauseCondition).toContain("보호 범위가 아직 확인되지 않았다면 먼저 명확히");
+    expect(first.changingPlays.map((play) => play.family)).toEqual(["resource", "timing"]);
     const props = { intelligence: first, translate: (en: string) => en, externalEvidenceUsed: true };
     const dashboard = renderToStaticMarkup(React.createElement(ProductApplicationDashboard, props));
     const report = renderToStaticMarkup(React.createElement(ProductApplicationReport, props));
+    const koreanProps = { intelligence: korean, translate: (_en: string, ko: string) => ko, externalEvidenceUsed: true };
+    const koreanDashboard = renderToStaticMarkup(React.createElement(ProductApplicationDashboard, koreanProps));
+    const koreanReport = renderToStaticMarkup(React.createElement(ProductApplicationReport, koreanProps));
     expect(dashboard).toContain("Preserve and Validate");
     expect(report).toContain("Preserve and Validate");
     expect(dashboard).toContain("Opportunity evidence for advisory practice remains present");
     expect(report).toContain("Opportunity evidence for advisory practice remains present");
+    expect(dashboard).toContain("A change in this condition calls for reassessing");
+    expect(report).toContain("A change in this condition calls for reassessing");
+    expect(koreanDashboard).toContain("기회 근거와 하방 노출을 함께 재평가");
+    expect(koreanReport).toContain("기회 근거와 하방 노출을 함께 재평가");
     expect(first.changingPlays.length).toBeLessThanOrEqual(3);
   });
 

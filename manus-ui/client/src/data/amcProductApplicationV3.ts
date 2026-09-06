@@ -389,8 +389,8 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     signal,
     direction: postureAssessment.guardrailApplied
       ? (ko
-          ? `이 신호는 ${optionB}의 기회 근거를 강화하지만, 몰입 확대에는 ${guardrailConstraintText}의 재평가와 신뢰할 수 있는 보호가 함께 필요합니다.`
-          : `This signal strengthens the opportunity case for ${optionB}; increasing commitment also requires ${guardrailConstraintText} to be reassessed and credibly protected.`)
+          ? `이 조건이 달라지면 ${optionB}의 기회 근거와 하방 노출을 함께 재평가합니다. 몰입 확대는 기회 근거가 이를 뒷받침하고 ${guardrailConstraintText}에 대한 보호가 확인될 때만 검토할 수 있습니다.`
+          : `A change in this condition calls for reassessing the opportunity evidence for ${optionB} and downside exposure together. Increased commitment is supportable only when the opportunity evidence supports it and protection around ${guardrailConstraintText} is confirmed.`)
       : postureFamily === "transition"
       ? (ko ? `${optionB} 근거가 유지되면 단계적 몰입을 계속 뒷받침하고, 약해지면 노출을 줄여 현재 기반을 다시 보호합니다.` : `If it holds, it supports continued staged commitment to ${optionB}; if it weakens, reduce exposure and restore protection around the current base.`)
       : index < 2
@@ -475,7 +475,9 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
             : `${decisionSwitches[0]?.signal || input.validationFocus} Increasing commitment also requires ${guardrailConstraintText} to be reassessed and credibly protected.`)
         : decisionSwitches[0]?.signal || input.validationFocus,
       pauseCondition: postureAssessment.guardrailApplied
-        ? (ko ? `${guardrailConstraintText}이 계속 제약되면 검증을 중단하거나 노출 경계를 재설계합니다.` : `Pause or redesign the exposure boundary while ${guardrailConstraintText} remain constrained.`)
+        ? (ko
+            ? `실험이 확인된 노출 한도를 넘거나 회복 역량을 약화시키면 해당 실험 또는 실행 노출을 중단하거나 재설계합니다. 확인된 보호 범위 안에서는 제한된 검증과 학습을 계속할 수 있으며, 보호 범위가 아직 확인되지 않았다면 먼저 명확히 합니다.`
+            : `Pause or redesign the experiment or its execution exposure if it exceeds the established exposure boundary or weakens recovery capacity. Bounded validation and learning can continue within confirmed protection; if that protection is not yet established, clarify it first.`)
         : ko ? `근거가 생기기 전에 ${financialRoom}을 약화시키는 경우 중단하거나 재설계합니다.` : `Pause or redesign if the test weakens this protected room before credible evidence appears: ${financialRoom}`,
       reassessAt: ko ? "각 검증 단계가 끝날 때, 그리고 노출을 확대하기 전에 현재 구조적 자세를 다시 봅니다." : "Reassess the Current Structural Posture at the end of each stage and before increasing exposure.",
       stages: input.plan,

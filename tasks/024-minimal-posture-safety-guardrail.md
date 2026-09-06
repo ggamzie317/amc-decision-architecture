@@ -67,3 +67,9 @@ git diff --check
 - English and Korean labels and sentences remain descriptive rather than directive.
 - No out-of-scope architecture, persistence, UX, or deployment change.
 - Verification commands were run and reported.
+
+## Final wording consistency review
+
+- Guarded Decision Switch directions treat every condition as a neutral reassessment trigger; they do not infer that a condition strengthens the opportunity case.
+- Guarded pause language applies to an experiment or execution exposure that exceeds an established boundary or weakens recovery capacity, while preserving bounded validation and learning inside confirmed protection.
+- No signal polarity inference, keyword parsing, scoring, guardrail, Changing, or persistence behavior was added or changed.
