@@ -172,18 +172,33 @@ describe("AMC Product Application Layer V3 correction", () => {
     const guardedCases = [
       {
         structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), reversibility: signal("weak"), structuralRisk: signal("high") },
+        safetyMarginInputs: {
+          financialRoom: { band: "weak", source: "current-user-structured" },
+          reversibility: { band: "weak", source: "current-user-structured" },
+          downsideExposure: { band: "high", source: "current-user-structured" },
+        },
         triggers: ["weak-safety-margin", "weak-reversibility", "high-structural-risk"],
         expectedSupport: 10,
         reason: /weak Safety Margin, weak reversibility, and high downside exposure/,
       },
       {
         structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), reversibility: signal("weak") },
+        safetyMarginInputs: {
+          financialRoom: { band: "weak", source: "current-user-structured" },
+          reversibility: { band: "weak", source: "current-user-structured" },
+          downsideExposure: { band: "low", source: "current-user-structured" },
+        },
         triggers: ["weak-safety-margin", "weak-reversibility"],
         expectedSupport: 12,
         reason: /weak Safety Margin and weak reversibility/,
       },
       {
         structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), structuralRisk: signal("high") },
+        safetyMarginInputs: {
+          financialRoom: { band: "weak", source: "current-user-structured" },
+          reversibility: { band: "strong", source: "current-user-structured" },
+          downsideExposure: { band: "high", source: "current-user-structured" },
+        },
         triggers: ["weak-safety-margin", "high-structural-risk"],
         expectedSupport: 12,
         reason: /weak Safety Margin and high downside exposure/,
@@ -191,7 +206,12 @@ describe("AMC Product Application Layer V3 correction", () => {
     ] as const;
 
     for (const guardedCase of guardedCases) {
-      const guardedInput = input({ fifwm: fifwm(2), structuralSignals: guardedCase.structuralSignals });
+      expect(deriveSafetyMarginCore(guardedCase.safetyMarginInputs)).toMatchObject({ band: "weak", knownDimensions: 3 });
+      const guardedInput = input({
+        fifwm: fifwm(2),
+        safetyMarginInputs: guardedCase.safetyMarginInputs,
+        structuralSignals: guardedCase.structuralSignals,
+      });
       const assessment = derivePostureAssessment(guardedInput);
       const result = buildProductApplicationV3(guardedInput);
       expect(assessment.candidatePosture).toBe("transition");
@@ -217,30 +237,67 @@ describe("AMC Product Application Layer V3 correction", () => {
       constraintLoad: signal("light"),
       missingPointImpact: signal("resolved"),
     };
-    const weakSafetyOnly = derivePostureAssessment(input({ fifwm: fifwm(2), structuralSignals: transitionSignals }));
+    const weakSafetyOnlyInputs: SafetyMarginInputs = {
+      financialRoom: { band: "weak", source: "current-user-structured" },
+      reversibility: { band: "developing", source: "current-user-structured" },
+      downsideExposure: { band: "moderate", source: "current-user-structured" },
+    };
+    expect(deriveSafetyMarginCore(weakSafetyOnlyInputs).band).toBe("weak");
+    const weakSafetyOnly = derivePostureAssessment(input({
+      fifwm: fifwm(2),
+      safetyMarginInputs: weakSafetyOnlyInputs,
+      structuralSignals: transitionSignals,
+    }));
     expect(weakSafetyOnly.candidatePosture).toBe("transition");
     expect(weakSafetyOnly.support).toBe(12);
     expect(weakSafetyOnly.effectivePosture).toBe("transition");
     expect(weakSafetyOnly.guardrailApplied).toBe(false);
 
-    const atEight = derivePostureAssessment(input({ structuralSignals: { ...baseSignals, externalValidation: signal("strong") } }));
-    const atOne = derivePostureAssessment(input({ structuralSignals: {
+    const atEight = derivePostureAssessment(input({ structuralSignals: {
       ...baseSignals,
-      externalValidation: signal("weak"),
-      internalReadiness: signal("weak"),
-      safetyMargin: signal("weak"),
+      externalValidation: signal("strong"),
+      reversibility: signal("strong"),
+      optionBSupport: signal("weak"),
       structuralRisk: signal("low"),
+      missingPointImpact: signal("critical"),
     } }));
+    const weakSafetyInputs: SafetyMarginInputs = {
+      financialRoom: { band: "weak", source: "current-user-structured" },
+      reversibility: { band: "weak", source: "current-user-structured" },
+      downsideExposure: { band: "high", source: "current-user-structured" },
+    };
+    const atOne = derivePostureAssessment(input({
+      safetyMarginInputs: weakSafetyInputs,
+      structuralSignals: {
+        ...baseSignals,
+        safetyMargin: signal("weak"),
+        reversibility: signal("weak"),
+        structuralRisk: signal("high"),
+        missingPointImpact: signal("critical"),
+      },
+    }));
     const allUnknown = derivePostureAssessment(input({
       fifwm: buildUnavailableFifwm("en"),
       fifwmSource: "unavailable",
+      safetyMarginInputs: {
+        financialRoom: unavailableSignal(),
+        reversibility: unavailableSignal(),
+        downsideExposure: unavailableSignal(),
+      },
       structuralSignals: webRuntimeSignals("unknown", "unknown", "unknown", "unknown"),
     }));
     expect(atEight).toMatchObject({ support: 8, candidatePosture: "transition", effectivePosture: "transition" });
     expect(atOne).toMatchObject({ support: 1, candidatePosture: "reconfigure", effectivePosture: "reconfigure" });
-    expect(derivePostureAssessment(input())).toMatchObject({ support: 6, candidatePosture: "validate", effectivePosture: "validate" });
+    expect(derivePostureAssessment(input({
+      safetyMarginInputs: {
+        financialRoom: { band: "developing", source: "current-user-structured" },
+        reversibility: { band: "developing", source: "current-user-structured" },
+        downsideExposure: { band: "moderate", source: "current-user-structured" },
+      },
+      structuralSignals: { ...baseSignals, safetyMargin: signal("developing") },
+    }))).toMatchObject({ support: 5, candidatePosture: "validate", effectivePosture: "validate" });
     expect(allUnknown).toMatchObject({ support: 5, candidatePosture: "validate", effectivePosture: "validate", guardrailApplied: false });
-    expect(buildProductApplicationV3(input({ structuralSignals: transitionSignals })).currentStructuralPosture.label).toBe("Stronger Transition Case");
+    expect(buildProductApplicationV3(input({ safetyMarginInputs: weakSafetyOnlyInputs, structuralSignals: transitionSignals })).currentStructuralPosture.label).toBe("Stronger Transition Case");
   });
 
   it("aligns English and Korean reconfigure language without prescribing employer stay", () => {
@@ -254,20 +311,31 @@ describe("AMC Product Application Layer V3 correction", () => {
       constraintLoad: signal("heavy"),
       missingPointImpact: signal("critical"),
     };
-    const en = buildProductApplicationV3(input({ fifwm: fifwm(0), structuralSignals: reconfigureSignals }));
-    const ko = buildProductApplicationV3(input({ language: "ko", fifwm: fifwm(0), structuralSignals: reconfigureSignals }));
+    const reconfigureSafetyInputs: SafetyMarginInputs = {
+      financialRoom: { band: "weak", source: "current-user-structured" },
+      reversibility: { band: "weak", source: "current-user-structured" },
+      downsideExposure: { band: "high", source: "current-user-structured" },
+    };
+    const enInput = input({ fifwm: fifwm(0), safetyMarginInputs: reconfigureSafetyInputs, structuralSignals: reconfigureSignals });
+    const koInput = input({ language: "ko", fifwm: fifwm(0), safetyMarginInputs: reconfigureSafetyInputs, structuralSignals: reconfigureSignals });
+    const en = buildProductApplicationV3(enInput);
+    const ko = buildProductApplicationV3(koInput);
     expect(en.currentStructuralPosture.label).toBe("Protect and Reconfigure");
     expect(ko.currentStructuralPosture.label).toBe("기반을 보호하며 재구성");
     expect(en.currentStructuralPosture.sentence).not.toMatch(/stay|employer|current role/i);
     expect(ko.currentStructuralPosture.sentence).not.toMatch(/직장|고용주|남아|유지해야/);
-    expect(derivePostureAssessment(input({ fifwm: fifwm(0), structuralSignals: reconfigureSignals })).effectivePosture).toBe("reconfigure");
-    expect(derivePostureAssessment(input({ fifwm: fifwm(0), structuralSignals: reconfigureSignals })).support).toBe(-6);
-    expect(derivePostureAssessment(input({ language: "ko", fifwm: fifwm(0), structuralSignals: reconfigureSignals })).effectivePosture).toBe("reconfigure");
+    expect(derivePostureAssessment(enInput)).toMatchObject({ support: -6, effectivePosture: "reconfigure" });
+    expect(derivePostureAssessment(koInput).effectivePosture).toBe("reconfigure");
   });
 
   it("uses the same guarded posture in Dashboard and Report with safety-consistent switches and experiment", () => {
     const guardedInput = input({
       fifwm: fifwm(2),
+      safetyMarginInputs: {
+        financialRoom: { band: "weak", source: "current-user-structured" },
+        reversibility: { band: "weak", source: "current-user-structured" },
+        downsideExposure: { band: "high", source: "current-user-structured" },
+      },
       structuralSignals: {
         externalValidation: signal("strong"),
         internalReadiness: signal("strong"),
