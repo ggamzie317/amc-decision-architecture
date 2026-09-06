@@ -19,6 +19,7 @@
     "test:founder-ops-esm": "node scripts/check_founder_ops_esm.mjs",
     "test:external-evidence": "vitest run --root .. manus-ui/tests/external-snapshot-route.test.ts",
     "test:product-application-v3": "vitest run --root .. manus-ui/tests/product-application-v3.test.ts",
+    "test:current-web-structural-signals": "vitest run --root .. manus-ui/tests/current-web-structural-signals.test.ts",
     "test:customer-language-firewall": "vitest run --root .. manus-ui/tests/customer-language-firewall.test.tsx",
     "test:public-bundle-privacy": "vitest run --root .. manus-ui/tests/public-bundle-privacy.test.ts",
     "check": "tsc --noEmit",
