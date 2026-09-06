@@ -98,3 +98,9 @@ git diff --check
 - Confirmed the 8/1 posture thresholds, Task 024 guardrail, Safety Margin formula, Changing derivation, and shared Dashboard/Report product object remain unchanged.
 - Passed the Task 025 runtime tests (7), Product Application V3 tests (22), customer-language firewall tests (3), Founder Ops lifecycle tests (8), public-bundle privacy tests (2), TypeScript check, production build, and `git diff --check`.
 - Python discovery ran 56 tests: 54 passed and two untouched legacy localization assertions failed because they expect English external-snapshot titles while the fixture currently returns Korean titles (`test_external_snapshot_title_academic`, `test_external_snapshot_title_industry`).
+
+### Final selector calibration
+
+- Added one short EN/KO behavioral anchor beneath every option in Q17, Q19–Q21, Q23, and Q25 without changing question IDs, option values, scoring, or derivation.
+- Localized remaining customer-facing Korean strength labels (`Strong`, `Developing`, and `Moderate`) while preserving their internal enum values.
+- Verified all 24 options begin unselected and remain readable in the local Preview at desktop and 390px widths; also verified the Korean anchors in the rendered 29-question intake.

@@ -208,7 +208,9 @@ describe("AMC current-web structural signal runtime", () => {
 
   it("keeps the 29-question contract and places selectors only inside Q17, Q19-Q21, Q23, and Q25", () => {
     const page = fs.readFileSync(path.join(root, "manus-ui/client/src/pages/AmcWebMvp.tsx"), "utf8");
+    const productViews = fs.readFileSync(path.join(root, "manus-ui/client/src/components/ProductApplicationViews.tsx"), "utf8");
     const intakeSource = page.slice(page.indexOf("const intakeGroups ="), page.indexOf("const intakeGroupTitlesKo"));
+    const optionsSource = page.slice(page.indexOf("const structuredBandOptions"), page.indexOf("function isCurrentCaseStructuredQuestionId"));
     const ids = [...intakeSource.matchAll(/\bid:\s*(\d+)/g)].map((match) => Number(match[1]));
     expect(ids).toEqual(Array.from({ length: 29 }, (_, index) => index + 1));
     expect(page).toContain("const currentCaseStructuredQuestionIds = [17, 19, 20, 21, 23, 25]");
@@ -217,6 +219,26 @@ describe("AMC current-web structural signal runtime", () => {
     expect(page).toContain('25: { en: "Overall constraint load", ko: "전반적인 제약 부담" }');
     expect(page).toContain("currentCaseStructuredSelections[structuredQuestionId] === option.value");
     expect(page).toContain("buildUnavailableFifwm(language)");
+
+    expect([...optionsSource.matchAll(/value: "([^"]+)"/g)].map((match) => match[1])).toEqual([
+      "strong", "developing", "weak", "unknown",
+      "strong", "developing", "weak", "unknown",
+      "strong", "developing", "weak", "unknown",
+      "low", "moderate", "high", "unknown",
+      "strong", "developing", "weak", "unknown",
+      "light", "material", "heavy", "unknown",
+    ]);
+    expect(optionsSource.match(/descriptionEn: "/g)).toHaveLength(24);
+    expect(optionsSource.match(/descriptionKo: "/g)).toHaveLength(24);
+    expect(optionsSource).toContain("Most required capability and proof are already in place.");
+    expect(optionsSource).toContain("실험이 실패해도 단기 안정성이 크게 흔들리지 않음.");
+    expect(optionsSource).toContain("A credible return or re-entry path is available.");
+    expect(optionsSource).toContain("하방 위험이 회복·재시도 여력을 크게 줄일 수 있음.");
+    expect(optionsSource).toContain("Concrete and reliable support is available.");
+    expect(optionsSource).toContain("전반적인 제약 부담이 아직 명확하지 않음.");
+    expect(optionsSource).not.toMatch(/ko: "(?:Strong|Developing|Moderate)"/);
+    expect(productViews).not.toContain('translate("Strong", "Strong")');
+    expect(productViews).not.toContain('translate("Developing", "Developing")');
   });
 
   it("persists structured posture basis separately from raw answers without a schema change", async () => {

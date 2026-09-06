@@ -8,8 +8,8 @@ type ProductViewProps = {
 };
 
 function strengthLabel(band: StructuralStrength, translate: Translate) {
-  if (band === "strong") return translate("Strong", "Strong");
-  if (band === "developing") return translate("Developing", "Developing");
+  if (band === "strong") return translate("Strong", "강함");
+  if (band === "developing") return translate("Developing", "형성 중");
   if (band === "weak") return translate("Constrained", "제약됨");
   return translate("Not Yet Established", "아직 확인되지 않음");
 }

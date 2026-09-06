@@ -58,42 +58,48 @@ const structuredAssessmentLabels: Record<CurrentCaseStructuredQuestionId, { en: 
   23: { en: "Support available for Option B", ko: "Option B에 사용할 수 있는 지원" },
   25: { en: "Overall constraint load", ko: "전반적인 제약 부담" },
 };
-const structuredBandOptions: Record<CurrentCaseStructuredQuestionId, Array<{ value: string; en: string; ko: string }>> = {
+const structuredBandOptions: Record<CurrentCaseStructuredQuestionId, Array<{
+  value: string;
+  en: string;
+  ko: string;
+  descriptionEn: string;
+  descriptionKo: string;
+}>> = {
   17: [
-    { value: "strong", en: "Strong", ko: "충분함" },
-    { value: "developing", en: "Developing", ko: "형성 중" },
-    { value: "weak", en: "Constrained", ko: "제약됨" },
-    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+    { value: "strong", en: "Strong", ko: "충분함", descriptionEn: "Most required capability and proof are already in place.", descriptionKo: "필요한 역량과 근거가 대부분 준비되어 있음." },
+    { value: "developing", en: "Developing", ko: "형성 중", descriptionEn: "Some are in place, but meaningful gaps remain.", descriptionKo: "일부 준비되어 있지만 중요한 공백이 남아 있음." },
+    { value: "weak", en: "Constrained", ko: "제약됨", descriptionEn: "Major capability or proof gaps still limit execution.", descriptionKo: "큰 역량 또는 근거 공백이 실행을 제약함." },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음", descriptionEn: "There is not enough evidence to judge yet.", descriptionKo: "아직 판단할 근거가 충분하지 않음." },
   ],
   19: [
-    { value: "strong", en: "Strong", ko: "Strong" },
-    { value: "developing", en: "Developing", ko: "Developing" },
-    { value: "weak", en: "Constrained", ko: "제약됨" },
-    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+    { value: "strong", en: "Strong", ko: "충분함", descriptionEn: "A failed test would not materially disrupt near-term stability.", descriptionKo: "실험이 실패해도 단기 안정성이 크게 흔들리지 않음." },
+    { value: "developing", en: "Developing", ko: "형성 중", descriptionEn: "Some room exists, but a failed test would create pressure.", descriptionKo: "어느 정도 여유는 있으나 실패 시 부담이 생김." },
+    { value: "weak", en: "Constrained", ko: "제약됨", descriptionEn: "A failed test could materially reduce financial room.", descriptionKo: "실패 시 재정·소득 여유가 크게 줄어들 수 있음." },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음", descriptionEn: "The available financial room is not yet clear.", descriptionKo: "현재 확보 가능한 재정·소득 여유가 아직 불명확함." },
   ],
   20: [
-    { value: "strong", en: "Strong", ko: "Strong" },
-    { value: "developing", en: "Developing", ko: "Developing" },
-    { value: "weak", en: "Constrained", ko: "제약됨" },
-    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+    { value: "strong", en: "Strong", ko: "강함", descriptionEn: "A credible return or re-entry path is available.", descriptionKo: "신뢰할 수 있는 복귀·재진입 경로가 있음." },
+    { value: "developing", en: "Developing", ko: "형성 중", descriptionEn: "A recovery path exists, but important uncertainty remains.", descriptionKo: "회복 경로는 있으나 중요한 불확실성이 남아 있음." },
+    { value: "weak", en: "Constrained", ko: "제약됨", descriptionEn: "Returning or recovering would be difficult.", descriptionKo: "복귀하거나 회복하기가 어려움." },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음", descriptionEn: "The recovery path is not yet clear.", descriptionKo: "회복 경로가 아직 명확하지 않음." },
   ],
   21: [
-    { value: "low", en: "Contained", ko: "통제됨" },
-    { value: "moderate", en: "Moderate", ko: "Moderate" },
-    { value: "high", en: "Elevated", ko: "높음" },
-    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+    { value: "low", en: "Contained", ko: "통제됨", descriptionEn: "The downside appears bounded and recoverable.", descriptionKo: "하방 위험이 제한적이고 회복 가능한 수준임." },
+    { value: "moderate", en: "Moderate", ko: "보통", descriptionEn: "Meaningful downside exists, but appears manageable.", descriptionKo: "의미 있는 하방 위험이 있지만 관리 가능한 수준임." },
+    { value: "high", en: "Elevated", ko: "높음", descriptionEn: "The downside could materially reduce recovery or retry capacity.", descriptionKo: "하방 위험이 회복·재시도 여력을 크게 줄일 수 있음." },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음", descriptionEn: "The downside exposure is not yet clear.", descriptionKo: "하방 노출 수준이 아직 명확하지 않음." },
   ],
   23: [
-    { value: "strong", en: "Strong", ko: "강함" },
-    { value: "developing", en: "Developing", ko: "형성 중" },
-    { value: "weak", en: "Constrained", ko: "제약됨" },
-    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+    { value: "strong", en: "Strong", ko: "강함", descriptionEn: "Concrete and reliable support is available.", descriptionKo: "구체적이고 신뢰할 수 있는 지원이 있음." },
+    { value: "developing", en: "Developing", ko: "형성 중", descriptionEn: "Some support exists, but it is not fully reliable yet.", descriptionKo: "일부 지원이 있으나 아직 충분히 확실하지 않음." },
+    { value: "weak", en: "Constrained", ko: "제약됨", descriptionEn: "Available support is limited or unreliable.", descriptionKo: "사용할 수 있는 지원이 제한적이거나 불확실함." },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음", descriptionEn: "The available support is not yet clear.", descriptionKo: "사용할 수 있는 지원 수준이 아직 불명확함." },
   ],
   25: [
-    { value: "light", en: "Light", ko: "낮음" },
-    { value: "material", en: "Material", ko: "유의미함" },
-    { value: "heavy", en: "Heavy", ko: "높음" },
-    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+    { value: "light", en: "Light", ko: "낮음", descriptionEn: "Few constraints materially limit execution.", descriptionKo: "실행을 크게 제한하는 제약이 적음." },
+    { value: "material", en: "Material", ko: "유의미함", descriptionEn: "Meaningful constraints require active management.", descriptionKo: "중요한 제약이 있어 적극적인 관리가 필요함." },
+    { value: "heavy", en: "Heavy", ko: "높음", descriptionEn: "Constraints could seriously limit or block execution.", descriptionKo: "제약이 실행을 크게 제한하거나 막을 수 있음." },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음", descriptionEn: "The overall constraint load is not yet clear.", descriptionKo: "전반적인 제약 부담이 아직 명확하지 않음." },
   ],
 };
 
@@ -2578,8 +2584,8 @@ function evidenceTypeLabel(type: ExternalEvidenceType, isKo: boolean) {
 }
 
 function customerSafetyStrength(band: StructuralStrength, translate: (en: string, ko: string) => string) {
-  if (band === "strong") return "Strong";
-  if (band === "developing") return "Developing";
+  if (band === "strong") return translate("Strong", "강함");
+  if (band === "developing") return translate("Developing", "형성 중");
   if (band === "weak") return translate("Constrained", "제약됨");
   return translate("Not Yet Established", "아직 확인되지 않음");
 }
@@ -4171,9 +4177,14 @@ export default function AmcWebMvp() {
                                             type="button"
                                             aria-pressed={selected}
                                             onClick={() => updateCurrentCaseStructuredSelection(structuredQuestionId, option.value)}
-                                            className={`min-h-10 rounded-md border px-2 py-2 text-xs font-medium ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"}`}
+                                            className={`flex min-h-24 flex-col items-start justify-start gap-1.5 rounded-md border px-3 py-2.5 text-left ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"}`}
                                           >
-                                            {isKo ? option.ko : option.en}
+                                            <span className="text-xs font-semibold leading-snug">
+                                              {isKo ? option.ko : option.en}
+                                            </span>
+                                            <span className={`text-[11px] font-normal leading-snug ${selected ? "text-background/80" : "text-muted-foreground"}`}>
+                                              {isKo ? option.descriptionKo : option.descriptionEn}
+                                            </span>
                                           </button>
                                         );
                                       })}
