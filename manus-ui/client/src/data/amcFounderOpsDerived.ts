@@ -67,6 +67,7 @@ export function founderOpsDerivedFingerprint(
     externalEvidenceConfidence: patch.externalEvidenceConfidence,
     externalEvidenceGeneratedAt: patch.externalEvidenceJson.generatedAtLabel,
     currentStructuralPosture: patch.structuralOutputJson.currentStructuralPosture,
+    postureBasis: patch.structuralOutputJson.postureBasis,
     changingPlays: patch.structuralOutputJson.changingPlays,
     safetyMarginBand: patch.safetyMarginStructuredData.band,
     decisionSwitches: patch.structuralOutputJson.decisionSwitches,

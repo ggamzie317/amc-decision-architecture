@@ -95,15 +95,15 @@ const input = (overrides: Partial<ProductApplicationBuildInput> = {}): ProductAp
 });
 
 describe("AMC Product Application Layer V3 correction", () => {
-  it("keeps exactly 29 questions and adds structured bands inside the existing Q19-Q21 cards", () => {
+  it("keeps exactly 29 questions and structured bands inside the existing evidence cards", () => {
     const root = path.basename(process.cwd()) === "manus-ui" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
     const page = fs.readFileSync(path.join(root, "manus-ui/client/src/pages/AmcWebMvp.tsx"), "utf8");
     const intakeSource = page.slice(page.indexOf("const intakeGroups ="), page.indexOf("const intakeGroupTitlesKo"));
     const ids = [...intakeSource.matchAll(/\bid:\s*(\d+)/g)].map((match) => Number(match[1]));
     expect(ids).toHaveLength(29);
     expect(ids).toEqual(Array.from({ length: 29 }, (_, index) => index + 1));
-    expect(page).toContain("const safetyMarginQuestionIds = [19, 20, 21]");
-    expect(page).toContain("safetyMarginBandOptions[structuredQuestionId]");
+    expect(page).toContain("const currentCaseStructuredQuestionIds = [17, 19, 20, 21, 23, 25]");
+    expect(page).toContain("structuredBandOptions[structuredQuestionId]");
     expect(page).toContain('{ value: "weak", en: "Constrained"');
     expect(page).toContain('{ value: "low", en: "Contained"');
     expect(page).toContain('{ value: "high", en: "Elevated"');
@@ -613,6 +613,10 @@ describe("AMC Product Application Layer V3 correction", () => {
       path.join(root, "manus-ui/client/src/data/amcFounderOpsDerived.ts"),
       "utf8",
     );
+    const currentCaseSignals = fs.readFileSync(
+      path.join(root, "manus-ui/client/src/data/amcCurrentCaseStructuralSignals.ts"),
+      "utf8",
+    );
     expect(page.match(/<ProductApplicationDashboard intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
     expect(page.match(/<ProductApplicationReport intelligence=\{productApplicationV3\}/g)).toHaveLength(1);
     expect(page).not.toContain("ProductApplicationSections");
@@ -627,7 +631,9 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(page).not.toContain("launchInterpretation.alternativePath");
     expect(page).not.toContain("changingMoves:");
     expect(page).toContain("buildUnavailableFifwm(language)");
-    expect(page).toContain("externalValidationSignal(displayedExternalSnapshot)");
+    expect(page).toContain("buildCurrentCaseStructuralSignals({");
+    expect(page).toContain("externalSnapshot: displayedExternalSnapshot");
+    expect(currentCaseSignals).toContain('if (snapshot.status !== "live") return unavailableSignal');
     expect(page).toContain('externalSnapshot ?? (isQaMode ? mockExternalSnapshot : neutralExternalSnapshot)');
     expect(page).toContain('setExternalSnapshot(isQaMode ? mockExternalSnapshot : null)');
     for (const fixedBand of [
@@ -641,7 +647,7 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(founderOpsDerived).toContain("changingPlays: productApplication.changingPlays");
     expect(page).toContain("answersJson:");
     expect(founderOpsDerived).toContain("safetyMarginInputs: productApplication.safetyMargin.inputs");
-    expect(page).toContain('source: "current-user-structured"');
+    expect(currentCaseSignals).toContain('source: "current-user-structured"');
     expect(AMC_PRODUCT_VERSION).toBe("AMC-LAUNCH-V3");
     expect(AMC_FRAMEWORK_VERSION).toBe("FIFWM-SM-V2");
   });

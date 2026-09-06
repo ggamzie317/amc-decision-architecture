@@ -3,15 +3,15 @@ import { ProductApplicationDashboard, ProductApplicationReport } from "../compon
 import { trackAmcJourney } from "../data/amcFounderOps";
 import { buildFounderOpsDerivedPatch, founderOpsDerivedFingerprint } from "../data/amcFounderOpsDerived";
 import {
+  buildCurrentCaseStructuralSignals,
+  initialCurrentCaseStructuredSelections,
+  type CurrentCaseStructuredQuestionId,
+  type CurrentCaseStructuredSelections,
+} from "../data/amcCurrentCaseStructuralSignals";
+import {
   buildUnavailableFifwm,
   buildProductApplicationV3,
-  deriveSafetyMarginCore,
-  type SafetyMarginInputs,
-  type StructuralLoad,
-  type StructuralRisk,
-  type StructuralSignal,
   type StructuralStrength,
-  type MissingPointImpact,
 } from "../data/amcProductApplicationV3";
 import {
   customerSafeExternalSnapshot,
@@ -49,16 +49,22 @@ type PreviewAnswers = {
   condition: string;
 };
 
-type SafetyMarginQuestionId = 19 | 20 | 21;
-type SafetyMarginSelections = {
-  19: StructuralStrength | null;
-  20: StructuralStrength | null;
-  21: StructuralRisk | null;
+const currentCaseStructuredQuestionIds = [17, 19, 20, 21, 23, 25] as const;
+const structuredAssessmentLabels: Record<CurrentCaseStructuredQuestionId, { en: string; ko: string }> = {
+  17: { en: "Internal readiness for Option B", ko: "Option B 실행 준비도" },
+  19: { en: "Choose the description that fits now", ko: "현재 상황에 맞는 설명을 선택하세요" },
+  20: { en: "Choose the description that fits now", ko: "현재 상황에 맞는 설명을 선택하세요" },
+  21: { en: "Choose the description that fits now", ko: "현재 상황에 맞는 설명을 선택하세요" },
+  23: { en: "Support available for Option B", ko: "Option B에 사용할 수 있는 지원" },
+  25: { en: "Overall constraint load", ko: "전반적인 제약 부담" },
 };
-
-const safetyMarginQuestionIds = [19, 20, 21] as const;
-const initialSafetyMarginSelections: SafetyMarginSelections = { 19: null, 20: null, 21: null };
-const safetyMarginBandOptions: Record<SafetyMarginQuestionId, Array<{ value: string; en: string; ko: string }>> = {
+const structuredBandOptions: Record<CurrentCaseStructuredQuestionId, Array<{ value: string; en: string; ko: string }>> = {
+  17: [
+    { value: "strong", en: "Strong", ko: "충분함" },
+    { value: "developing", en: "Developing", ko: "형성 중" },
+    { value: "weak", en: "Constrained", ko: "제약됨" },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+  ],
   19: [
     { value: "strong", en: "Strong", ko: "Strong" },
     { value: "developing", en: "Developing", ko: "Developing" },
@@ -77,10 +83,22 @@ const safetyMarginBandOptions: Record<SafetyMarginQuestionId, Array<{ value: str
     { value: "high", en: "Elevated", ko: "높음" },
     { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
   ],
+  23: [
+    { value: "strong", en: "Strong", ko: "강함" },
+    { value: "developing", en: "Developing", ko: "형성 중" },
+    { value: "weak", en: "Constrained", ko: "제약됨" },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+  ],
+  25: [
+    { value: "light", en: "Light", ko: "낮음" },
+    { value: "material", en: "Material", ko: "유의미함" },
+    { value: "heavy", en: "Heavy", ko: "높음" },
+    { value: "unknown", en: "Not Yet Established", ko: "아직 확인되지 않음" },
+  ],
 };
 
-function isSafetyMarginQuestionId(questionId: number): questionId is SafetyMarginQuestionId {
-  return safetyMarginQuestionIds.includes(questionId as SafetyMarginQuestionId);
+function isCurrentCaseStructuredQuestionId(questionId: number): questionId is CurrentCaseStructuredQuestionId {
+  return currentCaseStructuredQuestionIds.includes(questionId as CurrentCaseStructuredQuestionId);
 }
 
 const initialPreviewAnswers: PreviewAnswers = {
@@ -2505,22 +2523,6 @@ function externalSnapshotStatusLabel(snapshot: ExternalSnapshot) {
   return "QA preview";
 }
 
-function unavailableStructuralSignal<TBand extends string>(): StructuralSignal<TBand> {
-  return { band: "unknown" as TBand, source: "unavailable" };
-}
-
-function externalValidationSignal(snapshot: ExternalSnapshot): StructuralSignal<StructuralStrength> {
-  if (snapshot.status !== "live") return unavailableStructuralSignal<StructuralStrength>();
-  const supportive = snapshot.externalSignals.filter((signal) => signal.direction === "supportive").length;
-  const caution = snapshot.externalSignals.filter((signal) => signal.direction === "caution").length;
-  const band = snapshot.confidence === "high" && supportive > caution
-    ? "strong"
-    : snapshot.confidence === "low" && caution > supportive
-      ? "weak"
-      : "developing";
-  return { band, source: "live-external-evidence" };
-}
-
 function externalSnapshotStatusCopy(status: ExternalSnapshot["status"], isKo: boolean) {
   if (status === "live") {
     return isKo
@@ -2622,7 +2624,7 @@ export default function AmcWebMvp() {
   const [showPdfReportView, setShowPdfReportView] = useState(false);
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
   const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
-  const [safetyMarginSelections, setSafetyMarginSelections] = useState<SafetyMarginSelections>(initialSafetyMarginSelections);
+  const [currentCaseStructuredSelections, setCurrentCaseStructuredSelections] = useState<CurrentCaseStructuredSelections>(initialCurrentCaseStructuredSelections);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
   const [externalSnapshot, setExternalSnapshot] = useState<ExternalSnapshot | null>(null);
   const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
@@ -2654,9 +2656,8 @@ export default function AmcWebMvp() {
   const answeredQuestionCount = useMemo(() => intakeGroups.reduce((count, group) => count + group.questions.filter((question) => {
     const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
     if (!hasExplanation) return false;
-    const structuredQuestionId = question.id;
-    return !isSafetyMarginQuestionId(structuredQuestionId) || safetyMarginSelections[structuredQuestionId] !== null;
-  }).length, 0), [fullIntakeAnswers, safetyMarginSelections]);
+    return !isCurrentCaseStructuredQuestionId(question.id) || currentCaseStructuredSelections[question.id] !== null;
+  }).length, 0), [currentCaseStructuredSelections, fullIntakeAnswers]);
   const progress = Math.round((answeredQuestionCount / totalFullIntakeQuestions) * 100);
   const fullIntakeComplete = answeredQuestionCount === totalFullIntakeQuestions;
   const expandedGroupSet = useMemo(() => new Set(expandedGroups), [expandedGroups]);
@@ -2685,12 +2686,16 @@ export default function AmcWebMvp() {
     () => buildUnavailableFifwm(language),
     [language],
   );
-  const safetyMarginInputs = useMemo<SafetyMarginInputs>(() => ({
-    financialRoom: { band: safetyMarginSelections[19] ?? "unknown", source: "current-user-structured" },
-    reversibility: { band: safetyMarginSelections[20] ?? "unknown", source: "current-user-structured" },
-    downsideExposure: { band: safetyMarginSelections[21] ?? "unknown", source: "current-user-structured" },
-  }), [safetyMarginSelections]);
-  const safetyMarginCore = useMemo(() => deriveSafetyMarginCore(safetyMarginInputs), [safetyMarginInputs]);
+  const currentCaseRuntimeStructure = useMemo(
+    () => buildCurrentCaseStructuralSignals({
+      externalSnapshot: displayedExternalSnapshot,
+      selections: currentCaseStructuredSelections,
+    }),
+    [currentCaseStructuredSelections, displayedExternalSnapshot],
+  );
+  const safetyMarginInputs = currentCaseRuntimeStructure.safetyMarginInputs;
+  const currentCaseStructuralSignals = currentCaseRuntimeStructure.structuralSignals;
+  const safetyMarginCore = currentCaseStructuralSignals.safetyMargin;
   const internalSignals = useMemo(() => baseInternalSignals.map((signal) => {
     if (signal.label === "Safety Margin") return {
         ...signal,
@@ -2706,19 +2711,6 @@ export default function AmcWebMvp() {
     };
     return { ...signal, status: localizedStatus[signal.label] || signal.status };
   }), [isKo, safetyMarginCore]);
-  const currentCaseStructuralSignals = useMemo(
-    () => ({
-      externalValidation: externalValidationSignal(displayedExternalSnapshot),
-      internalReadiness: unavailableStructuralSignal<StructuralStrength>(),
-      safetyMargin: { band: safetyMarginCore.band, source: safetyMarginCore.source },
-      reversibility: safetyMarginInputs.reversibility,
-      optionBSupport: unavailableStructuralSignal<StructuralStrength>(),
-      structuralRisk: safetyMarginInputs.downsideExposure,
-      constraintLoad: unavailableStructuralSignal<StructuralLoad>(),
-      missingPointImpact: unavailableStructuralSignal<MissingPointImpact>(),
-    }),
-    [displayedExternalSnapshot, safetyMarginCore, safetyMarginInputs],
-  );
   const productApplicationV3 = useMemo(
     () =>
       buildProductApplicationV3({
@@ -2873,8 +2865,11 @@ export default function AmcWebMvp() {
     setFullIntakeAnswers((current) => ({ ...current, [questionId]: value }));
   };
 
-  const updateSafetyMarginSelection = (questionId: SafetyMarginQuestionId, value: string) => {
-    setSafetyMarginSelections((current) => ({ ...current, [questionId]: value } as SafetyMarginSelections));
+  const updateCurrentCaseStructuredSelection = (questionId: CurrentCaseStructuredQuestionId, value: string) => {
+    setCurrentCaseStructuredSelections((current) => ({
+      ...current,
+      [questionId]: value,
+    } as CurrentCaseStructuredSelections));
   };
 
   const toggleGroup = (title: string) => {
@@ -2893,7 +2888,14 @@ export default function AmcWebMvp() {
       ),
     ) as Record<number, string>;
     setFullIntakeAnswers(sampleAnswers);
-    setSafetyMarginSelections({ 19: "strong", 20: "strong", 21: "high" });
+    setCurrentCaseStructuredSelections({
+      17: "developing",
+      19: "strong",
+      20: "strong",
+      21: "high",
+      23: "developing",
+      25: "material",
+    });
     setExpandedGroups(intakeGroups.map((group) => group.title));
   };
 
@@ -4105,7 +4107,7 @@ export default function AmcWebMvp() {
                 const expanded = expandedGroupSet.has(group.title);
                 const answeredInGroup = group.questions.filter((question) => {
                   const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
-                  return hasExplanation && (!isSafetyMarginQuestionId(question.id) || safetyMarginSelections[question.id] !== null);
+                  return hasExplanation && (!isCurrentCaseStructuredQuestionId(question.id) || currentCaseStructuredSelections[question.id] !== null);
                 }).length;
                 const complete = answeredInGroup === group.questions.length;
 
@@ -4143,7 +4145,7 @@ export default function AmcWebMvp() {
                             const guidance = isKo
                               ? fullIntakeGuidance[question.id].ko
                               : fullIntakeGuidance[question.id].en;
-                            const structuredQuestionId = isSafetyMarginQuestionId(question.id) ? question.id : null;
+                            const structuredQuestionId = isCurrentCaseStructuredQuestionId(question.id) ? question.id : null;
 
                             return (
                               <div key={question.id} className="rounded-md border border-border bg-background p-4">
@@ -4156,17 +4158,19 @@ export default function AmcWebMvp() {
                                 {structuredQuestionId !== null ? (
                                   <fieldset className="mt-3">
                                     <legend className="text-xs font-medium text-foreground">
-                                      {t("Choose the description that fits now", "현재 상황에 맞는 설명을 선택하세요")}
+                                      {isKo
+                                        ? structuredAssessmentLabels[structuredQuestionId].ko
+                                        : structuredAssessmentLabels[structuredQuestionId].en}
                                     </legend>
                                     <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                      {safetyMarginBandOptions[structuredQuestionId].map((option) => {
-                                        const selected = safetyMarginSelections[structuredQuestionId] === option.value;
+                                      {structuredBandOptions[structuredQuestionId].map((option) => {
+                                        const selected = currentCaseStructuredSelections[structuredQuestionId] === option.value;
                                         return (
                                           <button
                                             key={option.value}
                                             type="button"
                                             aria-pressed={selected}
-                                            onClick={() => updateSafetyMarginSelection(structuredQuestionId, option.value)}
+                                            onClick={() => updateCurrentCaseStructuredSelection(structuredQuestionId, option.value)}
                                             className={`min-h-10 rounded-md border px-2 py-2 text-xs font-medium ${selected ? "border-foreground bg-foreground text-background" : "border-border bg-card text-foreground"}`}
                                           >
                                             {isKo ? option.ko : option.en}
