@@ -21,6 +21,14 @@ export type SafetyMarginInputs = {
   downsideExposure: StructuralSignal<StructuralRisk>;
 };
 export type SafetyMarginCore = StructuralSignal<StructuralStrength> & { knownDimensions: number };
+export type PostureFamily = "transition" | "validate" | "reconfigure";
+export type PostureAssessment = {
+  support: number;
+  candidatePosture: PostureFamily;
+  effectivePosture: PostureFamily;
+  guardrailApplied: boolean;
+  guardrailTriggers: Array<"weak-safety-margin" | "weak-reversibility" | "high-structural-risk">;
+};
 export type FifwmFactor = { score: 0 | 1 | 2 | null; reading: string };
 export type FifwmStructure = {
   formal: FifwmFactor;
@@ -203,7 +211,7 @@ function deriveEvidenceCoverage(input: ProductApplicationBuildInput): ProductApp
   return "limited";
 }
 
-function derivePostureFamily(input: ProductApplicationBuildInput) {
+export function derivePostureAssessment(input: ProductApplicationBuildInput): PostureAssessment {
   const scores = Object.values(input.fifwm).map((factor) => factor.score).filter((score): score is 0 | 1 | 2 => score !== null);
   const fifwmSupport = scores.length ? scores.reduce<number>((total, score) => total + score, 0) / scores.length : 1;
   const signals = input.structuralSignals;
@@ -216,9 +224,24 @@ function derivePostureFamily(input: ProductApplicationBuildInput) {
     - riskPenalty[signals.structuralRisk.band]
     - loadPenalty[signals.constraintLoad.band]
     - missingPenalty[signals.missingPointImpact.band];
-  if (support >= 8) return "transition" as const;
-  if (support <= 1) return "reconfigure" as const;
-  return "validate" as const;
+  const candidatePosture: PostureFamily = support >= 8 ? "transition" : support <= 1 ? "reconfigure" : "validate";
+  const guardrailApplied = candidatePosture === "transition"
+    && signals.safetyMargin.band === "weak"
+    && (signals.reversibility.band === "weak" || signals.structuralRisk.band === "high");
+  const guardrailTriggers: PostureAssessment["guardrailTriggers"] = guardrailApplied
+    ? [
+        "weak-safety-margin",
+        ...(signals.reversibility.band === "weak" ? ["weak-reversibility" as const] : []),
+        ...(signals.structuralRisk.band === "high" ? ["high-structural-risk" as const] : []),
+      ]
+    : [];
+  return {
+    support,
+    candidatePosture,
+    effectivePosture: guardrailApplied ? "validate" : candidatePosture,
+    guardrailApplied,
+    guardrailTriggers,
+  };
 }
 
 type CasePresentation = {
@@ -330,7 +353,21 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
 
   // Structure is assembled first. Posture reads only canonical FIFWM and explicit
   // structural bands; wording never changes the result.
-  const postureFamily = derivePostureFamily(input);
+  const postureAssessment = derivePostureAssessment(input);
+  const postureFamily = postureAssessment.effectivePosture;
+  const guardrailConstraints = [
+    ko ? "약한 Safety Margin" : "weak Safety Margin",
+    ...(input.structuralSignals.reversibility.band === "weak" ? [ko ? "약한 가역성" : "weak reversibility"] : []),
+    ...(input.structuralSignals.structuralRisk.band === "high" ? [ko ? "높은 하방 노출" : "high downside exposure"] : []),
+  ];
+  const guardrailConstraintText = guardrailConstraints.length > 2
+    ? `${guardrailConstraints.slice(0, -1).join(", ")}${ko ? " 및 " : ", and "}${guardrailConstraints.at(-1)}`
+    : guardrailConstraints.join(ko ? "과 " : " and ");
+  const guardrailExplanation = postureAssessment.guardrailApplied
+    ? (ko
+        ? `${optionB}에 대한 기회 근거는 존재하지만, ${guardrailConstraintText}이 실행 노출의 규모를 제한합니다. 현재 자세는 몰입을 확대하기 전에 배우고 회복하며 검증할 여력을 보호합니다.`
+        : `Opportunity evidence for ${optionB} remains present, but ${guardrailConstraintText} constrain the scale of execution exposure. The current posture protects room to learn, recover, and validate before scaling commitment.`)
+    : "";
   const currentStructuralPosture = postureFamily === "transition"
     ? {
         label: ko ? "더 강해진 전환 근거" : "Stronger Transition Case",
@@ -338,17 +375,23 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
       }
     : postureFamily === "reconfigure"
       ? {
-          label: ko ? "유지하며 재구성" : "Stay and Reconfigure",
-          sentence: ko ? `현재 구조는 ${optionA}를 유지하되, ${optionB}의 핵심 가능성을 내부 역할과 제한된 실험으로 재구성하는 자세를 더 강하게 뒷받침합니다.` : `The current structure better supports Option A — ${optionA} — while reconfiguring it to test the most valuable elements of ${optionB}.`,
+          label: ko ? "기반을 보호하며 재구성" : "Protect and Reconfigure",
+          sentence: ko ? `현재 구조는 회복 역량과 유효한 선택지를 보호하면서, 제한된 변화로 ${optionB}의 핵심 가능성을 검증할 수 있도록 경로를 재구성하는 자세를 뒷받침합니다.` : `The current structure supports protecting recovery capacity and viable options while reconfiguring the path to test the most valuable elements of ${optionB} through bounded changes.`,
         }
       : {
           label: ko ? "보존하며 검증" : "Preserve and Validate",
-          sentence: ko ? `현재 구조는 ${optionA}의 기반을 보존하면서 ${optionB}의 외부 근거를 검증하는 방향을 더 강하게 뒷받침합니다.` : `The current structure better supports Option A — ${optionA} — while validating the external case for ${optionB}.`,
+          sentence: postureAssessment.guardrailApplied
+            ? guardrailExplanation
+            : ko ? `현재 구조는 ${optionA}의 기반을 보존하면서 ${optionB}의 외부 근거를 검증하는 방향을 더 강하게 뒷받침합니다.` : `The current structure better supports Option A — ${optionA} — while validating the external case for ${optionB}.`,
         };
 
   const decisionSwitches = input.decisionConditions.slice(0, 3).map((signal, index) => ({
     signal,
-    direction: postureFamily === "transition"
+    direction: postureAssessment.guardrailApplied
+      ? (ko
+          ? `이 조건이 달라지면 ${optionB}의 기회 근거와 하방 노출을 함께 재평가합니다. 몰입 확대는 기회 근거가 이를 뒷받침하고 ${guardrailConstraintText}에 대한 보호가 확인될 때만 검토할 수 있습니다.`
+          : `A change in this condition calls for reassessing the opportunity evidence for ${optionB} and downside exposure together. Increased commitment is supportable only when the opportunity evidence supports it and protection around ${guardrailConstraintText} is confirmed.`)
+      : postureFamily === "transition"
       ? (ko ? `${optionB} 근거가 유지되면 단계적 몰입을 계속 뒷받침하고, 약해지면 노출을 줄여 현재 기반을 다시 보호합니다.` : `If it holds, it supports continued staged commitment to ${optionB}; if it weakens, reduce exposure and restore protection around the current base.`)
       : index < 2
         ? (ko ? `확인되면 ${optionB}에 대한 단계적 몰입이 더 설명 가능해집니다.` : `If observed, a staged increase in commitment to ${optionB} becomes more defensible.`)
@@ -397,7 +440,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     postureEvidenceCoverage: deriveEvidenceCoverage(input),
     postureBasis: input.structuralSignals,
     why: {
-      topDrivers: [optionAProtection, input.externalImplication, internalReadiness].filter(Boolean).slice(0, 3),
+      topDrivers: [guardrailExplanation || optionAProtection, input.externalImplication, internalReadiness].filter(Boolean).slice(0, 3),
       biggestRisk: `${input.primaryRisk}: ${input.primaryRiskMeaning}`,
       strongestCounterargument: ko
         ? (postureFamily === "transition" ? `이 자세에 대한 가장 강한 반론은 ${optionAProtection}` : `이 자세에 대한 가장 강한 반론은 ${optionBUpside}`)
@@ -426,8 +469,16 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
       buildOrLearn: internalReadiness,
       evidenceToCollect: missingValidation,
       exposureBoundary: downside,
-      continueCondition: decisionSwitches[0]?.signal || input.validationFocus,
-      pauseCondition: ko ? `근거가 생기기 전에 ${financialRoom}을 약화시키는 경우 중단하거나 재설계합니다.` : `Pause or redesign if the test weakens this protected room before credible evidence appears: ${financialRoom}`,
+      continueCondition: postureAssessment.guardrailApplied
+        ? (ko
+            ? `${decisionSwitches[0]?.signal || input.validationFocus} 몰입 확대에는 ${guardrailConstraintText}의 재평가와 신뢰할 수 있는 보호도 필요합니다.`
+            : `${decisionSwitches[0]?.signal || input.validationFocus} Increasing commitment also requires ${guardrailConstraintText} to be reassessed and credibly protected.`)
+        : decisionSwitches[0]?.signal || input.validationFocus,
+      pauseCondition: postureAssessment.guardrailApplied
+        ? (ko
+            ? `실험이 확인된 노출 한도를 넘거나 회복 역량을 약화시키면 해당 실험 또는 실행 노출을 중단하거나 재설계합니다. 확인된 보호 범위 안에서는 제한된 검증과 학습을 계속할 수 있으며, 보호 범위가 아직 확인되지 않았다면 먼저 명확히 합니다.`
+            : `Pause or redesign the experiment or its execution exposure if it exceeds the established exposure boundary or weakens recovery capacity. Bounded validation and learning can continue within confirmed protection; if that protection is not yet established, clarify it first.`)
+        : ko ? `근거가 생기기 전에 ${financialRoom}을 약화시키는 경우 중단하거나 재설계합니다.` : `Pause or redesign if the test weakens this protected room before credible evidence appears: ${financialRoom}`,
       reassessAt: ko ? "각 검증 단계가 끝날 때, 그리고 노출을 확대하기 전에 현재 구조적 자세를 다시 봅니다." : "Reassess the Current Structural Posture at the end of each stage and before increasing exposure.",
       stages: input.plan,
     },
