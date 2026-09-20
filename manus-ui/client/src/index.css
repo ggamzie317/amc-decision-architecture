@@ -139,6 +139,14 @@
 }
 
 @layer components {
+  .amc-start-cta {
+    @apply inline-flex min-h-14 w-full items-center justify-center gap-4 rounded-lg border border-transparent bg-[#2448a0] px-6 py-4 text-base font-semibold text-white shadow-md transition-colors hover:bg-[#19377f] active:bg-[#142d69] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2448a0] sm:w-auto sm:min-w-64;
+  }
+
+  .amc-how-link {
+    @apply inline-flex min-h-11 items-center justify-center rounded-sm py-2 text-sm font-medium text-muted-foreground underline decoration-current underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2448a0];
+  }
+
   .report-title {
     @apply text-4xl font-bold tracking-tight text-foreground;
     letter-spacing: -0.02em;
@@ -355,8 +363,8 @@
   overflow-wrap: anywhere;
 }
 
-.amc-web-mvp-shell[lang="ko"] button:not([aria-pressed]),
-.amc-web-mvp-shell[lang="ko"] a {
+.amc-web-mvp-shell[lang="ko"] button:not([aria-pressed]):not(.amc-start-cta),
+.amc-web-mvp-shell[lang="ko"] a:not(.amc-start-cta) {
   height: auto;
   min-height: 2.75rem;
   padding-top: 0.65rem;
