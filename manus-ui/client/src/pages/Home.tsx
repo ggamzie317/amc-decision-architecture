@@ -23,8 +23,8 @@ const reportOutline = [
 
 const howItWorks = [
   {
-    title: "Submit Your Case",
-    body: "You provide your decision context and constraints.",
+    title: "Start with a Free Preview",
+    body: "Answer seven short questions for a first reading of your career decision.",
   },
   {
     title: "Structural Reading",
@@ -43,7 +43,7 @@ const howItWorks = [
 const faqs = [
   {
     q: "Is AMC coaching?",
-    a: "No. AMC is a report-led career architecture service. It is designed to clarify structural conditions before commitment.",
+    a: "AMC is a self-guided career decision tool. It helps you examine your options, constraints, and next steps. Live coaching or mentoring is not included.",
   },
   {
     q: "Will AMC tell me what to do?",
@@ -103,36 +103,37 @@ export default function Home() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <main className="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
-        <section className="py-16 lg:py-24 border-b border-border" id="top">
+        <section className="py-8 sm:py-14 lg:py-20 border-b border-border" id="top">
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 lg:gap-16 items-start">
             <div>
               <p className="text-xs sm:text-sm uppercase tracking-[0.18em] text-muted-foreground mb-4">All of My Career</p>
               <h1 className="text-4xl sm:text-5xl tracking-tight font-semibold leading-tight mb-6">
-                A private career architecture service for serious career crossroads.
+                See the structure behind your next career move.
               </h1>
               <p className="text-base sm:text-lg text-foreground/90 leading-relaxed mb-3">
-                You receive a structured written report.
+                Understand your options, trade-offs, and what to test before you commit.
               </p>
-              <p className="text-base text-muted-foreground leading-relaxed mb-8">
-                We do not look at decisions first. We look at structure first. AMC sees structure.
-              </p>
-              <p className="text-sm uppercase tracking-[0.14em] text-muted-foreground mb-8">Tip in. Decide. Value up.</p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="mt-7 max-w-lg">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Start here · Free Preview</p>
                 <a
-                  href="/amc-web-mvp"
-                  className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
+                  href="/amc-web-mvp?start=preview"
+                  aria-describedby="home-preview-helper"
+                  className="amc-start-cta"
                 >
-                  Start Your AMC Case
+                  Start Free Preview <span aria-hidden="true">→</span>
                 </a>
+                <p id="home-preview-helper" className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  Seven short questions. A first reading. No account needed.
+                </p>
                 <a
                   href="#how-it-works"
-                  className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
+                  className="amc-how-link mt-2"
                 >
-                  How AMC Works
+                  See how AMC works
                 </a>
               </div>
-              <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
-                No account required. Your case is handled as a private submission for report delivery and related follow-up.
+              <p className="text-sm text-muted-foreground mt-5 max-w-lg leading-relaxed">
+                AMC is a self-guided career decision tool. Start by seeing the structure of your decision; live coaching or mentoring is not included.
               </p>
             </div>
             <div className="border border-border rounded-lg bg-card p-6 sm:p-7">
@@ -284,14 +285,14 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <a
-                href="/amc-web-mvp"
-                className="inline-flex items-center justify-center h-11 px-5 rounded-md bg-foreground text-background text-sm font-medium"
+                href="/amc-web-mvp?start=preview"
+                className="amc-start-cta"
               >
-                Start Your AMC Case
+                Start Free Preview <span aria-hidden="true">→</span>
               </a>
               <a
                 href="#formats"
-                className="inline-flex items-center justify-center h-11 px-5 rounded-md border border-border text-sm font-medium"
+                className="amc-how-link"
               >
                 See the Full Structural Report
               </a>

@@ -2623,7 +2623,18 @@ export default function AmcWebMvp() {
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
   const [language, setLanguage] = useState<Language>("en");
+  const [previewEntryRequested, setPreviewEntryRequested] = useState(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("start") === "preview",
+  );
   const [previewStarted, setPreviewStarted] = useState(false);
+  const previewEntryRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (previewEntryRequested && !previewStarted) {
+      previewEntryRef.current?.focus({ preventScroll: true });
+      previewEntryRef.current?.scrollIntoView({ block: "start" });
+    }
+  }, [previewEntryRequested, previewStarted]);
   const [previewGenerated, setPreviewGenerated] = useState(false);
   const [fullIntakeUnlocked, setFullIntakeUnlocked] = useState(false);
   const [dashboardGenerated, setDashboardGenerated] = useState(false);
@@ -2826,6 +2837,7 @@ export default function AmcWebMvp() {
   };
 
   const startPreview = () => {
+    if (!serviceStorageConsent) return;
     const now = new Date().toISOString();
     void trackAmcJourney({
       eventType: "preview_started",
@@ -2836,7 +2848,8 @@ export default function AmcWebMvp() {
     });
     setPreviewStarted(true);
     requestAnimationFrame(() => {
-      document.getElementById("preview-intake")?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("preview-intake")?.focus({ preventScroll: true });
+      document.getElementById("preview-intake")?.scrollIntoView({ block: "start" });
     });
   };
 
@@ -3595,9 +3608,9 @@ export default function AmcWebMvp() {
   return (
     <div lang={isKo ? "ko" : "en"} className="amc-web-mvp-shell min-h-screen bg-background text-foreground">
       <main className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-        <section className="grid min-h-[86vh] grid-cols-1 gap-10 border-b border-border py-14 sm:py-18 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:py-20">
+        <section className="grid grid-cols-1 gap-10 border-b border-border py-8 sm:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:py-20">
           <div>
-            <div className="mb-8 flex items-center justify-between gap-5">
+            <div className="mb-6 flex items-center justify-between gap-3">
               <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
                 AMC - All of My Career
               </p>
@@ -3612,7 +3625,7 @@ export default function AmcWebMvp() {
                     type="button"
                     onClick={() => selectLanguage(item)}
                     aria-pressed={language === item}
-                    className={`inline-flex h-8 min-w-10 items-center justify-center rounded-sm px-3 text-xs font-semibold tracking-[0.08em] transition-colors ${
+                    className={`inline-flex h-11 min-w-11 items-center justify-center rounded-sm px-3 text-xs font-semibold tracking-[0.08em] transition-colors ${
                       language === item
                         ? "bg-foreground text-background"
                         : "text-muted-foreground hover:text-foreground"
@@ -3623,7 +3636,6 @@ export default function AmcWebMvp() {
                 ))}
               </div>
             </div>
-            <p className="mb-5 text-sm font-medium tracking-[0.12em] text-muted-foreground">Tip in. Decide. Value up.</p>
             <h1 className="max-w-4xl text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               {t(
                 "AMC sees structure.",
@@ -3632,49 +3644,46 @@ export default function AmcWebMvp() {
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
               {t(
-                "A private career decision report for experienced professionals facing important career crossroads.",
-                "중요한 커리어 갈림길에 선 경력자를 위한 Private Career Decision Report입니다.",
+                "Understand your options, trade-offs, and what to test before your next career move.",
+                "다음 커리어 결정을 내리기 전에 선택지와 장단점, 먼저 확인할 것을 정리하세요.",
               )}
             </p>
-            <p className="mt-4 inline-flex rounded-sm border border-border bg-secondary/30 px-3 py-2 text-sm font-medium">
-              {t("No account required to start.", "계정 없이 시작할 수 있습니다.")}
-            </p>
-            <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              {t(
-                "Free Preview helps you see the initial structure of your career decision before unlocking the full report.",
-                "Free Preview는 유료 리포트 전에 현재 커리어 결정의 초기 구조를 먼저 확인하는 단계입니다.",
-              )}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-7 max-w-lg">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {t("Start here · Free Preview", "여기서 시작하세요 · 무료 미리보기")}
+              </p>
               <button
                 type="button"
-                onClick={startPreview}
-                disabled={!serviceStorageConsent}
-                className="inline-flex h-11 items-center justify-center rounded-md bg-foreground px-5 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => {
+                  if (previewStarted) {
+                    document.getElementById("preview-intake")?.focus({ preventScroll: true });
+                    document.getElementById("preview-intake")?.scrollIntoView({ block: "start" });
+                  } else if (previewEntryRequested) {
+                    previewEntryRef.current?.focus({ preventScroll: true });
+                    previewEntryRef.current?.scrollIntoView({ block: "start" });
+                  } else {
+                    setPreviewEntryRequested(true);
+                  }
+                }}
+                aria-describedby="preview-helper"
+                className="amc-start-cta"
               >
                 {t("Start Free Preview", "Free Preview 시작하기")}
+                <span aria-hidden="true">→</span>
               </button>
-              <a
-                href="#how-amc-works"
-                className="inline-flex h-11 items-center justify-center rounded-md border border-border px-5 text-sm font-medium text-foreground"
-              >
+              <p id="preview-helper" className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                {t("Seven short questions. A first reading. No account needed.", "7개 질문으로 첫 결과를 확인하세요. 계정 없이 시작할 수 있습니다.")}
+              </p>
+              <a href="#how-amc-works" className="amc-how-link mt-2">
                 {t("See how AMC works", "AMC 진행 방식 보기")}
               </a>
             </div>
-            <label className="mt-5 flex max-w-2xl items-start gap-3 text-xs leading-relaxed text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={serviceStorageConsent}
-                onChange={(event) => setServiceStorageConsent(event.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0"
-              />
-              <span>
-                {t(
-                  "I agree that my responses may be stored to generate my report, operate the service, and improve AMC. I will not enter confidential company information or sensitive personal data.",
-                  "리포트 생성, 서비스 운영 및 AMC 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
-                )}
-              </span>
-            </label>
+            <p className="mt-5 max-w-lg text-sm leading-relaxed text-muted-foreground">
+              {t(
+                "AMC is a self-guided career decision tool. Start by seeing the structure of your decision; live coaching or mentoring is not included.",
+                "AMC는 스스로 선택의 구조를 살펴보는 커리어 의사결정 도구입니다. 실시간 코칭이나 멘토링은 포함되지 않습니다.",
+              )}
+            </p>
           </div>
 
           <aside className="rounded-lg border border-border bg-card p-5 shadow-sm sm:p-7">
@@ -3699,6 +3708,50 @@ export default function AmcWebMvp() {
             </p>
           </aside>
         </section>
+
+        {previewEntryRequested && !previewStarted ? (
+          <section
+            id="preview-entry"
+            ref={previewEntryRef}
+            tabIndex={-1}
+            aria-labelledby="preview-entry-title"
+            className="scroll-mt-6 border-b border-border py-10 outline-none sm:py-14"
+          >
+            <div className="max-w-2xl rounded-xl border border-border bg-card p-5 sm:p-7">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Free Preview</p>
+              <h2 id="preview-entry-title" className="mt-3 text-2xl font-semibold tracking-tight">
+                {t("Before your first question", "첫 질문에 답하기 전에")}
+              </h2>
+              <p id="preview-consent-helper" className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                {t("Review and agree below, then answer seven short questions to see your first reading.", "아래 내용을 확인하고 동의한 뒤, 7개 질문에 답하면 첫 결과를 볼 수 있습니다.")}
+              </p>
+              <label className="mt-5 flex max-w-2xl cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-4 text-sm leading-relaxed text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={serviceStorageConsent}
+                  onChange={(event) => setServiceStorageConsent(event.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[#2448a0]"
+                />
+                <span>
+                  {t(
+                    "I agree that my responses may be stored to generate my report, operate the service, and improve AMC. I will not enter confidential company information or sensitive personal data.",
+                    "리포트 생성, 서비스 운영 및 AMC 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
+                  )}
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={startPreview}
+                disabled={!serviceStorageConsent}
+                aria-describedby="preview-consent-helper"
+                className="amc-start-cta mt-5 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {t("Continue to questions", "질문으로 이동하기")}
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <section id="how-amc-works" className="border-b border-border py-12 sm:py-14">
           <SectionHeader
@@ -3732,7 +3785,7 @@ export default function AmcWebMvp() {
         </section>
 
         {previewStarted ? (
-          <section id="preview-intake" className="border-b border-border py-12 sm:py-14">
+          <section id="preview-intake" tabIndex={-1} aria-label={t("Free Preview questions", "무료 미리보기 질문")} className="scroll-mt-6 border-b border-border py-12 outline-none sm:py-14">
             <SectionHeader
               eyebrow="Free Preview"
               title={t(
@@ -3740,8 +3793,8 @@ export default function AmcWebMvp() {
                 "7개 질문으로 결정의 핵심 구조를 먼저 확인합니다.",
               )}
               body={t(
-                "Free Preview helps you see the initial structure of your career decision before unlocking the full report.",
-                "Free Preview는 유료 리포트 전에 현재 커리어 결정의 초기 구조를 먼저 확인하는 단계입니다.",
+                "Describe your decision and the two paths you are considering. You can explore the full report after your preview.",
+                "현재 고민과 고려 중인 두 선택지를 적어 주세요. 미리보기를 확인한 뒤 전체 리포트를 살펴볼 수 있습니다.",
               )}
             />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
