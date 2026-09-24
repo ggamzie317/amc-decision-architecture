@@ -339,32 +339,51 @@
   }
 }
 
-.amc-web-mvp-shell[lang="ko"] {
+/* Korean customer surfaces only; keep the English type scale and tracking. */
+:is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  line-break: strict;
+  letter-spacing: 0;
   line-height: 1.65;
 }
 
-.amc-web-mvp-shell[lang="ko"] h1,
-.amc-web-mvp-shell[lang="ko"] h2,
-.amc-web-mvp-shell[lang="ko"] h3,
-.amc-web-mvp-shell[lang="ko"] h4 {
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
+:is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] :is(h1, h2, h3, h4) {
+  letter-spacing: 0;
+  line-height: 1.35;
 }
 
-.amc-web-mvp-shell[lang="ko"] p,
-.amc-web-mvp-shell[lang="ko"] li,
-.amc-web-mvp-shell[lang="ko"] label,
-.amc-web-mvp-shell[lang="ko"] td,
-.amc-web-mvp-shell[lang="ko"] th {
-  word-break: keep-all;
-  overflow-wrap: anywhere;
+:is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] :is([class*="tracking-"], .pdf-kicker, .pdf-signal-label, th) {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* break-word preserves intrinsic word widths: let grid/flex items shrink
+   inside their assigned tracks instead of widening or clipping the card. */
+:is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] .grid > *,
+:is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] .flex > :is(div, p) {
+  min-width: 0;
+}
+
+:is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] .font-semibold:is(.text-lg, .text-xl, .text-2xl, .text-3xl) {
+  line-height: 1.4;
+}
+
+@supports (text-wrap: balance) {
+  :is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] :is(h1, h2, h3, h4) {
+    text-wrap: balance;
+  }
+}
+
+@supports (text-wrap: pretty) {
+  :is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] :is(p, li, dd) {
+    text-wrap: pretty;
+  }
 }
 
 .amc-web-mvp-shell[lang="ko"] button:not([aria-pressed]):not(.amc-start-cta),
-.amc-web-mvp-shell[lang="ko"] a:not(.amc-start-cta) {
+.amc-web-mvp-shell[lang="ko"] a:not(.amc-start-cta),
+.pdf-report-shell[lang="ko"] .pdf-report-controls button {
   height: auto;
   min-height: 2.75rem;
   padding-top: 0.65rem;
@@ -372,8 +391,31 @@
   line-height: 1.4;
 }
 
+:is(.amc-web-mvp-shell, .pdf-report-shell)[lang="ko"] button {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.amc-web-mvp-shell[lang="ko"] [aria-label="Language"] {
+  flex-shrink: 0;
+}
+
+.amc-web-mvp-shell[lang="ko"] [aria-label="Language"] button {
+  height: auto;
+  min-height: 2.75rem;
+}
+
 .amc-web-mvp-shell[lang="ko"] textarea {
+  height: auto;
+  min-height: 6rem;
+  resize: vertical;
   line-height: 1.6;
+}
+
+@supports (field-sizing: content) {
+  .amc-web-mvp-shell[lang="ko"] textarea {
+    field-sizing: content;
+  }
 }
 
 .amc-web-mvp-shell[lang="ko"] table th,
@@ -420,7 +462,7 @@
 
 .pdf-report-shell[lang="ko"] .pdf-report-view {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-spacing: normal;
   line-height: 1.65;
 }
@@ -431,19 +473,21 @@
 .pdf-report-shell[lang="ko"] .pdf-report-view h4,
 .pdf-report-shell[lang="ko"] .pdf-report-view p,
 .pdf-report-shell[lang="ko"] .pdf-report-view dd,
+.pdf-report-shell[lang="ko"] .pdf-report-view th,
 .pdf-report-shell[lang="ko"] .pdf-report-view td,
-.pdf-report-shell[lang="ko"] .pdf-report-view li {
+.pdf-report-shell[lang="ko"] .pdf-report-view li,
+.pdf-report-shell[lang="ko"] .pdf-keyword-chip strong {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .pdf-report-shell[lang="ko"] .pdf-section-heading {
-  line-height: 1.25;
+  line-height: 1.35;
   letter-spacing: 0;
 }
 
 .pdf-report-shell[lang="ko"] .pdf-executive-message {
-  line-height: 1.18;
+  line-height: 1.35;
   letter-spacing: 0;
 }
 
@@ -456,6 +500,36 @@
 .pdf-report-shell[lang="ko"] .pdf-comparison-table th,
 .pdf-report-shell[lang="ko"] .pdf-comparison-table td {
   line-height: 1.65;
+}
+
+.pdf-report-shell[lang="ko"] .pdf-comparison-table {
+  table-layout: fixed;
+}
+
+/* Preserve readable table columns on phones; only this region scrolls. */
+@media screen and (max-width: 767px) {
+  .pdf-report-shell[lang="ko"] .pdf-comparison-scroll {
+    overflow-x: auto;
+  }
+
+  .pdf-report-shell[lang="ko"] .pdf-comparison-table {
+    min-width: 40rem;
+  }
+}
+
+@media screen and (max-width: 639px) {
+  .pdf-report-shell[lang="ko"] .pdf-cover {
+    padding: 2rem;
+    gap: 3rem;
+  }
+
+  .pdf-report-shell[lang="ko"] .pdf-cover > .relative {
+    max-width: 100%;
+  }
+
+  .pdf-report-shell[lang="ko"] .pdf-cover > [aria-hidden="true"] {
+    display: none;
+  }
 }
 
 .pdf-executive-message {
@@ -733,7 +807,21 @@
   margin: 0;
 }
 
+/* Repeated page margins protect Korean continuation lines at paper edges. */
+@page amc-korean-report {
+  size: A4;
+  margin: 12mm 0;
+}
+
+@page amc-korean-report:first {
+  margin: 0;
+}
+
 @media print {
+  :root:has(.pdf-report-shell[lang="ko"]) {
+    page: amc-korean-report;
+  }
+
   html,
   body,
   #root {
@@ -769,6 +857,44 @@
     font-size: 9.5pt;
     line-height: 1.55;
     word-spacing: normal;
+  }
+
+  .pdf-report-shell[lang="ko"] :is(p, li, dd) {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .pdf-report-shell[lang="ko"] :is(h1, h2, h3, h4, .pdf-kicker),
+  .pdf-report-shell[lang="ko"] .pdf-keep-together > p:first-child {
+    break-after: avoid;
+  }
+
+  /* A4 is narrower than the desktop breakpoint: retain paired summary cards. */
+  .pdf-report-shell[lang="ko"] [data-report-executive-summary] > .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Long detail sections may span pages; keep each play / definition intact. */
+  .pdf-report-shell[lang="ko"] [data-report-detail] > section {
+    break-inside: auto;
+    page-break-inside: auto;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .pdf-report-shell[lang="ko"] [data-report-detail] article,
+  .pdf-report-shell[lang="ko"] [data-report-detail] dl > div {
+    break-inside: avoid;
+  }
+
+  .pdf-report-shell[lang="ko"] .pdf-comparison-scroll {
+    overflow: visible;
+  }
+
+  .pdf-report-shell[lang="ko"] .pdf-comparison-table,
+  .pdf-report-shell[lang="ko"] .pdf-comparison-table tbody {
+    break-inside: auto;
+    page-break-inside: auto;
   }
 
   .pdf-cover {
