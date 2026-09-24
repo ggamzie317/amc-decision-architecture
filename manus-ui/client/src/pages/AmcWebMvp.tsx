@@ -3430,7 +3430,12 @@ export default function AmcWebMvp() {
                   {t("Structural reading, not recommendation", "추천이 아닌 Structural Reading")}
                 </p>
               </div>
-              <div className="mt-7 overflow-hidden border border-black/15">
+              <div
+                className="pdf-comparison-scroll mt-7 overflow-hidden border border-black/15"
+                role={isKo ? "region" : undefined}
+                aria-label={isKo ? "선택지 비교" : undefined}
+                tabIndex={isKo ? 0 : undefined}
+              >
                 <table className="pdf-comparison-table w-full border-collapse">
                   <colgroup>
                     <col className="w-[19%]" />
