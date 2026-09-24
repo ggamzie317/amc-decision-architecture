@@ -137,7 +137,8 @@ export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
   const patch = sanitizePatch(body.patch);
   if (Object.keys(patch).length > 0)
     await store.updateSubmission(submissionId, patch);
-  const metadata = boundedObject(body.metadata, 4000) || {};
+  const metadata = { ...(boundedObject(body.metadata, 4000) || {}) };
+  delete metadata.providerObservation; // Reserved for server-authored provider telemetry.
   await store.addEvent(submissionId, eventType, metadata);
   return { ok: true, stored: true, submissionId };
 }

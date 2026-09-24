@@ -56,7 +56,7 @@ async function startServer() {
       return;
     }
 
-    const snapshot = await resolveWebExternalSnapshot(request);
+    const snapshot = await resolveWebExternalSnapshot(request, { tracking: req.body });
     res.status(200).json(snapshot);
   });
 

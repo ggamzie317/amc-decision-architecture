@@ -13,6 +13,9 @@ const entryPoints = [
   "founderAdminAuth.ts",
   "founderNotification.ts",
   "founderOpsAnalytics.ts",
+  "launchOpsAnalytics.ts",
+  "externalSnapshotService.ts",
+  "providerObservation.ts",
   "founderOpsApi.ts",
   "founderOpsHealth.ts",
   "founderOpsStore.ts",
@@ -35,7 +38,10 @@ try {
   const runtimeModule = await import(
     pathToFileURL(path.join(outputRoot, "vercelFounderOps.js")).href
   );
-  if (typeof runtimeModule.handleAdminHealth !== "function") {
+  if (
+    typeof runtimeModule.handleAdminHealth !== "function" ||
+    typeof runtimeModule.handleAdminLaunchOps !== "function"
+  ) {
     throw new Error(
       "Founder Ops runtime module did not load expected exports."
     );

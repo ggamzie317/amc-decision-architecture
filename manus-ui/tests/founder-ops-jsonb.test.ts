@@ -196,3 +196,43 @@ describe("Founder Ops native JSONB persistence", () => {
     ]);
   });
 });
+
+describe("Launch Ops provider metadata JSONB", () => {
+  it("binds metadata as an object and restricts updates to fresh consented request events", async () => {
+    const parameterSql = postgres();
+    const queries: string[] = [];
+    const tagged = vi.fn(
+      async (parts: TemplateStringsArray, ...params: unknown[]) => {
+        queries.push(parts.join("?").replace(/\s+/g, " "));
+        const metadata = params[0] as JsonParameter;
+        expect(jsonbTypeof(metadata)).toBe("object");
+        expect(metadata.value).toEqual({
+          providerObservation: {
+            provider: "perplexity",
+            apiGeneration: "agent-api",
+            status: "live",
+          },
+        });
+        return [];
+      }
+    );
+    const sql = Object.assign(tagged, {
+      json: (value: JSONValue) => parameterSql.json(value),
+    }) as unknown as Sql;
+    await new PostgresFounderOpsStore(sql).annotateEvidenceRequest(
+      "AMC-20260924-1234ABCD",
+      "request-id",
+      { provider: "perplexity", apiGeneration: "agent-api", status: "live" }
+    );
+    expect(queries[0]).toContain("s.service_storage_consent = true");
+    expect(queries[0]).toContain(
+      "e.event_type = 'external_evidence_requested'"
+    );
+    expect(queries[0]).toContain("e.metadata_json->>'requestId' = ?");
+    expect(queries[0]).toContain("INTERVAL '2 minutes'");
+    expect(queries[0]).toContain(
+      "NOT (e.metadata_json ? 'providerObservation')"
+    );
+    expect(queries[0]).not.toContain("UPDATE submissions");
+  });
+});

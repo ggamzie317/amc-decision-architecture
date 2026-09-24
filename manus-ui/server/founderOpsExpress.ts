@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 
 import {
   handleAdminExport,
+  handleAdminLaunchOps,
   handleAdminHealth,
   handleAdminLogin,
   handleAdminLogout,
@@ -25,6 +26,7 @@ export function registerFounderOpsRoutes(app: Express) {
   app.post("/api/amc/ops/track", adapt(handleTrack));
   app.post("/api/amc/admin/login", adapt(handleAdminLogin));
   app.post("/api/amc/admin/logout", adapt(handleAdminLogout));
+  app.get("/api/amc/admin/launch", adapt(handleAdminLaunchOps));
   app.get("/api/amc/admin/summary", adapt(handleAdminSummary));
   app.get("/api/amc/admin/health", adapt(handleAdminHealth));
   app.get("/api/amc/admin/submissions", adapt(handleAdminSubmissions));
