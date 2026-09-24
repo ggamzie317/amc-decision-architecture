@@ -26,7 +26,6 @@ Exact AMC request:
     { "type": "message", "role": "system", "content": "AMC evidence instructions" },
     { "type": "message", "role": "user", "content": "Bounded career-decision context" }
   ],
-  "max_steps": 1,
   "max_output_tokens": 2500,
   "stream": false,
   "response_format": {
@@ -51,7 +50,7 @@ AMC accepts only the completed HTTP response envelope (`object: response`, `stat
 - Keep `PERPLEXITY_API_KEY` server-side. Existing `PPLX_API_KEY` alias remains supported; no secret rotation is required by this migration.
 - Optional `PERPLEXITY_AGENT_PRESET=fast`; unset/invalid values default to `fast`. Supported explicit overrides are `fast`, `low`, `medium`, `high`, `xhigh`. Do not upgrade the preset without measured benefit.
 - `PERPLEXITY_MODEL` is ignored by the web integration. `fast` is the official economical Sonar replacement. AMC does not pin the preset's underlying model.
-- One request, one step, 2,500 output-token ceiling, no automatic provider retries. Provider timeout: 45 seconds. First schema compilation can take longer than a warm call according to the output-control documentation.
+- AMC uses the Perplexity `fast` preset and allows the preset to manage its own optimized Agent API step budget; the request does not override `max_steps`. One request, 2,500 output-token ceiling, no automatic provider retries. Provider timeout: 45 seconds. First schema compilation can take longer than a warm call according to the output-control documentation.
 - `manus-ui/vercel.json` gives this specific Node function a 60-second maximum; telemetry waits at most two seconds. See [Vercel duration configuration](https://vercel.com/docs/functions/configuring-functions/duration).
 - Official responses expose `usage.cost` metadata. This task deliberately does not persist dollar values or integrate billing APIs. Founder request counts are useful inputs to later cost estimation, not an invoice.
 - The older offline `src/perplexity` report/CLI pipeline is separate from the deployed AMC web path and remains outside this migration. Its Sonar commands should not be used after retirement without a separate migration.

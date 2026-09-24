@@ -87,7 +87,6 @@ describe("Perplexity Agent API boundary", () => {
       );
       expect(sent).toMatchObject({
         preset: "fast",
-        max_steps: 1,
         max_output_tokens: 2500,
         stream: false,
         response_format: {
@@ -95,6 +94,7 @@ describe("Perplexity Agent API boundary", () => {
           json_schema: { name: "AmcWebExternalSnapshot", strict: true },
         },
       });
+      expect(sent).not.toHaveProperty("max_steps");
       expect(sent).not.toHaveProperty("model");
       expect(sent).not.toHaveProperty("messages");
       expect(sent.input.every((item: any) => item.type === "message")).toBe(

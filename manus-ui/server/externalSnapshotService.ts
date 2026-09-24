@@ -221,7 +221,6 @@ export async function resolveWebExternalSnapshot(
             type: "message",
             ...message,
           })),
-          max_steps: 1,
           max_output_tokens: 2500,
           stream: false,
           response_format: {
