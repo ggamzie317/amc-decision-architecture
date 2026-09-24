@@ -23,7 +23,9 @@
     "test:customer-language-firewall": "vitest run --root .. manus-ui/tests/customer-language-firewall.test.tsx",
     "test:public-bundle-privacy": "vitest run --root .. manus-ui/tests/public-bundle-privacy.test.ts",
     "check": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:agent-api": "vitest run --root .. manus-ui/tests/perplexity-agent.test.ts",
+    "test:launch-ops": "vitest run --root .. manus-ui/tests/launch-ops.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

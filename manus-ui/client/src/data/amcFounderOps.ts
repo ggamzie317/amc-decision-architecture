@@ -153,3 +153,8 @@ const browserJourneyTracker = createFounderOpsJourneyTracker({
 export function trackAmcJourney(input: TrackJourneyInput) {
   return browserJourneyTracker(input);
 }
+
+/** Opaque journey correlation only; provider details remain on the server. */
+export function activeAmcSubmissionId() {
+  return storageValue(safeStorage(() => typeof window === "undefined" ? null : window.sessionStorage), ACTIVE_SUBMISSION_STORAGE_KEY);
+}

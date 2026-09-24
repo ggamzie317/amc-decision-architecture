@@ -44,6 +44,8 @@ export type SubmissionPatch = {
 };
 
 export type SubmissionRecord = {
+  jsonShapeErrors?: string[];
+  storedAnswerCount?: number;
   submissionId: string;
   createdAt: string;
   updatedAt: string;
@@ -106,6 +108,15 @@ export type ResearchSummary = OperationsSummary & {
 
 export type FounderOpsStore = {
   readonly available: boolean;
+  readLaunchData?(): Promise<{
+    submissions: SubmissionRecord[];
+    events: UsageEventRecord[];
+  }>;
+  annotateEvidenceRequest?(
+    submissionId: string,
+    requestId: string,
+    observation: Record<string, unknown>
+  ): Promise<void>;
   createSubmission(
     language: AmcLanguage,
     serviceStorageConsent: boolean
@@ -123,9 +134,7 @@ export type FounderOpsStore = {
     filters?: SubmissionFilters,
     limit?: number
   ): Promise<SubmissionRecord[]>;
-  getSubmission(
-    submissionId: string
-  ): Promise<{
+  getSubmission(submissionId: string): Promise<{
     submission: SubmissionRecord;
     events: UsageEventRecord[];
   } | null>;

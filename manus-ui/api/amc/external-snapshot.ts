@@ -15,7 +15,7 @@ type RouteFallbackReason = "malformed_request" | "service_load_error";
 
 type ExternalSnapshotService = {
   parseWebExternalSnapshotRequest(raw: unknown): unknown | null;
-  resolveWebExternalSnapshot(request: unknown): Promise<unknown>;
+  resolveWebExternalSnapshot(request: unknown, options?: { tracking: unknown }): Promise<unknown>;
   buildFallbackSnapshot(language: Language, reason: "malformed_request"): unknown;
 };
 
@@ -64,7 +64,7 @@ export async function handleExternalSnapshot(
       return;
     }
 
-    res.status(200).json(await resolveWebExternalSnapshot(request));
+    res.status(200).json(await resolveWebExternalSnapshot(request, { tracking: rawBody }));
   } catch {
     res.status(200).json(buildRouteFallbackSnapshot(language, "service_load_error"));
   }

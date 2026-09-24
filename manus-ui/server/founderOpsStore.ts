@@ -81,6 +81,24 @@ function toIso(value: unknown): string | null {
 
 function mapSubmission(row: Record<string, unknown>): SubmissionRecord {
   return {
+    jsonShapeErrors: Array.from(jsonFields).filter(key =>
+      key === "decision_conditions_json"
+        ? !Array.isArray(row[key]) ||
+          !(row[key] as unknown[]).every(item => typeof item === "string")
+        : !row[key] ||
+          typeof row[key] !== "object" ||
+          Array.isArray(row[key]) ||
+          (key === "answers_json" &&
+            !Object.values(row[key] as object).every(
+              item => typeof item === "string"
+            ))
+    ),
+    storedAnswerCount:
+      row.answers_json &&
+      typeof row.answers_json === "object" &&
+      !Array.isArray(row.answers_json)
+        ? Object.keys(row.answers_json).length
+        : 0,
     submissionId: String(row.submission_id),
     createdAt: toIso(row.created_at) || new Date().toISOString(),
     updatedAt: toIso(row.updated_at) || new Date().toISOString(),
@@ -225,6 +243,35 @@ export class PostgresFounderOpsStore implements FounderOpsStore {
       );
   }
 
+  async readLaunchData() {
+    // Two bulk reads avoid the old per-submission event query and preserve orphan visibility.
+    const [rows, events] = await Promise.all([
+      this.sql`SELECT * FROM submissions ORDER BY created_at DESC`,
+      this.sql`SELECT * FROM usage_events ORDER BY created_at ASC`,
+    ]);
+    return {
+      submissions: rows.map(row => mapSubmission(row)),
+      events: events.map(row => mapEvent(row)),
+    };
+  }
+
+  async annotateEvidenceRequest(
+    submissionId: string,
+    requestId: string,
+    observation: Record<string, unknown>
+  ) {
+    await this.sql`
+      UPDATE usage_events e SET metadata_json = e.metadata_json ||
+        ${this.sql.json({ providerObservation: observation } as JSONValue)}::jsonb
+      FROM submissions s
+      WHERE e.submission_id = ${submissionId} AND s.submission_id = e.submission_id
+        AND s.service_storage_consent = true AND e.event_type = 'external_evidence_requested'
+        AND e.metadata_json->>'requestId' = ${requestId}
+        AND NOT (e.metadata_json ? 'providerObservation')
+        AND e.created_at >= NOW() - INTERVAL '2 minutes'
+    `;
+  }
+
   async getSubmission(submissionId: string) {
     const rows = await this
       .sql`SELECT * FROM submissions WHERE submission_id = ${submissionId} LIMIT 1`;
@@ -333,6 +380,32 @@ export class MemoryFounderOpsStore implements FounderOpsStore {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, limit)
       .map(item => structuredClone(item));
+  }
+
+  async readLaunchData() {
+    return structuredClone({
+      submissions: Array.from(this.submissions.values()),
+      events: this.events,
+    });
+  }
+
+  async annotateEvidenceRequest(
+    submissionId: string,
+    requestId: string,
+    observation: Record<string, unknown>
+  ) {
+    if (!this.submissions.get(submissionId)?.serviceStorageConsent) return;
+    for (const event of this.events) {
+      if (
+        event.submissionId === submissionId &&
+        event.eventType === "external_evidence_requested" &&
+        event.metadataJson.requestId === requestId &&
+        !event.metadataJson.providerObservation &&
+        Date.parse(event.createdAt) >= Date.now() - 120_000
+      ) {
+        event.metadataJson.providerObservation = structuredClone(observation);
+      }
+    }
   }
 
   async getSubmission(submissionId: string) {

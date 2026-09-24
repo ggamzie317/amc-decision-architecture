@@ -1,3 +1,5 @@
+import { buildLaunchOpsSummary } from "./launchOpsAnalytics.js";
+import { configuredAgentPreset } from "./externalSnapshotService.js";
 import {
   ADMIN_COOKIE_NAME,
   adminAuthConfigured,
@@ -189,7 +191,24 @@ export async function handleAdminSubmissions(
       parseSubmissionFilters(req.query || {}),
       500
     );
-    res.status(200).json({ backendAvailable: true, submissions });
+    // Overview responses carry metadata only. Raw answers and derived narratives
+    // remain behind the explicit authenticated detail/export actions.
+    res.status(200).json({
+      backendAvailable: true,
+      submissions: submissions.map(row => ({
+        submissionId: row.submissionId,
+        createdAt: row.createdAt,
+        language: row.language,
+        caseType: row.caseType,
+        currentStage: row.currentStage,
+        fullIntakeCompletedAt: row.fullIntakeCompletedAt,
+        externalEvidenceMode: row.externalEvidenceMode,
+        externalEvidenceConfidence: row.externalEvidenceConfidence,
+        reportGeneratedAt: row.reportGeneratedAt,
+        printSaveClickedAt: row.printSaveClickedAt,
+        researchUseConsent: row.researchUseConsent,
+      })),
+    });
   } catch {
     res.status(200).json({ backendAvailable: false, submissions: [] });
   }
@@ -253,3 +272,38 @@ export async function handleAdminExport(
 }
 
 export const requireAdminSession = requireAdmin;
+
+export async function handleAdminLaunchOps(
+  req: ApiRequest,
+  res: ApiResponse,
+  store: FounderOpsStore = getFounderOpsStore()
+) {
+  res.setHeader("Cache-Control", "no-store");
+  if (!method(req, res, ["GET"]) || !requireAdmin(req, res)) return;
+  const configuration = {
+    provider: "Perplexity Agent API",
+    preset: configuredAgentPreset(),
+    launchMode: "FREE PUBLIC",
+    ...(process.env.VERCEL_ENV === "production" &&
+    /^[a-f0-9]{40}$/.test(process.env.VERCEL_GIT_COMMIT_SHA ?? "")
+      ? { productionSha: process.env.VERCEL_GIT_COMMIT_SHA }
+      : {}),
+  };
+  if (!store.available || !store.readLaunchData) {
+    res.status(200).json({ backendAvailable: false, configuration });
+    return;
+  }
+  try {
+    const { submissions, events } = await store.readLaunchData();
+    const windowDays =
+      req.query?.window === "7" ? 7 : req.query?.window === "30" ? 30 : null;
+    res
+      .status(200)
+      .json({
+        ...buildLaunchOpsSummary(submissions, events, windowDays),
+        configuration,
+      });
+  } catch {
+    res.status(200).json({ backendAvailable: false, configuration });
+  }
+}

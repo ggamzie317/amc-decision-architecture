@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ProductApplicationDashboard, ProductApplicationReport } from "../components/ProductApplicationViews";
-import { trackAmcJourney } from "../data/amcFounderOps";
+import { activeAmcSubmissionId, trackAmcJourney } from "../data/amcFounderOps";
 import { buildFounderOpsDerivedPatch, founderOpsDerivedFingerprint } from "../data/amcFounderOpsDerived";
 import {
   buildCurrentCaseStructuralSignals,
@@ -2931,8 +2931,10 @@ export default function AmcWebMvp() {
         answersJson: Object.fromEntries(Object.entries(fullIntakeAnswers).map(([key, value]) => [key, value])),
       },
     });
-    void trackAmcJourney({
+    const evidenceRequestId = crypto.randomUUID();
+    const evidenceTracking = trackAmcJourney({
       eventType: "external_evidence_requested",
+      metadata: { requestId: evidenceRequestId },
       language,
       serviceStorageConsent,
       patch: { caseType: detectedCaseType },
@@ -2958,10 +2960,12 @@ export default function AmcWebMvp() {
       document.getElementById("full-dashboard")?.scrollIntoView({ behavior: "smooth" });
     });
 
-    void fetch("/api/amc/external-snapshot", {
+    void Promise.race([evidenceTracking, new Promise(resolve => setTimeout(resolve, 1500))]).then(() => fetch("/api/amc/external-snapshot", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        submissionId: activeAmcSubmissionId(),
+        requestId: evidenceRequestId,
         caseType: detectedCaseType,
         optionA: optionALabel,
         optionB: optionBLabel,
@@ -2972,7 +2976,7 @@ export default function AmcWebMvp() {
         validationNeed: [fullIntakeAnswers[14], fullIntakeAnswers[28]].filter(Boolean).join(" "),
         language: isKo ? "kr" : "en",
       }),
-    })
+    }))
       .then(async (response) => {
         const payload = (await response.json().catch(() => null)) as unknown;
         if (!isExternalSnapshot(payload)) throw new Error("External snapshot response was unavailable.");

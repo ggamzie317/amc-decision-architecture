@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import LaunchOps, { type LaunchResponse } from "../components/LaunchOps";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Summary = {
   backendAvailable: boolean;
@@ -40,6 +41,20 @@ type Detail = {
   submission: Submission;
   events: Array<{ eventId: string; eventType: string; createdAt: string }>;
 };
+type SubmissionOverview = Pick<
+  Submission,
+  | "submissionId"
+  | "createdAt"
+  | "language"
+  | "caseType"
+  | "currentStage"
+  | "fullIntakeCompletedAt"
+  | "externalEvidenceMode"
+  | "externalEvidenceConfidence"
+  | "reportGeneratedAt"
+  | "printSaveClickedAt"
+  | "researchUseConsent"
+>;
 type Health = {
   database: "connected" | "not_configured" | "error";
   schema: "ready" | "missing_migration";
@@ -62,7 +77,7 @@ type Health = {
     researchConsentRate: number;
   };
 };
-type Tab = "operations" | "research" | "submissions";
+type Tab = "launch" | "operations" | "research" | "submissions";
 
 const metricLabels: Record<string, string> = {
   submissions: "Anonymous submissions",
@@ -123,11 +138,13 @@ export default function AmcAdmin() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
-  const [tab, setTab] = useState<Tab>("operations");
+  const [tab, setTab] = useState<Tab>("launch");
   const [windowDays, setWindowDays] = useState("all");
+  const [launch, setLaunch] = useState<LaunchResponse | null>(null);
+  const loadId = useRef(0);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [research, setResearch] = useState<Summary | null>(null);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [submissions, setSubmissions] = useState<SubmissionOverview[]>([]);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
   const [filters, setFilters] = useState({
@@ -148,25 +165,31 @@ export default function AmcAdmin() {
   }, [filters, windowDays]);
 
   const load = async () => {
+    const requestId = ++loadId.current;
+    setLaunch(null);
     try {
-      const [ops, patterns, list, status] = await Promise.all([
+      const [ops, patterns, list, status, launchData] = await Promise.all([
         api<Summary>(
           `/api/amc/admin/summary?${new URLSearchParams({ ...(windowDays !== "all" ? { window: windowDays } : {}) })}`
         ),
         api<Summary>(
           `/api/amc/admin/summary?${new URLSearchParams({ mode: "research", ...(windowDays !== "all" ? { window: windowDays } : {}) })}`
         ),
-        api<{ backendAvailable: boolean; submissions: Submission[] }>(
+        api<{ backendAvailable: boolean; submissions: SubmissionOverview[] }>(
           `/api/amc/admin/submissions?${query}`
         ),
         api<Health>("/api/amc/admin/health"),
+        api<LaunchResponse>(`/api/amc/admin/launch?window=${windowDays}`),
       ]);
+      if (loadId.current !== requestId) return;
       setAuthenticated(true);
+      setLaunch(launchData);
       setSummary(ops);
       setResearch(patterns);
       setSubmissions(list.submissions);
       setHealth(status);
     } catch (error) {
+      if (loadId.current !== requestId) return;
       if (error instanceof Error && error.message === "Unauthorized")
         setAuthenticated(false);
       else
@@ -204,6 +227,8 @@ export default function AmcAdmin() {
       () => undefined
     );
     setAuthenticated(false);
+    loadId.current++;
+    setLaunch(null);
     setSummary(null);
     setResearch(null);
     setSubmissions([]);
@@ -282,7 +307,9 @@ export default function AmcAdmin() {
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
               AMC Founder Operations
             </p>
-            <h1 className="mt-1 text-xl font-semibold">Launch V2 Data Layer</h1>
+            <h1 className="mt-1 text-xl font-semibold">
+              Public Launch Operations
+            </h1>
           </div>
           <button
             type="button"
@@ -304,22 +331,31 @@ export default function AmcAdmin() {
           </p>
         ) : null}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-          <div className="flex gap-2">
-            {(["operations", "research", "submissions"] as Tab[]).map(item => (
-              <button
-                key={item}
-                onClick={() => setTab(item)}
-                className={`px-3 py-2 text-sm font-medium ${tab === item ? "bg-foreground text-background" : "border border-border"}`}
-              >
-                {item === "operations"
-                  ? "Operations"
-                  : item === "research"
-                    ? "Research Patterns"
-                    : "Recent Submissions"}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-2">
+            {(["launch", "operations", "research", "submissions"] as Tab[]).map(
+              item => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setTab(item);
+                    setDetail(null);
+                  }}
+                  aria-pressed={tab === item}
+                  className={`px-3 py-2 text-sm font-medium ${tab === item ? "bg-foreground text-background" : "border border-border"}`}
+                >
+                  {item === "launch"
+                    ? "LAUNCH OPS"
+                    : item === "operations"
+                      ? "Operations"
+                      : item === "research"
+                        ? "Research Patterns"
+                        : "Recent Submissions"}
+                </button>
+              )
+            )}
           </div>
           <select
+            aria-label="Analytics period"
             value={windowDays}
             onChange={event => setWindowDays(event.target.value)}
             className="h-10 border border-border bg-background px-3 text-sm"
@@ -329,6 +365,10 @@ export default function AmcAdmin() {
             <option value="7">Last 7 days</option>
           </select>
         </div>
+
+        {tab === "launch" ? (
+          <LaunchOps data={launch} openDetail={openDetail} />
+        ) : null}
 
         {tab === "operations" ? (
           <div className="mt-6 space-y-6">
@@ -647,7 +687,8 @@ export default function AmcAdmin() {
                   {detail.submission.submissionId}
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {detail.submission.productVersion} · {detail.submission.frameworkVersion}
+                  {detail.submission.productVersion} ·{" "}
+                  {detail.submission.frameworkVersion}
                 </p>
               </div>
               <button
@@ -698,9 +739,7 @@ export default function AmcAdmin() {
                     <dd>{detail.submission.alternativePath || "—"}</dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">
-                      Decision Switches
-                    </dt>
+                    <dt className="text-muted-foreground">Decision Switches</dt>
                     <dd>
                       {detail.submission.decisionConditionsJson.join(" · ") ||
                         "—"}
