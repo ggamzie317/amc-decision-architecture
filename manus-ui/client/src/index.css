@@ -446,10 +446,35 @@
 }
 
 .pdf-report-view {
+  position: relative;
+  isolation: isolate;
   font-kerning: normal;
   font-variant-ligatures: common-ligatures;
   text-rendering: optimizeLegibility;
   word-spacing: 0.035em;
+}
+
+.pdf-report-lettermark {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  transform: translate(-50%, -50%) rotate(-32deg);
+  color: #202326;
+  opacity: 0.03;
+  font-size: clamp(2rem, 7vw, 5.5rem);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pdf-report-view > :not(.pdf-report-lettermark) {
+  position: relative;
+  z-index: 1;
 }
 
 .pdf-report-view p,
@@ -851,6 +876,10 @@
     box-shadow: none;
     font-size: 10pt;
     word-spacing: 0.04em;
+  }
+
+  .pdf-report-lettermark {
+    font-size: 54pt;
   }
 
   .pdf-report-shell[lang="ko"] .pdf-report-view {
