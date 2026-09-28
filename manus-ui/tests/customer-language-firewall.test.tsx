@@ -1,4 +1,5 @@
 import React from "react";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -10,6 +11,7 @@ import {
   type StructuralSignal,
 } from "../client/src/data/amcProductApplicationV3";
 import Home from "../client/src/pages/Home";
+import AmcWebMvp, { ReportCoverIdentity, ReportLettermark } from "../client/src/pages/AmcWebMvp";
 import ErrorBoundary from "../client/src/components/ErrorBoundary";
 import { customerSafeExternalSnapshot } from "../client/src/data/customerLanguageFirewall";
 import { ProductApplicationDashboard, ProductApplicationReport } from "../client/src/components/ProductApplicationViews";
@@ -99,6 +101,37 @@ function buildJourney(
 }
 
 describe("AMC customer-language firewall", () => {
+  it("renders allofmycareer without the legacy public brand on customer pages", () => {
+    const journey = buildJourney("en", "strong", "strong", "strong", "low");
+    const surfaces = [
+      renderToStaticMarkup(<Home />),
+      renderToStaticMarkup(<AmcWebMvp />),
+      renderToStaticMarkup(<ProductApplicationDashboard intelligence={journey} translate={translateEn} externalEvidenceUsed />),
+      renderToStaticMarkup(<ProductApplicationReport intelligence={journey} translate={translateEn} externalEvidenceUsed />),
+      renderToStaticMarkup(<ReportCoverIdentity translate={translateEn} />),
+      renderToStaticMarkup(<ReportCoverIdentity translate={translateKo} />),
+    ];
+    for (const markup of surfaces) {
+      const text = customerText(markup);
+      expect(text).not.toMatch(/\bAMC\b/i);
+      expect(text).not.toMatch(/All of My Career/i);
+    }
+    expect(customerText(surfaces[0])).toContain("allofmycareer");
+    expect(customerText(surfaces[1])).toContain("allofmycareer");
+    expectCustomerSafe(customerText(surfaces[1]));
+    for (const cover of surfaces.slice(-2)) {
+      expect(customerText(cover)).toContain("allofmycareer");
+      expect(customerText(cover)).toContain("Full Structural Report");
+      expect(customerText(cover)).toContain("Tip in. Decide. Value up.");
+    }
+    expect(customerText(surfaces.at(-1)!)).toContain("allofmycareer는 구조를 봅니다.");
+    expect(renderToStaticMarkup(<ReportLettermark />)).toContain('aria-hidden="true"');
+    expect(customerText(renderToStaticMarkup(<ReportLettermark />))).toBe("allofmycareer");
+    const metadata = readFileSync(new URL("../client/index.html", import.meta.url), "utf8");
+    expect(metadata).toMatch(/<title>allofmycareer\b/);
+    expect(metadata).not.toMatch(/<title>AMC\b|content="[^"]*\bAMC\b/i);
+  });
+
   it("keeps the public landing page free of internal methodology language", () => {
     expectCustomerSafe(customerText(renderToStaticMarkup(<Home />)));
     const boundary = new ErrorBoundary({ children: null });

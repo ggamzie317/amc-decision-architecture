@@ -2487,7 +2487,7 @@ function buildMockExternalSnapshot(
 function SectionHeader({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
   return (
     <div className="mb-7 max-w-3xl">
-      <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p>
+      <p className={`mb-3 text-xs font-medium text-muted-foreground ${eyebrow.includes("allofmycareer") ? "normal-case tracking-normal" : "uppercase tracking-[0.18em]"}`}>{eyebrow}</p>
       <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h2>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
     </div>
@@ -2617,6 +2617,29 @@ function qaDiagnosticStatusTone(status: QaDiagnosticStatus) {
   if (status === "fallback") return "border-amber-300 bg-amber-50 text-amber-800";
   if (status === "failed") return "border-red-300 bg-red-50 text-red-800";
   return "border-border bg-background text-muted-foreground";
+}
+
+export function ReportCoverIdentity({ translate }: { translate: (en: string, ko: string) => string }) {
+  return (
+    <div className="relative z-10 max-w-[64%]">
+      <div className="flex items-center gap-4">
+        <span className="h-px w-10 bg-black/70" aria-hidden="true" />
+        <p className="text-[11px] font-semibold tracking-normal text-black/55">allofmycareer</p>
+      </div>
+      <p className="mt-16 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/42">
+        {translate("Private career decision architecture", "Private Career Decision Architecture")}
+      </p>
+      <h1 className="mt-5 text-4xl font-semibold leading-[1.08] sm:text-6xl">Full Structural Report</h1>
+      <p className="mt-8 text-base font-medium text-black/58">Tip in. Decide. Value up.</p>
+      <p className="mt-3 text-sm font-semibold text-black/72">
+        {translate("allofmycareer sees structure.", "allofmycareer는 구조를 봅니다.")}
+      </p>
+    </div>
+  );
+}
+
+export function ReportLettermark() {
+  return <span className="pdf-report-lettermark" aria-hidden="true">allofmycareer</span>;
 }
 
 export default function AmcWebMvp() {
@@ -3185,27 +3208,11 @@ export default function AmcWebMvp() {
         </div>
 
         <article className="pdf-report-view mx-auto my-8 max-w-[960px] bg-white shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
+          <ReportLettermark />
           <section className="pdf-cover relative flex min-h-[760px] flex-col justify-between overflow-hidden border-b border-black/15 p-10 sm:p-16">
             <div className="absolute right-0 top-0 h-full w-[31%] bg-[#202326]" aria-hidden="true" />
             <div className="absolute right-[31%] top-0 h-full w-px bg-black/15" aria-hidden="true" />
-            <div className="relative z-10 max-w-[64%]">
-              <div className="flex items-center gap-4">
-                <span className="h-px w-10 bg-black/70" aria-hidden="true" />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-black/55">
-                  AMC — All of My Career
-                </p>
-              </div>
-              <p className="mt-16 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/42">
-                {t("Private career decision architecture", "Private Career Decision Architecture")}
-              </p>
-              <h1 className="mt-5 text-4xl font-semibold leading-[1.08] sm:text-6xl">
-                {t("Strategic Career Decision Report", "전략적 커리어 결정 리포트")}
-              </h1>
-              <p className="mt-8 text-base font-medium text-black/58">Tip in. Decide. Value up.</p>
-              <p className="mt-3 text-sm font-semibold text-black/72">
-                {t("AMC sees structure.", "AMC는 구조를 봅니다.")}
-              </p>
-            </div>
+            <ReportCoverIdentity translate={t} />
             <div className="relative z-10 max-w-[64%]">
               <p className="border-l-2 border-black pl-4 text-sm font-semibold leading-6">
                 {t("Private structural interpretation report", "개인 커리어 결정을 위한 구조 해석 Report")}
@@ -3281,11 +3288,11 @@ export default function AmcWebMvp() {
                 </div>
               </div>
               <div className="pdf-structural-lens pdf-keep-together mt-9">
-                <div className="pdf-structural-lens-mark" aria-hidden="true">AMC</div>
+                <div className="pdf-structural-lens-mark" aria-hidden="true">01</div>
                 <div>
                   <p className="text-[10px] font-semibold uppercase text-white/55">Structural Lens</p>
                   <h3 className="mt-3 text-xl font-semibold leading-6 text-white">
-                    {t("AMC sees structure.", "AMC는 구조를 봅니다.")}
+                    {t("allofmycareer sees structure.", "allofmycareer는 구조를 봅니다.")}
                   </h3>
                   <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">
                     {t(
@@ -3295,8 +3302,8 @@ export default function AmcWebMvp() {
                   </p>
                   <p className="mt-3 max-w-3xl text-xs leading-5 text-white/55">
                     {t(
-                      "AMC applies one consistent decision architecture across cases, connecting your situation, available external evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
-                      "AMC는 모든 사례에 동일한 결정 구조를 적용해 현재 상황, 확인 가능한 외부 근거, 놓친 변수, Changing, Safety Margin, Decision Switches를 연결합니다.",
+                      "allofmycareer applies one consistent decision architecture across cases, connecting your situation, available external evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
+                      "allofmycareer는 모든 사례에 동일한 결정 구조를 적용해 현재 상황, 확인 가능한 외부 근거, 놓친 변수, Changing, Safety Margin, Decision Switches를 연결합니다.",
                     )}
                   </p>
                 </div>
@@ -3316,8 +3323,8 @@ export default function AmcWebMvp() {
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <h2 className="pdf-section-heading max-w-2xl">
                   {t(
-                    "This section separates external context from AMC’s decision reading. It shows what the outside environment appears to support, where evidence remains mixed, and what still requires validation.",
-                    "이 섹션은 외부 맥락을 AMC의 결정 해석과 분리하여 보여줍니다. 외부 환경이 무엇을 뒷받침하는지, 어디에서 근거가 혼재되어 있는지, 무엇을 추가로 검증해야 하는지 확인합니다.",
+                    "This section separates external context from allofmycareer’s decision reading. It shows what the outside environment appears to support, where evidence remains mixed, and what still requires validation.",
+                    "이 섹션은 외부 맥락을 allofmycareer의 결정 해석과 분리하여 보여줍니다. 외부 환경이 무엇을 뒷받침하는지, 어디에서 근거가 혼재되어 있는지, 무엇을 추가로 검증해야 하는지 확인합니다.",
                   )}
                 </h2>
                 <span className="inline-flex w-fit border border-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]">
@@ -3338,7 +3345,7 @@ export default function AmcWebMvp() {
                 <ul className="mt-4 grid grid-cols-1 gap-3 text-sm leading-6 text-black/65 sm:grid-cols-3">
                   {[
                     t("User-provided case context", "사용자가 입력한 사례 맥락"),
-                    t("AMC structural reading", "AMC 구조 해석"),
+                    t("allofmycareer structural reading", "allofmycareer 구조 해석"),
                     t("External evidence layer when available", "사용 가능한 경우 외부 근거 레이어"),
                   ].map((item) => (
                     <li key={item} className="border-l border-black/25 pl-3">{item}</li>
@@ -3604,7 +3611,7 @@ export default function AmcWebMvp() {
                 </p>
               </div>
               <div className="mt-14 flex items-end justify-between border-t border-black/20 pt-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">
-                <span>AMC — All of My Career</span>
+                <span className="normal-case tracking-normal">allofmycareer</span>
                 <span>{t("Private structural interpretation", "Private Structural Reading")}</span>
               </div>
             </section>
@@ -3620,8 +3627,8 @@ export default function AmcWebMvp() {
         <section className="grid grid-cols-1 gap-10 border-b border-border py-8 sm:py-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:py-20">
           <div>
             <div className="mb-6 flex items-center justify-between gap-3">
-              <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground">
-                AMC - All of My Career
+              <p className="text-xs font-semibold tracking-normal text-muted-foreground">
+                allofmycareer
               </p>
               <div
                 role="group"
@@ -3647,8 +3654,8 @@ export default function AmcWebMvp() {
             </div>
             <h1 className="max-w-4xl text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               {t(
-                "AMC sees structure.",
-                "AMC는 구조를 봅니다.",
+                "allofmycareer sees structure.",
+                "allofmycareer는 구조를 봅니다.",
               )}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -3684,20 +3691,20 @@ export default function AmcWebMvp() {
                 {t("Seven short questions. A first reading. No account needed.", "7개 질문으로 첫 결과를 확인하세요. 계정 없이 시작할 수 있습니다.")}
               </p>
               <a href="#how-amc-works" className="amc-how-link mt-2">
-                {t("See how AMC works", "AMC 진행 방식 보기")}
+                {t("See how allofmycareer works", "allofmycareer 진행 방식 보기")}
               </a>
             </div>
             <p className="mt-5 max-w-lg text-sm leading-relaxed text-muted-foreground">
               {t(
-                "AMC is a self-guided career decision tool. Start by seeing the structure of your decision; live coaching or mentoring is not included.",
-                "AMC는 스스로 선택의 구조를 살펴보는 커리어 의사결정 도구입니다. 실시간 코칭이나 멘토링은 포함되지 않습니다.",
+                "allofmycareer is a self-guided career decision tool. Start by seeing the structure of your decision; live coaching or mentoring is not included.",
+                "allofmycareer는 스스로 선택의 구조를 살펴보는 커리어 의사결정 도구입니다. 실시간 코칭이나 멘토링은 포함되지 않습니다.",
               )}
             </p>
           </div>
 
           <aside className="rounded-lg border border-border bg-card p-5 shadow-sm sm:p-7">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              {t("What AMC shows", "AMC가 보여주는 것")}
+            <p className="text-xs font-medium tracking-normal text-muted-foreground">
+              {t("What allofmycareer shows", "allofmycareer가 보여주는 것")}
             </p>
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {["Decision Type", "Core Tension", "Risk Diagnosis", "Decision Switches"].map(
@@ -3743,8 +3750,8 @@ export default function AmcWebMvp() {
                 />
                 <span>
                   {t(
-                    "I agree that my responses may be stored to generate my report, operate the service, and improve AMC. I will not enter confidential company information or sensitive personal data.",
-                    "리포트 생성, 서비스 운영 및 AMC 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
+                    "I agree that my responses may be stored to generate my report, operate the service, and improve allofmycareer. I will not enter confidential company information or sensitive personal data.",
+                    "리포트 생성, 서비스 운영 및 allofmycareer 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
                   )}
                 </span>
               </label>
@@ -3764,14 +3771,14 @@ export default function AmcWebMvp() {
 
         <section id="how-amc-works" className="border-b border-border py-12 sm:py-14">
           <SectionHeader
-            eyebrow={t("How AMC works", "AMC 진행 방식")}
+            eyebrow={t("How allofmycareer works", "allofmycareer 진행 방식")}
             title={t(
               "A staged path from quick view to full dashboard.",
               "Preview에서 Full Web Dashboard까지 단계적으로 확인합니다.",
             )}
             body={t(
-              "AMC sees structure.",
-              "AMC는 구조를 봅니다.",
+              "allofmycareer sees structure.",
+              "allofmycareer는 구조를 봅니다.",
             )}
           />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -3966,7 +3973,7 @@ export default function AmcWebMvp() {
         {previewGenerated ? (
           <section id="unlock" className="border-b border-border py-12 sm:py-14">
             <SectionHeader
-              eyebrow="AMC Full Structural Report"
+              eyebrow="allofmycareer Full Structural Report"
               title={t(
                 "One full report. One structured decision architecture.",
                 "하나의 Full Report로 결정의 구조를 끝까지 확인합니다.",
@@ -3979,7 +3986,7 @@ export default function AmcWebMvp() {
             <div className="rounded-lg border border-foreground/20 bg-card p-6 sm:p-7">
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
                 <div>
-                  <h3 className="text-2xl font-semibold leading-snug">AMC Full Structural Report</h3>
+                  <h3 className="text-2xl font-semibold leading-snug">allofmycareer Full Structural Report</h3>
                   <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                     {t(
                       "A complete reading of your situation, available external evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
@@ -4118,14 +4125,14 @@ export default function AmcWebMvp() {
             <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
               <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
                 {t(
-                  "Your responses may be securely stored to generate your report and improve AMC. Please avoid entering confidential company information or sensitive personal data.",
-                  "입력 내용은 리포트 생성과 AMC 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
+                  "Your responses may be securely stored to generate your report and improve allofmycareer. Please avoid entering confidential company information or sensitive personal data.",
+                  "입력 내용은 리포트 생성과 allofmycareer 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
                 )}
               </p>
               <p className="rounded-md border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
                 {t(
-                  "AMC uses a repeatable decision architecture rather than open-ended AI advice. It examines your situation, available evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
-                  "AMC는 개방형 AI 조언이 아니라 반복 가능한 결정 구조로 현재 상황, 확인 가능한 근거, 놓친 변수, Changing, Safety Margin, Decision Switches를 살펴봅니다.",
+                  "allofmycareer uses a repeatable decision architecture rather than open-ended AI advice. It examines your situation, available evidence, missing variables, Changing, Safety Margin, and Decision Switches.",
+                  "allofmycareer는 개방형 AI 조언이 아니라 반복 가능한 결정 구조로 현재 상황, 확인 가능한 근거, 놓친 변수, Changing, Safety Margin, Decision Switches를 살펴봅니다.",
                 )}
               </p>
             </div>
@@ -4138,8 +4145,8 @@ export default function AmcWebMvp() {
               />
               <span>
                 {t(
-                  "Optional: I agree that my de-identified responses may be used in aggregated form for AMC research, education, and service development.",
-                  "선택: 익명화된 응답이 AMC의 연구, 교육 및 서비스 개선을 위해 집계 형태로 활용되는 것에 동의합니다.",
+                  "Optional: I agree that my de-identified responses may be used in aggregated form for allofmycareer research, education, and service development.",
+                  "선택: 익명화된 응답이 allofmycareer의 연구, 교육 및 서비스 개선을 위해 집계 형태로 활용되는 것에 동의합니다.",
                 )}
               </span>
             </label>
@@ -4325,8 +4332,8 @@ export default function AmcWebMvp() {
               <div className="rounded-lg border border-border bg-card p-6">
                 <p className="max-w-3xl text-sm leading-relaxed text-foreground">
                   {t(
-                    "AMC sees structure.",
-                    "AMC는 구조를 봅니다.",
+                    "allofmycareer sees structure.",
+                    "allofmycareer는 구조를 봅니다.",
                   )}
                 </p>
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">

@@ -28,7 +28,7 @@ const howItWorks = [
   },
   {
     title: "Structural Reading",
-    body: "AMC reads burden, fit, risk, and defensibility.",
+    body: "allofmycareer reads burden, fit, risk, and defensibility.",
   },
   {
     title: "Receive Your Report",
@@ -42,20 +42,20 @@ const howItWorks = [
 
 const faqs = [
   {
-    q: "Is AMC coaching?",
-    a: "AMC is a self-guided career decision tool. It helps you examine your options, constraints, and next steps. Live coaching or mentoring is not included.",
+    q: "Is allofmycareer coaching?",
+    a: "allofmycareer is a self-guided career decision tool. It helps you examine your options, constraints, and next steps. Live coaching or mentoring is not included.",
   },
   {
-    q: "Will AMC tell me what to do?",
-    a: "AMC establishes a clear, non-prescriptive Current Structural Posture and shows what evidence would justify changing it.",
+    q: "Will allofmycareer tell me what to do?",
+    a: "allofmycareer establishes a clear, non-prescriptive Current Structural Posture and shows what evidence would justify changing it.",
   },
   {
     q: "What do I receive?",
     a: "You receive a structured written report centered on structural exposure, value logic, mobility logic, temperament, and commitment conditions.",
   },
   {
-    q: "Is AMC a generic AI chat tool?",
-    a: "No. AMC applies a consistent structural decision approach and delivers one Full Structural Report.",
+    q: "Is allofmycareer a generic AI chat tool?",
+    a: "No. allofmycareer applies a consistent structural decision approach and delivers one Full Structural Report.",
   },
   {
     q: "Do I need an account before I begin?",
@@ -106,7 +106,7 @@ export default function Home() {
         <section className="py-8 sm:py-14 lg:py-20 border-b border-border" id="top">
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 lg:gap-16 items-start">
             <div>
-              <p className="text-xs sm:text-sm uppercase tracking-[0.18em] text-muted-foreground mb-4">All of My Career</p>
+              <p className="text-xs sm:text-sm font-semibold tracking-normal text-muted-foreground mb-4">allofmycareer</p>
               <h1 className="text-4xl sm:text-5xl tracking-tight font-semibold leading-tight mb-6">
                 See the structure behind your next career move.
               </h1>
@@ -129,17 +129,17 @@ export default function Home() {
                   href="#how-it-works"
                   className="amc-how-link mt-2"
                 >
-                  See how AMC works
+                  See how allofmycareer works
                 </a>
               </div>
               <p className="text-sm text-muted-foreground mt-5 max-w-lg leading-relaxed">
-                AMC is a self-guided career decision tool. Start by seeing the structure of your decision; live coaching or mentoring is not included.
+                allofmycareer is a self-guided career decision tool. Start by seeing the structure of your decision; live coaching or mentoring is not included.
               </p>
             </div>
             <div className="border border-border rounded-lg bg-card p-6 sm:p-7">
               <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground mb-4">Delivery</p>
               <p className="text-sm text-foreground/90 leading-relaxed mb-3">
-                AMC is delivered as a structured report.
+                allofmycareer is delivered as a structured report.
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 One Full Structural Report combines the dashboard, deeper written interpretation, and validation plan.
@@ -150,13 +150,13 @@ export default function Home() {
 
         <section className="py-16 lg:py-20 border-b border-border" id="report-preview">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">What You Receive</h2>
-          <p className="text-base text-foreground/90 mb-2">AMC delivers a structured report as the core product.</p>
+          <p className="text-base text-foreground/90 mb-2">allofmycareer delivers a structured report as the core product.</p>
           <p className="text-sm text-muted-foreground mb-8">
             We help you see the structure behind today’s decision — including what you may be missing — so you can make a better-supported decision and preserve the capacity to change again.
           </p>
           <div className="border border-border rounded-lg bg-card p-7 sm:p-8 max-w-3xl">
             <div className="flex items-center justify-between mb-6">
-              <p className="text-sm font-medium tracking-wide">AMC Report Outline</p>
+              <p className="text-sm font-medium tracking-wide">allofmycareer Report Outline</p>
               <p className="text-xs text-muted-foreground uppercase tracking-[0.12em]">Structured Deliverable</p>
             </div>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
@@ -171,7 +171,7 @@ export default function Home() {
         </section>
 
         <section className="py-16 lg:py-20 border-b border-border" id="how-it-works">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">How AMC Works</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">How allofmycareer Works</h2>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 lg:gap-0">
             {howItWorks.map((step, idx) => (
               <div
@@ -201,17 +201,17 @@ export default function Home() {
         <section className="py-16 lg:py-20 border-b border-border" id="formats">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">One Full Structural Report</h2>
           <p className="text-sm text-muted-foreground mb-8">
-            AMC uses one report format so the dashboard and detailed written interpretation represent the same intelligence.
+            allofmycareer uses one report format so the dashboard and detailed written interpretation represent the same intelligence.
           </p>
           <div className="border border-border rounded-lg p-6 bg-card max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-3">AMC Full Structural Report</p>
+            <p className="text-xs tracking-normal text-muted-foreground mb-3">allofmycareer Full Structural Report</p>
             <p className="text-lg font-medium mb-2">Full Dashboard + Detailed PDF Report</p>
-            <p className="text-sm text-muted-foreground">Full Structural Dashboard + Detailed Report, built from the same AMC structural analysis.</p>
+            <p className="text-sm text-muted-foreground">Full Structural Dashboard + Detailed Report, built from the same allofmycareer structural analysis.</p>
           </div>
         </section>
 
         <section className="py-16 lg:py-20 border-b border-border" id="fit">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">Who AMC Is For / Not For</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">Who allofmycareer Is For / Not For</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border border-border rounded-lg p-6 bg-card">
               <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground mb-4">For</p>
@@ -239,7 +239,7 @@ export default function Home() {
         </section>
 
         <section className="py-16 lg:py-20 border-b border-border" id="difference">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">What Makes AMC Different</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-8">What Makes allofmycareer Different</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {differences.map((item) => (
               <div key={item} className="border border-border rounded-lg p-5 bg-card">
