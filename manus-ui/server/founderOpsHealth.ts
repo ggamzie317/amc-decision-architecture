@@ -1,3 +1,5 @@
+import { completedInteractive } from "../shared/interactivePrivacy.js";
+import { expectedIntakeAnswers, buildSimulatorAnalytics } from "./simulatorAnalytics.js";
 import postgres from "postgres";
 
 import { adminAuthConfigured } from "./founderAdminAuth.js";
@@ -162,8 +164,9 @@ export function buildDataQuality(submissions: SubmissionRecord[]): DataQuality {
     completeFullIntake: count(
       item =>
         Boolean(item.fullIntakeCompletedAt) &&
-        Object.values(item.answersJson).filter(answer => answer.trim())
-          .length === 29
+        (expectedIntakeAnswers(item) === 0
+          ? Object.keys(item.answersJson).length === 0 && completedInteractive(item.structuralOutputJson)
+          : Object.values(item.answersJson).filter(answer => answer.trim()).length === 29)
     ),
     structuralOutputSaved: count(item =>
       hasObjectData(item.structuralOutputJson)

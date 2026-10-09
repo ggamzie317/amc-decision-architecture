@@ -17,6 +17,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/amc-web-mvp"} component={AmcWebMvp} />
+      <Route path="/amc-interactive-v1">{() => <AmcWebMvp key="interactive-v1" interactive />}</Route>
       <Route path={"/amc-admin"} component={AmcAdmin} />
       <Route path={"/intake"} component={LegacyProductRedirect} />
       <Route path={"/format-handoff"} component={LegacyProductRedirect} />

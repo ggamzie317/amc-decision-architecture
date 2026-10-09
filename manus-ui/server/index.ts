@@ -1,4 +1,5 @@
 import express from "express";
+import { handleJevScenario } from "./jevScenario.js";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -44,6 +45,7 @@ async function startServer() {
 
   registerAmcSubmissionBridge(app, __dirname);
   registerFounderOpsRoutes(app);
+  app.post("/api/amc/jev-scenario", handleJevScenario);
 
   app.post("/api/amc/external-snapshot", async (req, res) => {
     res.setHeader("Cache-Control", "no-store");

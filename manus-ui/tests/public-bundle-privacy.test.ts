@@ -45,6 +45,7 @@ describe("AMC public bundle privacy gate", () => {
       .filter((file) => /\.(?:js|css|html)$/i.test(file))
       .map((file) => fs.readFileSync(file, "utf8"))
       .join("\n");
+    expect(bundle).not.toMatch(/AI_GATEWAY_API_KEY|getVercelOidcTokenSync|ai-gateway\.vercel\.sh\/typesafe/);
     const leakedMarkerIds = markers.filter((marker) => bundle.includes(marker.value)).map((marker) => marker.id);
     expect(leakedMarkerIds, "Public assets contain one or more hashed historical-fixture markers.").toEqual([]);
   });

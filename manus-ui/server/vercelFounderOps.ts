@@ -1,3 +1,5 @@
+import { isInteractive, projectInteractivePatch, projectInteractiveMetadata } from "../shared/interactivePrivacy.js";
+import { sanitizeSimulatorMetadata } from "./simulatorAnalytics.js";
 import { buildLaunchOpsSummary } from "./launchOpsAnalytics.js";
 import { configuredAgentPreset } from "./externalSnapshotService.js";
 import {
@@ -98,10 +100,12 @@ export async function handleTrack(
       body.eventType === "dashboard_generated" &&
       result.submissionId
     ) {
-      void sendFounderReportNotification(
-        result.submissionId,
-        (body.patch || {}) as SubmissionPatch
-      ).catch(() => undefined);
+      const id = result.submissionId;
+      void (async () => {
+        const stored = (await store.getSubmission(id))?.submission;
+        await sendFounderReportNotification(id,
+          (isInteractive(stored?.structuralOutputJson) ? projectInteractivePatch(stored) : body.patch || {}) as SubmissionPatch);
+      })().catch(() => undefined);
     }
   } catch {
     res
@@ -236,7 +240,10 @@ export async function handleAdminSubmission(
       res.status(404).json({ error: "Submission not found" });
       return;
     }
-    res.status(200).json(detail);
+    res.status(200).json(isInteractive(detail.submission.structuralOutputJson) ? {
+      submission: {...detail.submission, ...projectInteractivePatch(detail.submission)},
+      events: detail.events.map(e => ({...e, metadataJson:{...projectInteractiveMetadata(e.metadataJson),...sanitizeSimulatorMetadata(e.metadataJson)}})),
+    } : detail);
   } catch {
     res.status(503).json({ error: "Data backend unavailable" });
   }

@@ -4,6 +4,13 @@ const LEGACY_SUBMISSION_STORAGE_KEY = "amc_launch_v3_submission_id";
 const SUBMISSION_ID_PATTERN = /^AMC-\d{8}-[A-F0-9]{8}$/;
 
 export type JourneyEventType =
+  | "simulator_opened"
+  | "scenario_variable_changed"
+  | "scenario_evaluated"
+  | "scenario_reset"
+  | "jev_assessment_requested"
+  | "jev_assessment_completed"
+  | "jev_assessment_unavailable"
   | "preview_started"
   | "preview_completed"
   | "full_intake_started"
@@ -30,6 +37,7 @@ type JourneyFetchResponse = { json(): Promise<unknown> };
 type JourneyFetcher = (url: string, init: RequestInit) => Promise<JourneyFetchResponse>;
 
 type JourneyTrackerOptions = {
+  storageNamespace?: "interactive-v1";
   fetcher: JourneyFetcher;
   getSessionStorage: () => JourneyStorage | null;
   getLegacyStorage: () => JourneyStorage | null;
@@ -69,6 +77,8 @@ function setStorageValue(storage: JourneyStorage | null, key: string, value: str
 
 export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
   let queue = Promise.resolve();
+  const submissionKey = ACTIVE_SUBMISSION_STORAGE_KEY + (options.storageNamespace ? `_${options.storageNamespace}` : "");
+  const statusKey = ACTIVE_JOURNEY_STATUS_KEY + (options.storageNamespace ? `_${options.storageNamespace}` : "");
 
   return function trackJourney(input: TrackJourneyInput) {
     if (!input.serviceStorageConsent) return queue;
@@ -80,8 +90,8 @@ export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
 
       const requestsNewJourney =
         input.eventType === "preview_started" && input.newSubmission === true;
-      const storedSubmissionId = storageValue(sessionStorage, ACTIVE_SUBMISSION_STORAGE_KEY);
-      const activeJourneyStatus = storageValue(sessionStorage, ACTIVE_JOURNEY_STATUS_KEY);
+      const storedSubmissionId = storageValue(sessionStorage, submissionKey);
+      const activeJourneyStatus = storageValue(sessionStorage, statusKey);
       const resumesActiveJourney =
         requestsNewJourney &&
         SUBMISSION_ID_PATTERN.test(storedSubmissionId) &&
@@ -91,8 +101,8 @@ export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
 
       if (resumesActiveJourney) return;
       if (startsNewJourney) {
-        removeStorageValue(sessionStorage, ACTIVE_SUBMISSION_STORAGE_KEY);
-        removeStorageValue(sessionStorage, ACTIVE_JOURNEY_STATUS_KEY);
+        removeStorageValue(sessionStorage, submissionKey);
+        removeStorageValue(sessionStorage, statusKey);
       }
       if (!startsNewJourney && input.eventType !== "preview_started" && !activeSubmissionId) return;
 
@@ -115,10 +125,10 @@ export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
           typeof result.submissionId === "string" &&
           SUBMISSION_ID_PATTERN.test(result.submissionId)
         ) {
-          setStorageValue(sessionStorage, ACTIVE_SUBMISSION_STORAGE_KEY, result.submissionId);
+          setStorageValue(sessionStorage, submissionKey, result.submissionId);
           setStorageValue(
             sessionStorage,
-            ACTIVE_JOURNEY_STATUS_KEY,
+            statusKey,
             startsNewJourney
               ? "active"
               : input.eventType === "dashboard_generated"
@@ -128,13 +138,13 @@ export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
           return;
         }
         if (startsNewJourney) {
-          removeStorageValue(sessionStorage, ACTIVE_SUBMISSION_STORAGE_KEY);
-          removeStorageValue(sessionStorage, ACTIVE_JOURNEY_STATUS_KEY);
+          removeStorageValue(sessionStorage, submissionKey);
+          removeStorageValue(sessionStorage, statusKey);
         }
       } catch {
         if (startsNewJourney) {
-          removeStorageValue(sessionStorage, ACTIVE_SUBMISSION_STORAGE_KEY);
-          removeStorageValue(sessionStorage, ACTIVE_JOURNEY_STATUS_KEY);
+          removeStorageValue(sessionStorage, submissionKey);
+          removeStorageValue(sessionStorage, statusKey);
         }
         // Operations persistence is best-effort and must never block the report flow.
       }
@@ -155,6 +165,14 @@ export function trackAmcJourney(input: TrackJourneyInput) {
 }
 
 /** Opaque journey correlation only; provider details remain on the server. */
-export function activeAmcSubmissionId() {
-  return storageValue(safeStorage(() => typeof window === "undefined" ? null : window.sessionStorage), ACTIVE_SUBMISSION_STORAGE_KEY);
+export function activeAmcSubmissionId(experience?: "interactive-v1") {
+  return storageValue(safeStorage(() => typeof window === "undefined" ? null : window.sessionStorage), ACTIVE_SUBMISSION_STORAGE_KEY + (experience ? `_${experience}` : ""));
 }
+
+const interactiveJourneyTracker = createFounderOpsJourneyTracker({
+  storageNamespace: "interactive-v1",
+  fetcher: (url, init) => fetch(url, init),
+  getSessionStorage: () => (typeof window === "undefined" ? null : window.sessionStorage),
+  getLegacyStorage: () => (typeof window === "undefined" ? null : window.localStorage),
+});
+export function trackInteractiveJourney(input: TrackJourneyInput) { return interactiveJourneyTracker(input); }

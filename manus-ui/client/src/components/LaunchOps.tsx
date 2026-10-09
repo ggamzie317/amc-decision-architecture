@@ -1,3 +1,4 @@
+import SimulatorAnalytics from "./SimulatorAnalytics";
 import type { LaunchOpsSummary } from "../../../server/launchOpsAnalytics";
 
 type LaunchResponse =
@@ -76,7 +77,7 @@ function Pattern({
 const integrityLabels: Record<string, string> = {
   suspiciousLifecycle: "Duplicate starts / missing or out-of-order stages",
   completedAnswerCountMismatch:
-    "Completed intake without exactly 29 valid answers",
+    "Completed intake with invalid schema-specific answer count",
   completedMissingStructuralOutput:
     "Dashboard missing complete structural output",
   liveMissingDerivedSync: "Live evidence missing final derived sync",
@@ -97,6 +98,7 @@ export default function LaunchOps({
   const config = data?.configuration;
   return (
     <div className="mt-6 space-y-6">
+      {data?.backendAvailable && <SimulatorAnalytics data={data.simulator} />}
       <section className="rounded border border-border bg-card p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
           Launch Ops

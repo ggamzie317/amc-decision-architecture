@@ -1,3 +1,4 @@
+import { buildSimulatorAnalytics } from "./simulatorAnalytics.js";
 import type {
   OperationsSummary,
   ResearchSummary,
@@ -46,6 +47,7 @@ export function buildOperationsSummary(
 
   return {
     backendAvailable: true,
+    simulator: buildSimulatorAnalytics(submissions, events),
     totals: {
       submissions: submissions.length,
       previewStarts,

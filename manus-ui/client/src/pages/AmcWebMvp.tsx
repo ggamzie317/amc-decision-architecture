@@ -1,6 +1,10 @@
+import { identity, projectInteractivePatch, projectInteractiveMetadata } from "../../../shared/interactivePrivacy";
+import { adaptIntake15, intake15Groups, intake15Questions, intake15SelectorMap, INTAKE_V4_SCHEMA, EXPERIENCE_VERSION } from "../data/amcIntakeV4";
+import InteractiveSimulator from "../components/InteractiveSimulator";
+import type { ProductApplicationBuildInput } from "../data/amcProductApplicationV3";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ProductApplicationDashboard, ProductApplicationReport } from "../components/ProductApplicationViews";
-import { activeAmcSubmissionId, trackAmcJourney } from "../data/amcFounderOps";
+import { activeAmcSubmissionId, trackAmcJourney, trackInteractiveJourney } from "../data/amcFounderOps";
 import { buildFounderOpsDerivedPatch, founderOpsDerivedFingerprint } from "../data/amcFounderOpsDerived";
 import {
   buildCurrentCaseStructuralSignals,
@@ -846,7 +850,7 @@ const fullIntakeGuidance: Record<number, FullIntakeGuidance> = {
   },
 };
 
-const totalFullIntakeQuestions = intakeGroups.reduce((total, group) => total + group.questions.length, 0);
+const legacyTotalFullIntakeQuestions = intakeGroups.reduce((total, group) => total + group.questions.length, 0);
 
 const dashboardDeck = [
   {
@@ -1965,7 +1969,7 @@ function includesCaseKeyword(text: string, keyword: string) {
   return text.includes(keyword.toLowerCase());
 }
 
-function detectCaseType(previewAnswers: PreviewAnswers, fullAnswers: Record<number, string>): CaseType {
+export function detectCaseType(previewAnswers: PreviewAnswers, fullAnswers: Record<number, string>): CaseType {
   const answerText = [...Object.values(previewAnswers), ...Object.values(fullAnswers)]
     .join(" ")
     .toLowerCase();
@@ -2642,7 +2646,14 @@ export function ReportLettermark() {
   return <span className="pdf-report-lettermark" aria-hidden="true">allofmycareer</span>;
 }
 
-export default function AmcWebMvp() {
+export default function AmcWebMvp({ interactive = false }: { interactive?: boolean; params?: unknown } = {}) {
+  const activeIntakeGroups = interactive ? intake15Groups : intakeGroups;
+  const totalFullIntakeQuestions = interactive ? 15 : legacyTotalFullIntakeQuestions;
+  const selectorId = (id: number) => interactive ? intake15SelectorMap[id] ?? null : isCurrentCaseStructuredQuestionId(id) ? id : null;
+  const trackJourney: typeof trackAmcJourney = input => (interactive ? trackInteractiveJourney : trackAmcJourney)(interactive ? {
+    ...input, metadata: {...projectInteractiveMetadata(input.metadata), ...input.metadata && Object.fromEntries(Object.entries(input.metadata).filter(([key]) => ["variable","baselineBand","newBand","mode","postureChanged","safetyChanged","changingChanged"].includes(key)))},
+    patch: projectInteractivePatch({...input.patch, structuralOutputJson: {...input.patch?.structuralOutputJson as object, ...identity}}),
+  } : input);
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
   const [language, setLanguage] = useState<Language>("en");
@@ -2665,7 +2676,7 @@ export default function AmcWebMvp() {
   const [answers, setAnswers] = useState<PreviewAnswers>(initialPreviewAnswers);
   const [fullIntakeAnswers, setFullIntakeAnswers] = useState<Record<number, string>>({});
   const [currentCaseStructuredSelections, setCurrentCaseStructuredSelections] = useState<CurrentCaseStructuredSelections>(initialCurrentCaseStructuredSelections);
-  const [expandedGroups, setExpandedGroups] = useState<string[]>([intakeGroups[0].title]);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([activeIntakeGroups[0].title]);
   const [externalSnapshot, setExternalSnapshot] = useState<ExternalSnapshot | null>(null);
   const [externalSnapshotLoading, setExternalSnapshotLoading] = useState(false);
   const [externalSnapshotError, setExternalSnapshotError] = useState<string | null>(null);
@@ -2675,6 +2686,7 @@ export default function AmcWebMvp() {
   const externalSnapshotRequestId = useRef(0);
   const lastDerivedSyncFingerprint = useRef("");
 
+  const engineAnswers = useMemo(() => interactive ? adaptIntake15(answers, fullIntakeAnswers) : fullIntakeAnswers, [interactive, answers, fullIntakeAnswers]);
   const isKo = language === "ko";
   const t = (en: string, ko: string) => (isKo ? ko : en);
   const optionALabel = reportOptionLabel(answers.optionA, t("Option A", "선택지 A"));
@@ -2693,17 +2705,17 @@ export default function AmcWebMvp() {
     [isKo],
   );
   const requiredPreviewReady = Boolean(answers.decision.trim() && answers.optionA.trim() && answers.optionB.trim());
-  const answeredQuestionCount = useMemo(() => intakeGroups.reduce((count, group) => count + group.questions.filter((question) => {
+  const answeredQuestionCount = useMemo(() => activeIntakeGroups.reduce((count, group) => count + group.questions.filter((question) => {
     const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
     if (!hasExplanation) return false;
-    return !isCurrentCaseStructuredQuestionId(question.id) || currentCaseStructuredSelections[question.id] !== null;
+    return selectorId(question.id) === null || currentCaseStructuredSelections[selectorId(question.id)!] !== null;
   }).length, 0), [currentCaseStructuredSelections, fullIntakeAnswers]);
   const progress = Math.round((answeredQuestionCount / totalFullIntakeQuestions) * 100);
   const fullIntakeComplete = answeredQuestionCount === totalFullIntakeQuestions;
   const expandedGroupSet = useMemo(() => new Set(expandedGroups), [expandedGroups]);
   const detectedCaseType = useMemo(
-    () => detectCaseType(answers, fullIntakeAnswers),
-    [answers, fullIntakeAnswers],
+    () => detectCaseType(answers, engineAnswers),
+    [answers, engineAnswers],
   );
   const caseTypeReading = caseTypeInterpretations[detectedCaseType];
   const caseSpecificReading = caseSpecificReadings[detectedCaseType];
@@ -2751,14 +2763,13 @@ export default function AmcWebMvp() {
     };
     return { ...signal, status: localizedStatus[signal.label] || signal.status };
   }), [isKo, safetyMarginCore]);
-  const productApplicationV3 = useMemo(
-    () =>
-      buildProductApplicationV3({
+  const productBuildInput = useMemo<ProductApplicationBuildInput>(
+    () => ({
         language,
         caseType: detectedCaseType,
         optionA: optionALabel,
         optionB: optionBLabel,
-        answers: fullIntakeAnswers,
+        answers: engineAnswers,
         fifwm,
         fifwmSource: "unavailable",
         safetyMarginInputs,
@@ -2782,7 +2793,7 @@ export default function AmcWebMvp() {
       caseSpecificReading,
       detectedCaseType,
       displayedExternalSnapshot,
-      fullIntakeAnswers,
+      engineAnswers,
       fifwm,
       currentCaseStructuralSignals,
       isKo,
@@ -2795,6 +2806,7 @@ export default function AmcWebMvp() {
       safetyMarginInputs,
     ],
   );
+  const productApplicationV3 = useMemo(() => buildProductApplicationV3(productBuildInput), [productBuildInput]);
   const founderOpsDerivedPatch = useMemo(
     () => buildFounderOpsDerivedPatch({
       productApplication: productApplicationV3,
@@ -2836,7 +2848,7 @@ export default function AmcWebMvp() {
         : null;
     if (!terminalEvent || lastDerivedSyncFingerprint.current === derivedSyncFingerprint) return;
     lastDerivedSyncFingerprint.current = derivedSyncFingerprint;
-    void trackAmcJourney({
+    void trackJourney({
       eventType: terminalEvent,
       language,
       serviceStorageConsent,
@@ -2856,13 +2868,14 @@ export default function AmcWebMvp() {
     serviceStorageConsent,
   ]);
   const updateAnswer = (field: keyof PreviewAnswers, value: string) => {
+    if (interactive && dashboardGenerated) return;
     setAnswers((current) => ({ ...current, [field]: value }));
   };
 
   const startPreview = () => {
     if (!serviceStorageConsent) return;
     const now = new Date().toISOString();
-    void trackAmcJourney({
+    void trackJourney({
       eventType: "preview_started",
       language,
       serviceStorageConsent,
@@ -2877,7 +2890,7 @@ export default function AmcWebMvp() {
   };
 
   const generatePreview = () => {
-    void trackAmcJourney({
+    void trackJourney({
       eventType: "preview_completed",
       language,
       serviceStorageConsent,
@@ -2890,7 +2903,7 @@ export default function AmcWebMvp() {
   };
 
   const continueToFullReport = () => {
-    void trackAmcJourney({
+    void trackJourney({
       eventType: "full_intake_started",
       language,
       serviceStorageConsent,
@@ -2922,10 +2935,10 @@ export default function AmcWebMvp() {
 
   const fillSampleAnswers = () => {
     const sampleAnswers = Object.fromEntries(
-      intakeGroups.flatMap((group) =>
+      activeIntakeGroups.flatMap((group) =>
         group.questions.map((question) => [
           question.id,
-          isKo ? intakeQuestionsKo[question.id].sample : question.sample,
+          interactive ? (isKo ? "검증할 조건과 현재의 여유를 정리합니다." : "Describe current capacity and conditions to validate.") : isKo ? intakeQuestionsKo[question.id].sample : question.sample,
         ]),
       ),
     ) as Record<number, string>;
@@ -2938,12 +2951,12 @@ export default function AmcWebMvp() {
       23: "developing",
       25: "material",
     });
-    setExpandedGroups(intakeGroups.map((group) => group.title));
+    setExpandedGroups(activeIntakeGroups.map((group) => group.title));
   };
 
   const generateDashboard = () => {
     const generatedAt = new Date().toISOString();
-    void trackAmcJourney({
+    void trackJourney({
       eventType: "full_intake_completed",
       language,
       serviceStorageConsent,
@@ -2951,18 +2964,18 @@ export default function AmcWebMvp() {
         currentStage: "full_intake_completed",
         fullIntakeCompletedAt: generatedAt,
         researchUseConsent,
-        answersJson: Object.fromEntries(Object.entries(fullIntakeAnswers).map(([key, value]) => [key, value])),
+        answersJson: interactive ? {} : Object.fromEntries(Object.entries(fullIntakeAnswers).map(([key, value]) => [key, value])),
       },
     });
     const evidenceRequestId = crypto.randomUUID();
-    const evidenceTracking = trackAmcJourney({
+    const evidenceTracking = trackJourney({
       eventType: "external_evidence_requested",
       metadata: { requestId: evidenceRequestId },
       language,
       serviceStorageConsent,
       patch: { caseType: detectedCaseType },
     });
-    void trackAmcJourney({
+    void trackJourney({
       eventType: "dashboard_generated",
       language,
       serviceStorageConsent,
@@ -2987,16 +3000,16 @@ export default function AmcWebMvp() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        submissionId: activeAmcSubmissionId(),
+        submissionId: activeAmcSubmissionId(interactive ? "interactive-v1" : undefined),
         requestId: evidenceRequestId,
         caseType: detectedCaseType,
         optionA: optionALabel,
         optionB: optionBLabel,
         currentDecision: decisionContext,
-        externalPressure: [fullIntakeAnswers[11], fullIntakeAnswers[12], fullIntakeAnswers[13]]
+        externalPressure: interactive ? fullIntakeAnswers[5] : [fullIntakeAnswers[11], fullIntakeAnswers[12], fullIntakeAnswers[13]]
           .filter(Boolean)
           .join(" "),
-        validationNeed: [fullIntakeAnswers[14], fullIntakeAnswers[28]].filter(Boolean).join(" "),
+        validationNeed: interactive ? fullIntakeAnswers[6] : [fullIntakeAnswers[14], fullIntakeAnswers[28]].filter(Boolean).join(" "),
         language: isKo ? "kr" : "en",
       }),
     }))
@@ -3025,7 +3038,7 @@ export default function AmcWebMvp() {
 
   const selectLanguage = (nextLanguage: Language) => {
     if (nextLanguage === language) return;
-    void trackAmcJourney({
+    void trackJourney({
       eventType: "language_changed",
       language: nextLanguage,
       serviceStorageConsent,
@@ -3036,7 +3049,7 @@ export default function AmcWebMvp() {
   };
 
   const generateDetailedReport = () => {
-    void trackAmcJourney({
+    void trackJourney({
       eventType: "detailed_report_opened",
       language,
       serviceStorageConsent,
@@ -3182,7 +3195,7 @@ export default function AmcWebMvp() {
               <button
                 type="button"
                 onClick={() => {
-                  void trackAmcJourney({
+                  void trackJourney({
                     eventType: "print_save_clicked",
                     language,
                     serviceStorageConsent,
@@ -3750,11 +3763,19 @@ export default function AmcWebMvp() {
                 />
                 <span>
                   {t(
-                    "I agree that my responses may be stored to generate my report, operate the service, and improve allofmycareer. I will not enter confidential company information or sensitive personal data.",
-                    "리포트 생성, 서비스 운영 및 allofmycareer 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
+                    interactive ? "My written answers stay in this session. I agree to storage of de-identified structural results and service activity." : "I agree that my responses may be stored to generate my report, operate the service, and improve allofmycareer. I will not enter confidential company information or sensitive personal data.",
+                    interactive ? "작성한 답변은 현재 세션에만 유지됩니다. 비식별 구조 결과와 서비스 활동 정보 저장에 동의합니다." : "리포트 생성, 서비스 운영 및 allofmycareer 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
                   )}
                 </span>
               </label>
+              {interactive && (
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  {t(
+                    "Your written answers are not stored by allofmycareer. Limited decision context may be sent to an external AI/search provider to generate current external evidence. Please do not enter confidential company information or sensitive personal data.",
+                    "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 현재 외부 근거를 생성하기 위해 결정에 필요한 일부 내용이 외부 AI/검색 제공자에게 전달될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요."
+                  )}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={startPreview}
@@ -3979,8 +4000,8 @@ export default function AmcWebMvp() {
                 "하나의 Full Report로 결정의 구조를 끝까지 확인합니다.",
               )}
               body={t(
-                  "Continue to the 29-question Full Intake, Current External Evidence, Full Dashboard, and Detailed PDF Report.",
-                "29개 Full Intake, Live External Evidence, Full Dashboard, Detailed PDF Report로 이어집니다.",
+                  interactive ? "Continue to the 15-question Full Intake, Current External Evidence, Full Dashboard, and Detailed PDF Report." : "Continue to the 29-question Full Intake, Current External Evidence, Full Dashboard, and Detailed PDF Report.",
+                interactive ? "15개 Full Intake, Live External Evidence, Full Dashboard, Detailed PDF Report로 이어집니다." : "29개 Full Intake, Live External Evidence, Full Dashboard, Detailed PDF Report로 이어집니다.",
               )}
             />
             <div className="rounded-lg border border-foreground/20 bg-card p-6 sm:p-7">
@@ -4112,8 +4133,9 @@ export default function AmcWebMvp() {
           </section>
         ) : null}
 
-        {fullIntakeUnlocked ? (
+        {fullIntakeUnlocked && (!interactive || !dashboardGenerated) ? (
           <section id="full-intake" className="border-b border-border py-12 sm:py-14">
+            {interactive && <p className="mb-6 text-sm leading-relaxed">{t("We already have the core of your decision. These 15 questions deepen the structure without asking you to start again.", "이미 결정의 핵심 내용은 확인했습니다. 아래 15개 질문은 같은 내용을 다시 묻지 않고 결정 구조를 더 깊게 살펴봅니다.")}<br/>{answers.decision} · {answers.optionA} / {answers.optionB}</p>}
             <SectionHeader
               eyebrow="Full Intake"
               title={t("A deeper evidence base for the full dashboard.", "Full Web Dashboard를 위한 근거를 정리합니다.")}
@@ -4125,8 +4147,8 @@ export default function AmcWebMvp() {
             <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
               <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
                 {t(
-                  "Your responses may be securely stored to generate your report and improve allofmycareer. Please avoid entering confidential company information or sensitive personal data.",
-                  "입력 내용은 리포트 생성과 allofmycareer 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
+                  interactive ? "Your written answers are not stored by allofmycareer. Limited decision context may be sent to an external AI/search provider to generate current external evidence. Please do not enter confidential company information or sensitive personal data." : "Your responses may be securely stored to generate your report and improve allofmycareer. Please avoid entering confidential company information or sensitive personal data.",
+                  interactive ? "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 현재 외부 근거를 생성하기 위해 결정에 필요한 일부 내용이 외부 AI/검색 제공자에게 전달될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요." : "입력 내용은 리포트 생성과 allofmycareer 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
                 )}
               </p>
               <p className="rounded-md border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
@@ -4145,8 +4167,8 @@ export default function AmcWebMvp() {
               />
               <span>
                 {t(
-                  "Optional: I agree that my de-identified responses may be used in aggregated form for allofmycareer research, education, and service development.",
-                  "선택: 익명화된 응답이 allofmycareer의 연구, 교육 및 서비스 개선을 위해 집계 형태로 활용되는 것에 동의합니다.",
+                  interactive ? "Optional: I agree to aggregated use of de-identified structural patterns for research, education, and service development." : "Optional: I agree that my de-identified responses may be used in aggregated form for allofmycareer research, education, and service development.",
+                  interactive ? "선택 사항: 비식별 구조 패턴을 연구·교육·서비스 개발에 집계하여 사용하는 데 동의합니다." : "선택: 익명화된 응답이 allofmycareer의 연구, 교육 및 서비스 개선을 위해 집계 형태로 활용되는 것에 동의합니다.",
                 )}
               </span>
             </label>
@@ -4178,11 +4200,11 @@ export default function AmcWebMvp() {
             </div>
 
             <div className="space-y-4">
-              {intakeGroups.map((group, index) => {
+              {activeIntakeGroups.map((group, index) => {
                 const expanded = expandedGroupSet.has(group.title);
                 const answeredInGroup = group.questions.filter((question) => {
                   const hasExplanation = Boolean(fullIntakeAnswers[question.id]?.trim());
-                  return hasExplanation && (!isCurrentCaseStructuredQuestionId(question.id) || currentCaseStructuredSelections[question.id] !== null);
+                  return hasExplanation && (selectorId(question.id) === null || currentCaseStructuredSelections[selectorId(question.id)!] !== null);
                 }).length;
                 const complete = answeredInGroup === group.questions.length;
 
@@ -4217,10 +4239,10 @@ export default function AmcWebMvp() {
                       <div className="border-t border-border bg-background/50 p-5">
                         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                           {group.questions.map((question) => {
-                            const guidance = isKo
+                            const guidance = interactive ? {guide: "", example: ""} : isKo
                               ? fullIntakeGuidance[question.id].ko
                               : fullIntakeGuidance[question.id].en;
-                            const structuredQuestionId = isCurrentCaseStructuredQuestionId(question.id) ? question.id : null;
+                            const structuredQuestionId = selectorId(question.id);
 
                             return (
                               <div key={question.id} className="rounded-md border border-border bg-background p-4">
@@ -4228,7 +4250,7 @@ export default function AmcWebMvp() {
                                   {t("Question", "질문")} {question.id}
                                 </span>
                                 <label htmlFor={`full-intake-${question.id}`} className="mt-2 block min-h-10 text-sm font-medium leading-snug">
-                                  {isKo ? intakeQuestionsKo[question.id].text : question.text}
+                                  {interactive && isKo ? intake15Questions[question.id - 1].ko : isKo ? intakeQuestionsKo[question.id].text : question.text}
                                 </label>
                                 {structuredQuestionId !== null ? (
                                   <fieldset className="mt-3">
@@ -4260,13 +4282,13 @@ export default function AmcWebMvp() {
                                     </div>
                                   </fieldset>
                                 ) : null}
-                                <span className="mt-3 block text-xs leading-relaxed text-muted-foreground">
+                                {!interactive && <><span className="mt-3 block text-xs leading-relaxed text-muted-foreground">
                                   <span className="font-medium text-foreground">{t("Guide", "가이드")}:</span>{" "}
                                   {guidance.guide}
                                 </span>
                                 <span className="mt-2 block text-xs leading-relaxed text-muted-foreground">
                                   {guidance.example}
-                                </span>
+                                </span></>}
                                 <textarea
                                   id={`full-intake-${question.id}`}
                                   value={fullIntakeAnswers[question.id] || ""}
@@ -4317,6 +4339,7 @@ export default function AmcWebMvp() {
               />
 
               <ProductApplicationDashboard intelligence={productApplicationV3} translate={t} externalEvidenceUsed={displayedExternalSnapshot.status === "live"} />
+              {interactive && !externalSnapshotLoading && <InteractiveSimulator input={productBuildInput} baseline={productApplicationV3} track={trackJourney} consent={serviceStorageConsent} />}
 
             </section>
 
