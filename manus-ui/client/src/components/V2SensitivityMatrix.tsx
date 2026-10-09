@@ -20,9 +20,11 @@ const impacts = [
 ] as const;
 export default function V2SensitivityMatrix({
   rows,
+  variables,
   language,
 }: {
   rows: V2Sensitivity[];
+  variables: readonly ScenarioVariable[];
   language: V2Language;
 }) {
   const t = (key: V2CopyKey) => v2t(language, key);
@@ -36,10 +38,11 @@ export default function V2SensitivityMatrix({
           </span>
         ))}
       </div>
-      {groupV2Sensitivity(rows).map(group => (
+      {groupV2Sensitivity(rows, variables).map(group => (
         <div
           className="v2-matrix-row"
           data-testid="v2-sensitivity-row"
+          data-variable={group.variable}
           key={group.variable}
         >
           <strong className="v2-matrix-variable">

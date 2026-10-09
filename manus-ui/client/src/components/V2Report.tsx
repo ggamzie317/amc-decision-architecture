@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import V2SensitivityMatrix from "./V2SensitivityMatrix";
+import { selectV2SimulatorVariables } from "../data/amcV2SensitivityView";
+import { baselineBands } from "../data/amcScenario";
 import {
   inspectV2ReportDensity,
   lowDensityPages,
@@ -47,7 +49,11 @@ export default function V2Report({
 }) {
   const t = (k: V2CopyKey) => v2t(state.language, k),
     d = v2DecisionReadings(state, core),
-    sensitivity = buildV2Sensitivity(input, core);
+    sensitivity = buildV2Sensitivity(input, core),
+    visibleVariables = selectV2SimulatorVariables(
+      sensitivity,
+      baselineBands(input)
+    );
   const selected = (items: V2CopyKey[]) =>
     items.length ? items.map(t).join(" · ") : t("noneYet");
   const page = (number: number, title: string, body: React.ReactNode) => (
@@ -87,7 +93,11 @@ export default function V2Report({
   const marks = Array.from(
     new Set(
       sensitivity
-        .filter(x => x.posture || x.safety || x.changing || x.nextTest)
+        .filter(
+          x =>
+            visibleVariables.includes(x.variable) &&
+            (x.posture || x.safety || x.changing || x.nextTest)
+        )
         .map(x => x.variable)
     )
   );
@@ -336,9 +346,7 @@ export default function V2Report({
           <div className="v2-paper-band">
             <span>{t("missing")}</span>
             <strong>{d.missing.value}</strong>
-            <p>
-              {d.missingDetail.value}
-            </p>
+            <p>{d.missingDetail.value}</p>
           </div>
           <div className="v2-paper-play-list">
             {core.changingPlays.slice(0, 4).map((play, i) => (
@@ -369,7 +377,11 @@ export default function V2Report({
             </strong>
             <p>{t("sensitivityIntro")}</p>
           </div>
-          <V2SensitivityMatrix rows={sensitivity} language={state.language} />
+          <V2SensitivityMatrix
+            rows={sensitivity}
+            variables={visibleVariables}
+            language={state.language}
+          />
         </>
       )}
       {page(

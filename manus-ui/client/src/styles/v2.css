@@ -998,6 +998,12 @@
   font-weight: 800;
   text-decoration: underline;
 }
+.v2-lab-hold {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
 .v2-lab-controls fieldset {
   padding: 10px 0;
   border: 0;

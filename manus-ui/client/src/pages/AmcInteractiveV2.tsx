@@ -692,6 +692,7 @@ export default function AmcInteractiveV2() {
             }}
           />
           <V2Simulator
+            key={demoMode ? kind : "customer"}
             state={state}
             input={input}
             baseline={core}

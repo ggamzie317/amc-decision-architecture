@@ -6,7 +6,6 @@ import type {
 import {
   baselineBands,
   updateScenario,
-  scenarioVariables,
   type ScenarioOverrides,
   type ScenarioVariable,
 } from "../data/amcScenario";
@@ -15,8 +14,13 @@ import {
   v2Scenario,
   type V2State,
 } from "../data/amcV2Model";
-import { v2t, v2FamilyLabel, type V2CopyKey } from "../data/v2Language";
-import { prioritizeV2Thresholds } from "../data/amcV2SensitivityView";
+import { v2t, type V2CopyKey } from "../data/v2Language";
+import {
+  limitV2Overrides,
+  prioritizeV2Thresholds,
+  selectV2SimulatorVariables,
+  v2ScenarioComparison,
+} from "../data/amcV2SensitivityView";
 import V2SensitivityMatrix from "./V2SensitivityMatrix";
 const key: Record<ScenarioVariable, V2CopyKey> = {
   financialRoom: "financial",
@@ -52,18 +56,33 @@ export default function V2Simulator({
   ) => void;
 }) {
   const [overrides, setOverrides] = useState<ScenarioOverrides>({});
-  const t = (k: V2CopyKey) => v2t(state.language, k),
-    baseBands = baselineBands(input);
-  const scenario = useMemo(
-    () => v2Scenario(input, overrides).result,
-    [input, overrides]
-  );
+  const t = (k: V2CopyKey) => v2t(state.language, k);
+  const baseBands = useMemo(() => baselineBands(input), [input]);
   const sensitivity = useMemo(
     () => buildV2Sensitivity(input, baseline),
     [input, baseline]
   );
+  const visibleVariables = useMemo(
+    () => selectV2SimulatorVariables(sensitivity, baseBands),
+    [sensitivity, baseBands]
+  );
+  const activeOverrides = useMemo(
+    () => limitV2Overrides(input, visibleVariables, overrides),
+    [input, visibleVariables, overrides]
+  );
+  const scenario = useMemo(
+    () => v2Scenario(input, activeOverrides).result,
+    [input, activeOverrides]
+  );
   const setBand = (variable: ScenarioVariable, band: string) => {
-    const next = updateScenario(input, overrides, variable, band, "multi");
+    if (!visibleVariables.includes(variable)) return;
+    const next = updateScenario(
+      input,
+      activeOverrides,
+      variable,
+      band,
+      "multi"
+    );
     setOverrides(next);
     onEvent?.("scenario_variable_changed", {
       variable,
@@ -82,25 +101,8 @@ export default function V2Simulator({
         result.changingPlays.length !== baseline.changingPlays.length,
     });
   };
-  const compare: [V2CopyKey, string, string][] = [
-    [
-      "posture",
-      baseline.currentStructuralPosture.label,
-      scenario.currentStructuralPosture.label,
-    ],
-    ["safety", t(baseline.safetyMargin.band), t(scenario.safetyMargin.band)],
-    ["missing", baseline.missingPoint, scenario.missingPoint],
-    [
-      "changing",
-      `${baseline.changingPlays.length} · ${baseline.changingPlays.map(p => v2FamilyLabel(state.language, p.family)).join(" · ") || t("noneYet")}`,
-      `${scenario.changingPlays.length} · ${scenario.changingPlays.map(p => v2FamilyLabel(state.language, p.family)).join(" · ") || t("noneYet")}`,
-    ],
-    [
-      "nextTest",
-      baseline.nextStepExperiment.whatToTest,
-      scenario.nextStepExperiment.whatToTest,
-    ],
-  ];
+  const compare = v2ScenarioComparison(baseline, scenario, state.language);
+  const changedImpact = compare.filter(([, before, after]) => before !== after);
   const changeLabels = (row: (typeof sensitivity)[number]) =>
     [
       row.posture ? t("postureShifts") : null,
@@ -110,7 +112,10 @@ export default function V2Simulator({
     ]
       .filter(Boolean)
       .join(" · ") || t("noChange");
-  const thresholds = prioritizeV2Thresholds(sensitivity, baseBands);
+  const thresholds = prioritizeV2Thresholds(
+    sensitivity.filter(row => visibleVariables.includes(row.variable)),
+    baseBands
+  );
   return (
     <section
       className="v2-lab"
@@ -136,8 +141,13 @@ export default function V2Simulator({
               {t("reset")}
             </button>
           </div>
-          {scenarioVariables.map(variable => (
-            <fieldset key={variable}>
+          <p className="v2-lab-hold">{t("baselineHold")}</p>
+          {visibleVariables.map(variable => (
+            <fieldset
+              key={variable}
+              data-testid="v2-simulator-control"
+              data-variable={variable}
+            >
               <legend>{t(key[variable])}</legend>
               <div className="v2-control-row">
                 {choices(variable).map(band => (
@@ -145,7 +155,8 @@ export default function V2Simulator({
                     key={band}
                     type="button"
                     aria-pressed={
-                      (overrides[variable] ?? baseBands[variable]) === band
+                      (activeOverrides[variable] ?? baseBands[variable]) ===
+                      band
                     }
                     onClick={() => setBand(variable, band)}
                   >
@@ -178,26 +189,24 @@ export default function V2Simulator({
         <aside className="v2-lab-impact">
           <span className="v2-kicker">{t("impact")}</span>
           <h3>
-            {Object.keys(overrides).length
-              ? `${Object.keys(overrides).length}${state.language === "ko" ? "" : " "}${t("conditionsChanged")}`
+            {Object.keys(activeOverrides).length
+              ? `${Object.keys(activeOverrides).length}${state.language === "ko" ? "" : " "}${t(Object.keys(activeOverrides).length === 1 ? "conditionChanged" : "conditionsChanged")}`
               : t("noChange")}
           </h3>
           <ul>
-            {compare.map(([label, before, after]) => (
-              <li
-                key={label}
-                className={before !== after ? "v2-impact-changed" : ""}
-              >
+            {changedImpact.map(([label, before, after]) => (
+              <li key={label} className="v2-impact-changed">
                 <span>{t(label)}</span>
                 <strong>
-                  {before !== after
-                    ? label === "changing"
-                      ? `${baseline.changingPlays.length} → ${scenario.changingPlays.length}`
-                      : `${before} → ${after}`
-                    : t("noChange")}
+                  {label === "changing"
+                    ? `${baseline.changingPlays.length} → ${scenario.changingPlays.length}`
+                    : `${before} → ${after}`}
                 </strong>
               </li>
             ))}
+            {changedImpact.length === 0 && (
+              <li className="v2-impact-empty">{t("noChange")}</li>
+            )}
           </ul>
         </aside>
       </div>
@@ -209,7 +218,11 @@ export default function V2Simulator({
           </div>
           <p>{t("sensitivityIntro")}</p>
         </div>
-        <V2SensitivityMatrix rows={sensitivity} language={state.language} />
+        <V2SensitivityMatrix
+          rows={sensitivity}
+          variables={visibleVariables}
+          language={state.language}
+        />
       </section>
       <section className="v2-thresholds">
         <div>

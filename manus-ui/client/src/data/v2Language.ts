@@ -154,8 +154,12 @@ export const v2Copy = {
     "화면 검토용 합성 자료입니다. 실시간 검색 결과가 아닙니다.",
   ],
   liveEvidence: ["Verified external evidence", "확인된 외부 근거"],
-  simulator: ["Scenario Laboratory", "시나리오 실험실"],
-  controls: ["Scenario controls", "조건 변경"],
+  simulator: ["Key Condition Simulator", "핵심 조건 시뮬레이션"],
+  controls: ["Key conditions", "핵심 조건"],
+  baselineHold: [
+    "Other structural conditions stay at the current baseline.",
+    "표시되지 않은 구조 조건은 현재 기준값으로 유지됩니다.",
+  ],
   baseline: ["Baseline", "현재 구조"],
   scenario: ["Scenario", "변경한 조건"],
   impact: ["Scenario impact", "변화의 영향"],
@@ -279,17 +283,18 @@ export const v2Copy = {
     "판단 근거를 한 문서에서 확인하세요.",
   ],
   simulatorIntro: [
-    "Change a condition and the same decision rules recalculate the structure. Hypothetical states do not become evidence.",
-    "가정을 바꾸면 동일한 분석 규칙으로 구조 변화를 다시 계산합니다. 실제 근거가 달라진 것은 아닙니다.",
+    "Adjust only the few conditions most likely to change this decision structure. Hypothetical states are not evidence.",
+    "이 결정 구조를 실제로 바꿀 가능성이 큰 핵심 조건만 조정합니다. 가정한 상태는 실제 근거가 아닙니다.",
   ],
   sensitivityIntro: [
-    "Each alternative is tested locally against the same deterministic engine.",
-    "각 대체 상태를 브라우저에서만 시험합니다.",
+    "The same key conditions are tested against the current baseline using the AMC rules.",
+    "위의 핵심 조건을 현재 기준값과 비교해 동일한 AMC 규칙으로 시험합니다.",
   ],
   noThreshold: [
     "No tested single-variable alternative crossed a structural boundary.",
     "현재 시험한 단일 조건으로는 구조 경계를 넘지 않았습니다.",
   ],
+  conditionChanged: ["condition changed", "개 조건 변경"],
   conditionsChanged: ["conditions changed", "개 조건 변경"],
   inputHint: [
     "Three short fields, then guided choices.",
