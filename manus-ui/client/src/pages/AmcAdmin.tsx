@@ -1,4 +1,5 @@
 import SimulatorAnalytics from "../components/SimulatorAnalytics";
+import { isInteractive } from "../../../shared/interactivePrivacy";
 import { intake15Questions, INTAKE_V4_SCHEMA } from "../data/amcIntakeV4";
 import LaunchOps, { type LaunchResponse } from "../components/LaunchOps";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -706,7 +707,7 @@ export default function AmcAdmin() {
               <article className="border border-border p-5">
                 <h3 className="font-semibold">RAW USER INPUT</h3><p className="text-xs">{detail.submission.structuralOutputJson.intakeSchemaVersion === INTAKE_V4_SCHEMA ? INTAKE_V4_SCHEMA + " · 15 questions" : "Legacy · 29 questions"}</p>
                 <div className="mt-4 space-y-3">
-                  {Object.entries(detail.submission.answersJson).map(
+                  {isInteractive(detail.submission.structuralOutputJson) ? <p>Session-only / not stored</p> : Object.entries(detail.submission.answersJson).map(
                     ([question, answer]) => (
                       <div key={question}>
                         <p className="text-xs text-muted-foreground">
@@ -722,6 +723,16 @@ export default function AmcAdmin() {
               </article>
               <article className="border border-border p-5">
                 <h3 className="font-semibold">AMC DERIVED ANALYSIS</h3>
+                {isInteractive(detail.submission.structuralOutputJson) && (
+                  <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                    <div><dt className="text-muted-foreground">Case Type</dt><dd>{detail.submission.caseType}</dd></div>
+                    {Object.entries((detail.submission.structuralOutputJson.baselineBands || {}) as Record<string, string>).map(([name, band]) => (
+                      <div key={name}><dt className="text-muted-foreground">{name}</dt><dd>{band}</dd></div>
+                    ))}
+                    <div><dt className="text-muted-foreground">Changing families</dt><dd>{((detail.submission.structuralOutputJson.changingPlays || []) as Array<{family: string}>).map(play => play.family).join(" · ") || "None"}</dd></div>
+                    <div><dt className="text-muted-foreground">Decision switch count</dt><dd>{String(detail.submission.structuralOutputJson.decisionSwitchCount ?? "—")}</dd></div>
+                  </dl>
+                )}
                 <dl className="mt-4 space-y-4 text-sm">
                   <div>
                     <dt className="text-muted-foreground">

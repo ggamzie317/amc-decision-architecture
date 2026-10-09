@@ -1,5 +1,7 @@
 # Task 059 — Experimental intake and interactive decision simulator
 
+> Historical Task 059 record. Task 059A explicitly supersedes the raw-answer storage, duplicate narrative mapping, and blocked live-JEV sections below. The current implementation and verification are documented in [Task 059A](task_059a_privacy_jev.md).
+
 ## Review status
 
 Implemented for **draft review only**, based on approved main `8b817ede5683f13ff28d11e92e551c79484d03e9`.

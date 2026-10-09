@@ -191,7 +191,7 @@ describe("intake contract and hard engine-equivalence gate", () => {
       expect(q.ko).toMatch(/[가-힣]/);
       expect(q.text).not.toMatch(/^What is Option [AB]|What career decision/);
     }
-    expect(adaptIntake15(preview, raw)).toEqual(legacy);
+    const expected = {...legacy}; for (const id of [2,7,10,12,13,16,18,22,24,26,27]) (expected as any)[id]=""; expect(adaptIntake15(preview, raw)).toEqual(expected);
   });
   it("requires exactly the fifteen responses and their six bands, including explicit unknown", () => {
     expect(completedIntake15(raw, selections)).toBe(15);
@@ -388,7 +388,7 @@ describe("auxiliary advisory fail-soft contract", () => {
   });
 });
 describe("Founder Ops baseline-only persistence and consent", () => {
-  it("stores fifteen real answers once, rejects orphan scenario use, ignores core patches and unbounded metadata", async () => {
+  it("stores no raw answers and records fifteen completed session questions, rejects orphan scenario use, ignores core patches and unbounded metadata", async () => {
     const store = new MemoryFounderOpsStore();
     expect(
       await trackFounderOps(
@@ -443,7 +443,8 @@ describe("Founder Ops baseline-only persistence and consent", () => {
     );
     const after = await store.getSubmission(submissionId);
     expect(after?.submission).toEqual(before?.submission);
-    expect(after?.submission.answersJson).toEqual(raw);
+    expect(after?.submission.answersJson).toEqual({});
+    expect(after?.submission.structuralOutputJson.completedIntakeQuestionCount).toBe(15);
     expect(after?.events.at(-1)?.metadataJson).toEqual({
       variable: "financialRoom",
       baselineBand: "developing",
@@ -451,7 +452,7 @@ describe("Founder Ops baseline-only persistence and consent", () => {
       mode: "single",
     });
     expect(await store.listSubmissions({}, 100)).toHaveLength(1);
-    expect(expectedIntakeAnswers(after!.submission)).toBe(15);
+    expect(expectedIntakeAnswers(after!.submission)).toBe(0);
     expect(buildDataQuality([after!.submission]).completeFullIntake).toBe(1);
     expect(
       buildLaunchOpsSummary([after!.submission], after!.events, null).integrity

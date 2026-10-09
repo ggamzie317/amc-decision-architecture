@@ -146,6 +146,7 @@ export function adaptIntake15(
   };
   for (const [id, targets] of Object.entries(intake15LegacyMap))
     for (const target of targets) legacy[target] = answers[Number(id)] || "";
+  for (const unused of [2, 7, 10, 12, 13, 16, 18, 22, 24, 26, 27]) legacy[unused] = "";
   return legacy;
 }
 export function completedIntake15(

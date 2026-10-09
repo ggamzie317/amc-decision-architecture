@@ -1,3 +1,4 @@
+import { completedInteractive } from "../shared/interactivePrivacy.js";
 import { expectedIntakeAnswers, buildSimulatorAnalytics } from "./simulatorAnalytics.js";
 import type { SubmissionRecord, UsageEventRecord } from "./founderOpsTypes.js";
 
@@ -247,7 +248,7 @@ export function buildLaunchOpsSummary(
     const answers = record(row.answersJson);
     if (
       full &&
-      ((row.storedAnswerCount ?? Object.keys(answers).length) !== expectedIntakeAnswers(row) ||
+      ((expectedIntakeAnswers(row) === 0 && !completedInteractive(output)) || (row.storedAnswerCount ?? Object.keys(answers).length) !== expectedIntakeAnswers(row) ||
         Array.from({ length: expectedIntakeAnswers(row) }, (_, i) => String(i + 1)).some(
           key =>
             typeof answers[key] !== "string" || !String(answers[key]).trim()

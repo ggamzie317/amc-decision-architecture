@@ -1,3 +1,4 @@
+import { identity, projectInteractivePatch, projectInteractiveMetadata } from "../../../shared/interactivePrivacy";
 import { adaptIntake15, intake15Groups, intake15Questions, intake15SelectorMap, INTAKE_V4_SCHEMA, EXPERIENCE_VERSION } from "../data/amcIntakeV4";
 import InteractiveSimulator from "../components/InteractiveSimulator";
 import type { ProductApplicationBuildInput } from "../data/amcProductApplicationV3";
@@ -2650,8 +2651,8 @@ export default function AmcWebMvp({ interactive = false }: { interactive?: boole
   const totalFullIntakeQuestions = interactive ? 15 : legacyTotalFullIntakeQuestions;
   const selectorId = (id: number) => interactive ? intake15SelectorMap[id] ?? null : isCurrentCaseStructuredQuestionId(id) ? id : null;
   const trackJourney: typeof trackAmcJourney = input => (interactive ? trackInteractiveJourney : trackAmcJourney)(interactive ? {
-    ...input, metadata: {...input.metadata, experienceVersion: EXPERIENCE_VERSION, intakeSchemaVersion: INTAKE_V4_SCHEMA},
-    patch: input.patch?.structuralOutputJson || input.patch?.fullIntakeCompletedAt ? {...input.patch, structuralOutputJson: {...input.patch.structuralOutputJson as object, experienceVersion: EXPERIENCE_VERSION, intakeSchemaVersion: INTAKE_V4_SCHEMA}} : input.patch,
+    ...input, metadata: {...projectInteractiveMetadata(input.metadata), ...input.metadata && Object.fromEntries(Object.entries(input.metadata).filter(([key]) => ["variable","baselineBand","newBand","mode","postureChanged","safetyChanged","changingChanged"].includes(key)))},
+    patch: projectInteractivePatch({...input.patch, structuralOutputJson: {...input.patch?.structuralOutputJson as object, ...identity}}),
   } : input);
   const isQaMode =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("qa") === "1";
@@ -2963,7 +2964,7 @@ export default function AmcWebMvp({ interactive = false }: { interactive?: boole
         currentStage: "full_intake_completed",
         fullIntakeCompletedAt: generatedAt,
         researchUseConsent,
-        answersJson: Object.fromEntries(Object.entries(fullIntakeAnswers).map(([key, value]) => [key, value])),
+        answersJson: interactive ? {} : Object.fromEntries(Object.entries(fullIntakeAnswers).map(([key, value]) => [key, value])),
       },
     });
     const evidenceRequestId = crypto.randomUUID();
@@ -3762,8 +3763,8 @@ export default function AmcWebMvp({ interactive = false }: { interactive?: boole
                 />
                 <span>
                   {t(
-                    "I agree that my responses may be stored to generate my report, operate the service, and improve allofmycareer. I will not enter confidential company information or sensitive personal data.",
-                    "리포트 생성, 서비스 운영 및 allofmycareer 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
+                    interactive ? "My written answers stay in this session. I agree to storage of de-identified structural results and service activity." : "I agree that my responses may be stored to generate my report, operate the service, and improve allofmycareer. I will not enter confidential company information or sensitive personal data.",
+                    interactive ? "작성한 답변은 현재 세션에만 유지됩니다. 비식별 구조 결과와 서비스 활동 정보 저장에 동의합니다." : "리포트 생성, 서비스 운영 및 allofmycareer 개선을 위해 입력 내용이 저장될 수 있음에 동의합니다. 회사 기밀이나 민감한 개인정보는 입력하지 않겠습니다.",
                   )}
                 </span>
               </label>
@@ -4138,8 +4139,8 @@ export default function AmcWebMvp({ interactive = false }: { interactive?: boole
             <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
               <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
                 {t(
-                  "Your responses may be securely stored to generate your report and improve allofmycareer. Please avoid entering confidential company information or sensitive personal data.",
-                  "입력 내용은 리포트 생성과 allofmycareer 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
+                  interactive ? "Your written answers stay in this session and are not stored. You may need to re-enter them after leaving or reloading." : "Your responses may be securely stored to generate your report and improve allofmycareer. Please avoid entering confidential company information or sensitive personal data.",
+                  interactive ? "작성한 답변은 현재 세션에만 유지되며 저장되지 않습니다. 페이지를 떠나거나 새로고침하면 다시 입력해야 할 수 있습니다." : "입력 내용은 리포트 생성과 allofmycareer 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
                 )}
               </p>
               <p className="rounded-md border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
@@ -4158,8 +4159,8 @@ export default function AmcWebMvp({ interactive = false }: { interactive?: boole
               />
               <span>
                 {t(
-                  "Optional: I agree that my de-identified responses may be used in aggregated form for allofmycareer research, education, and service development.",
-                  "선택: 익명화된 응답이 allofmycareer의 연구, 교육 및 서비스 개선을 위해 집계 형태로 활용되는 것에 동의합니다.",
+                  interactive ? "Optional: I agree to aggregated use of de-identified structural patterns for research, education, and service development." : "Optional: I agree that my de-identified responses may be used in aggregated form for allofmycareer research, education, and service development.",
+                  interactive ? "선택 사항: 비식별 구조 패턴을 연구·교육·서비스 개발에 집계하여 사용하는 데 동의합니다." : "선택: 익명화된 응답이 allofmycareer의 연구, 교육 및 서비스 개선을 위해 집계 형태로 활용되는 것에 동의합니다.",
                 )}
               </span>
             </label>

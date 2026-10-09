@@ -1,3 +1,4 @@
+import { activeAmcSubmissionId } from "./amcFounderOps";
 import { baselineBands, type ScenarioOverrides } from "./amcScenario";
 import type {
   ProductApplicationBuildInput,
@@ -32,6 +33,22 @@ const levels = ["low", "medium", "high"];
 export function parseJevAdvisory(value: unknown): JevAdvisory | null {
   if (!value || typeof value !== "object") return null;
   const v = value as Record<string, unknown>;
+  if (
+    Object.keys(v).some(
+      k =>
+        ![
+          "scenarioPlausibility",
+          "evidenceSupport",
+          "scenarioSensitivity",
+          "changingFeasibility",
+          "safetyMarginContribution",
+          "assumptions",
+          "uncertainties",
+          "conditionalReading",
+        ].includes(k)
+    )
+  )
+    return null;
   for (const key of [
     "scenarioPlausibility",
     "evidenceSupport",
@@ -88,15 +105,14 @@ export function makeJevInput(
     ],
   };
 }
-/** Canonical AMU provider found (see docs/task_059_interactive_v1.md).
- * Live transmission was blocked by automatic approval review. Runtime deliberately
- * supplies no provider. This interface supports offline validation without networking. */
+/** Session cache: no localStorage, persistence, automatic retry or background request. */
 export function createJevSession(provider?: JevProvider, timeoutMs = 8000) {
   const cache = new Map<string, Promise<JevResult>>();
   return {
     assess(input: JevInput): Promise<JevResult> {
       const key = JSON.stringify(input);
       if (cache.has(key)) return cache.get(key)!;
+      if (cache.size >= 64) return Promise.resolve({ status: "unavailable" });
       const request = (async (): Promise<JevResult> => {
         if (!provider) return { status: "unavailable" };
         let timer: ReturnType<typeof setTimeout> | undefined;
@@ -122,3 +138,21 @@ export function createJevSession(provider?: JevProvider, timeoutMs = 8000) {
     },
   };
 }
+
+export const serverJevProvider: JevProvider = {
+  async assess(input) {
+    const response = await fetch("/api/amc/jev-scenario", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-amc-submission-id": activeAmcSubmissionId("interactive-v1") || "",
+      },
+      body: JSON.stringify(input),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error("unavailable");
+    const result = await response.json();
+    if (result.status !== "available") throw new Error("unavailable");
+    return result.advisory;
+  },
+};

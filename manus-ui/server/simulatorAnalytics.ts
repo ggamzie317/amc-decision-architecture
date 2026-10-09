@@ -1,3 +1,4 @@
+import { isInteractive } from "../shared/interactivePrivacy.js";
 import type { SubmissionRecord, UsageEventRecord } from "./founderOpsTypes.js";
 export const simulatorEvents = [
   "simulator_opened",
@@ -52,9 +53,7 @@ export function sanitizeSimulatorMetadata(value: Record<string, unknown>) {
 export function expectedIntakeAnswers(
   row: Pick<SubmissionRecord, "structuralOutputJson">
 ) {
-  return row.structuralOutputJson.intakeSchemaVersion === "AMC-INTAKE-V4-15"
-    ? 15
-    : 29;
+  return isInteractive(row.structuralOutputJson) ? 0 : 29;
 }
 export function buildSimulatorAnalytics(
   submissions: SubmissionRecord[],
@@ -78,7 +77,7 @@ export function buildSimulatorAnalytics(
       .map(e => e.submissionId)
   );
   for (const s of cohort)
-    if (s.reportGeneratedAt && expectedIntakeAnswers(s) === 15)
+    if (s.reportGeneratedAt && expectedIntakeAnswers(s) === 0)
       interactiveIds.add(s.submissionId);
   const openedIds = new Set(
     scoped

@@ -140,7 +140,7 @@ fs.mkdirSync(output, { recursive: true });
           break;
         await new Promise(r => setTimeout(r, 40));
       }
-      assert.equal(Object.keys(before.answersJson).length, 15);
+      assert.equal(Object.keys(before.answersJson).length, 0);
       assert.equal(
         before.structuralOutputJson.intakeSchemaVersion,
         "AMC-INTAKE-V4-15"
@@ -194,6 +194,15 @@ fs.mkdirSync(output, { recursive: true });
         .locator("button")
         .nth(2)
         .click();
+      assert.equal(
+        requests.filter(r => r.url.includes("jev-scenario")).length,
+        0
+      );
+      assert(
+        (await simulator.innerText()).includes(
+          ko ? "비식별 구조 요약" : "de-identified structural summary"
+        )
+      );
       await simulator
         .getByRole("button", {
           name: ko ? "이 시나리오 평가" : "ASSESS THIS SCENARIO",
@@ -201,6 +210,36 @@ fs.mkdirSync(output, { recursive: true });
         })
         .click();
       await simulator.getByRole("status").waitFor();
+      assert.equal(
+        requests.filter(r => r.url.includes("jev-scenario")).length,
+        1
+      );
+      await simulator
+        .getByRole("button", {
+          name: ko ? "이 시나리오 평가" : "ASSESS THIS SCENARIO",
+          exact: true,
+        })
+        .click();
+      await simulator.getByRole("status").waitFor();
+      assert.equal(
+        requests.filter(r => r.url.includes("jev-scenario")).length,
+        1
+      );
+      assert.equal(
+        before.structuralOutputJson.completedIntakeQuestionCount,
+        15
+      );
+      assert.equal(
+        Object.keys(before.structuralOutputJson.baselineBands).length,
+        7
+      );
+      const ops = requests.filter(r => r.url.includes("ops/track"));
+      assert(!JSON.stringify(ops).includes("Evidence for question"));
+      assert(
+        !JSON.stringify(ops).includes(
+          "가족의 생활 기반과 재정 여유를 보호하며 고객 수요를 검증합니다."
+        )
+      );
       await noOverflow("multi-advisory");
       const shortButtons = await simulator
         .locator("button")
@@ -223,8 +262,18 @@ fs.mkdirSync(output, { recursive: true });
         )
       );
       const ext = requests.find(r => r.url.includes("external-snapshot")).body;
-      assert.equal(ext.externalPressure, before.answersJson["5"]);
-      assert.equal(ext.validationNeed, before.answersJson["6"]);
+      assert.equal(
+        ext.externalPressure,
+        ko
+          ? "질문 5: 가족의 생활 기반과 재정 여유를 보호하며 고객 수요를 검증합니다."
+          : "Evidence for question 5: protect runway while validating demand."
+      );
+      assert.equal(
+        ext.validationNeed,
+        ko
+          ? "질문 6: 가족의 생활 기반과 재정 여유를 보호하며 고객 수요를 검증합니다."
+          : "Evidence for question 6: protect runway while validating demand."
+      );
       let after;
       for (let i = 0; i < 50; i++) {
         const all = await records();
@@ -233,7 +282,10 @@ fs.mkdirSync(output, { recursive: true });
           all.events.some(
             e =>
               e.submissionId === storage &&
-              e.eventType === "jev_assessment_unavailable"
+              [
+                "jev_assessment_unavailable",
+                "jev_assessment_completed",
+              ].includes(e.eventType)
           )
         )
           break;
@@ -241,6 +293,17 @@ fs.mkdirSync(output, { recursive: true });
       }
       assert.deepEqual(after.answersJson, before.answersJson);
       assert.deepEqual(after.structuralOutputJson, before.structuralOutputJson);
+      await simulator
+        .getByRole("button", {
+          name: ko ? "기본 상태로 초기화" : "RESET TO BASELINE",
+          exact: true,
+        })
+        .click();
+      assert.equal(await simulator.getByRole("status").count(), 0);
+      assert.equal(
+        requests.filter(r => r.url.includes("jev-scenario")).length,
+        1
+      );
       await page
         .getByRole("button", {
           name: ko ? "Detailed PDF Report 보기" : "View Detailed PDF Report",

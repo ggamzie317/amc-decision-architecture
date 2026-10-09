@@ -29,7 +29,7 @@ export type EvidenceMode = "live" | "fallback" | "mock" | null;
 
 export type SubmissionPatch = {
   language?: AmcLanguage;
-  caseType?: string;
+  caseType?: string | null;
   currentStage?: string;
   previewStartedAt?: string;
   previewCompletedAt?: string;
@@ -44,7 +44,7 @@ export type SubmissionPatch = {
   answersJson?: Record<string, string>;
   structuralOutputJson?: Record<string, unknown>;
   externalEvidenceJson?: Record<string, unknown>;
-  missingPoint?: string;
+  missingPoint?: string | null;
   alternativePath?: string | null;
   decisionConditionsJson?: string[];
   safetyMarginStructuredData?: Record<string, unknown>;
@@ -117,6 +117,7 @@ export type ResearchSummary = OperationsSummary & {
 
 export type FounderOpsStore = {
   readonly available: boolean;
+  reserveJevScenario?(submissionId: string, fingerprint: string): Promise<boolean>;
   readLaunchData?(): Promise<{
     submissions: SubmissionRecord[];
     events: UsageEventRecord[];

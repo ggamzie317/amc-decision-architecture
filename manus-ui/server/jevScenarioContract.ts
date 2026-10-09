@@ -1,6 +1,4 @@
-/** Offline-only adaptation of canonical AMU src/decision-assist/jev.ts.
- * No transport or credential resolution exists here. Never imported by the customer bundle.
- * See the review document for the verified provider path and outstanding live approval. */
+/** Canonical AMU Choice packet and strict response boundary. Server-only. */
 import type {
   JevInput,
   JevAdvisory,
@@ -63,6 +61,24 @@ export function parseOfflineGatewayAdvisory(raw: unknown): JevAdvisory | null {
   const data = raw as Record<string, any>,
     routing = data.provider_metadata?.gateway?.routing;
   if (
+    Array.isArray(raw) ||
+    Object.keys(data).some(
+      k => !["model", "answers", "provider_metadata", "usage"].includes(k)
+    ) ||
+    !data.provider_metadata ||
+    Object.keys(data.provider_metadata).some(k => k !== "gateway") ||
+    !data.provider_metadata.gateway ||
+    Object.keys(data.provider_metadata.gateway).some(k => k !== "routing") ||
+    !routing ||
+    Object.keys(routing).some(
+      k =>
+        ![
+          "originalModelId",
+          "canonicalSlug",
+          "resolvedProvider",
+          "finalProvider",
+        ].includes(k)
+    ) ||
     data.model !== "typesafe-ai/jev" ||
     routing?.originalModelId !== "typesafe-ai/jev" ||
     routing?.canonicalSlug !== "typesafe-ai/jev" ||

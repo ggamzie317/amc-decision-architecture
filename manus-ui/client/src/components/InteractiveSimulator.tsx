@@ -1,3 +1,4 @@
+import { serverJevProvider } from "../data/amcJevAdvisory";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   ProductApplicationBuildInput,
@@ -66,7 +67,7 @@ export default function InteractiveSimulator({
   const [mode, setMode] = useState<"single" | "multi">("single");
   const [advisory, setAdvisory] = useState<JevResult | null>(null);
   const [assessing, setAssessing] = useState(false);
-  const session = useRef(createJevSession());
+  const session = useRef(createJevSession(serverJevProvider));
   const generation = useRef(0),
     opened = useRef(false);
   const emit = (
@@ -131,7 +132,6 @@ export default function InteractiveSimulator({
     if (assessing) return;
     const request = ++generation.current;
     setAssessing(true);
-    emit("jev_assessment_requested");
     const result = await session.current.assess(
       makeJevInput(
         input,
@@ -144,18 +144,6 @@ export default function InteractiveSimulator({
     if (request !== generation.current) return;
     setAdvisory(result);
     setAssessing(false);
-    emit(
-      result.status === "available"
-        ? "jev_assessment_completed"
-        : "jev_assessment_unavailable",
-      result.status === "available"
-        ? {
-            scenarioPlausibility: result.advisory.scenarioPlausibility,
-            evidenceSupport: result.advisory.evidenceSupport,
-            scenarioSensitivity: result.advisory.scenarioSensitivity,
-          }
-        : {}
-    );
   };
   const button =
     "min-h-11 rounded-md border border-border px-3 py-2 text-sm whitespace-normal";
@@ -357,6 +345,12 @@ export default function InteractiveSimulator({
             "이 보조 검토는 allofmycareer의 구조 분석을 변경하지 않습니다."
           )}
         </p>
+        <p className="mt-3 text-sm">
+          {t(
+            "Optional: this assessment sends only a de-identified structural summary of the scenario to an external AI provider. Your written answers are not sent.",
+            "선택 기능입니다. 이 평가는 시나리오의 비식별 구조 요약만 외부 AI 제공자에게 전송합니다. 작성한 답변 원문은 전송하지 않습니다."
+          )}
+        </p>
         <button
           type="button"
           className={`${button} mt-4`}
@@ -374,7 +368,7 @@ export default function InteractiveSimulator({
           </p>
         )}
         {advisory?.status === "available" && (
-          <div className="mt-4 space-y-2">
+          <div role="status" className="mt-4 space-y-2">
             {(
               [
                 [
@@ -404,7 +398,26 @@ export default function InteractiveSimulator({
               </p>
             ))}
             <h4>{t("Conditional Reading", "조건부 해석")}</h4>
-            <p>{advisory.advisory.conditionalReading}</p>
+            <p>
+              {t(
+                advisory.advisory.conditionalReading,
+                "제시한 가정에 따른 조건부 해석입니다. 해당 조건이 성립하지 않으면 이 평가도 달라질 수 있습니다."
+              )}
+            </p>
+            <h4>{t("Assumptions", "가정")}</h4>
+            <p>
+              {t(
+                advisory.advisory.assumptions.join(" "),
+                "시험한 조건을 실제로 확보할 수 있어야 합니다."
+              )}
+            </p>
+            <h4>{t("Uncertainties", "불확실성")}</h4>
+            <p>
+              {t(
+                advisory.advisory.uncertainties.join(" "),
+                "가정한 역량과 여유를 확보할 수 있는지는 아직 명확하지 않습니다."
+              )}
+            </p>
           </div>
         )}
       </section>
