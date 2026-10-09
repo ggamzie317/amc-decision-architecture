@@ -1,5 +1,5 @@
 import SimulatorAnalytics from "../components/SimulatorAnalytics";
-import { isInteractive } from "../../../shared/interactivePrivacy";
+import { isInteractive, v2Identity } from "../../../shared/interactivePrivacy";
 import { intake15Questions, INTAKE_V4_SCHEMA } from "../data/amcIntakeV4";
 import LaunchOps, { type LaunchResponse } from "../components/LaunchOps";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,6 +12,8 @@ type Summary = {
   languageDistribution?: Record<string, number>;
   caseTypeDistribution?: Record<string, number>;
   evidenceDistribution?: Record<string, number>;
+  experienceDistribution?: Record<string, number>;
+  experienceFunnels?: Record<string, Record<string, number>>;
   safetyMarginDistribution?: Record<string, number>;
   frameworkSignalDistributions?: Record<string, Record<string, number>>;
   alternativePathSurfaced?: Record<string, number>;
@@ -705,7 +707,7 @@ export default function AmcAdmin() {
             </div>
             <div className="mt-5 grid gap-5 lg:grid-cols-2">
               <article className="border border-border p-5">
-                <h3 className="font-semibold">RAW USER INPUT</h3><p className="text-xs">{detail.submission.structuralOutputJson.intakeSchemaVersion === INTAKE_V4_SCHEMA ? INTAKE_V4_SCHEMA + " · 15 questions" : "Legacy · 29 questions"}</p>
+                <h3 className="font-semibold">RAW USER INPUT</h3><p className="text-xs">{detail.submission.structuralOutputJson.intakeSchemaVersion === v2Identity.intakeSchemaVersion ? "interactive-v2 · 8 guided modules" : detail.submission.structuralOutputJson.intakeSchemaVersion === INTAKE_V4_SCHEMA ? INTAKE_V4_SCHEMA + " · 15 questions" : "Legacy · 29 questions"}</p>
                 <div className="mt-4 space-y-3">
                   {isInteractive(detail.submission.structuralOutputJson) ? <p>Session-only / not stored</p> : Object.entries(detail.submission.answersJson).map(
                     ([question, answer]) => (
@@ -725,7 +727,13 @@ export default function AmcAdmin() {
                 <h3 className="font-semibold">AMC DERIVED ANALYSIS</h3>
                 {isInteractive(detail.submission.structuralOutputJson) && (
                   <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                    <div><dt className="text-muted-foreground">Experience</dt><dd>{String(detail.submission.structuralOutputJson.experienceVersion || "legacy")}</dd></div>
                     <div><dt className="text-muted-foreground">Case Type</dt><dd>{detail.submission.caseType}</dd></div>
+                    <div><dt className="text-muted-foreground">Safety Margin</dt><dd>{String((detail.submission.structuralOutputJson.safetyMargin as {band?:string}|undefined)?.band || "Not yet established")}</dd></div>
+                    {detail.submission.structuralOutputJson.experienceVersion === "interactive-v2" && <div><dt className="text-muted-foreground">External evidence status</dt><dd>{String(detail.submission.structuralOutputJson.externalEvidenceStatus || "unavailable")}</dd></div>}
+                    <div><dt className="text-muted-foreground">Research consent</dt><dd>{detail.submission.researchUseConsent ? "Yes" : "No"}</dd></div>
+                    <div><dt className="text-muted-foreground">Simulator use</dt><dd>{detail.events.filter(event => event.eventType === "simulator_opened").length} opens · {detail.events.filter(event => event.eventType === "scenario_evaluated").length} evaluations</dd></div>
+                    <div><dt className="text-muted-foreground">Report / print</dt><dd>{detail.events.filter(event => event.eventType === "detailed_report_opened").length} opens · {detail.events.filter(event => event.eventType === "print_save_clicked").length} prints</dd></div>
                     {Object.entries((detail.submission.structuralOutputJson.baselineBands || {}) as Record<string, string>).map(([name, band]) => (
                       <div key={name}><dt className="text-muted-foreground">{name}</dt><dd>{band}</dd></div>
                     ))}

@@ -5,6 +5,7 @@ import { Redirect, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AmcWebMvp from "./pages/AmcWebMvp";
+import AmcInteractiveV2 from "./pages/AmcInteractiveV2";
 import AmcAdmin from "./pages/AmcAdmin";
 import Home from "./pages/Home";
 
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/amc-web-mvp"} component={AmcWebMvp} />
+      <Route path="/amc-interactive-v2" component={AmcInteractiveV2} />
       <Route path="/amc-interactive-v1">{() => <AmcWebMvp key="interactive-v1" interactive />}</Route>
       <Route path={"/amc-admin"} component={AmcAdmin} />
       <Route path={"/intake"} component={LegacyProductRedirect} />

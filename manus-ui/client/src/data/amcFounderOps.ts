@@ -37,7 +37,7 @@ type JourneyFetchResponse = { json(): Promise<unknown> };
 type JourneyFetcher = (url: string, init: RequestInit) => Promise<JourneyFetchResponse>;
 
 type JourneyTrackerOptions = {
-  storageNamespace?: "interactive-v1";
+  storageNamespace?: "interactive-v1" | "interactive-v2";
   fetcher: JourneyFetcher;
   getSessionStorage: () => JourneyStorage | null;
   getLegacyStorage: () => JourneyStorage | null;
@@ -165,7 +165,7 @@ export function trackAmcJourney(input: TrackJourneyInput) {
 }
 
 /** Opaque journey correlation only; provider details remain on the server. */
-export function activeAmcSubmissionId(experience?: "interactive-v1") {
+export function activeAmcSubmissionId(experience?: "interactive-v1" | "interactive-v2") {
   return storageValue(safeStorage(() => typeof window === "undefined" ? null : window.sessionStorage), ACTIVE_SUBMISSION_STORAGE_KEY + (experience ? `_${experience}` : ""));
 }
 
@@ -176,3 +176,11 @@ const interactiveJourneyTracker = createFounderOpsJourneyTracker({
   getLegacyStorage: () => (typeof window === "undefined" ? null : window.localStorage),
 });
 export function trackInteractiveJourney(input: TrackJourneyInput) { return interactiveJourneyTracker(input); }
+
+const v2JourneyTracker = createFounderOpsJourneyTracker({
+  storageNamespace: "interactive-v2",
+  fetcher: (url, init) => fetch(url, init),
+  getSessionStorage: () => (typeof window === "undefined" ? null : window.sessionStorage),
+  getLegacyStorage: () => (typeof window === "undefined" ? null : window.localStorage),
+});
+export function trackV2Journey(input: TrackJourneyInput) { return v2JourneyTracker(input); }

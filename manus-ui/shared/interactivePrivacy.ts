@@ -3,6 +3,10 @@ export const identity = {
   experienceVersion: "interactive-v1",
   intakeSchemaVersion: "AMC-INTAKE-V4-15",
 };
+export const v2Identity = {
+  experienceVersion: "interactive-v2",
+  intakeSchemaVersion: "AMC-MODULES-V2-8",
+};
 export const caseTypes = [
   "Corporate Stay vs Exit",
   "MBA / EMBA / PhD Decision",
@@ -54,19 +58,31 @@ const obj = (v: unknown): Record<string, any> =>
   v && typeof v === "object" && !Array.isArray(v)
     ? (v as Record<string, any>)
     : {};
+function selectedIdentity(value: unknown) {
+  const v = obj(value);
+  return v.experienceVersion === v2Identity.experienceVersion ||
+    v.intakeSchemaVersion === v2Identity.intakeSchemaVersion
+    ? v2Identity
+    : identity;
+}
 export function isInteractive(value: unknown) {
   const v = obj(value);
   return (
     v.experienceVersion === identity.experienceVersion ||
-    v.intakeSchemaVersion === identity.intakeSchemaVersion
+    v.intakeSchemaVersion === identity.intakeSchemaVersion ||
+    v.experienceVersion === v2Identity.experienceVersion ||
+    v.intakeSchemaVersion === v2Identity.intakeSchemaVersion
   );
 }
 export function completedInteractive(value: unknown) {
   const v = obj(value);
   return (
-    v.experienceVersion === identity.experienceVersion &&
-    v.intakeSchemaVersion === identity.intakeSchemaVersion &&
-    v.completedIntakeQuestionCount === 15
+    (v.experienceVersion === v2Identity.experienceVersion &&
+      v.intakeSchemaVersion === v2Identity.intakeSchemaVersion &&
+      v.completedIntakeQuestionCount === 8) ||
+    (v.experienceVersion === identity.experienceVersion &&
+      v.intakeSchemaVersion === identity.intakeSchemaVersion &&
+      v.completedIntakeQuestionCount === 15)
   );
 }
 export function projectInteractivePatch(value: unknown): Record<string, any> {
@@ -101,7 +117,7 @@ export function projectInteractivePatch(value: unknown): Record<string, any> {
     externalEvidenceConfidence: null,
     safetyMarginStructuredData: bands.includes(band) ? { band } : {},
     structuralOutputJson: {
-      ...identity,
+      ...selectedIdentity(s),
       ...(Object.keys(baseline).length ? { baselineBands: baseline } : {}),
       ...(Array.isArray(s.changingPlays)
         ? {
@@ -112,9 +128,15 @@ export function projectInteractivePatch(value: unknown): Record<string, any> {
     },
   };
   if (completedInteractive(s) || v.fullIntakeCompletedAt)
-    out.structuralOutputJson.completedIntakeQuestionCount = 15;
+    out.structuralOutputJson.completedIntakeQuestionCount =
+      selectedIdentity(s) === v2Identity ? 8 : 15;
   if ("caseType" in v)
     out.caseType = caseTypes.includes(v.caseType) ? v.caseType : null;
+  if (
+    ["live", "unavailable", "demo"].includes(s.externalEvidenceStatus) &&
+    selectedIdentity(s) === v2Identity
+  )
+    out.structuralOutputJson.externalEvidenceStatus = s.externalEvidenceStatus;
   if (postures.includes(obj(s.currentStructuralPosture).label))
     out.structuralOutputJson.currentStructuralPosture = {
       label: s.currentStructuralPosture.label,
@@ -157,7 +179,7 @@ export function projectInteractivePatch(value: unknown): Record<string, any> {
 }
 export function projectInteractiveMetadata(value: unknown) {
   const v = obj(value),
-    out: Record<string, unknown> = { ...identity };
+    out: Record<string, unknown> = { ...selectedIdentity(v) };
   for (const key of ["derivedAnalysisSynced"])
     if (typeof v[key] === "boolean") out[key] = v[key];
   for (const key of ["externalEvidenceMode"])

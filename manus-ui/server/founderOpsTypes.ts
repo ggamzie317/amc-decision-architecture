@@ -107,6 +107,8 @@ export type OperationsSummary = {
   languageDistribution: Record<string, number>;
   caseTypeDistribution: Record<string, number>;
   evidenceDistribution: Record<string, number>;
+  experienceDistribution: Record<string, number>;
+  experienceFunnels: Record<string, Record<string, number>>;
 };
 
 export type ResearchSummary = OperationsSummary & {
