@@ -13,6 +13,9 @@ import {
   buildV2Sensitivity,
   initialV2State,
   v2Choices,
+  v2UnansweredBands,
+  v2AllBandsAnswered,
+  v2DecisionReadings,
   v2ExternalOptions,
   v2ModuleKeys,
   v2SwitchCandidates,
@@ -27,6 +30,13 @@ import {
 import { v2t, v2CaseLabel, v2FamilyLabel } from "../client/src/data/v2Language";
 import V2Dashboard from "../client/src/components/V2Dashboard";
 import V2Report from "../client/src/components/V2Report";
+import V2Simulator from "../client/src/components/V2Simulator";
+import V2SensitivityMatrix from "../client/src/components/V2SensitivityMatrix";
+import { v2MissingPoint } from "../client/src/data/amcV2Presentation";
+import {
+  groupV2Sensitivity,
+  prioritizeV2Thresholds,
+} from "../client/src/data/amcV2SensitivityView";
 import { lowDensityPages } from "../client/src/data/amcV2ReportDensity";
 import AmcInteractiveV2 from "../client/src/pages/AmcInteractiveV2";
 import {
@@ -54,6 +64,179 @@ describe("AMC interactive V2 experience", () => {
     expect(html.match(/ required=""/g) || []).toHaveLength(3);
     expect(html).toContain("Decision Setup");
     expect(html).not.toContain("15 questions");
+  });
+  it("requires explicit clicks for exactly six structural anchors, including explicit unknown", () => {
+    const state = initialV2State();
+    expect(Object.keys(state.bandSelections)).toHaveLength(6);
+    expect(state.bands.internalReadiness).toBe("unknown");
+    expect(v2UnansweredBands(state, 3)).toEqual(["internalReadiness"]);
+    expect(v2UnansweredBands(state, 4)).toEqual([
+      "financialRoom",
+      "reversibility",
+      "downsideExposure",
+    ]);
+    expect(v2AllBandsAnswered(state)).toBe(false);
+    state.bandSelections.internalReadiness = true;
+    expect(state.bands.internalReadiness).toBe("unknown");
+    expect(v2UnansweredBands(state, 3)).toEqual([]);
+    for (const key of Object.keys(
+      state.bandSelections
+    ) as (keyof typeof state.bandSelections)[])
+      state.bandSelections[key] = true;
+    expect(v2AllBandsAnswered(state)).toBe(true);
+    expect(v2t("en", "chooseCurrentState")).toBe(
+      "Choose the current state before continuing."
+    );
+    expect(v2t("ko", "chooseCurrentState")).toBe(
+      "현재 상태를 선택한 뒤 계속해 주세요."
+    );
+  });
+  it("uses established Missing Point concepts for all nine case families", () => {
+    const concepts = [
+      "Unused internal value",
+      "Alternative access routes",
+      "Destination operating fit",
+      "Repeatable paid demand",
+      "Transferable proof",
+      "Real scope change",
+      "Recovery before direction",
+      "Family operating fit",
+      "The real decision condition",
+    ];
+    caseTypes.forEach((caseType, index) => {
+      const state = initialV2State();
+      state.caseType = caseType;
+      for (const key of Object.keys(
+        state.bandSelections
+      ) as (keyof typeof state.bandSelections)[]) {
+        state.bandSelections[key] = true;
+        if (key !== "downsideExposure" && key !== "constraintLoad")
+          state.bands[key] = "strong";
+      }
+      const input = buildV2Input(state);
+      const core = buildProductApplicationV3(input);
+      expect(input.missingPoint).toBe(v2MissingPoint(caseType, "en").point);
+      expect(core.presentation.missingPointKeyword).toBe(concepts[index]);
+      expect(input.missingPoint).toBe(concepts[index]);
+      expect(core.missingPoint).toContain(concepts[index]);
+      expect(core.missingPoint).not.toContain("External Validation");
+      expect(v2MissingPoint(caseType, "ko").point.length).toBeGreaterThan(3);
+    });
+  });
+  it("builds the trade-off from A protection and B opportunity while keeping exposure separate", () => {
+    const f = v2DemoFixture("entrepreneurship", "en");
+    const d = v2DecisionReadings(f.state, f.baseline);
+    expect(d.tradeoff.value).toBe(
+      "Income · Family stability ↔ Autonomy · Research / expertise"
+    );
+    expect(d.tradeoff.value).not.toContain("Income risk");
+    expect(d.exposure.value).toContain("Income risk");
+    expect(d.constraint.value).toContain("Family");
+    const dashboard = renderToStaticMarkup(
+      React.createElement(V2Dashboard, {
+        state: f.state,
+        core: f.baseline,
+        intelligence: f.intelligence,
+        onReport: () => {},
+      })
+    );
+    expect(dashboard).toContain("Exposure / Risk");
+    expect(dashboard).toContain(d.tradeoff.value);
+  });
+  it("keeps the optional-chip path analytically distinct with case-family fallback copy", () => {
+    const state = initialV2State("ko");
+    state.caseType = "Entrepreneurship";
+    const core = buildProductApplicationV3(buildV2Input(state));
+    const readings = v2DecisionReadings(state, core);
+    expect(readings.tradeoff.value).toBe("소득 연속성 ↔ 창업가 주도 가치");
+    expect(readings.tradeoff.provenance).toBe("DERIVED_CORE_RULE");
+    expect(readings.exposure.value).toContain("하방 위험");
+    expect(readings.constraint.value).toBe("소득 여유와 제공 부담");
+    expect(readings.nextTest.value).toBe("작은 유료 시범 운영으로 수요 검증");
+    expect(readings.missingDetail.value).not.toContain(readings.missing.value);
+  });
+  it("groups 21 sensitivity results into seven visual rows with impact legend", () => {
+    const f = v2DemoFixture("industry", "en");
+    const grouped = groupV2Sensitivity(f.sensitivity);
+    expect(grouped).toHaveLength(7);
+    expect(grouped.every(group => group.alternatives.length === 3)).toBe(true);
+    const html = renderToStaticMarkup(
+      React.createElement(V2SensitivityMatrix, {
+        rows: f.sensitivity,
+        language: "ko",
+      })
+    );
+    expect(html.match(/data-testid="v2-sensitivity-row"/g)).toHaveLength(7);
+    expect(html).toContain("변화 표시");
+    expect(html).toContain("되돌릴 수 있는 여지");
+    expect(html).toContain(">P<");
+  });
+  it("prioritizes posture then safety then changing then next-test and diversifies variables", () => {
+    const f = v2DemoFixture("industry", "en");
+    const template = f.sensitivity[0];
+    const row = (
+      variable: typeof template.variable,
+      band: string,
+      flag: "posture" | "safety" | "changing" | "nextTest"
+    ) => ({
+      ...template,
+      variable,
+      band,
+      posture: false,
+      safety: false,
+      changing: false,
+      nextTest: false,
+      [flag]: true,
+    });
+    const rows = [
+      row("financialRoom", "weak", "safety"),
+      row("optionBSupport", "weak", "changing"),
+      row("externalValidation", "strong", "posture"),
+      row("financialRoom", "developing", "posture"),
+      row("financialRoom", "strong", "posture"),
+      row("constraintLoad", "heavy", "nextTest"),
+    ];
+    const baseline = {
+      financialRoom: "weak",
+      reversibility: "weak",
+      downsideExposure: "high",
+      internalReadiness: "weak",
+      optionBSupport: "weak",
+      constraintLoad: "material",
+      externalValidation: "unknown",
+    };
+    const result = prioritizeV2Thresholds(rows, baseline);
+    expect(result[0].variable).toBe("financialRoom");
+    expect(result[0].band).toBe("developing");
+    expect(result[1].variable).toBe("externalValidation");
+    expect(result.map(x => x.variable)).toEqual([
+      "financialRoom",
+      "externalValidation",
+      "optionBSupport",
+      "constraintLoad",
+    ]);
+  });
+  it("shows before-to-after impact values and retains normal-mode evidence guard", () => {
+    const f = v2DemoFixture("entrepreneurship", "en");
+    const html = renderToStaticMarkup(
+      React.createElement(V2Simulator, {
+        state: f.state,
+        input: f.input,
+        baseline: f.baseline,
+      })
+    );
+    expect(html).toContain("Scenario impact");
+    expect(html.match(/data-testid="v2-sensitivity-row"/g)).toHaveLength(7);
+    const normal = renderToStaticMarkup(
+      React.createElement(V2Dashboard, {
+        state: f.state,
+        core: f.baseline,
+        intelligence: unavailableIntelligence(f.state.caseType, "en"),
+        onReport: () => {},
+      })
+    );
+    expect(normal).not.toContain("Pilot interest appears uneven");
+    expect(normal).toContain("Current external evidence is not verified.");
   });
   it("keeps case-relevant external choices and central Korean vocabulary", () => {
     expect(v2ExternalOptions("Entrepreneurship")).toEqual(
@@ -215,6 +398,11 @@ describe("AMC interactive V2 experience", () => {
       })
     );
     expect(normal.match(/class="v2-paper-page"/g) || []).toHaveLength(8);
+    expect(normal).toContain("Transferable proof");
+    expect(normal).toContain("Income · Network ↔ Growth · Learning");
+    expect(normal).toContain("Exposure / Risk");
+    expect(normal).toContain("allofmycareer</div>");
+    expect(normal.match(/data-testid="v2-sensitivity-row"/g)).toHaveLength(7);
     expect(demo.match(/class="v2-paper-page"/g) || []).toHaveLength(9);
     expect(normal).not.toContain("Synthetic scenario fixture");
     expect(demo).toContain("DEMO DATA — NOT LIVE EVIDENCE");

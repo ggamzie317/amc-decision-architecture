@@ -15,6 +15,9 @@ import {
   v2ModuleKeys,
   v2SwitchCandidates,
   buildV2Input,
+  v2UnansweredBands,
+  v2AllBandsAnswered,
+  v2RequiredBandsByStep,
   type V2State,
   type V2CaseType,
 } from "../data/amcV2Model";
@@ -55,6 +58,7 @@ export default function AmcInteractiveV2() {
   const [casePinned, setCasePinned] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
   const [showContext, setShowContext] = useState(false);
+  const [showBandError, setShowBandError] = useState(false);
   const simOpened = useRef(false);
   const t = (key: V2CopyKey) => v2t(language, key);
   const update = (patch: Partial<V2State>) =>
@@ -62,7 +66,12 @@ export default function AmcInteractiveV2() {
   const setBand = <K extends keyof V2State["bands"]>(
     key: K,
     value: V2State["bands"][K]
-  ) => setState(s => ({ ...s, bands: { ...s.bands, [key]: value } }));
+  ) =>
+    setState(s => ({
+      ...s,
+      bands: { ...s.bands, [key]: value },
+      bandSelections: { ...s.bandSelections, [key]: true },
+    }));
   const toggle = (
     key: keyof Pick<
       V2State,
@@ -161,20 +170,28 @@ export default function AmcInteractiveV2() {
     field: keyof V2State["bands"],
     choices: readonly string[]
   ) => (
-    <fieldset className="v2-field">
+    <fieldset
+      className={`v2-field${showBandError && !state.bandSelections[field] ? " v2-band-error" : ""}`}
+      aria-invalid={showBandError && !state.bandSelections[field]}
+    >
       <legend>{t(label)}</legend>
       <div className="v2-band-choices">
         {choices.map(choice => (
           <button
             type="button"
             key={choice}
-            aria-pressed={state.bands[field] === choice}
+            aria-pressed={
+              state.bandSelections[field] && state.bands[field] === choice
+            }
             onClick={() => setBand(field, choice as never)}
           >
             {t(choice as V2CopyKey)}
           </button>
         ))}
       </div>
+      {showBandError && !state.bandSelections[field] && (
+        <p className="v2-band-error-text">{t("chooseCurrentState")}</p>
+      )}
     </fieldset>
   );
   const radioGroup = (
@@ -368,6 +385,14 @@ export default function AmcInteractiveV2() {
     }
   };
   const finish = () => {
+    if (!v2AllBandsAnswered(state)) {
+      const firstIncomplete = [3, 4, 5, 6].find(
+        i => v2UnansweredBands(state, i).length
+      );
+      setStep(firstIncomplete ?? 3);
+      setShowBandError(true);
+      return;
+    }
     const now = new Date().toISOString();
     const structuralOutputJson = {
       ...v2Identity,
@@ -606,7 +631,15 @@ export default function AmcInteractiveV2() {
               <span>
                 {t("step")} {step + 1} {t("of")} 8
               </span>
-              <span>{t("optional")}</span>
+              <span>
+                {v2RequiredBandsByStep[step]
+                  ? v2UnansweredBands(state, step).length === 0
+                    ? t("complete")
+                    : v2UnansweredBands(state, step).length === 1
+                      ? t("oneSelectionNeeded")
+                      : `${v2UnansweredBands(state, step).length}${language === "ko" ? "" : " "}${t("selectionsNeeded")}`
+                  : t("optional")}
+              </span>
             </div>
             <h2>{t(v2ModuleKeys[step])}</h2>
             <div className="v2-module-fields">{moduleBody()}</div>
@@ -614,6 +647,7 @@ export default function AmcInteractiveV2() {
               <button
                 type="button"
                 onClick={() => {
+                  setShowBandError(false);
                   if (step === 0) setPhase("setup");
                   else setStep(step - 1);
                   window.scrollTo(0, 0);
@@ -625,6 +659,11 @@ export default function AmcInteractiveV2() {
                 type="button"
                 className="v2-primary"
                 onClick={() => {
+                  if (v2UnansweredBands(state, step).length) {
+                    setShowBandError(true);
+                    return;
+                  }
+                  setShowBandError(false);
                   if (step === 7) finish();
                   else {
                     setStep(step + 1);

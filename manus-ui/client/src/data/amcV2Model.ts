@@ -23,6 +23,7 @@ import {
 } from "./externalIntelligenceV2";
 import { caseTypes } from "../../../shared/interactivePrivacy";
 import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
+import { v2MissingPoint } from "./amcV2Presentation";
 export const V2_SCHEMA = "AMC-MODULES-V2-8";
 export const V2_EXPERIENCE = "interactive-v2";
 export type V2CaseType = (typeof caseTypes)[number];
@@ -48,6 +49,7 @@ export type V2State = {
   externalAreas: V2CopyKey[];
   targetGeography: string;
   bands: V2Bands;
+  bandSelections: Record<keyof V2Bands, boolean>;
   missingAssets: V2CopyKey[];
   supportSources: V2CopyKey[];
   constraints: V2CopyKey[];
@@ -220,6 +222,14 @@ export function initialV2State(language: V2Language = "en"): V2State {
       optionBSupport: "unknown",
       constraintLoad: "unknown",
     },
+    bandSelections: {
+      internalReadiness: false,
+      financialRoom: false,
+      reversibility: false,
+      downsideExposure: false,
+      optionBSupport: false,
+      constraintLoad: false,
+    },
     missingAssets: [],
     supportSources: [],
     constraints: [],
@@ -230,6 +240,27 @@ export function initialV2State(language: V2Language = "en"): V2State {
     serviceConsent: false,
     researchConsent: false,
   };
+}
+export const v2RequiredBandsByStep: Partial<
+  Record<number, readonly (keyof V2Bands)[]>
+> = {
+  3: ["internalReadiness"],
+  4: ["financialRoom", "reversibility", "downsideExposure"],
+  5: ["optionBSupport"],
+  6: ["constraintLoad"],
+};
+export function v2UnansweredBands(
+  state: V2State,
+  step: number
+): (keyof V2Bands)[] {
+  return (v2RequiredBandsByStep[step] || []).filter(
+    key => !state.bandSelections[key]
+  );
+}
+export function v2AllBandsAnswered(state: V2State): boolean {
+  return [3, 4, 5, 6]
+    .flatMap(step => v2RequiredBandsByStep[step] || [])
+    .every(key => state.bandSelections[key]);
 }
 export type V2Switch = {
   id: string;
@@ -325,15 +356,7 @@ export function buildV2Input(s: V2State): ProductApplicationBuildInput {
     externalSnapshot: neutral,
     selections,
   });
-  const missingBand: V2CopyKey =
-    s.bands.internalReadiness === "unknown"
-      ? "readinessBand"
-      : s.bands.financialRoom === "unknown"
-        ? "financial"
-        : s.bands.optionBSupport === "unknown"
-          ? "supportBand"
-          : "externalValidation";
-  const missingText = v2t(language, missingBand);
+  const missing = v2MissingPoint(s.caseType, language);
   const externalArea = selected(s, s.externalAreas);
   const conditionNames = v2SwitchCandidates(
     s,
@@ -365,8 +388,8 @@ export function buildV2Input(s: V2State): ProductApplicationBuildInput {
     fifwm: buildUnavailableFifwm(language),
     fifwmSource: "unavailable",
     ...coreSignals,
-    missingPoint: missingText,
-    missingPointWhy: v2t(language, "needsVerification"),
+    missingPoint: missing.point,
+    missingPointWhy: missing.why,
     primaryRisk: riskLabel,
     primaryRiskMeaning:
       s.bands.downsideExposure === "unknown"
@@ -402,8 +425,20 @@ export function buildV2Input(s: V2State): ProductApplicationBuildInput {
 }
 export type V2Reading = { value: string; provenance: V2Provenance };
 export function v2DecisionReadings(s: V2State, core: ProductApplicationV3) {
-  const label = (keys: V2CopyKey[]) =>
-    selected(s, keys) || v2t(s.language, "noneYet");
+  const label = (keys: V2CopyKey[], fallback: string) =>
+    selected(s, keys) || fallback;
+  const caseStructure = core.presentation.decisionStructure;
+  const protects = label(s.protects, caseStructure.optionAProtects);
+  const opens = label(s.opens, caseStructure.optionBOpens);
+  const tradeoffProtects = label(
+    s.protects.slice(0, 2),
+    caseStructure.optionAProtects
+  );
+  const tradeoffOpens = label(s.opens.slice(0, 2), caseStructure.optionBOpens);
+  const nextTest =
+    s.language === "ko" && s.caseType === "Entrepreneurship"
+      ? "작은 유료 시범 운영으로 수요 검증"
+      : core.presentation.nextTestKeyword;
   return {
     posture: {
       value: core.currentStructuralPosture.label,
@@ -413,15 +448,43 @@ export function v2DecisionReadings(s: V2State, core: ProductApplicationV3) {
       value: v2t(s.language, core.safetyMargin.band),
       provenance: "DERIVED_CORE_RULE",
     },
-    missing: { value: core.missingPoint, provenance: "DERIVED_CORE_RULE" },
-    protects: { value: label(s.protects), provenance: "USER_STRUCTURED" },
-    opens: { value: label(s.opens), provenance: "USER_STRUCTURED" },
-    tension: { value: label(s.exposes), provenance: "USER_STRUCTURED" },
-    constraint: { value: label(s.constraints), provenance: "USER_STRUCTURED" },
-    nextTest: {
-      value: core.nextStepExperiment.whatToTest,
+    missing: {
+      value: core.presentation.missingPointKeyword,
       provenance: "DERIVED_CORE_RULE",
     },
+    missingDetail: {
+      value: v2MissingPoint(s.caseType, s.language).why,
+      provenance: "DERIVED_CORE_RULE",
+    },
+    protects: {
+      value: protects,
+      provenance: s.protects.length ? "USER_STRUCTURED" : "DERIVED_CORE_RULE",
+    },
+    opens: {
+      value: opens,
+      provenance: s.opens.length ? "USER_STRUCTURED" : "DERIVED_CORE_RULE",
+    },
+    tradeoff: {
+      value: `${tradeoffProtects} ↔ ${tradeoffOpens}`,
+      provenance:
+        s.protects.length && s.opens.length
+          ? "USER_STRUCTURED"
+          : "DERIVED_CORE_RULE",
+    },
+    exposure: {
+      value: label(
+        s.exposes,
+        `${v2t(s.language, "downside")}: ${v2t(s.language, core.safetyMargin.inputs.downsideExposure.band)}`
+      ),
+      provenance: s.exposes.length ? "USER_STRUCTURED" : "DERIVED_CORE_RULE",
+    },
+    constraint: {
+      value: label(s.constraints, caseStructure.keyConstraint),
+      provenance: s.constraints.length
+        ? "USER_STRUCTURED"
+        : "DERIVED_CORE_RULE",
+    },
+    nextTest: { value: nextTest, provenance: "DERIVED_CORE_RULE" },
   } as const satisfies Record<string, V2Reading>;
 }
 export type V2Sensitivity = {

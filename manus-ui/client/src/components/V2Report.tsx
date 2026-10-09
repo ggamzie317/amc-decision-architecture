@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import V2SensitivityMatrix from "./V2SensitivityMatrix";
 import {
   inspectV2ReportDensity,
   lowDensityPages,
@@ -110,9 +111,7 @@ export default function V2Report({
                 {t("caseConfirm")} {v2CaseLabel(state.language, state.caseType)}
               </p>
             </div>
-            <div className="v2-cover-mark">
-              a<span>llofmycareer</span>
-            </div>
+            <div className="v2-cover-mark">allofmycareer</div>
           </div>
           {fact}
           <div className="v2-paper-tiles">
@@ -153,7 +152,7 @@ export default function V2Report({
             </article>
             <article>
               <span>{t("tradeoff")}</span>
-              <h3>{d.tension.value}</h3>
+              <h3>{d.tradeoff.value}</h3>
               <p>
                 {t("keyConstraint")}: {d.constraint.value}
               </p>
@@ -255,10 +254,14 @@ export default function V2Report({
               <p>{d.opens.value}</p>
             </article>
           </div>
+          <div className="v2-paper-note">
+            <strong>{t("tradeoff")}</strong>
+            <p>{d.tradeoff.value}</p>
+          </div>
           <div className="v2-paper-grid two">
             <article>
-              <span>{t("expose")}</span>
-              <h3>{d.tension.value}</h3>
+              <span>{t("exposureRisk")}</span>
+              <h3>{d.exposure.value}</h3>
             </article>
             <article>
               <span>{t("keyConstraint")}</span>
@@ -334,7 +337,7 @@ export default function V2Report({
             <span>{t("missing")}</span>
             <strong>{d.missing.value}</strong>
             <p>
-              {t("externalValidation")}: {t("evidenceUnavailable")}
+              {d.missingDetail.value}
             </p>
           </div>
           <div className="v2-paper-play-list">
@@ -366,35 +369,7 @@ export default function V2Report({
             </strong>
             <p>{t("sensitivityIntro")}</p>
           </div>
-          <div className="v2-paper-table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t("controls")}</th>
-                  <th>{t("scenario")}</th>
-                  <th>{t("posture")}</th>
-                  <th>{t("safety")}</th>
-                  <th>{t("changing")}</th>
-                  <th>{t("nextTest")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sensitivity.map((r, i) => (
-                  <tr key={i}>
-                    <th>{t(key[r.variable])}</th>
-                    <td>{t(r.band as V2CopyKey)}</td>
-                    <td>{r.posture ? "●" : "·"}</td>
-                    <td>{r.safety ? "●" : "·"}</td>
-                    <td>{r.changing ? "●" : "·"}</td>
-                    <td>{r.nextTest ? "●" : "·"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="v2-paper-caption">
-            ● {t("changeLabel")}　 · {t("noChange")}
-          </p>
+          <V2SensitivityMatrix rows={sensitivity} language={state.language} />
         </>
       )}
       {page(

@@ -124,7 +124,7 @@ export default function V2Dashboard({
     ["posture", d.posture.value, d.posture.provenance],
     ["missing", d.missing.value, d.missing.provenance],
     ["safety", d.safety.value, d.safety.provenance],
-    ["tradeoff", d.tension.value, d.tension.provenance],
+    ["tradeoff", d.tradeoff.value, d.tradeoff.provenance],
     ["nextTest", d.nextTest.value, d.nextTest.provenance],
   ];
   const signals: [V2CopyKey, string][] = [
@@ -192,18 +192,21 @@ export default function V2Dashboard({
           </div>
         </div>
         <div className="v2-map-flow">
-          <article data-provenance="USER_STRUCTURED">
+          <article data-provenance={d.protects.provenance}>
             <span>{t("optionA")}</span>
             <h3>{state.optionA}</h3>
             <p>
               <b>{t("protects")}</b> {d.protects.value}
             </p>
           </article>
-          <article className="v2-map-tension" data-provenance="USER_STRUCTURED">
+          <article
+            className="v2-map-tension"
+            data-provenance={d.tradeoff.provenance}
+          >
             <span>↔ {t("tension")} ↔</span>
-            <strong>{d.tension.value}</strong>
+            <strong>{d.tradeoff.value}</strong>
           </article>
-          <article data-provenance="USER_STRUCTURED">
+          <article data-provenance={d.opens.provenance}>
             <span>{t("optionB")}</span>
             <h3>{state.optionB}</h3>
             <p>
@@ -212,6 +215,9 @@ export default function V2Dashboard({
           </article>
         </div>
         <div className="v2-map-bottom">
+          <span>
+            <b>{t("exposureRisk")}</b> {d.exposure.value}
+          </span>
           <span>
             <b>{t("keyConstraint")}</b> {d.constraint.value}
           </span>

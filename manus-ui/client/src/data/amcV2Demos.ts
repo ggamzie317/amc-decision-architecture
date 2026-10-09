@@ -13,6 +13,8 @@ export type V2DemoKind = "entrepreneurship" | "industry";
 export function v2DemoFixture(kind: V2DemoKind, language: V2Language) {
   const s: V2State = initialV2State(language);
   const ko = language === "ko";
+  for (const key of Object.keys(s.bandSelections) as (keyof V2State["bands"])[])
+    s.bandSelections[key] = true;
   if (kind === "entrepreneurship")
     Object.assign(s, {
       decision: ko

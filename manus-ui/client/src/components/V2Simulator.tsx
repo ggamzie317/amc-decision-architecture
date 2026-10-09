@@ -14,9 +14,10 @@ import {
   buildV2Sensitivity,
   v2Scenario,
   type V2State,
-  type V2Sensitivity,
 } from "../data/amcV2Model";
 import { v2t, v2FamilyLabel, type V2CopyKey } from "../data/v2Language";
+import { prioritizeV2Thresholds } from "../data/amcV2SensitivityView";
+import V2SensitivityMatrix from "./V2SensitivityMatrix";
 const key: Record<ScenarioVariable, V2CopyKey> = {
   financialRoom: "financial",
   reversibility: "reversibility",
@@ -100,7 +101,7 @@ export default function V2Simulator({
       scenario.nextStepExperiment.whatToTest,
     ],
   ];
-  const changeLabels = (row: V2Sensitivity) =>
+  const changeLabels = (row: (typeof sensitivity)[number]) =>
     [
       row.posture ? t("postureShifts") : null,
       row.safety ? t("safetyChanges") : null,
@@ -109,9 +110,7 @@ export default function V2Simulator({
     ]
       .filter(Boolean)
       .join(" · ") || t("noChange");
-  const thresholds = sensitivity
-    .filter(row => row.posture || row.safety || row.changing || row.nextTest)
-    .slice(0, 4);
+  const thresholds = prioritizeV2Thresholds(sensitivity, baseBands);
   return (
     <section
       className="v2-lab"
@@ -191,7 +190,11 @@ export default function V2Simulator({
               >
                 <span>{t(label)}</span>
                 <strong>
-                  {before !== after ? t("changeLabel") : t("noChange")}
+                  {before !== after
+                    ? label === "changing"
+                      ? `${baseline.changingPlays.length} → ${scenario.changingPlays.length}`
+                      : `${before} → ${after}`
+                    : t("noChange")}
                 </strong>
               </li>
             ))}
@@ -206,49 +209,7 @@ export default function V2Simulator({
           </div>
           <p>{t("sensitivityIntro")}</p>
         </div>
-        <div className="v2-matrix-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{t("controls")}</th>
-                <th>{t("scenario")}</th>
-                <th>{t("posture")}</th>
-                <th>{t("safety")}</th>
-                <th>{t("changing")}</th>
-                <th>{t("nextTest")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sensitivity.map(row => (
-                <tr key={`${row.variable}-${row.band}`}>
-                  <th>{t(key[row.variable])}</th>
-                  <td>{t(row.band as V2CopyKey)}</td>
-                  {(
-                    [
-                      row.posture,
-                      row.safety,
-                      row.changing,
-                      row.nextTest,
-                    ] as boolean[]
-                  ).map((changed, index) => (
-                    <td key={index}>
-                      <span
-                        className={
-                          changed ? "v2-cell-change" : "v2-cell-stable"
-                        }
-                      >
-                        {changed ? "●" : "·"}
-                        <span className="v2-sr">
-                          {changed ? t("changeLabel") : t("noChange")}
-                        </span>
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <V2SensitivityMatrix rows={sensitivity} language={state.language} />
       </section>
       <section className="v2-thresholds">
         <div>
