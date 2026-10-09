@@ -27,6 +27,7 @@ import {
   v2CaseLabel,
   v2FamilyLabel,
   v2DirectionLabel,
+  v2EvidenceDimensionLabel,
   type V2CopyKey,
 } from "../data/v2Language";
 const key = {
@@ -46,6 +47,7 @@ export default function V2Report({
   visibleVariables,
   scenarioOverrides = {},
   intelligence,
+  evidencePhase = intelligence.status,
   onClose,
   onPrint,
 }: {
@@ -56,6 +58,7 @@ export default function V2Report({
   visibleVariables: readonly ScenarioVariable[];
   scenarioOverrides?: ScenarioOverrides;
   intelligence: ExternalIntelligenceV2;
+  evidencePhase?: "not_checked" | "loading" | "live" | "unavailable" | "demo";
   onClose: () => void;
   onPrint: () => void;
 }) {
@@ -80,6 +83,28 @@ export default function V2Report({
   );
   const selected = (items: V2CopyKey[]) =>
     items.length ? items.map(t).join(" · ") : t("noneYet");
+  const hasSources =
+    intelligence.status === "live" || intelligence.status === "demo";
+  const evidenceLabel =
+    intelligence.status === "live"
+      ? t("liveEvidence")
+      : intelligence.status === "demo"
+        ? t("demoBadge")
+        : evidencePhase === "not_checked"
+          ? t("evidenceNotChecked")
+          : evidencePhase === "loading"
+            ? t("evidenceChecking")
+            : t("evidenceUnavailable");
+  const evidenceNote =
+    intelligence.status === "live"
+      ? `${t("reviewedAt")}: ${intelligence.generatedAt?.slice(0, 10) ?? ""}`
+      : intelligence.status === "demo"
+        ? t("demoOnly")
+        : evidencePhase === "not_checked"
+          ? t("externalPending")
+          : evidencePhase === "loading"
+            ? t("evidenceChecking")
+            : t("evidenceRetryHint");
   const page = (number: number, title: string, body: React.ReactNode) => (
     <section className="v2-paper-page" data-page={number}>
       <header>
@@ -87,8 +112,7 @@ export default function V2Report({
           allofmycareer <i>/</i> {t("briefHeader")}
         </span>
         <span>
-          {String(number).padStart(2, "0")} /{" "}
-          {intelligence.status === "demo" ? "09" : "08"}
+          {String(number).padStart(2, "0")} / {hasSources ? "09" : "08"}
         </span>
       </header>
       <div className="v2-paper-body">
@@ -100,11 +124,7 @@ export default function V2Report({
       </div>
       <footer>
         <span>allofmycareer</span>
-        <span>
-          {intelligence.status === "demo"
-            ? t("demoBadge")
-            : t("evidenceUnavailable")}
-        </span>
+        <span>{evidenceLabel}</span>
       </footer>
     </section>
   );
@@ -199,8 +219,8 @@ export default function V2Report({
               </p>
             </article>
             <article>
-              <span>{t("validationState")}</span>
-              <h3>{t("evidenceUnavailable")}</h3>
+              <span>{t("publicEvidenceStatus")}</span>
+              <h3>{evidenceLabel}</h3>
               <p>{t("qualitativeNote")}</p>
             </article>
           </div>
@@ -216,23 +236,15 @@ export default function V2Report({
         <>
           <div className="v2-paper-band">
             <span>{t("evidence")}</span>
-            <strong>
-              {intelligence.status === "demo"
-                ? t("demoBadge")
-                : t("evidenceUnavailable")}
-            </strong>
-            <p>
-              {intelligence.status === "demo"
-                ? t("demoOnly")
-                : t("externalPending")}
-            </p>
+            <strong>{evidenceLabel}</strong>
+            <p>{evidenceNote}</p>
           </div>
           <div className="v2-paper-grid two">
-            {intelligence.status === "demo" ? (
+            {hasSources ? (
               intelligence.evidenceBlocks.map((b, i) => (
                 <article key={i} data-provenance="EXTERNAL_EVIDENCE">
                   <span>
-                    {b.dimension} /{" "}
+                    {v2EvidenceDimensionLabel(state.language, b.dimension)} /{" "}
                     {v2DirectionLabel(state.language, b.direction)}
                   </span>
                   <h3>{b.headline}</h3>
@@ -241,7 +253,12 @@ export default function V2Report({
                     <b>{t("whyMatters")}</b> {b.whyItMatters}
                   </p>
                   <small>
-                    {t("source")}: {b.sourceLabel}
+                    {t("source")}:{" "}
+                    {b.sourceUrl ? (
+                      <a href={b.sourceUrl}>{b.sourceLabel}</a>
+                    ) : (
+                      b.sourceLabel
+                    )}
                     {b.sourceDate ? ` · ${b.sourceDate}` : ""}
                   </small>
                 </article>
@@ -250,7 +267,7 @@ export default function V2Report({
               <article className="v2-paper-wide">
                 <span>{t("validateArea")}</span>
                 <h3>{selected(state.externalAreas)}</h3>
-                <p>{t("evidenceUnavailable")}</p>
+                <p>{evidenceLabel}</p>
               </article>
             )}
           </div>
@@ -446,7 +463,7 @@ export default function V2Report({
               <span>{t("nextTest")}</span>
               <h3>{d.nextTest.value}</h3>
               <p>
-                {t("validationState")}: {t("evidenceUnavailable")}
+                {t("publicEvidenceStatus")}: {evidenceLabel}
               </p>
             </article>
           </div>
@@ -464,35 +481,35 @@ export default function V2Report({
           </div>
           <div className="v2-paper-note">
             <strong>{t("sourceNotes")}</strong>
-            <p>
-              {intelligence.status === "demo"
-                ? t("demoOnly")
-                : t("evidenceUnavailable")}
-            </p>
+            <p>{evidenceNote}</p>
           </div>
         </>
       )}
-      {intelligence.status === "demo" &&
+      {hasSources &&
         page(
           9,
           t("sourceNotes"),
           <>
             <div className="v2-paper-band">
-              <span>{t("demoBadge")}</span>
-              <strong>{t("demoOnly")}</strong>
+              <span>{evidenceLabel}</span>
+              <strong>{evidenceNote}</strong>
               <p>{intelligence.implication}</p>
             </div>
             <div className="v2-paper-play-list">
               {intelligence.evidenceBlocks.map((b, i) => (
                 <article key={i}>
                   <span>
-                    0{i + 1} / {b.dimension}
+                    0{i + 1} /{" "}
+                    {v2EvidenceDimensionLabel(state.language, b.dimension)}
                   </span>
                   <h3>{b.headline}</h3>
                   <p>{b.fact}</p>
                   <small>
                     {t("source")}: {b.sourceLabel}
                     {b.sourceDate ? ` · ${b.sourceDate}` : ""}
+                    {b.sourceUrl && (
+                      <span className="v2-paper-source-url">{b.sourceUrl}</span>
+                    )}
                   </small>
                 </article>
               ))}

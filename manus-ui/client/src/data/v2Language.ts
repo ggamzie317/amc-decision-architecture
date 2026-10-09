@@ -31,8 +31,8 @@ export const v2Copy = {
     "선택: 비식별 구조 패턴의 집계 연구 활용에 동의합니다.",
   ],
   privacy: [
-    "Written answers are not stored by allofmycareer. Current external evidence is not connected in this V2 review. Do not enter confidential or sensitive information.",
-    "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 이번 V2 검토 화면에는 실시간 외부 근거가 연결되지 않았습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
+    "Written answers are not stored by allofmycareer. Public-source search is optional and runs only when you request it. Do not enter confidential company information or sensitive personal data.",
+    "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 공개 근거 검색은 선택 사항이며 요청할 때만 실행됩니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
   ],
   begin: ["Begin guided setup", "단계별 설정 시작"],
   complete: ["Complete", "선택 완료"],
@@ -136,6 +136,7 @@ export const v2Copy = {
   tension: ["TRADE-OFF", "상충관계"],
   keyConstraint: ["Key constraint", "핵심 제약"],
   validationState: ["External validation", "외부 검증"],
+  publicEvidenceStatus: ["Public evidence status", "공개 근거 확인 상태"],
   structuralMap: ["Structural Map", "구조 지도"],
   externalValidation: ["External Validation", "외부 검증"],
   externalBoard: ["External Intelligence", "외부 근거"],
@@ -153,7 +154,30 @@ export const v2Copy = {
     "Synthetic fixture for visual review only. No live search was performed.",
     "화면 검토용 합성 자료입니다. 실시간 검색 결과가 아닙니다.",
   ],
-  liveEvidence: ["Verified external evidence", "확인된 외부 근거"],
+  liveEvidence: ["Current public evidence reviewed", "현재 공개 근거 확인됨"],
+  evidenceNotChecked: [
+    "Current external evidence has not been checked.",
+    "현재 외부 근거를 확인하지 않았습니다.",
+  ],
+  evidenceChecking: [
+    "Checking current public evidence…",
+    "현재 공개 근거를 확인하고 있습니다…",
+  ],
+  checkEvidence: ["Check current evidence", "현재 외부 근거 확인"],
+  retryEvidence: ["Retry evidence check", "외부 근거 다시 확인"],
+  evidenceRetryHint: [
+    "No source-backed evidence could be established. The structural reading remains unchanged.",
+    "출처를 확인한 근거를 확보하지 못했습니다. 구조 판단은 그대로 유지됩니다.",
+  ],
+  evidenceDisclosure: [
+    "To search current public sources, your selected external areas, target geography (if given), and a short Option B label are sent transiently to the external search provider. allofmycareer does not store your written answers.",
+    "현재 공개 근거를 검색하기 위해 선택한 외부 확인 영역, 대상 지역(입력한 경우), 짧은 선택지 B 명칭이 외부 검색 제공자에게 일시적으로 전달됩니다. allofmycareer는 작성한 답변 원문을 저장하지 않습니다.",
+  ],
+  evidenceOptionalLater: [
+    "You can check current public evidence after the dashboard is built. This is optional.",
+    "대시보드를 만든 뒤 현재 공개 근거를 선택적으로 확인할 수 있습니다.",
+  ],
+  reviewedAt: ["Sources reviewed", "근거 확인일"],
   simulator: ["Key Condition Simulator", "핵심 조건 시뮬레이션"],
   controls: ["AMC-selected conditions", "AMC가 선별한 조건"],
   currentBand: ["Current state", "현재 상태"],
@@ -283,8 +307,8 @@ export const v2Copy = {
   marketWindow: ["Market window", "시장 기회 시점"],
   schoolChildren: ["School / children", "자녀·학교"],
   externalPending: [
-    "Verified sources and dates will appear here when the evidence connection is ready.",
-    "실제 자료가 연결되면 출처와 확인 날짜가 여기에 표시됩니다.",
+    "Search has not run. Current public evidence will appear here only if you choose to check it.",
+    "검색을 실행하지 않았습니다. 확인을 선택하면 현재 공개 근거가 여기에 표시됩니다.",
   ],
   qualitativeNote: [
     "Qualitative conditions, not a numeric score.",
@@ -411,3 +435,34 @@ export const v2DirectionLabel = (language: V2Language, direction: string) =>
         ? "caution"
         : "mixedDirection"
   );
+
+const externalDimensionKeys: V2CopyKey[] = [
+  "hiringDemand",
+  "roleDemand",
+  "compensation",
+  "requiredSkills",
+  "industryDirection",
+  "geography",
+  "visaMobility",
+  "customerDemand",
+  "competition",
+  "pricing",
+  "marketGrowth",
+  "distribution",
+  "barriers",
+  "regulation",
+  "programOutcomes",
+  "employmentRelevance",
+  "researchRelevance",
+  "opportunityCost",
+  "funding",
+  "geographyMobility",
+];
+
+export const v2EvidenceDimensionLabel = (
+  language: V2Language,
+  dimension: string
+) => {
+  const key = externalDimensionKeys.find(key => v2t("en", key) === dimension);
+  return key ? v2t(language, key) : dimension;
+};

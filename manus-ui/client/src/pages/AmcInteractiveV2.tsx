@@ -25,7 +25,14 @@ import {
   type V2CaseType,
 } from "../data/amcV2Model";
 import { v2DemoFixture, type V2DemoKind } from "../data/amcV2Demos";
-import { unavailableIntelligence } from "../data/externalIntelligenceV2";
+import {
+  unavailableIntelligence,
+  type ExternalIntelligenceV2,
+} from "../data/externalIntelligenceV2";
+import {
+  buildV2EvidenceRequest,
+  requestV2Evidence,
+} from "../data/v2ExternalEvidenceClient";
 import {
   v2t,
   v2CaseLabel,
@@ -65,6 +72,12 @@ export default function AmcInteractiveV2() {
   const [scenarioOverrides, setScenarioOverrides] = useState<ScenarioOverrides>(
     {}
   );
+  const [evidenceByLanguage, setEvidenceByLanguage] = useState<
+    Record<V2Language, ExternalIntelligenceV2 | null>
+  >({ en: null, ko: null });
+  const [evidenceLoadingLanguage, setEvidenceLoadingLanguage] =
+    useState<V2Language | null>(null);
+  const evidencePending = useRef(false);
   const simOpened = useRef(false);
   const t = (key: V2CopyKey) => v2t(language, key);
   const update = (patch: Partial<V2State>) =>
@@ -141,9 +154,15 @@ export default function AmcInteractiveV2() {
     () =>
       demoMode
         ? v2DemoFixture(kind, language).intelligence
-        : unavailableIntelligence(state.caseType, language),
-    [demoMode, kind, language, state.caseType]
+        : (evidenceByLanguage[language] ??
+          unavailableIntelligence(state.caseType, language)),
+    [demoMode, kind, language, state.caseType, evidenceByLanguage]
   );
+  const evidencePhase = demoMode
+    ? "demo"
+    : evidenceLoadingLanguage === language
+      ? "loading"
+      : (evidenceByLanguage[language]?.status ?? "not_checked");
   const input = useMemo(() => buildV2Input(state), [state]);
   const core = useMemo(() => buildProductApplicationV3(input), [input]);
   const analysisVisible = phase === "dashboard" || phase === "report";
@@ -313,7 +332,7 @@ export default function AmcInteractiveV2() {
                 onChange={e => update({ targetGeography: e.target.value })}
               />
             </label>
-            <p className="v2-guidance">{t("evidenceUnavailable")}</p>
+            <p className="v2-guidance">{t("evidenceOptionalLater")}</p>
           </>
         );
       case 3:
@@ -448,6 +467,43 @@ export default function AmcInteractiveV2() {
     if (next === language) return;
     track("language_changed", {}, { from: language, to: next });
     setLanguage(next);
+  };
+  const checkCurrentEvidence = async () => {
+    if (
+      demoMode ||
+      evidencePending.current ||
+      evidenceByLanguage[language]?.status === "live"
+    )
+      return;
+    const request = buildV2EvidenceRequest({ ...state, language });
+    if (!request) {
+      setEvidenceByLanguage(previous => ({
+        ...previous,
+        [language]: unavailableIntelligence(state.caseType, language),
+      }));
+      return;
+    }
+    evidencePending.current = true;
+    setEvidenceLoadingLanguage(language);
+    track(
+      "external_evidence_requested",
+      {},
+      { externalEvidenceMode: "checking" }
+    );
+    const result = await requestV2Evidence(request);
+    setEvidenceByLanguage(previous => ({
+      ...previous,
+      [request.language]: result,
+    }));
+    track(
+      result.status === "live"
+        ? "external_evidence_live"
+        : "external_evidence_fallback",
+      { externalEvidenceMode: result.status === "live" ? "live" : "fallback" },
+      { externalEvidenceMode: result.status === "live" ? "live" : "unverified" }
+    );
+    evidencePending.current = false;
+    setEvidenceLoadingLanguage(null);
   };
   const switchDemo = (next: V2DemoKind) => {
     if (next === kind) return;
@@ -713,6 +769,8 @@ export default function AmcInteractiveV2() {
             state={state}
             core={core}
             intelligence={intelligence}
+            evidencePhase={evidencePhase}
+            onCheckEvidence={checkCurrentEvidence}
             onReport={() => {
               track("detailed_report_opened", {
                 currentStage: "detailed_report_opened",
@@ -748,6 +806,7 @@ export default function AmcInteractiveV2() {
           visibleVariables={visibleVariables}
           scenarioOverrides={scenarioOverrides}
           intelligence={intelligence}
+          evidencePhase={evidencePhase}
           onClose={() => {
             setPhase("dashboard");
             window.scrollTo(0, 0);

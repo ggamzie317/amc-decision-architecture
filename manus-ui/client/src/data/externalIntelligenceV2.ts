@@ -185,6 +185,18 @@ export function customerEvidence(
 ) {
   if (intelligence.status === "unavailable") return intelligence;
   if (intelligence.status === "demo" && demoMode) return intelligence;
-  // Live intake is a future contract. Never silently treat an unverified payload as evidence.
+  if (
+    intelligence.status === "live" &&
+    !demoMode &&
+    intelligence.evidenceBlocks.length >= 2 &&
+    intelligence.evidenceBlocks.length <= 4 &&
+    intelligence.evidenceBlocks.every(
+      block =>
+        block.provenance === "EXTERNAL_EVIDENCE" &&
+        typeof block.sourceUrl === "string" &&
+        block.sourceUrl.startsWith("https://")
+    )
+  )
+    return intelligence;
   return unavailableIntelligence(intelligence.caseType, "en");
 }

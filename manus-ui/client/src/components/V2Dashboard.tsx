@@ -2,18 +2,44 @@ import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2State } from "../data/amcV2Model";
 import { v2DecisionReadings } from "../data/amcV2Model";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
-import { v2t, v2DirectionLabel, type V2CopyKey } from "../data/v2Language";
+import {
+  v2t,
+  v2DirectionLabel,
+  v2EvidenceDimensionLabel,
+  type V2CopyKey,
+} from "../data/v2Language";
 import "../styles/v2.css";
 const fmt = (s: V2State, key: V2CopyKey) => v2t(s.language, key);
+export type V2EvidencePhase =
+  | "not_checked"
+  | "loading"
+  | "live"
+  | "unavailable"
+  | "demo";
+export function v2EvidenceStatusLabel(phase: V2EvidencePhase): V2CopyKey {
+  return phase === "live"
+    ? "liveEvidence"
+    : phase === "demo"
+      ? "demoBadge"
+      : phase === "not_checked"
+        ? "evidenceNotChecked"
+        : phase === "loading"
+          ? "evidenceChecking"
+          : "evidenceUnavailable";
+}
 export function V2ExternalBoard({
   state,
   intelligence,
+  phase,
+  onCheckEvidence,
 }: {
   state: V2State;
   intelligence: ExternalIntelligenceV2;
+  phase: V2EvidencePhase;
+  onCheckEvidence: () => void;
 }) {
   const t = (key: V2CopyKey) => fmt(state, key),
-    demo = intelligence.status === "demo";
+    demo = phase === "demo";
   const metrics = intelligence.metrics.filter(metric =>
     Number.isFinite(metric.value)
   );
@@ -25,22 +51,48 @@ export function V2ExternalBoard({
           <h2>{t("externalBoard")}</h2>
         </div>
         <span className={demo ? "v2-demo-label" : "v2-status-label"}>
-          {demo
-            ? t("demoBadge")
-            : intelligence.status === "live"
-              ? t("liveEvidence")
-              : t("evidenceUnavailable")}
+          {phase === "loading"
+            ? t("evidenceChecking")
+            : t(v2EvidenceStatusLabel(phase))}
         </span>
       </div>
-      {intelligence.status === "unavailable" ? (
-        <div className="v2-empty-evidence">
+      {phase === "not_checked" ||
+      phase === "loading" ||
+      phase === "unavailable" ? (
+        <div className="v2-empty-evidence" aria-live="polite">
           <span aria-hidden="true">◌</span>
-          <strong>{t("evidenceUnavailable")}</strong>
-          <p>{t("externalPending")}</p>
+          <strong>
+            {t(
+              phase === "loading"
+                ? "evidenceChecking"
+                : v2EvidenceStatusLabel(phase)
+            )}
+          </strong>
+          <p>
+            {t(
+              phase === "unavailable" ? "evidenceRetryHint" : "externalPending"
+            )}
+          </p>
+          {phase !== "loading" && (
+            <div className="v2-evidence-action">
+              <button type="button" onClick={onCheckEvidence}>
+                {t(phase === "unavailable" ? "retryEvidence" : "checkEvidence")}
+              </button>
+              <p>{t("evidenceDisclosure")}</p>
+            </div>
+          )}
         </div>
       ) : (
         <>
           {demo && <p className="v2-evidence-caveat">{t("demoOnly")}</p>}
+          {phase === "live" && intelligence.generatedAt && (
+            <p className="v2-evidence-caveat">
+              {t("reviewedAt")}:{" "}
+              {new Date(intelligence.generatedAt).toLocaleDateString(
+                state.language === "ko" ? "ko-KR" : "en-US"
+              )}
+            </p>
+          )}
           <div className="v2-evidence-grid">
             {intelligence.evidenceBlocks.map((block, index) => (
               <article
@@ -51,8 +103,8 @@ export function V2ExternalBoard({
                 <div className="v2-evidence-number">
                   0{index + 1}{" "}
                   <span>
-                    {block.dimension} ·{" "}
-                    {v2DirectionLabel(state.language, block.direction)}
+                    {v2EvidenceDimensionLabel(state.language, block.dimension)}{" "}
+                    · {v2DirectionLabel(state.language, block.direction)}
                   </span>
                 </div>
                 <h3>{block.headline}</h3>
@@ -89,18 +141,24 @@ export function V2ExternalBoard({
             </div>
           )}
           <div className="v2-evidence-foot">
-            <div>
-              <strong>{t("opportunity")}</strong>
-              <p>{intelligence.opportunitySignals.join(" · ")}</p>
-            </div>
-            <div>
-              <strong>{t("friction")}</strong>
-              <p>{intelligence.frictionSignals.join(" · ")}</p>
-            </div>
-            <div>
-              <strong>{t("uncertainty")}</strong>
-              <p>{intelligence.uncertainties.join(" · ")}</p>
-            </div>
+            {intelligence.opportunitySignals.length > 0 && (
+              <div>
+                <strong>{t("opportunity")}</strong>
+                <p>{intelligence.opportunitySignals.join(" · ")}</p>
+              </div>
+            )}
+            {intelligence.frictionSignals.length > 0 && (
+              <div>
+                <strong>{t("friction")}</strong>
+                <p>{intelligence.frictionSignals.join(" · ")}</p>
+              </div>
+            )}
+            {intelligence.uncertainties.length > 0 && (
+              <div>
+                <strong>{t("uncertainty")}</strong>
+                <p>{intelligence.uncertainties.join(" · ")}</p>
+              </div>
+            )}
           </div>
         </>
       )}
@@ -111,11 +169,15 @@ export default function V2Dashboard({
   state,
   core,
   intelligence,
+  evidencePhase = intelligence.status,
+  onCheckEvidence = () => {},
   onReport,
 }: {
   state: V2State;
   core: ProductApplicationV3;
   intelligence: ExternalIntelligenceV2;
+  evidencePhase?: V2EvidencePhase;
+  onCheckEvidence?: () => void;
   onReport: () => void;
 }) {
   const t = (key: V2CopyKey) => fmt(state, key),
@@ -222,7 +284,8 @@ export default function V2Dashboard({
             <b>{t("keyConstraint")}</b> {d.constraint.value}
           </span>
           <span>
-            <b>{t("validationState")}</b> {t("evidenceUnavailable")}
+            <b>{t("publicEvidenceStatus")}</b>{" "}
+            {t(v2EvidenceStatusLabel(evidencePhase))}
           </span>
         </div>
       </section>
@@ -259,7 +322,12 @@ export default function V2Dashboard({
           <strong>{t(core.safetyMargin.inputs.downsideExposure.band)}</strong>
         </p>
       </section>
-      <V2ExternalBoard state={state} intelligence={intelligence} />
+      <V2ExternalBoard
+        state={state}
+        intelligence={intelligence}
+        phase={evidencePhase}
+        onCheckEvidence={onCheckEvidence}
+      />
       <div className="v2-report-cta">
         <div>
           <p className="v2-kicker">{t("report")}</p>
