@@ -135,6 +135,36 @@ describe("approved JEV boundary", () => {
     ]);
     expect(Object.keys(store.events[1].metadataJson)).toHaveLength(3);
   });
+  it("rejects zero overrides before the pilot reservation or Gateway request", async () => {
+    const { store, id } = await setup();
+    const reserve = vi.spyOn(store, "reserveJevScenario");
+    const fetcher = vi.fn();
+    const handler = createJevScenarioHandler({
+      store,
+      enabled: true,
+      credential: () => "test",
+      fetcher,
+    });
+    const unchanged = {
+      ...packet,
+      scenarioBands: { ...baselineBands },
+      changedVariables: [],
+      safetyMargin: ["developing", "developing"],
+    };
+    expect((await call(handler, id, unchanged)).status).toBe(400);
+    expect(
+      (
+        await call(handler, id, {
+          ...unchanged,
+          changedVariables: ["financialRoom"],
+        })
+      ).status
+    ).toBe(400);
+    expect(reserve).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(store.events).toHaveLength(0);
+    expect(jevInputSchema.safeParse(packet).success).toBe(true);
+  });
   it.each([
     "answers",
     "options",
@@ -368,10 +398,12 @@ describe("interactive privacy", () => {
   it("does not consider missing session completion valid and retains legacy answer behavior", async () => {
     const { store, id } = await setup();
     const row = store.submissions.get(id)!;
-    row.answersJson = Object.fromEntries(Array.from({length:15},(_,i)=>[String(i+1), ""]));
-      expect(buildDataQuality([row]).completeFullIntake).toBe(0);
-      row.answersJson={};
-      delete row.structuralOutputJson.completedIntakeQuestionCount;
+    row.answersJson = Object.fromEntries(
+      Array.from({ length: 15 }, (_, i) => [String(i + 1), ""])
+    );
+    expect(buildDataQuality([row]).completeFullIntake).toBe(0);
+    row.answersJson = {};
+    delete row.structuralOutputJson.completedIntakeQuestionCount;
     expect(buildDataQuality([row]).completeFullIntake).toBe(0);
     const legacy = await store.createSubmission("ko", true);
     await trackFounderOps(

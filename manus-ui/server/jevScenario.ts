@@ -34,6 +34,7 @@ export const jevInputSchema = z
     scenarioBands: bands,
     changedVariables: z
       .array(z.enum(variables))
+      .min(1)
       .max(7)
       .refine(a => new Set(a).size === a.length),
     baselinePosture: z.enum(postures),

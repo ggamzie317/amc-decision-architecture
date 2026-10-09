@@ -191,7 +191,10 @@ describe("intake contract and hard engine-equivalence gate", () => {
       expect(q.ko).toMatch(/[가-힣]/);
       expect(q.text).not.toMatch(/^What is Option [AB]|What career decision/);
     }
-    const expected = {...legacy}; for (const id of [2,7,10,12,13,16,18,22,24,26,27]) (expected as any)[id]=""; expect(adaptIntake15(preview, raw)).toEqual(expected);
+    const expected = { ...legacy };
+    for (const id of [2, 7, 10, 12, 13, 16, 18, 22, 24, 26, 27])
+      (expected as any)[id] = "";
+    expect(adaptIntake15(preview, raw)).toEqual(expected);
   });
   it("requires exactly the fifteen responses and their six bands, including explicit unknown", () => {
     expect(completedIntake15(raw, selections)).toBe(15);
@@ -316,6 +319,19 @@ describe("deterministic counterfactuals", () => {
       );
       expect(html).toContain(
         language === "en" ? "TEST ONE CHANGE" : "한 가지 조건 시험"
+      );
+      expect(html).toContain(
+        language === "en"
+          ? "Change at least one condition first."
+          : "먼저 한 가지 조건을 변경해 주세요."
+      );
+      expect(html).toMatch(
+        /<button[^>]*disabled=""[^>]*>(?:ASSESS THIS SCENARIO|이 시나리오 평가)<\/button>/
+      );
+      expect(html).toContain(
+        language === "en"
+          ? "Your written answers are not sent to this optional assessment."
+          : "작성한 답변 원문은 이 선택형 평가에는 전송되지 않습니다."
       );
       expect(html).toContain(
         language === "en"
@@ -444,7 +460,9 @@ describe("Founder Ops baseline-only persistence and consent", () => {
     const after = await store.getSubmission(submissionId);
     expect(after?.submission).toEqual(before?.submission);
     expect(after?.submission.answersJson).toEqual({});
-    expect(after?.submission.structuralOutputJson.completedIntakeQuestionCount).toBe(15);
+    expect(
+      after?.submission.structuralOutputJson.completedIntakeQuestionCount
+    ).toBe(15);
     expect(after?.events.at(-1)?.metadataJson).toEqual({
       variable: "financialRoom",
       baselineBand: "developing",

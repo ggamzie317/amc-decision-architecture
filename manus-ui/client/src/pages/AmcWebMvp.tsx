@@ -3768,6 +3768,14 @@ export default function AmcWebMvp({ interactive = false }: { interactive?: boole
                   )}
                 </span>
               </label>
+              {interactive && (
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  {t(
+                    "Your written answers are not stored by allofmycareer. Limited decision context may be sent to an external AI/search provider to generate current external evidence. Please do not enter confidential company information or sensitive personal data.",
+                    "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 현재 외부 근거를 생성하기 위해 결정에 필요한 일부 내용이 외부 AI/검색 제공자에게 전달될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요."
+                  )}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={startPreview}
@@ -4139,8 +4147,8 @@ export default function AmcWebMvp({ interactive = false }: { interactive?: boole
             <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
               <p className="rounded-md border border-border bg-secondary/20 p-4 text-xs leading-relaxed text-muted-foreground">
                 {t(
-                  interactive ? "Your written answers stay in this session and are not stored. You may need to re-enter them after leaving or reloading." : "Your responses may be securely stored to generate your report and improve allofmycareer. Please avoid entering confidential company information or sensitive personal data.",
-                  interactive ? "작성한 답변은 현재 세션에만 유지되며 저장되지 않습니다. 페이지를 떠나거나 새로고침하면 다시 입력해야 할 수 있습니다." : "입력 내용은 리포트 생성과 allofmycareer 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
+                  interactive ? "Your written answers are not stored by allofmycareer. Limited decision context may be sent to an external AI/search provider to generate current external evidence. Please do not enter confidential company information or sensitive personal data." : "Your responses may be securely stored to generate your report and improve allofmycareer. Please avoid entering confidential company information or sensitive personal data.",
+                  interactive ? "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 현재 외부 근거를 생성하기 위해 결정에 필요한 일부 내용이 외부 AI/검색 제공자에게 전달될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요." : "입력 내용은 리포트 생성과 allofmycareer 서비스 개선을 위해 안전하게 저장될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
                 )}
               </p>
               <p className="rounded-md border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">

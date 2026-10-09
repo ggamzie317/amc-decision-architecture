@@ -34,6 +34,10 @@ fs.mkdirSync(output, { recursive: true });
         );
       };
       await noOverflow("entry");
+      const privacyCopy = ko
+        ? "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 현재 외부 근거를 생성하기 위해 결정에 필요한 일부 내용이 외부 AI/검색 제공자에게 전달될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요."
+        : "Your written answers are not stored by allofmycareer. Limited decision context may be sent to an external AI/search provider to generate current external evidence. Please do not enter confidential company information or sensitive personal data.";
+      assert((await page.locator("body").innerText()).includes(privacyCopy));
       await page.locator("input[type=checkbox]").check();
       await page
         .getByRole("button", {
@@ -75,6 +79,7 @@ fs.mkdirSync(output, { recursive: true });
         })
         .click();
       const intake = page.locator("#full-intake");
+      assert((await intake.innerText()).includes(privacyCopy));
       while (await intake.locator("button[aria-expanded=false]").count())
         await intake.locator("button[aria-expanded=false]").first().click();
       assert.equal(await intake.locator("textarea").count(), 15);
@@ -141,6 +146,35 @@ fs.mkdirSync(output, { recursive: true });
         await new Promise(r => setTimeout(r, 40));
       }
       assert.equal(Object.keys(before.answersJson).length, 0);
+      const assessButton = simulator.getByRole("button", {
+        name: ko ? "이 시나리오 평가" : "ASSESS THIS SCENARIO",
+        exact: true,
+      });
+      assert(await assessButton.isDisabled());
+      assert(
+        (await simulator.innerText()).includes(
+          ko
+            ? "먼저 한 가지 조건을 변경해 주세요."
+            : "Change at least one condition first."
+        )
+      );
+      assert(
+        (await simulator.innerText()).includes(
+          ko
+            ? "작성한 답변 원문은 이 선택형 평가에는 전송되지 않습니다."
+            : "Your written answers are not sent to this optional assessment."
+        )
+      );
+      assert.equal(
+        requests.filter(r => r.url.includes("jev-scenario")).length,
+        0
+      );
+      assert.equal(
+        (await records()).events.filter(
+          e => e.submissionId === storage && e.metadataJson.packetFingerprint
+        ).length,
+        0
+      );
       assert.equal(
         before.structuralOutputJson.intakeSchemaVersion,
         "AMC-INTAKE-V4-15"
@@ -156,6 +190,17 @@ fs.mkdirSync(output, { recursive: true });
         baselineText
       );
       await noOverflow("single");
+      assert(await assessButton.isEnabled());
+      assert.equal(
+        requests.filter(r => r.url.includes("jev-scenario")).length,
+        0
+      );
+      assert.equal(
+        (await records()).events.filter(
+          e => e.submissionId === storage && e.metadataJson.packetFingerprint
+        ).length,
+        0
+      );
       await simulator
         .getByRole("button", {
           name: ko ? "기본 상태로 초기화" : "RESET TO BASELINE",
@@ -169,6 +214,17 @@ fs.mkdirSync(output, { recursive: true });
           .locator("p")
           .allTextContents(),
         baselineParagraphs
+      );
+      assert(await assessButton.isDisabled());
+      assert.equal(
+        requests.filter(r => r.url.includes("jev-scenario")).length,
+        0
+      );
+      assert.equal(
+        (await records()).events.filter(
+          e => e.submissionId === storage && e.metadataJson.packetFingerprint
+        ).length,
+        0
       );
       await simulator
         .getByRole("button", {
@@ -194,6 +250,7 @@ fs.mkdirSync(output, { recursive: true });
         .locator("button")
         .nth(2)
         .click();
+      assert(await assessButton.isEnabled());
       assert.equal(
         requests.filter(r => r.url.includes("jev-scenario")).length,
         0
@@ -300,6 +357,7 @@ fs.mkdirSync(output, { recursive: true });
         })
         .click();
       assert.equal(await simulator.getByRole("status").count(), 0);
+      assert(await assessButton.isDisabled());
       assert.equal(
         requests.filter(r => r.url.includes("jev-scenario")).length,
         1

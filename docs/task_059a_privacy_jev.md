@@ -32,9 +32,9 @@ This document supersedes Task 059's raw-answer persistence and blocked live tran
 
 ## Exact customer disclosure
 
-EN: Optional: this assessment sends only a de-identified structural summary of the scenario to an external AI provider. Your written answers are not sent.
+EN: Optional: this assessment sends only a de-identified structural summary of the scenario to an external AI provider. Your written answers are not sent to this optional assessment.
 
-KO: 선택 기능입니다. 이 평가는 시나리오의 비식별 구조 요약만 외부 AI 제공자에게 전송합니다. 작성한 답변 원문은 전송하지 않습니다.
+KO: 선택 기능입니다. 이 평가는 시나리오의 비식별 구조 요약만 외부 AI 제공자에게 전송합니다. 작성한 답변 원문은 이 선택형 평가에는 전송되지 않습니다.
 
 ## Verification artifacts
 
@@ -70,3 +70,15 @@ Synthetic screenshots and browser records: `/tmp/task059a-qa/`. No real customer
 - `manus-ui/tests/jev-scenario.test.ts`
 
 - `docs/task_059a_privacy_jev.md`
+
+## Task 059B: final privacy copy and zero-override guard
+
+Before Preview input and in the interactive Full Intake, customers now see the exact disclosure:
+
+EN: Your written answers are not stored by allofmycareer. Limited decision context may be sent to an external AI/search provider to generate current external evidence. Please do not enter confidential company information or sensitive personal data.
+
+KO: 작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 현재 외부 근거를 생성하기 위해 결정에 필요한 일부 내용이 외부 AI/검색 제공자에게 전달될 수 있습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.
+
+The optional JEV notice above specifies that written answers are not sent **to this optional assessment**. With no changed scenario band, the assessment button is disabled and shows “Change at least one condition first.” / “먼저 한 가지 조건을 변경해 주세요.” The server rejects an empty changed-variable list before any pilot reservation, operational event or Gateway call. A changed band enables the button; Reset clears the advisory and disables it again. The deterministic simulator and existing External Evidence request remain unchanged.
+
+Task 059B verification: 220/220 web tests (the 72 structural-equivalence cases remain intact), TypeScript check, production build and ESM smoke passed. EN/KO browser QA passed at 390/430/768/1024/1440 px, asserting zero JEV requests/reservations before a changed condition, enablement after change, reset disablement and advisory clearing. The separate root suite remains at its documented baseline of 74 passed / 4 pre-existing failures out of 78; Task 059B does not modify those files.

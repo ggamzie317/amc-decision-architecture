@@ -93,6 +93,7 @@ export default function InteractiveSimulator({
   );
   const currentBands = baselineBands(input),
     scenarioBands = baselineBands(applyScenarioOverrides(input, overrides));
+  const hasScenarioChange = Object.keys(overrides).length > 0;
   const impact = scenarioImpact(baseline, scenario);
   const invalidate = () => {
     generation.current++;
@@ -129,7 +130,7 @@ export default function InteractiveSimulator({
     emit("scenario_reset", { mode });
   };
   const assess = async () => {
-    if (assessing) return;
+    if (assessing || !hasScenarioChange) return;
     const request = ++generation.current;
     setAssessing(true);
     const result = await session.current.assess(
@@ -347,18 +348,23 @@ export default function InteractiveSimulator({
         </p>
         <p className="mt-3 text-sm">
           {t(
-            "Optional: this assessment sends only a de-identified structural summary of the scenario to an external AI provider. Your written answers are not sent.",
-            "선택 기능입니다. 이 평가는 시나리오의 비식별 구조 요약만 외부 AI 제공자에게 전송합니다. 작성한 답변 원문은 전송하지 않습니다."
+            "Optional: this assessment sends only a de-identified structural summary of the scenario to an external AI provider. Your written answers are not sent to this optional assessment.",
+            "선택 기능입니다. 이 평가는 시나리오의 비식별 구조 요약만 외부 AI 제공자에게 전송합니다. 작성한 답변 원문은 이 선택형 평가에는 전송되지 않습니다."
           )}
         </p>
         <button
           type="button"
-          className={`${button} mt-4`}
-          disabled={assessing}
+          className={`${button} mt-4 disabled:cursor-not-allowed disabled:opacity-50`}
+          disabled={assessing || !hasScenarioChange}
           onClick={assess}
         >
           {t("ASSESS THIS SCENARIO", "이 시나리오 평가")}
         </button>
+        {!hasScenarioChange && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t("Change at least one condition first.", "먼저 한 가지 조건을 변경해 주세요.")}
+          </p>
+        )}
         {advisory?.status === "unavailable" && (
           <p role="status" className="mt-3 text-sm text-muted-foreground">
             {t(
