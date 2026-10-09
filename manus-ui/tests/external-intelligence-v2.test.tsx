@@ -497,6 +497,10 @@ describe("V2 live External Intelligence boundary", () => {
       })
     );
     expect(loading).toContain("Checking current public evidence");
+    expect(loading).toContain(
+      "Searching current public sources for the selected external questions."
+    );
+    expect(loading).not.toContain("Search has not run.");
     expect(loading).not.toContain("Check current evidence</button>");
     const korean = v2DemoFixture("entrepreneurship", "ko");
     const koLive = normalizeV2AgentResponse(envelope(providerContent("ko")), {

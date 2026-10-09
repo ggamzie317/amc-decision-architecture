@@ -163,6 +163,10 @@ export const v2Copy = {
     "Checking current public evidence…",
     "현재 공개 근거를 확인하고 있습니다…",
   ],
+  evidenceLoadingHint: [
+    "Searching current public sources for the selected external questions.",
+    "선택한 외부 확인 항목에 대한 현재 공개 자료를 검색하고 있습니다.",
+  ],
   checkEvidence: ["Check current evidence", "현재 외부 근거 확인"],
   retryEvidence: ["Retry evidence check", "외부 근거 다시 확인"],
   evidenceRetryHint: [

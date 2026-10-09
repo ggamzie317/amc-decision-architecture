@@ -70,7 +70,11 @@ export function V2ExternalBoard({
           </strong>
           <p>
             {t(
-              phase === "unavailable" ? "evidenceRetryHint" : "externalPending"
+              phase === "unavailable"
+                ? "evidenceRetryHint"
+                : phase === "loading"
+                  ? "evidenceLoadingHint"
+                  : "externalPending"
             )}
           </p>
           {phase !== "loading" && (
