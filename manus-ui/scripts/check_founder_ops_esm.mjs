@@ -14,6 +14,7 @@ const entryPoints = [
   "founderNotification.ts",
   "founderOpsAnalytics.ts",
   "launchOpsAnalytics.ts",
+  "simulatorAnalytics.ts",
   "externalSnapshotService.ts",
   "providerObservation.ts",
   "founderOpsApi.ts",

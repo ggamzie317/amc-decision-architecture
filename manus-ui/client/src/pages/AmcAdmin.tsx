@@ -1,7 +1,10 @@
+import SimulatorAnalytics from "../components/SimulatorAnalytics";
+import { intake15Questions, INTAKE_V4_SCHEMA } from "../data/amcIntakeV4";
 import LaunchOps, { type LaunchResponse } from "../components/LaunchOps";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Summary = {
+  simulator?: import("../../../server/simulatorAnalytics").SimulatorAnalytics;
   backendAvailable: boolean;
   totals?: Record<string, number>;
   rates?: Record<string, number>;
@@ -530,6 +533,7 @@ export default function AmcAdmin() {
                 values={research?.evidenceDistribution}
               />
             </div>
+            <SimulatorAnalytics data={research?.simulator} />
             {Object.entries(research?.frameworkSignalDistributions || {}).map(
               ([label, values]) => (
                 <Distribution key={label} title={label} values={values} />
@@ -700,13 +704,13 @@ export default function AmcAdmin() {
             </div>
             <div className="mt-5 grid gap-5 lg:grid-cols-2">
               <article className="border border-border p-5">
-                <h3 className="font-semibold">RAW USER INPUT</h3>
+                <h3 className="font-semibold">RAW USER INPUT</h3><p className="text-xs">{detail.submission.structuralOutputJson.intakeSchemaVersion === INTAKE_V4_SCHEMA ? INTAKE_V4_SCHEMA + " · 15 questions" : "Legacy · 29 questions"}</p>
                 <div className="mt-4 space-y-3">
                   {Object.entries(detail.submission.answersJson).map(
                     ([question, answer]) => (
                       <div key={question}>
                         <p className="text-xs text-muted-foreground">
-                          Question {question}
+                          Question {question}{detail.submission.structuralOutputJson.intakeSchemaVersion === INTAKE_V4_SCHEMA ? ` · ${detail.submission.language === "ko" ? intake15Questions[Number(question)-1]?.ko : intake15Questions[Number(question)-1]?.text}` : ""}
                         </p>
                         <p className="mt-1 whitespace-pre-wrap text-sm">
                           {answer}

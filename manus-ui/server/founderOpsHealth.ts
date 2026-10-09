@@ -1,3 +1,4 @@
+import { expectedIntakeAnswers, buildSimulatorAnalytics } from "./simulatorAnalytics.js";
 import postgres from "postgres";
 
 import { adminAuthConfigured } from "./founderAdminAuth.js";
@@ -163,7 +164,7 @@ export function buildDataQuality(submissions: SubmissionRecord[]): DataQuality {
       item =>
         Boolean(item.fullIntakeCompletedAt) &&
         Object.values(item.answersJson).filter(answer => answer.trim())
-          .length === 29
+          .length === expectedIntakeAnswers(item)
     ),
     structuralOutputSaved: count(item =>
       hasObjectData(item.structuralOutputJson)

@@ -1,3 +1,4 @@
+import { simulatorEvents, sanitizeSimulatorMetadata } from "./simulatorAnalytics.js";
 import {
   buildOperationsSummary,
   buildResearchSummary,
@@ -130,16 +131,17 @@ export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
   } else if (submissionId && !(await store.getSubmission(submissionId))) {
     submissionId = "";
   }
+  if (simulatorEvents.includes(eventType) && !submissionId) return {ok:false,stored:false,reason:"baseline_required"};
   if (!startsNewJourney && !submissionId) {
     const submission = await store.createSubmission(language, true);
     submissionId = submission.submissionId;
   }
-  const patch = sanitizePatch(body.patch);
+  const patch = simulatorEvents.includes(eventType) ? {} : sanitizePatch(body.patch);
   if (Object.keys(patch).length > 0)
     await store.updateSubmission(submissionId, patch);
   const metadata = { ...(boundedObject(body.metadata, 4000) || {}) };
   delete metadata.providerObservation; // Reserved for server-authored provider telemetry.
-  await store.addEvent(submissionId, eventType, metadata);
+  await store.addEvent(submissionId, eventType, simulatorEvents.includes(eventType) ? sanitizeSimulatorMetadata(metadata) : metadata);
   return { ok: true, stored: true, submissionId };
 }
 

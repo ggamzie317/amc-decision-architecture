@@ -1,3 +1,4 @@
+import { expectedIntakeAnswers, buildSimulatorAnalytics } from "./simulatorAnalytics.js";
 import type { SubmissionRecord, UsageEventRecord } from "./founderOpsTypes.js";
 
 export const funnelStages = [
@@ -246,8 +247,8 @@ export function buildLaunchOpsSummary(
     const answers = record(row.answersJson);
     if (
       full &&
-      ((row.storedAnswerCount ?? Object.keys(answers).length) !== 29 ||
-        Array.from({ length: 29 }, (_, i) => String(i + 1)).some(
+      ((row.storedAnswerCount ?? Object.keys(answers).length) !== expectedIntakeAnswers(row) ||
+        Array.from({ length: expectedIntakeAnswers(row) }, (_, i) => String(i + 1)).some(
           key =>
             typeof answers[key] !== "string" || !String(answers[key]).trim()
         ))
@@ -353,6 +354,7 @@ export function buildLaunchOpsSummary(
   return {
     backendAvailable: true as const,
     generatedAt: now.toISOString(),
+    simulator: buildSimulatorAnalytics(submissions, events),
     windowDays,
     cohortSize: submissions.length,
     cohortDescription:
