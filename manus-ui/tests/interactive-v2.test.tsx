@@ -48,12 +48,14 @@ import {
   caseTypes,
   completedInteractive,
   isInteractive,
+  projectInteractiveMetadata,
   projectInteractivePatch,
   v2Identity,
 } from "../shared/interactivePrivacy";
 import { MemoryFounderOpsStore } from "../server/founderOpsStore";
 import { trackFounderOps } from "../server/founderOpsApi";
 import { buildOperationsSummary } from "../server/founderOpsAnalytics";
+import { buildSimulatorAnalytics } from "../server/simulatorAnalytics";
 (globalThis as any).React = React;
 const root =
   path.basename(process.cwd()) === "manus-ui"
@@ -242,6 +244,13 @@ describe("AMC interactive V2 experience", () => {
         state: f.state,
         input: f.input,
         baseline: f.baseline,
+        sensitivity: f.sensitivity,
+        visibleVariables: selectV2SimulatorVariables(
+          f.sensitivity,
+          baselineBands(f.input)
+        ),
+        overrides: {},
+        onScenarioChange: () => {},
       })
     );
     expect(html).toContain("Scenario impact");
@@ -297,6 +306,74 @@ describe("AMC interactive V2 experience", () => {
       ).toHaveLength(1);
     }
   });
+  it("does not pad one- or two-lever sensitivity cases and keeps every customer surface aligned", () => {
+    const f = v2DemoFixture("entrepreneurship", "en");
+    const values = (html: string, testId: string) =>
+      Array.from(
+        html.matchAll(
+          new RegExp(`data-testid="${testId}" data-variable="([^"]+)"`, "g")
+        ),
+        match => match[1]
+      );
+    for (const count of [0, 1, 2]) {
+      const sparse = f.sensitivity.map(row => ({
+        ...row,
+        posture:
+          count >= 1 &&
+          row.variable === "externalValidation" &&
+          row.band === "strong",
+        safety:
+          count >= 2 && row.variable === "reversibility" && row.band === "weak",
+        changing: false,
+        nextTest: false,
+      }));
+      expect(sparse).toHaveLength(21);
+      const selected = selectV2SimulatorVariables(
+        sparse,
+        baselineBands(f.input)
+      );
+      expect(selected).toEqual(
+        ["externalValidation", "reversibility"].slice(0, count)
+      );
+      const simulator = renderToStaticMarkup(
+        React.createElement(V2Simulator, {
+          state: f.state,
+          input: f.input,
+          baseline: f.baseline,
+          sensitivity: sparse,
+          visibleVariables: selected,
+          overrides: {},
+          onScenarioChange: () => {},
+        })
+      );
+      const report = renderToStaticMarkup(
+        React.createElement(V2Report, {
+          state: f.state,
+          input: f.input,
+          core: f.baseline,
+          sensitivity: sparse,
+          visibleVariables: selected,
+          intelligence: f.intelligence,
+          onClose: () => {},
+          onPrint: () => {},
+        })
+      );
+      expect(values(simulator, "v2-simulator-control")).toEqual(selected);
+      expect(values(simulator, "v2-sensitivity-row")).toEqual(selected);
+      expect(values(simulator, "v2-decision-switch")).toEqual(selected);
+      expect(values(report, "v2-sensitivity-row")).toEqual(selected);
+      expect(values(report, "v2-report-switch")).toEqual(selected);
+      expect(simulator).toContain("AMC has selected");
+      if (count === 0) {
+        expect(simulator).toContain(
+          "No tested single condition materially changes"
+        );
+        expect(report).toContain(
+          "No tested single condition materially changes"
+        );
+      }
+    }
+  });
   it("keeps simulator controls, sensitivity rows, and report rows identical in EN and KO", () => {
     for (const language of ["en", "ko"] as const) {
       const f = v2DemoFixture("industry", language);
@@ -309,6 +386,10 @@ describe("AMC interactive V2 experience", () => {
           state: f.state,
           input: f.input,
           baseline: f.baseline,
+          sensitivity: f.sensitivity,
+          visibleVariables: selected,
+          overrides: {},
+          onScenarioChange: () => {},
         })
       );
       const report = renderToStaticMarkup(
@@ -316,6 +397,8 @@ describe("AMC interactive V2 experience", () => {
           state: f.state,
           input: f.input,
           core: f.baseline,
+          sensitivity: f.sensitivity,
+          visibleVariables: selected,
           intelligence: f.intelligence,
           onClose: () => {},
           onPrint: () => {},
@@ -390,6 +473,49 @@ describe("AMC interactive V2 experience", () => {
     expect(unavailableIntelligence(f.state.caseType, "en").status).toBe(
       "unavailable"
     );
+  });
+  it("keeps baseline report analysis separate from an interactive hypothetical scenario", () => {
+    const f = v2DemoFixture("entrepreneurship", "en");
+    const selected = selectV2SimulatorVariables(
+      f.sensitivity,
+      baselineBands(f.input)
+    );
+    const report = renderToStaticMarkup(
+      React.createElement(V2Report, {
+        state: f.state,
+        input: f.input,
+        core: f.baseline,
+        sensitivity: f.sensitivity,
+        visibleVariables: selected,
+        scenarioOverrides: { downsideExposure: "low" },
+        intelligence: unavailableIntelligence(f.state.caseType, "en"),
+        onClose: () => {},
+        onPrint: () => {},
+      })
+    );
+    expect(report).toContain("<h1>Preserve and Validate</h1>");
+    expect(report).toContain("BASELINE STRUCTURAL READING");
+    expect(report).toContain("HYPOTHETICAL SCENARIO");
+    expect(report).toContain(
+      "Preserve and Validate → Stronger Transition Case"
+    );
+    expect(report).toContain(
+      "This structural stress test does not establish new evidence."
+    );
+    expect(report).toContain("Current external evidence is not verified.");
+    const switches = Array.from(
+      report.matchAll(
+        /data-testid="v2-report-switch" data-variable="([^"]+)"/g
+      ),
+      match => match[1]
+    );
+    expect(switches).toEqual(
+      prioritizeV2Thresholds(
+        f.sensitivity.filter(row => selected.includes(row.variable)),
+        baselineBands(f.input)
+      ).map(row => row.variable)
+    );
+    expect(switches).not.toContain("financialRoom");
   });
   it("keeps case-relevant external choices and central Korean vocabulary", () => {
     expect(v2ExternalOptions("Entrepreneurship")).toEqual(
@@ -535,6 +661,11 @@ describe("AMC interactive V2 experience", () => {
         state: f.state,
         input: f.input,
         core: f.baseline,
+        sensitivity: f.sensitivity,
+        visibleVariables: selectV2SimulatorVariables(
+          f.sensitivity,
+          baselineBands(f.input)
+        ),
         intelligence: unavailableIntelligence(f.state.caseType, "en"),
         onClose: () => {},
         onPrint: () => {},
@@ -545,6 +676,11 @@ describe("AMC interactive V2 experience", () => {
         state: f.state,
         input: f.input,
         core: f.baseline,
+        sensitivity: f.sensitivity,
+        visibleVariables: selectV2SimulatorVariables(
+          f.sensitivity,
+          baselineBands(f.input)
+        ),
         intelligence: f.intelligence,
         onClose: () => {},
         onPrint: () => {},
@@ -619,6 +755,84 @@ describe("AMC interactive V2 experience", () => {
       externalEvidenceStatus: "unavailable",
     });
     expect(JSON.stringify(detail)).not.toContain("PRIVATE PROSE");
+  });
+  it("captures bounded V2 simulator events and selected levers without private prose", async () => {
+    const rawMetadata = {
+      ...v2Identity,
+      selectedVariables: [
+        "downsideExposure",
+        "internalReadiness",
+        "PRIVATE PROSE",
+      ],
+      variable: "downsideExposure",
+      baselineBand: "moderate",
+      newBand: "low",
+      mode: "multi",
+      postureChanged: true,
+      safetyChanged: true,
+      changingChanged: true,
+      nextTestChanged: false,
+      optionA: "PRIVATE PROSE",
+    };
+    const metadata = projectInteractiveMetadata(rawMetadata);
+    expect(metadata.selectedVariables).toEqual([
+      "downsideExposure",
+      "internalReadiness",
+    ]);
+    expect(JSON.stringify(metadata)).not.toContain("PRIVATE PROSE");
+    const store = new MemoryFounderOpsStore();
+    const started = await trackFounderOps(
+      {
+        language: "en",
+        serviceStorageConsent: true,
+        eventType: "preview_started",
+        newSubmission: true,
+        metadata: v2Identity,
+        patch: { structuralOutputJson: v2Identity },
+      },
+      store
+    );
+    for (const eventType of [
+      "dashboard_generated",
+      "simulator_opened",
+      "scenario_variable_changed",
+      "scenario_evaluated",
+      "scenario_reset",
+    ] as const)
+      await trackFounderOps(
+        {
+          submissionId: started.submissionId,
+          language: "en",
+          serviceStorageConsent: true,
+          eventType,
+          metadata: rawMetadata,
+          patch: { answersJson: { 1: "PRIVATE PROSE" } },
+        },
+        store
+      );
+    const detail = await store.getSubmission(started.submissionId!);
+    expect(
+      detail?.events.find(event => event.eventType === "scenario_evaluated")
+        ?.metadataJson
+    ).toMatchObject({
+      selectedVariables: ["downsideExposure", "internalReadiness"],
+      postureChanged: true,
+      safetyChanged: true,
+      changingChanged: true,
+      nextTestChanged: false,
+    });
+    expect(detail?.submission.answersJson).toEqual({});
+    expect(JSON.stringify(detail)).not.toContain("PRIVATE PROSE");
+    const analytics = buildSimulatorAnalytics(
+      [detail!.submission],
+      detail!.events
+    );
+    expect(analytics.mostSelectedVariables.downsideExposure).toBe(1);
+    expect(analytics.mostSelectedVariables.internalReadiness).toBe(1);
+    expect(analytics.mostTestedVariables.downsideExposure).toBe(1);
+    expect(analytics.changes.nextTest.unchanged).toBe(1);
+    expect(analytics.opened).toBe(1);
+    expect(analytics.resets).toBe(1);
   });
   it("keeps separate legacy, V1 and V2 founder funnels", async () => {
     const store = new MemoryFounderOpsStore();

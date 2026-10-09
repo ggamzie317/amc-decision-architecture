@@ -155,7 +155,19 @@ export const v2Copy = {
   ],
   liveEvidence: ["Verified external evidence", "확인된 외부 근거"],
   simulator: ["Key Condition Simulator", "핵심 조건 시뮬레이션"],
-  controls: ["Key conditions", "핵심 조건"],
+  controls: ["AMC-selected conditions", "AMC가 선별한 조건"],
+  currentBand: ["Current state", "현재 상태"],
+  canAffect: ["Can change", "변화 가능한 구조"],
+  noLevers: [
+    "No tested single condition materially changes this structural reading. The baseline remains the reference.",
+    "시험한 단일 조건 중 현재 구조 판단을 크게 바꾸는 조건은 없습니다. 현재 구조를 기준으로 확인하세요.",
+  ],
+  baselineReading: ["BASELINE STRUCTURAL READING", "기준 구조 판단"],
+  hypotheticalScenario: ["HYPOTHETICAL SCENARIO", "가정한 시나리오"],
+  hypotheticalNotEvidence: [
+    "This structural stress test does not establish new evidence.",
+    "이 구조 시험은 새로운 실제 근거를 확인한 것이 아닙니다.",
+  ],
   baselineHold: [
     "Other structural conditions stay at the current baseline.",
     "표시되지 않은 구조 조건은 현재 기준값으로 유지됩니다.",
@@ -283,8 +295,8 @@ export const v2Copy = {
     "판단 근거를 한 문서에서 확인하세요.",
   ],
   simulatorIntro: [
-    "Adjust only the few conditions most likely to change this decision structure. Hypothetical states are not evidence.",
-    "이 결정 구조를 실제로 바꿀 가능성이 큰 핵심 조건만 조정합니다. 가정한 상태는 실제 근거가 아닙니다.",
+    "AMC has selected the few conditions most capable of changing the current decision structure. Other structural conditions remain fixed at baseline. Hypothetical states are not evidence.",
+    "AMC가 현재 결정 구조에서 판단을 바꿀 가능성이 큰 핵심 조건만 선별했습니다. 다른 구조 조건은 현재 기준값으로 유지됩니다. 가정한 상태는 실제 근거가 아닙니다.",
   ],
   sensitivityIntro: [
     "The same key conditions are tested against the current baseline using the AMC rules.",

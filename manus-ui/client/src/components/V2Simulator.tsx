@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type {
   ProductApplicationBuildInput,
   ProductApplicationV3,
@@ -10,15 +10,14 @@ import {
   type ScenarioVariable,
 } from "../data/amcScenario";
 import {
-  buildV2Sensitivity,
   v2Scenario,
+  type V2Sensitivity,
   type V2State,
 } from "../data/amcV2Model";
 import { v2t, type V2CopyKey } from "../data/v2Language";
 import {
   limitV2Overrides,
   prioritizeV2Thresholds,
-  selectV2SimulatorVariables,
   v2ScenarioComparison,
 } from "../data/amcV2SensitivityView";
 import V2SensitivityMatrix from "./V2SensitivityMatrix";
@@ -41,11 +40,19 @@ export default function V2Simulator({
   state,
   input,
   baseline,
+  sensitivity,
+  visibleVariables,
+  overrides,
+  onScenarioChange,
   onEvent,
 }: {
   state: V2State;
   input: ProductApplicationBuildInput;
   baseline: ProductApplicationV3;
+  sensitivity: V2Sensitivity[];
+  visibleVariables: readonly ScenarioVariable[];
+  overrides: ScenarioOverrides;
+  onScenarioChange: (overrides: ScenarioOverrides) => void;
   onEvent?: (
     type:
       | "simulator_opened"
@@ -55,17 +62,8 @@ export default function V2Simulator({
     metadata?: Record<string, unknown>
   ) => void;
 }) {
-  const [overrides, setOverrides] = useState<ScenarioOverrides>({});
   const t = (k: V2CopyKey) => v2t(state.language, k);
   const baseBands = useMemo(() => baselineBands(input), [input]);
-  const sensitivity = useMemo(
-    () => buildV2Sensitivity(input, baseline),
-    [input, baseline]
-  );
-  const visibleVariables = useMemo(
-    () => selectV2SimulatorVariables(sensitivity, baseBands),
-    [sensitivity, baseBands]
-  );
   const activeOverrides = useMemo(
     () => limitV2Overrides(input, visibleVariables, overrides),
     [input, visibleVariables, overrides]
@@ -83,8 +81,9 @@ export default function V2Simulator({
       band,
       "multi"
     );
-    setOverrides(next);
+    onScenarioChange(next);
     onEvent?.("scenario_variable_changed", {
+      selectedVariables: visibleVariables,
       variable,
       baselineBand: baseBands[variable],
       newBand: band,
@@ -92,13 +91,18 @@ export default function V2Simulator({
     });
     const result = v2Scenario(input, next).result;
     onEvent?.("scenario_evaluated", {
+      selectedVariables: visibleVariables,
       mode: "multi",
       postureChanged:
         result.currentStructuralPosture.label !==
         baseline.currentStructuralPosture.label,
       safetyChanged: result.safetyMargin.band !== baseline.safetyMargin.band,
       changingChanged:
-        result.changingPlays.length !== baseline.changingPlays.length,
+        result.changingPlays.map(play => play.family).join("|") !==
+        baseline.changingPlays.map(play => play.family).join("|"),
+      nextTestChanged:
+        result.nextStepExperiment.whatToTest !==
+        baseline.nextStepExperiment.whatToTest,
     });
   };
   const compare = v2ScenarioComparison(baseline, scenario, state.language);
@@ -116,6 +120,14 @@ export default function V2Simulator({
     sensitivity.filter(row => visibleVariables.includes(row.variable)),
     baseBands
   );
+  const leverImpacts = (variable: ScenarioVariable) =>
+    (["posture", "safety", "changing", "nextTest"] as const)
+      .filter(impact =>
+        sensitivity.some(row => row.variable === variable && row[impact])
+      )
+      .map(impact => t(impact))
+      .join(" · ");
+  const overrideCount = Object.keys(activeOverrides).length;
   return (
     <section
       className="v2-lab"
@@ -134,21 +146,46 @@ export default function V2Simulator({
             <button
               type="button"
               onClick={() => {
-                setOverrides({});
-                onEvent?.("scenario_reset", { mode: "multi" });
+                onScenarioChange({});
+                onEvent?.("scenario_reset", {
+                  selectedVariables: visibleVariables,
+                  mode: "multi",
+                });
               }}
             >
               {t("reset")}
             </button>
           </div>
-          <p className="v2-lab-hold">{t("baselineHold")}</p>
-          {visibleVariables.map(variable => (
+          <div className="v2-live-summary" role="status" aria-live="polite">
+            <strong>{t("impact")}</strong>
+            <span>
+              {changedImpact.length
+                ? changedImpact.map(([label]) => t(label)).join(" · ")
+                : t("noChange")}
+            </span>
+          </div>
+          {visibleVariables.length === 0 && (
+            <p className="v2-lab-empty">{t("noLevers")}</p>
+          )}
+          {visibleVariables.map((variable, index) => (
             <fieldset
               key={variable}
               data-testid="v2-simulator-control"
               data-variable={variable}
             >
-              <legend>{t(key[variable])}</legend>
+              <legend>
+                <span className="v2-lever-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                {t(key[variable])}
+              </legend>
+              <p className="v2-lever-baseline">
+                {t("currentBand")}:{" "}
+                <strong>{t(baseBands[variable] as V2CopyKey)}</strong>
+              </p>
+              <p className="v2-lever-reach">
+                {t("canAffect")}: {leverImpacts(variable)}
+              </p>
               <div className="v2-control-row">
                 {choices(variable).map(band => (
                   <button
@@ -167,6 +204,25 @@ export default function V2Simulator({
             </fieldset>
           ))}
         </section>
+        <aside className="v2-lab-impact">
+          <span className="v2-kicker">{t("impact")}</span>
+          <h3>
+            {overrideCount
+              ? `${overrideCount}${state.language === "ko" ? "" : " "}${t(overrideCount === 1 ? "conditionChanged" : "conditionsChanged")}`
+              : t("noChange")}
+          </h3>
+          <ul>
+            {changedImpact.map(([label, before, after]) => (
+              <li key={label} className="v2-impact-changed">
+                <span>{t(label)}</span>
+                <strong>{`${before} → ${after}`}</strong>
+              </li>
+            ))}
+            {changedImpact.length === 0 && (
+              <li className="v2-impact-empty">{t("noChange")}</li>
+            )}
+          </ul>
+        </aside>
         <section className="v2-lab-comparison">
           <h3>
             {t("baseline")} <span aria-hidden="true">↔</span> {t("scenario")}
@@ -186,29 +242,6 @@ export default function V2Simulator({
             ))}
           </div>
         </section>
-        <aside className="v2-lab-impact">
-          <span className="v2-kicker">{t("impact")}</span>
-          <h3>
-            {Object.keys(activeOverrides).length
-              ? `${Object.keys(activeOverrides).length}${state.language === "ko" ? "" : " "}${t(Object.keys(activeOverrides).length === 1 ? "conditionChanged" : "conditionsChanged")}`
-              : t("noChange")}
-          </h3>
-          <ul>
-            {changedImpact.map(([label, before, after]) => (
-              <li key={label} className="v2-impact-changed">
-                <span>{t(label)}</span>
-                <strong>
-                  {label === "changing"
-                    ? `${baseline.changingPlays.length} → ${scenario.changingPlays.length}`
-                    : `${before} → ${after}`}
-                </strong>
-              </li>
-            ))}
-            {changedImpact.length === 0 && (
-              <li className="v2-impact-empty">{t("noChange")}</li>
-            )}
-          </ul>
-        </aside>
       </div>
       <section className="v2-sensitivity">
         <div className="v2-section-top">
@@ -232,7 +265,11 @@ export default function V2Simulator({
         <ol>
           {thresholds.length ? (
             thresholds.map(row => (
-              <li key={`${row.variable}-${row.band}`}>
+              <li
+                key={`${row.variable}-${row.band}`}
+                data-testid="v2-decision-switch"
+                data-variable={row.variable}
+              >
                 <strong>
                   {t(key[row.variable])} → {t(row.band as V2CopyKey)}
                 </strong>

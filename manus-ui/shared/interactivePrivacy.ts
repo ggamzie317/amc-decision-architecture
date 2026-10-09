@@ -180,6 +180,27 @@ export function projectInteractivePatch(value: unknown): Record<string, any> {
 export function projectInteractiveMetadata(value: unknown) {
   const v = obj(value),
     out: Record<string, unknown> = { ...selectedIdentity(v) };
+  if (selectedIdentity(v) === v2Identity) {
+    if (Array.isArray(v.selectedVariables))
+      out.selectedVariables = Array.from(
+        new Set(
+          v.selectedVariables.filter((item: unknown) =>
+            variables.includes(item as any)
+          )
+        )
+      ).slice(0, 4);
+    if (variables.includes(v.variable)) out.variable = v.variable;
+    for (const key of ["baselineBand", "newBand"])
+      if (bands.includes(v[key])) out[key] = v[key];
+    if (["single", "multi"].includes(v.mode)) out.mode = v.mode;
+    for (const key of [
+      "postureChanged",
+      "safetyChanged",
+      "changingChanged",
+      "nextTestChanged",
+    ])
+      if (typeof v[key] === "boolean") out[key] = v[key];
+  }
   for (const key of ["derivedAnalysisSynced"])
     if (typeof v[key] === "boolean") out[key] = v[key];
   for (const key of ["externalEvidenceMode"])

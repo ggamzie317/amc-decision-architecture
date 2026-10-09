@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildProductApplicationV3 } from "../data/amcProductApplicationV3";
+import { baselineBands, type ScenarioOverrides } from "../data/amcScenario";
+import { selectV2SimulatorVariables } from "../data/amcV2SensitivityView";
 import {
   caseTypes,
   projectInteractiveMetadata,
@@ -15,6 +17,7 @@ import {
   v2ModuleKeys,
   v2SwitchCandidates,
   buildV2Input,
+  buildV2Sensitivity,
   v2UnansweredBands,
   v2AllBandsAnswered,
   v2RequiredBandsByStep,
@@ -59,6 +62,9 @@ export default function AmcInteractiveV2() {
   const [caseOpen, setCaseOpen] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [showBandError, setShowBandError] = useState(false);
+  const [scenarioOverrides, setScenarioOverrides] = useState<ScenarioOverrides>(
+    {}
+  );
   const simOpened = useRef(false);
   const t = (key: V2CopyKey) => v2t(language, key);
   const update = (patch: Partial<V2State>) =>
@@ -128,6 +134,7 @@ export default function AmcInteractiveV2() {
       setState(fixture.state);
       setPhase("dashboard");
       simOpened.current = false;
+      setScenarioOverrides({});
     } else setState(s => ({ ...s, language }));
   }, [language, kind, demoMode]);
   const intelligence = useMemo(
@@ -139,6 +146,15 @@ export default function AmcInteractiveV2() {
   );
   const input = useMemo(() => buildV2Input(state), [state]);
   const core = useMemo(() => buildProductApplicationV3(input), [input]);
+  const analysisVisible = phase === "dashboard" || phase === "report";
+  const sensitivity = useMemo(
+    () => (analysisVisible ? buildV2Sensitivity(input, core) : []),
+    [analysisVisible, input, core]
+  );
+  const visibleVariables = useMemo(
+    () => selectV2SimulatorVariables(sensitivity, baselineBands(input)),
+    [sensitivity, input]
+  );
   const candidates = useMemo(
     () => v2SwitchCandidates(state, intelligence),
     [state, intelligence]
@@ -410,12 +426,21 @@ export default function AmcInteractiveV2() {
       structuralOutputJson,
       externalEvidenceMode: "fallback",
     });
-    track("dashboard_generated", {
-      currentStage: "dashboard_generated",
-      reportGeneratedAt: now,
-      structuralOutputJson,
-      externalEvidenceMode: "fallback",
-    });
+    track(
+      "dashboard_generated",
+      {
+        currentStage: "dashboard_generated",
+        reportGeneratedAt: now,
+        structuralOutputJson,
+        externalEvidenceMode: "fallback",
+      },
+      {
+        selectedVariables: selectV2SimulatorVariables(
+          buildV2Sensitivity(input, core),
+          baselineBands(input)
+        ),
+      }
+    );
     setPhase("dashboard");
     window.scrollTo(0, 0);
   };
@@ -423,6 +448,11 @@ export default function AmcInteractiveV2() {
     if (next === language) return;
     track("language_changed", {}, { from: language, to: next });
     setLanguage(next);
+  };
+  const switchDemo = (next: V2DemoKind) => {
+    if (next === kind) return;
+    setScenarioOverrides({});
+    setKind(next);
   };
   return (
     <div className="v2-app" lang={language} data-testid="v2-app">
@@ -455,13 +485,13 @@ export default function AmcInteractiveV2() {
           <span>{t("selectDemo")}</span>
           <button
             aria-pressed={kind === "entrepreneurship"}
-            onClick={() => setKind("entrepreneurship")}
+            onClick={() => switchDemo("entrepreneurship")}
           >
             {t("demoEntrepreneurship")}
           </button>
           <button
             aria-pressed={kind === "industry"}
-            onClick={() => setKind("industry")}
+            onClick={() => switchDemo("industry")}
           >
             {t("demoIndustry")}
           </button>
@@ -692,14 +722,17 @@ export default function AmcInteractiveV2() {
             }}
           />
           <V2Simulator
-            key={demoMode ? kind : "customer"}
             state={state}
             input={input}
             baseline={core}
+            sensitivity={sensitivity}
+            visibleVariables={visibleVariables}
+            overrides={scenarioOverrides}
+            onScenarioChange={setScenarioOverrides}
             onEvent={(event, metadata) => {
               if (!simOpened.current) {
                 simOpened.current = true;
-                track("simulator_opened");
+                track("simulator_opened", {}, metadata);
               }
               track(event, {}, metadata);
             }}
@@ -711,6 +744,9 @@ export default function AmcInteractiveV2() {
           state={state}
           input={input}
           core={core}
+          sensitivity={sensitivity}
+          visibleVariables={visibleVariables}
+          scenarioOverrides={scenarioOverrides}
           intelligence={intelligence}
           onClose={() => {
             setPhase("dashboard");

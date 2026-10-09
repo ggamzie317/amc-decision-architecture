@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import V2SensitivityMatrix from "./V2SensitivityMatrix";
-import { selectV2SimulatorVariables } from "../data/amcV2SensitivityView";
+import {
+  limitV2Overrides,
+  prioritizeV2Thresholds,
+  v2ScenarioComparison,
+} from "../data/amcV2SensitivityView";
 import { baselineBands } from "../data/amcScenario";
+import type { ScenarioOverrides, ScenarioVariable } from "../data/amcScenario";
 import {
   inspectV2ReportDensity,
   lowDensityPages,
@@ -11,8 +16,9 @@ import type {
   ProductApplicationV3,
 } from "../data/amcProductApplicationV3";
 import {
-  buildV2Sensitivity,
   v2DecisionReadings,
+  v2Scenario,
+  type V2Sensitivity,
   type V2State,
 } from "../data/amcV2Model";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
@@ -36,6 +42,9 @@ export default function V2Report({
   state,
   input,
   core,
+  sensitivity,
+  visibleVariables,
+  scenarioOverrides = {},
   intelligence,
   onClose,
   onPrint,
@@ -43,17 +52,32 @@ export default function V2Report({
   state: V2State;
   input: ProductApplicationBuildInput;
   core: ProductApplicationV3;
+  sensitivity: V2Sensitivity[];
+  visibleVariables: readonly ScenarioVariable[];
+  scenarioOverrides?: ScenarioOverrides;
   intelligence: ExternalIntelligenceV2;
   onClose: () => void;
   onPrint: () => void;
 }) {
   const t = (k: V2CopyKey) => v2t(state.language, k),
-    d = v2DecisionReadings(state, core),
-    sensitivity = buildV2Sensitivity(input, core),
-    visibleVariables = selectV2SimulatorVariables(
-      sensitivity,
-      baselineBands(input)
-    );
+    d = v2DecisionReadings(state, core);
+  const activeOverrides = limitV2Overrides(
+    input,
+    visibleVariables,
+    scenarioOverrides
+  );
+  const hypothetical = Object.keys(activeOverrides).length
+    ? v2Scenario(input, activeOverrides).result
+    : null;
+  const scenarioChanges = hypothetical
+    ? v2ScenarioComparison(core, hypothetical, state.language).filter(
+        ([, before, after]) => before !== after
+      )
+    : [];
+  const switchRows = prioritizeV2Thresholds(
+    sensitivity.filter(row => visibleVariables.includes(row.variable)),
+    baselineBands(input)
+  );
   const selected = (items: V2CopyKey[]) =>
     items.length ? items.map(t).join(" · ") : t("noneYet");
   const page = (number: number, title: string, body: React.ReactNode) => (
@@ -90,15 +114,11 @@ export default function V2Report({
       <p>{state.decision}</p>
     </div>
   );
-  const marks = Array.from(
-    new Set(
-      sensitivity
-        .filter(
-          x =>
-            visibleVariables.includes(x.variable) &&
-            (x.posture || x.safety || x.changing || x.nextTest)
-        )
-        .map(x => x.variable)
+  const marks = visibleVariables.filter(variable =>
+    sensitivity.some(
+      row =>
+        row.variable === variable &&
+        (row.posture || row.safety || row.changing || row.nextTest)
     )
   );
   return (
@@ -115,6 +135,7 @@ export default function V2Report({
           <div className="v2-cover">
             <div>
               <p>{t("reportSubtitle")}</p>
+              {hypothetical && <p>{t("baselineReading")}</p>}
               <h1>{core.currentStructuralPosture.label}</h1>
               <div className="v2-cover-rule" />
               <p>
@@ -369,7 +390,7 @@ export default function V2Report({
         t("scenarioSensitivity"),
         <>
           <div className="v2-paper-band">
-            <span>{t("thresholds")}</span>
+            <span>{t("baselineReading")}</span>
             <strong>
               {marks.length
                 ? marks.map(v => t(key[v])).join(" · ")
@@ -377,6 +398,21 @@ export default function V2Report({
             </strong>
             <p>{t("sensitivityIntro")}</p>
           </div>
+          {hypothetical && (
+            <div className="v2-paper-scenario">
+              <strong>{t("hypotheticalScenario")}</strong>
+              <p>{t("hypotheticalNotEvidence")}</p>
+              {scenarioChanges.length ? (
+                scenarioChanges.map(([label, before, after]) => (
+                  <p key={label}>
+                    {t(label)}: {`${before} → ${after}`}
+                  </p>
+                ))
+              ) : (
+                <p>{t("noChange")}</p>
+              )}
+            </div>
+          )}
           <V2SensitivityMatrix
             rows={sensitivity}
             variables={visibleVariables}
@@ -389,12 +425,17 @@ export default function V2Report({
         t("switchesPlan"),
         <>
           <div className="v2-paper-grid two">
-            <article>
+            <article data-testid="v2-report-switches">
               <span>{t("switches")}</span>
-              {core.decisionSwitches.length ? (
-                core.decisionSwitches.map((sw, i) => (
-                  <p key={i}>
-                    <b>0{i + 1}</b> {sw.signal}
+              {switchRows.length ? (
+                switchRows.map((row, i) => (
+                  <p
+                    key={i}
+                    data-testid="v2-report-switch"
+                    data-variable={row.variable}
+                  >
+                    <b>0{i + 1}</b> {t(key[row.variable])} →{" "}
+                    {t(row.band as V2CopyKey)}
                   </p>
                 ))
               ) : (

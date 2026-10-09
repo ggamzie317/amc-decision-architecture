@@ -38,6 +38,9 @@ export default function V2SensitivityMatrix({
           </span>
         ))}
       </div>
+      {variables.length === 0 && (
+        <p className="v2-matrix-empty">{t("noLevers")}</p>
+      )}
       {groupV2Sensitivity(rows, variables).map(group => (
         <div
           className="v2-matrix-row"

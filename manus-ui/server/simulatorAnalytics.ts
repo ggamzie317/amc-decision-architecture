@@ -1,4 +1,4 @@
-import { isInteractive } from "../shared/interactivePrivacy.js";
+import { isInteractive, v2Identity } from "../shared/interactivePrivacy.js";
 import type { SubmissionRecord, UsageEventRecord } from "./founderOpsTypes.js";
 export const simulatorEvents = [
   "simulator_opened",
@@ -33,13 +33,32 @@ const bands = [
 /** Strict allowlist: no raw text, provider data, scenario object or derived patch. */
 export function sanitizeSimulatorMetadata(value: Record<string, unknown>) {
   const result: Record<string, unknown> = {};
+  if (
+    value.experienceVersion === v2Identity.experienceVersion &&
+    value.intakeSchemaVersion === v2Identity.intakeSchemaVersion
+  )
+    Object.assign(result, v2Identity);
+  if (
+    result.experienceVersion === v2Identity.experienceVersion &&
+    Array.isArray(value.selectedVariables)
+  )
+    result.selectedVariables = Array.from(
+      new Set(
+        value.selectedVariables.filter(item => variables.includes(String(item)))
+      )
+    ).slice(0, 4);
   if (variables.includes(String(value.variable)))
     result.variable = value.variable;
   for (const key of ["baselineBand", "newBand"])
     if (bands.includes(String(value[key]))) result[key] = value[key];
   if (value.mode === "single" || value.mode === "multi")
     result.mode = value.mode;
-  for (const key of ["postureChanged", "safetyChanged", "changingChanged"])
+  for (const key of [
+    "postureChanged",
+    "safetyChanged",
+    "changingChanged",
+    "nextTestChanged",
+  ])
     if (typeof value[key] === "boolean") result[key] = value[key];
   for (const key of [
     "scenarioPlausibility",
@@ -91,6 +110,9 @@ export function buildSimulatorAnalytics(
   const mostTestedVariables: Record<string, number> = Object.fromEntries(
     variables.map(v => [v, 0])
   );
+  const mostSelectedVariables: Record<string, number> = Object.fromEntries(
+    variables.map(v => [v, 0])
+  );
   const directions: Record<string, number> = {},
     advisoryPatterns: Record<string, number> = {};
   const modes = { single: 0, multi: 0 };
@@ -98,9 +120,17 @@ export function buildSimulatorAnalytics(
     posture: { changed: 0, unchanged: 0 },
     safety: { changed: 0, unchanged: 0 },
     changing: { changed: 0, unchanged: 0 },
+    nextTest: { changed: 0, unchanged: 0 },
   };
   for (const e of scoped) {
     const m = sanitizeSimulatorMetadata(e.metadataJson);
+    if (
+      e.eventType === "dashboard_generated" &&
+      m.experienceVersion === v2Identity.experienceVersion &&
+      Array.isArray(m.selectedVariables)
+    )
+      for (const variable of m.selectedVariables)
+        if (typeof variable === "string") mostSelectedVariables[variable]++;
     if (
       e.eventType === "scenario_variable_changed" &&
       typeof m.variable === "string"
@@ -111,7 +141,7 @@ export function buildSimulatorAnalytics(
     }
     if (e.eventType === "scenario_evaluated") {
       if (m.mode === "single" || m.mode === "multi") modes[m.mode]++;
-      for (const key of ["posture", "safety", "changing"] as const)
+      for (const key of ["posture", "safety", "changing", "nextTest"] as const)
         if (typeof m[`${key}Changed`] === "boolean")
           changes[key][m[`${key}Changed`] ? "changed" : "unchanged"]++;
     }
@@ -142,6 +172,7 @@ export function buildSimulatorAnalytics(
     jevCompleted: count("jev_assessment_completed"),
     jevUnavailable: count("jev_assessment_unavailable"),
     mostTestedVariables,
+    mostSelectedVariables,
     directions,
     changes,
     advisoryPatterns,
