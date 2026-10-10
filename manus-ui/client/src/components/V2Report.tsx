@@ -325,6 +325,14 @@ export default function V2Report({
           <div className="v2-paper-band">
             <span>{evidenceLabel}</span>
             <p>{evidenceNote}</p>
+            {evidencePhase === "live" && (
+              <p>
+                {say(
+                  "출처 링크 접근을 확인했습니다. 주장과 적용 범위는 원문에서 대조하세요.",
+                  "Source links were reachable. Compare claims and applicability with the source text."
+                )}
+              </p>
+            )}
             <p>{analysis.externalReading}</p>
           </div>
           {hasSources ? (
@@ -480,11 +488,16 @@ export default function V2Report({
           t("sourceNotes"),
           <>
             <p className="v2-paper-caption">
-              {evidenceNote}.{" "}
-              {say(
-                "접근 가능한 출처라는 사실만으로 주장이 검증된 것은 아닙니다. 표본·시점·지역의 제한을 실제 목표 조건과 대조해야 합니다.",
-                "Source accessibility does not prove a claim. Check sample, timing and geography against the actual target conditions."
-              )}
+              {evidenceNote.replace(/\.$/, "")}.{" "}
+              {evidencePhase === "demo"
+                ? say(
+                    "이 페이지는 합성 예시입니다. 실제 출처와 주장 검증을 대신하지 않습니다.",
+                    "This is a synthetic example, not a check of actual sources or claims."
+                  )
+                : say(
+                    "접근 가능한 출처라는 사실만으로 주장이 검증된 것은 아닙니다. 표본·시점·지역의 제한을 실제 목표 조건과 대조해야 합니다.",
+                    "Source accessibility does not prove a claim. Check sample, timing and geography against the actual target conditions."
+                  )}
             </p>
             {sources(false)}
             {intelligence.uncertainties.length > 0 && (

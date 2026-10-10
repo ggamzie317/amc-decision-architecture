@@ -931,7 +931,7 @@
   }
   .v2-analysis-report .v2-paper-page {
     min-height: 267mm;
-    padding: 0;
+    padding: 0 3mm;
     margin: 0;
     box-shadow: none;
   }

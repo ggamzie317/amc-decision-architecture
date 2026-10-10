@@ -235,15 +235,8 @@ export function V2Reasoning({
                 {!compact && (
                   <>
                     <p>
-                      {v2CustomerEvidenceText(analysis.language, block.fact)}
+                      {ko ? "현재 조건" : "Current condition"}: {link.condition}
                     </p>
-                    <p>
-                      {v2CustomerEvidenceText(
-                        analysis.language,
-                        block.whyItMatters
-                      )}
-                    </p>
-                    <p>{link.interpretation}</p>
                   </>
                 )}
                 {block.sourceUrl && (

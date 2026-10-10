@@ -228,7 +228,9 @@ describe("V2 live External Intelligence boundary", () => {
       })
     );
     expect(englishDashboard).toContain("TRANSFERABLE PROOF: 42%");
-    expect(englishDashboard).toContain("IT·AI·MBA 관련 42% 수치는 transferable proof를");
+    expect(englishDashboard).toContain(
+      "IT·AI·MBA 관련 42% 수치는 transferable proof를"
+    );
     expect(
       v2CustomerEvidenceText("ko", "IT, AI, MBA, transferable proofing")
     ).toBe("IT, AI, MBA, transferable proofing");
@@ -265,11 +267,17 @@ describe("V2 live External Intelligence boundary", () => {
       caseType: "Entrepreneurship",
       externalAreas: ["customerDemand", "pricing"],
       targetGeography: "Seoul",
-      targetLabel: "Advisory service",
+      targetLabel: "Business validation",
     });
     expect(JSON.stringify(built)).not.toMatch(
       /PRIVATE|optionalNote|customCondition|financialRoom|supportSources|researchConsent|scenario/
     );
+    expect(
+      buildV2EvidenceRequest({
+        ...state,
+        publicSearchTarget: "Advisory service",
+      })?.targetLabel
+    ).toBe("Advisory service");
     expect(
       parseV2EvidenceRequest({ ...built, optionalNote: "PRIVATE" })
     ).toBeNull();

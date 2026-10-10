@@ -101,6 +101,10 @@ export function V2ExternalBoard({
             <p className="v2-evidence-caveat">
               {t("reviewedAt")}:{" "}
               {v2EvidenceCheckedDate(intelligence.generatedAt, state.language)}
+              {" · "}
+              {state.language === "ko"
+                ? "출처 링크 접근을 확인했습니다. 주장과 적용 범위는 원문에서 대조하세요."
+                : "Source links were reachable. Compare claims and applicability with the source text."}
             </p>
           )}
           <div className="v2-evidence-grid">

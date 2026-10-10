@@ -234,7 +234,10 @@ export function v2PublicSearchTarget(state: V2State): string {
     return state.language === "ko"
       ? "겸임교수 임용 자격 연구 실적 강의 경력 요건"
       : "Adjunct faculty appointment research teaching and qualification requirements";
-  return state.optionB.trim().slice(0, 120);
+  // Option B is free-form customer prose. Never copy it into a provider request.
+  const profile =
+    profiles[state.caseType] ?? profiles["General Career Reconfiguration"];
+  return profile.topic[state.language === "ko" ? 0 : 1];
 }
 export type V2Finding = {
   id: string;
@@ -263,6 +266,12 @@ export type V2Analysis = {
   externalReading: string;
   findings: V2Finding[];
   evidenceLinks: V2EvidenceLink[];
+  priorityEvidence: {
+    headline: string;
+    condition: string;
+    check: string;
+    nextCheck: string;
+  } | null;
   factors: Array<{
     id: V2EvidenceLink["factor"];
     title: string;
@@ -423,8 +432,12 @@ export function buildV2Analysis(
               `준비 상태: ${t(ready)} / 지원 기반: ${t(support)}`,
               `Readiness: ${t(ready)} / support: ${t(support)}`
             );
-    const implication =
-      block.direction === "caution"
+    const implication = demo
+      ? say(
+          "합성 자료는 실제 요건을 입증하지 않습니다. 목표 기관·직무·지역의 공개 자료에서 같은 조건을 확인해야 합니다.",
+          "Synthetic material does not establish actual requirements. Check the same condition in public sources for the target institution, role and location."
+        )
+      : block.direction === "caution"
         ? say(
             "이 출처에서 지적한 제한을 목표 경로의 요건·비용표에 반영해야 합니다.",
             "Carry this source's limitation into the target requirements and cost comparison."
@@ -444,14 +457,50 @@ export function buildV2Analysis(
         : factor === "workflow"
           ? capacityReading
           : readinessReading;
+    const headline = v2CustomerEvidenceText(state.language, block.headline);
+    const publicClaim = v2CustomerEvidenceText(state.language, block.fact);
+    const check = demo
+      ? say(
+          `합성 예시의 ‘${headline}’는 ‘${publicClaim}’라고 가정합니다. 실제 공개 요건을 별도로 찾아 현재 조건(${condition})과 대조하세요.`,
+          `The synthetic example for “${headline}” assumes: “${publicClaim}” Find actual public requirements separately and compare them with current conditions (${condition}).`
+        )
+      : say(
+          `‘${headline}’ 관련 검색 결과는 ‘${publicClaim}’라고 제시합니다. 원문에서 목표 기관·직무·지역에 적용되는지 확인하고, 현재 조건(${condition})과 대조하세요.`,
+          `The search result for “${headline}” states: “${publicClaim}” Check its applicability to the target institution, role and location in the source text, then compare it with current conditions (${condition}).`
+        );
     return {
       id,
       factor,
       condition,
       interpretation: `${implication} ${personal}`,
-      test: factor === "marketPolicy" ? boundary : text(profile.action),
+      test: check,
     };
   });
+  const priorityId = blocks.findIndex(block => block.direction === "caution");
+  const priorityLink = evidenceLinks[priorityId < 0 ? 0 : priorityId];
+  const priorityEvidence = priorityLink
+    ? {
+        headline: v2CustomerEvidenceText(
+          state.language,
+          blocks[priorityLink.id].headline
+        ),
+        condition: priorityLink.condition,
+        check: priorityLink.test,
+        nextCheck: say(
+          `‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’의 적용 범위를 현재 조건(${priorityLink.condition})과 대조하세요.`,
+          `Compare the applicability of “${blocks[priorityLink.id].headline}” with current conditions (${priorityLink.condition}).`
+        ),
+      }
+    : null;
+  const evidenceMeaning = (ids: number[]) => {
+    const block = blocks[ids[0]];
+    return block
+      ? say(
+          ` ${demo ? "합성 예시" : "검색 결과"} ‘${v2CustomerEvidenceText(state.language, block.headline)}’의 주장: ${v2CustomerEvidenceText(state.language, block.fact)} 판단에 주는 의미: ${v2CustomerEvidenceText(state.language, block.whyItMatters)} ${demo ? "실제 공개 자료와 대조해야 합니다." : "원문과 적용 범위를 확인해야 합니다."}`,
+          ` ${demo ? "Synthetic example" : "Search-result claim"} for “${block.headline}”: ${block.fact} Decision relevance: ${block.whyItMatters} ${demo ? "Compare this with actual public sources." : "Verify the source text and its scope."}`
+        )
+      : "";
+  };
   const externalReading =
     live || demo
       ? v2CustomerEvidenceText(state.language, intelligence.implication)
@@ -506,7 +555,10 @@ export function buildV2Analysis(
     },
   ];
   findings.forEach(f => {
-    if (f.evidenceIds.length) f.provenance.push("EXTERNAL_EVIDENCE");
+    if (f.evidenceIds.length) {
+      f.implication += evidenceMeaning(f.evidenceIds);
+      f.provenance.push("EXTERNAL_EVIDENCE");
+    }
   });
   const factorNames: Record<V2EvidenceLink["factor"], Pair> = {
     formal: ["기회의 조건", "Opportunity requirements"],
@@ -550,6 +602,14 @@ export function buildV2Analysis(
                 : safetyReading,
     })
   );
+  factors.forEach(f => {
+    const block = blocks[f.evidenceIds[0]];
+    if (block)
+      f.reading += say(
+        ` 연결된 ${demo ? "합성 예시" : "검색 결과"}: ‘${v2CustomerEvidenceText(state.language, block.headline)}’. ${demo ? "실제 공개 자료로 확인하세요." : "적용 범위를 확인하세요."}`,
+        ` Linked ${demo ? "synthetic example" : "search result"}: “${block.headline}”. ${demo ? "Check actual public sources." : "Verify its scope."}`
+      );
+  });
   const strength = (band: string) =>
     band === "strong"
       ? 3
@@ -705,15 +765,15 @@ export function buildV2Analysis(
       ],
     },
   };
-  const plays = core.changingPlays.map(play => ({
+  const plays = core.changingPlays.map((play, index) => ({
     family: play.family,
     title: text(playText[play.family].title),
-    move: text(playText[play.family].move),
+    move: `${text(playText[play.family].move)}${index === 0 && priorityEvidence ? ` ${priorityEvidence.check}` : ""}`,
     protects: protectedBase,
     needs: text(playText[play.family].needs),
     evidence: text(profile.output),
   }));
-  const continueCondition = `${text(profile.advance)}${ko ? ", 다음 범위를 검토하세요." : ", review the next scope."}`;
+  const continueCondition = `${text(profile.advance)}${priorityEvidence ? say(`, ‘${priorityEvidence.headline}’의 적용 여부와 현재 조건(${priorityEvidence.condition})을 확인한 뒤`, `, after confirming whether “${priorityEvidence.headline}” applies and checking current conditions (${priorityEvidence.condition})`) : ""}${ko ? ", 다음 범위를 검토하세요." : ", review the next scope."}`;
   const pause = say(
     "시험 때문에 보호할 소득·시간·생활 기반이 흔들리거나, 목표 요건과 결과물의 연결이 확인되지 않으면 범위를 줄이고 다시 설계하세요.",
     "Reduce scope and redesign if the test weakens protected income, time or living capacity, or fails to connect the work sample to target requirements."
@@ -739,7 +799,7 @@ export function buildV2Analysis(
           " 외부 요건을 확인하기 전까지는 이 판단을 구조 초안으로 사용하세요.",
           " Treat this as a structural draft until external requirements are checked."
         );
-  const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary}`;
+  const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary}${priorityEvidence ? say(` 우선 ‘${priorityEvidence.headline}’의 적용 범위를 현재 조건과 대조하세요.`, ` First compare the scope of “${priorityEvidence.headline}” with the current conditions.`) : ""}`;
   return {
     language: state.language,
     topic: text(profile.topic),
@@ -755,11 +815,12 @@ export function buildV2Analysis(
     externalReading,
     findings,
     evidenceLinks,
+    priorityEvidence,
     factors,
     safety,
     plays,
     experiment: {
-      action: text(profile.action),
+      action: `${priorityEvidence ? `${priorityEvidence.nextCheck} ` : ""}${text(profile.action)}`,
       output: text(profile.output),
       continue: continueCondition,
       pause,

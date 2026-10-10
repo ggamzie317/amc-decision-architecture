@@ -367,8 +367,8 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "최종 분석 버튼에서 위 주제·지역·선택한 공개 항목으로 검색합니다. 개인 메모와 내부 준비·재정 조건은 전송하지 않습니다."
-                : "The final analysis action searches this topic, geography and selected public areas. Personal notes and internal readiness or financial bands are not sent."}
+                ? "최종 분석 버튼에서 위에 보이는 공개 주제·지역·항목만 검색합니다. 선택지에 쓴 자유서술은 검색 주제로 자동 복사하지 않습니다. 개인 메모와 내부 준비·재정 조건은 전송하지 않습니다."
+                : "The final analysis action searches only the public topic, geography and areas shown above. Free-form option text is not copied into the search topic. Personal notes and internal readiness or financial bands are not sent."}
             </p>
           </>
         );

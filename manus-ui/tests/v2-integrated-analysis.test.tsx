@@ -128,6 +128,34 @@ describe("V2 integrated customer analysis", () => {
     expect(Object.values(input.fifwm).every(f => f.score === null)).toBe(true);
     expect(JSON.stringify(evidence)).toBe(snapshot);
   });
+  it("changes reasoning, Changing and next-step conditions when a synthetic source claim changes, without changing core posture", () => {
+    const f = fixture();
+    const alternative: ExternalIntelligenceV2 = structuredClone(evidence);
+    alternative.evidenceBlocks[1].headline = "합성 보상 조건 변경";
+    alternative.evidenceBlocks[1].fact =
+      "이 합성 표본은 보상 하한을 명시합니다.";
+    alternative.evidenceBlocks[1].whyItMatters =
+      "보상 하한이 실제 목표 역할과 지역에 적용되는지 확인해야 합니다.";
+    const snapshot = JSON.stringify(alternative);
+    const first = buildV2Analysis(f.state, f.core, evidence, "live");
+    const changed = buildV2Analysis(f.state, f.core, alternative, "live");
+    expect(changed.posture).toBe(first.posture);
+    expect(changed.summary).toContain("합성 보상 조건 변경");
+    expect(changed.findings[0].implication).toContain(
+      "보상 하한이 실제 목표 역할과 지역에 적용되는지"
+    );
+    expect(changed.plays[0].move).toContain("합성 보상 조건 변경");
+    expect(changed.experiment.action).toContain("재정 여력");
+    expect(changed.experiment.continue).toContain("합성 보상 조건 변경");
+    expect(changed.evidenceLinks[1].condition).toContain("재정 여력");
+    expect(changed.evidenceLinks[1].test).not.toBe(first.evidenceLinks[1].test);
+    const factOnly: ExternalIntelligenceV2 = structuredClone(evidence);
+    factOnly.evidenceBlocks[1].fact = "서로 다른 합성 근거 사실입니다.";
+    expect(
+      buildV2Analysis(f.state, f.core, factOnly, "live").plays[0].move
+    ).not.toBe(first.plays[0].move);
+    expect(JSON.stringify(alternative)).toBe(snapshot);
+  });
   it("labels synthetic analysis as a demonstration and connects alternative offers to market pressure", () => {
     const demo = v2DemoFixture("entrepreneurship", "en");
     const input = buildV2Input(demo.state);
@@ -204,6 +232,16 @@ describe("V2 integrated customer analysis", () => {
         publicSearchTarget: "x".repeat(121),
       })
     ).toBeNull();
+    const privateOption = {
+      ...f.state,
+      caseType: "Industry Transition" as const,
+      optionB: "PRIVATE PERSON at PRIVATE COMPANY with a private income figure",
+      publicSearchTarget: undefined,
+    };
+    expect(v2PublicSearchTarget(privateOption)).toBe("산업 전환");
+    expect(JSON.stringify(buildV2EvidenceRequest(privateOption))).not.toMatch(
+      /PRIVATE|income figure/i
+    );
   });
   it("renders the shared interpretation, relationship map and evidence-backed scope on all three surfaces", () => {
     const f = fixture(),
