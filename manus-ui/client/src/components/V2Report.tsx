@@ -1,12 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
-import V2SensitivityMatrix from "./V2SensitivityMatrix";
 import {
   limitV2Overrides,
-  prioritizeV2Thresholds,
   v2ScenarioComparison,
 } from "../data/amcV2SensitivityView";
-import { baselineBands } from "../data/amcScenario";
 import type { ScenarioOverrides, ScenarioVariable } from "../data/amcScenario";
 import {
   inspectV2ReportDensity,
@@ -17,34 +15,30 @@ import type {
   ProductApplicationV3,
 } from "../data/amcProductApplicationV3";
 import {
-  v2DecisionReadings,
   v2Scenario,
   type V2Sensitivity,
   type V2State,
 } from "../data/amcV2Model";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
-import {
-  v2CustomerPlayText,
-  v2CustomerPosture,
-  v2EvidenceCheckedDate,
-} from "../data/v2ReportPresentation";
+import { v2EvidenceCheckedDate } from "../data/v2ReportPresentation";
 import {
   v2t,
   v2CaseLabel,
-  v2FamilyLabel,
   v2DirectionLabel,
   v2EvidenceDimensionLabel,
   type V2CopyKey,
 } from "../data/v2Language";
-const key = {
-  financialRoom: "financial",
-  reversibility: "reversibility",
-  downsideExposure: "downside",
-  internalReadiness: "readinessBand",
-  optionBSupport: "supportBand",
-  constraintLoad: "constraint",
-  externalValidation: "externalValidation",
-} as const;
+import {
+  V2DecisionMap,
+  V2Reasoning,
+  V2FactorMap,
+  V2SafetyView,
+  V2ChangingView,
+  V2ExperimentView,
+} from "./V2AnalysisView";
+import V2SensitivityMatrix from "./V2SensitivityMatrix";
+import V2SwitchList from "./V2SwitchList";
+
 export default function V2Report({
   state,
   input,
@@ -64,21 +58,16 @@ export default function V2Report({
   visibleVariables: readonly ScenarioVariable[];
   scenarioOverrides?: ScenarioOverrides;
   intelligence: ExternalIntelligenceV2;
-  evidencePhase?: "not_checked" | "loading" | "live" | "unavailable" | "demo";
+  evidencePhase?: V2EvidencePhase;
   onClose: () => void;
   onPrint: () => void;
 }) {
+  const root = useRef<HTMLDivElement>(null);
   const t = (k: V2CopyKey) => v2t(state.language, k),
-    d = v2DecisionReadings(state, core);
-  const evidenceText = (value: string) =>
-    v2CustomerEvidenceText(state.language, value);
-  const posture = v2CustomerPosture(
-    state.language,
-    core.currentStructuralPosture.label,
-    core.currentStructuralPosture.sentence,
-    state.optionA,
-    state.optionB
-  );
+    ko = state.language === "ko";
+  const say = (a: string, b: string) => (ko ? a : b);
+  const evidenceText = (s: string) => v2CustomerEvidenceText(state.language, s);
+  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase);
   const activeOverrides = limitV2Overrides(
     input,
     visibleVariables,
@@ -87,364 +76,337 @@ export default function V2Report({
   const hypothetical = Object.keys(activeOverrides).length
     ? v2Scenario(input, activeOverrides).result
     : null;
+  const scenarioAnalysis = hypothetical
+    ? buildV2Analysis(state, hypothetical, intelligence, evidencePhase)
+    : null;
   const scenarioChanges = hypothetical
     ? v2ScenarioComparison(core, hypothetical, state.language).filter(
-        ([, before, after]) => before !== after
+        ([, a, b]) => a !== b
       )
     : [];
-  const switchRows = prioritizeV2Thresholds(
-    sensitivity.filter(row => visibleVariables.includes(row.variable)),
-    baselineBands(input)
-  );
-  const selected = (items: V2CopyKey[]) =>
-    items.length ? items.map(t).join(" · ") : t("noneYet");
   const hasSources =
-    intelligence.status === "live" || intelligence.status === "demo";
-  const evidenceLabel =
-    intelligence.status === "live"
-      ? t("liveEvidence")
-      : intelligence.status === "demo"
-        ? t("demoBadge")
+    (evidencePhase === "live" && intelligence.status === "live") ||
+    (evidencePhase === "demo" && intelligence.status === "demo");
+  const draft = !hasSources;
+  const evidenceLabel = t(
+    evidencePhase === "live"
+      ? "liveEvidence"
+      : evidencePhase === "demo"
+        ? "demoBadge"
         : evidencePhase === "not_checked"
-          ? t("evidenceNotChecked")
+          ? "evidenceNotChecked"
           : evidencePhase === "loading"
-            ? t("evidenceChecking")
-            : t("evidenceUnavailable");
+            ? "evidenceChecking"
+            : "evidenceUnavailable"
+  );
   const evidenceNote =
-    intelligence.status === "live"
+    evidencePhase === "live"
       ? `${t("reviewedAt")}: ${v2EvidenceCheckedDate(intelligence.generatedAt, state.language)}`
-      : intelligence.status === "demo"
+      : evidencePhase === "demo"
         ? t("demoOnly")
         : evidencePhase === "not_checked"
           ? t("externalPending")
           : evidencePhase === "loading"
-            ? t("evidenceChecking")
+            ? t("evidenceLoadingHint")
             : t("evidenceRetryHint");
-  const page = (number: number, title: string, body: React.ReactNode) => (
-    <section className="v2-paper-page" data-page={number}>
+  useEffect(() => {
+    let active = true;
+    const inspect = () => {
+      if (!active || !root.current) return;
+      const samples = inspectV2ReportDensity(root.current);
+      root.current.dataset.lowDensityPages = lowDensityPages(samples)
+        .map(p => p.page)
+        .join(",");
+    };
+    void document.fonts.ready.then(inspect);
+    window.addEventListener("beforeprint", inspect);
+    return () => {
+      active = false;
+      window.removeEventListener("beforeprint", inspect);
+    };
+  }, [state, core, intelligence, scenarioOverrides]);
+  const page = (
+    n: number,
+    english: string,
+    title: string,
+    children: React.ReactNode
+  ) => (
+    <section className="v2-paper-page" data-page={n}>
       <header>
         <span>
-          allofmycareer <i>/</i> {t("briefHeader")}
+          allofmycareer <i>/</i> Decision Brief
         </span>
         <span>
-          {String(number).padStart(2, "0")} / {hasSources ? "09" : "08"}
+          {String(n).padStart(2, "0")} / {hasSources ? "09" : "08"}
         </span>
       </header>
       <div className="v2-paper-body">
         <p className="v2-kicker">
-          {String(number).padStart(2, "0")} / {t("briefKicker")}
+          {String(n).padStart(2, "0")} / {english}
         </p>
         <h2>{title}</h2>
-        {body}
+        {children}
       </div>
       <footer>
         <span>allofmycareer</span>
-        <span>{evidenceLabel}</span>
+        <span>
+          {draft ? `${say("구조 초안", "Structural draft")} · ` : ""}
+          {evidenceLabel}
+        </span>
       </footer>
     </section>
   );
-  const fact = (
-    <div className="v2-paper-fact">
-      <span>{t("context")}</span>
-      <p>{state.decision}</p>
+  const sources = (full: boolean) => (
+    <div className={`v2-paper-evidence ${full ? "full" : ""}`}>
+      {intelligence.evidenceBlocks.map((b, id) => (
+        <article key={id} data-provenance="EXTERNAL_EVIDENCE">
+          <span>
+            {String(id + 1).padStart(2, "0")} /{" "}
+            {v2EvidenceDimensionLabel(state.language, b.dimension)} ·{" "}
+            {v2DirectionLabel(state.language, b.direction)}
+          </span>
+          <h3>{evidenceText(b.headline)}</h3>
+          <p>{evidenceText(b.fact)}</p>
+          {full ? (
+            <>
+              <p>
+                <b>{t("whyMatters")}</b> {evidenceText(b.whyItMatters)}
+              </p>
+              <p>
+                <b>
+                  {say(
+                    "현재 조건과의 연결",
+                    "Connection to current conditions"
+                  )}
+                </b>{" "}
+                {analysis.evidenceLinks[id]?.condition}
+              </p>
+              <p>{analysis.evidenceLinks[id]?.interpretation}</p>
+            </>
+          ) : (
+            <p>
+              {say("적용 범위", "Applicability")}:{" "}
+              {evidenceText(b.whyItMatters)}
+            </p>
+          )}
+          <small>
+            {t("source")}:{" "}
+            {b.sourceUrl ? (
+              <a href={b.sourceUrl} target="_blank" rel="noreferrer">
+                {b.sourceLabel}
+              </a>
+            ) : (
+              b.sourceLabel
+            )}
+            {b.sourceDate && b.sourceDateKind && (
+              <>
+                {" "}
+                ·{" "}
+                {t(
+                  b.sourceDateKind === "published"
+                    ? "sourcePublished"
+                    : "sourceUpdated"
+                )}
+                : {b.sourceDate}
+              </>
+            )}
+          </small>
+          {!full && b.sourceUrl && (
+            <span className="v2-paper-url">{b.sourceUrl}</span>
+          )}
+        </article>
+      ))}
     </div>
   );
-  const marks = visibleVariables.filter(variable =>
-    sensitivity.some(
-      row =>
-        row.variable === variable &&
-        (row.posture || row.safety || row.changing || row.nextTest)
-    )
-  );
   return (
-    <div className="v2-report-shell" data-testid="v2-report">
+    <div
+      ref={root}
+      className="v2-report-shell v2-analysis-report"
+      data-testid="v2-report"
+    >
       <div className="v2-report-toolbar">
         <button onClick={onClose}>{t("closeReport")}</button>
-        <span>{t("report")}</span>
-        <button onClick={onPrint}>{t("print")}</button>
+        <span>
+          {draft
+            ? say(
+                "구조 초안 / 외부 근거 미확인",
+                "Structural draft / external evidence unresolved"
+              )
+            : t("report")}
+        </span>
+        <button onClick={onPrint} disabled={evidencePhase === "loading"}>
+          {t("print")}
+        </button>
       </div>
       {page(
         1,
-        t("report"),
+        "Executive Overview",
+        analysis.topic,
         <>
           <div className="v2-cover">
             <div>
-              <p>{t("reportSubtitle")}</p>
-              {hypothetical && <p>{t("baselineReading")}</p>}
-              <h1>{posture.label}</h1>
-              <div className="v2-cover-rule" />
               <p>
-                {t("caseConfirm")} {v2CaseLabel(state.language, state.caseType)}
+                {draft
+                  ? say(
+                      "구조 초안 · 외부 근거 미확인",
+                      "Structural draft · external evidence unresolved"
+                    )
+                  : evidenceLabel}
               </p>
+              <p>{t("baselineReading")}</p>
+              <h1>{analysis.posture}</h1>
+              <p>{v2CaseLabel(state.language, state.caseType)}</p>
             </div>
             <div className="v2-cover-mark">allofmycareer</div>
           </div>
-          {fact}
-          <div className="v2-paper-tiles">
-            <div>
-              <span>{t("safety")}</span>
-              <strong>{t(core.safetyMargin.band)}</strong>
-            </div>
-            <div>
-              <span>{t("missing")}</span>
-              <strong>{d.missing.value}</strong>
-            </div>
-            <div>
-              <span>{t("nextTest")}</span>
-              <strong>{d.nextTest.value}</strong>
-            </div>
+          <p className="v2-paper-caption">
+            {t("context")}: {state.decision}
+          </p>
+          <p className="v2-paper-lead">{analysis.summary}</p>
+          <div className="v2-paper-priorities">
+            <article>
+              <span>01 / {say("핵심 질문", "Key question")}</span>
+              <h3>{analysis.question}</h3>
+            </article>
+            <article>
+              <span>02 / Safety Margin</span>
+              <h3>{t(core.safetyMargin.band)}</h3>
+              <p>{analysis.boundary}</p>
+            </article>
+            <article>
+              <span>03 / {say("다음 확인", "Next test")}</span>
+              <h3>{analysis.experiment.output}</h3>
+              <p>{analysis.experiment.action}</p>
+            </article>
           </div>
           <p className="v2-paper-caption">
-            {t("reading")} / {posture.sentence}
+            {say(
+              "이 분석은 선택을 대신 결정하지 않습니다. 현재 조건에서 무엇을 지키고, 어떤 근거가 확보되면 다음 범위를 검토할 수 있는지 보여 줍니다.",
+              "This brief does not decide for you. It shows what to protect and which evidence would make the next scope worth reviewing."
+            )}
           </p>
         </>
       )}
       {page(
         2,
-        t("executiveBoard"),
+        "Structural Reading",
+        say("현재 구조 판단의 이유", "Why the current structure leads here"),
         <>
-          <div className="v2-paper-band">
-            <span>{t("posture")}</span>
-            <strong>{posture.label}</strong>
-            <p>{posture.sentence}</p>
-          </div>
-          <div className="v2-paper-grid two">
-            <article>
-              <span>{t("missing")}</span>
-              <h3>{d.missing.value}</h3>
-              <p>
-                {t("implication")}: {d.nextTest.value}
-              </p>
-            </article>
-            <article>
-              <span>{t("tradeoff")}</span>
-              <h3>{d.tradeoff.value}</h3>
-              <p>
-                {t("keyConstraint")}: {d.constraint.value}
-              </p>
-            </article>
-            <article>
-              <span>{t("safety")}</span>
-              <h3>{d.safety.value}</h3>
-              <p>
-                {t("financial")}:{" "}
-                {t(core.safetyMargin.inputs.financialRoom.band)} ·{" "}
-                {t("reversibility")}:{" "}
-                {t(core.safetyMargin.inputs.reversibility.band)}
-              </p>
-            </article>
-            <article>
-              <span>{t("publicEvidenceStatus")}</span>
-              <h3>{evidenceLabel}</h3>
-              <p>{t("qualitativeNote")}</p>
-            </article>
-          </div>
+          <V2Reasoning
+            analysis={analysis}
+            intelligence={intelligence}
+            compact
+          />
           <div className="v2-paper-note">
-            <strong>{t("nextTest")}</strong>
-            <p>{d.nextTest.value}</p>
+            <strong>
+              {say(
+                "판단을 다시 검토할 근거",
+                "What would warrant reassessment"
+              )}
+            </strong>
+            <p>{analysis.experiment.continue}</p>
+            <p>
+              {say(
+                "한 조건의 개선이 남은 제약을 해결하는지는 7·8쪽의 조건 변화 분석에서 확인하세요.",
+                "Check pages 7–8 to see whether improving one condition resolves the remaining constraints."
+              )}
+            </p>
           </div>
         </>
       )}
       {page(
         3,
-        t("externalBoard"),
+        "External Evidence × Current Conditions",
+        say(
+          "공개 근거를 현재 조건에 대조",
+          "Public evidence in the current decision"
+        ),
         <>
           <div className="v2-paper-band">
-            <span>{t("evidence")}</span>
-            <strong>{evidenceLabel}</strong>
+            <span>{evidenceLabel}</span>
             <p>{evidenceNote}</p>
+            <p>{analysis.externalReading}</p>
           </div>
-          <div className="v2-paper-grid two">
-            {hasSources ? (
-              intelligence.evidenceBlocks.map((b, i) => (
-                <article key={i} data-provenance="EXTERNAL_EVIDENCE">
-                  <span>
-                    {evidenceText(
-                      v2EvidenceDimensionLabel(state.language, b.dimension)
-                    )}{" "}
-                    / {v2DirectionLabel(state.language, b.direction)}
-                  </span>
-                  <h3>{evidenceText(b.headline)}</h3>
-                  <p>{evidenceText(b.fact)}</p>
-                  <p>
-                    <b>{t("whyMatters")}</b> {evidenceText(b.whyItMatters)}
-                  </p>
-                  <small>
-                    {t("source")}:{" "}
-                    {b.sourceUrl ? (
-                      <a href={b.sourceUrl}>{b.sourceLabel}</a>
-                    ) : (
-                      b.sourceLabel
-                    )}
-                    {b.sourceDate && b.sourceDateKind && (
-                      <>
-                        {" "}
-                        ·{" "}
-                        {t(
-                          b.sourceDateKind === "published"
-                            ? "sourcePublished"
-                            : "sourceUpdated"
-                        )}
-                        : {b.sourceDate}
-                      </>
-                    )}
-                  </small>
-                </article>
-              ))
-            ) : (
-              <article className="v2-paper-wide">
-                <span>{t("validateArea")}</span>
-                <h3>{selected(state.externalAreas)}</h3>
-                <p>{evidenceLabel}</p>
-              </article>
-            )}
-          </div>
-          <div className="v2-paper-note">
-            <strong>{t("implication")}</strong>
-            <p>{evidenceText(intelligence.implication)}</p>
-          </div>
+          {hasSources ? (
+            sources(true)
+          ) : (
+            <div className="v2-paper-note">
+              <strong>
+                {say(
+                  "외부 조건이 확인되지 않았습니다",
+                  "External conditions remain unresolved"
+                )}
+              </strong>
+              <p>{analysis.question}</p>
+              <p>{analysis.experiment.action}</p>
+              <p>
+                {say(
+                  "대시보드에서 공개 근거를 확인한 뒤, 같은 스냅샷을 사용해 이 보고서를 다시 열 수 있습니다.",
+                  "Check public evidence on the dashboard, then reopen this report using the same snapshot."
+                )}
+              </p>
+            </div>
+          )}
         </>
       )}
       {page(
         4,
-        t("optionComparison"),
+        "Decision Map / Decision Structure",
+        say("경로와 조건의 관계", "Relationships between paths and conditions"),
         <>
-          <div className="v2-paper-compare">
-            <article>
-              <span>
-                {t("context")} / {t("optionA")}
-              </span>
-              <h3>{state.optionA}</h3>
-              <strong>{t("protects")}</strong>
-              <p>{d.protects.value}</p>
-            </article>
-            <div>
-              ↔<small>{t("tradeoff")}</small>
-            </div>
-            <article>
-              <span>
-                {t("context")} / {t("optionB")}
-              </span>
-              <h3>{state.optionB}</h3>
-              <strong>{t("opens")}</strong>
-              <p>{d.opens.value}</p>
-            </article>
-          </div>
-          <div className="v2-paper-note">
-            <strong>{t("tradeoff")}</strong>
-            <p>{d.tradeoff.value}</p>
-          </div>
-          <div className="v2-paper-grid two">
-            <article>
-              <span>{t("exposureRisk")}</span>
-              <h3>{d.exposure.value}</h3>
-            </article>
-            <article>
-              <span>{t("keyConstraint")}</span>
-              <h3>{d.constraint.value}</h3>
-            </article>
-          </div>
-          <div className="v2-paper-note">
-            <strong>{t("reading")}</strong>
-            <p>{posture.sentence}</p>
-          </div>
+          <V2DecisionMap
+            state={state}
+            analysis={analysis}
+            phase={evidencePhase}
+            safetyBand={core.safetyMargin.band}
+          />
+          <V2FactorMap analysis={analysis} compact />
         </>
       )}
       {page(
         5,
-        t("readinessSafety"),
+        "Safety Margin",
+        say(
+          "계획이 틀려도 회복할 수 있는가",
+          "Can you recover if the plan is wrong?"
+        ),
         <>
-          <div className="v2-paper-band">
-            <span>{t("safety")}</span>
-            <strong>{t(core.safetyMargin.band)}</strong>
-            <p>
-              {t("downside")}:{" "}
-              {t(core.safetyMargin.inputs.downsideExposure.band)}
-            </p>
-          </div>
-          <div className="v2-paper-bands">
-            {(
-              [
-                "internalReadiness",
-                "financialRoom",
-                "reversibility",
-                "downsideExposure",
-                "optionBSupport",
-                "constraintLoad",
-                "externalValidation",
-              ] as const
-            ).map(variable => (
-              <div key={variable}>
-                <span>{t(key[variable])}</span>
-                <strong>
-                  {t(
-                    (variable === "internalReadiness"
-                      ? core.postureBasis.internalReadiness.band
-                      : variable === "optionBSupport"
-                        ? core.postureBasis.optionBSupport.band
-                        : variable === "constraintLoad"
-                          ? core.postureBasis.constraintLoad.band
-                          : variable === "externalValidation"
-                            ? core.postureBasis.externalValidation.band
-                            : core.safetyMargin.inputs[variable]
-                                .band) as V2CopyKey
-                  )}
-                </strong>
-              </div>
-            ))}
-          </div>
-          <div className="v2-paper-grid two">
-            <article>
-              <span>{t("missingAssets")}</span>
-              <h3>{selected(state.missingAssets)}</h3>
-            </article>
-            <article>
-              <span>{t("supportSource")}</span>
-              <h3>{selected(state.supportSources)}</h3>
-            </article>
+          <V2SafetyView analysis={analysis} band={core.safetyMargin.band} />
+          <div className="v2-paper-note">
+            <strong>
+              {say("가장 먼저 해결할 질문", "First question to resolve")}
+            </strong>
+            <h3>{analysis.question}</h3>
+            <p>{analysis.findings[0].implication}</p>
+            <p>{analysis.experiment.pause}</p>
           </div>
         </>
       )}
       {page(
         6,
-        t("missingChanging"),
+        "Changing / Next Experiment",
+        say(
+          "목표를 유지하며 실행 구조 조정",
+          "Reconfigure the path while keeping the goal"
+        ),
         <>
-          <div className="v2-paper-band">
-            <span>{t("missing")}</span>
-            <strong>{d.missing.value}</strong>
-            <p>{d.missingDetail.value}</p>
-          </div>
-          <div className="v2-paper-play-list">
-            {core.changingPlays.slice(0, 4).map((play, i) => (
-              <article key={v2FamilyLabel(state.language, play.family)}>
-                <span>
-                  0{i + 1} / {v2FamilyLabel(state.language, play.family)}
-                </span>
-                <h3>{v2CustomerPlayText(state.language, play.title)}</h3>
-                <p>{v2CustomerPlayText(state.language, play.changes)}</p>
-                <small>
-                  {t("playNeeds")}:{" "}
-                  {v2CustomerPlayText(state.language, play.needs)}
-                </small>
-              </article>
-            ))}
-          </div>
+          <V2ChangingView analysis={analysis} />
+          <V2ExperimentView analysis={analysis} compact />
         </>
       )}
       {page(
         7,
+        "Interactive Scenario / Sensitivity",
         t("scenarioSensitivity"),
         <>
           <div className="v2-paper-band">
             <span>{t("baselineReading")}</span>
             <strong>
-              {marks.length
-                ? marks.map(v => t(key[v])).join(" · ")
-                : t("noChange")}
+              {analysis.posture} / Safety Margin: {t(core.safetyMargin.band)}
             </strong>
             <p>{t("sensitivityIntro")}</p>
           </div>
-          {hypothetical && (
+          {hypothetical && scenarioAnalysis && (
             <div className="v2-paper-scenario">
               <strong>{t("hypotheticalScenario")}</strong>
               <p>{t("hypotheticalNotEvidence")}</p>
@@ -457,6 +419,11 @@ export default function V2Report({
               ) : (
                 <p>{t("noChange")}</p>
               )}
+              <p>{scenarioAnalysis.summary}</p>
+              <p>
+                <b>{say("달라진 실행 범위", "Revised execution boundary")}</b>{" "}
+                {scenarioAnalysis.boundary}
+              </p>
             </div>
           )}
           <V2SensitivityMatrix
@@ -464,97 +431,75 @@ export default function V2Report({
             variables={visibleVariables}
             language={state.language}
           />
+          <p className="v2-paper-caption">
+            {say(
+              "각 행은 한 조건만 바꿔 같은 엔진을 실행한 결과입니다. 모든 선택지를 비교한 순위나 성공 확률이 아닙니다. 여러 조건을 함께 바꾸는 분석은 대시보드 시뮬레이터에서 확인할 수 있습니다.",
+              "Each row changes one condition and reruns the same engine. It is not a ranking or success probability. Use the dashboard simulator to explore combined changes."
+            )}
+          </p>
         </>
       )}
       {page(
         8,
-        t("switchesPlan"),
+        "Switching / 30–60–90-Day Validation",
+        say(
+          "전환 조건과 검증 계획",
+          "Switching conditions and validation plan"
+        ),
         <>
-          <div className="v2-paper-grid two">
-            <article data-testid="v2-report-switches">
-              <span>{t("switches")}</span>
-              {switchRows.length ? (
-                switchRows.map((row, i) => (
-                  <p
-                    key={i}
-                    data-testid="v2-report-switch"
-                    data-variable={row.variable}
-                  >
-                    <b>0{i + 1}</b> {t(key[row.variable])} →{" "}
-                    {t(row.band as V2CopyKey)}
-                  </p>
-                ))
-              ) : (
-                <p>{t("noneYet")}</p>
-              )}
-            </article>
-            <article>
-              <span>{t("nextTest")}</span>
-              <h3>{d.nextTest.value}</h3>
-              <p>
-                {t("publicEvidenceStatus")}: {evidenceLabel}
-              </p>
-            </article>
-          </div>
-          <div className="v2-paper-timeline">
-            {core.nextStepExperiment.stages.map((stage, i) => (
-              <article key={i}>
-                <strong>{stage.period}</strong>
+          <V2SwitchList
+            state={state}
+            input={input}
+            baseline={core}
+            sensitivity={sensitivity}
+            variables={visibleVariables}
+            report
+          />
+          <p className="v2-paper-caption">{evidenceNote}</p>
+          <ol className="v2-experiment-timeline">
+            {analysis.experiment.stages.map(s => (
+              <li key={s.day}>
+                <span>
+                  {s.day}
+                  <small>{ko ? "일" : "days"}</small>
+                </span>
                 <div>
-                  <span>{stage.title}</span>
-                  <p>{stage.action}</p>
-                  <small>{stage.output}</small>
+                  <h3>{s.title}</h3>
+                  <p>{s.action}</p>
+                  <strong>{s.output}</strong>
                 </div>
-              </article>
+              </li>
             ))}
-          </div>
-          <div className="v2-paper-note">
-            <strong>{t("sourceNotes")}</strong>
-            <p>{evidenceNote}</p>
-          </div>
+          </ol>
         </>
       )}
       {hasSources &&
         page(
           9,
+          "Sources / Scope / Decision Context",
           t("sourceNotes"),
           <>
-            <div className="v2-paper-band">
-              <span>{evidenceLabel}</span>
-              <strong>{evidenceNote}</strong>
-              <p>{evidenceText(intelligence.implication)}</p>
-            </div>
-            <div className="v2-paper-play-list">
-              {intelligence.evidenceBlocks.map((b, i) => (
-                <article key={i}>
-                  <span>
-                    0{i + 1} /{" "}
-                    {evidenceText(
-                      v2EvidenceDimensionLabel(state.language, b.dimension)
-                    )}
-                  </span>
-                  <h3>{evidenceText(b.headline)}</h3>
-                  <p>{evidenceText(b.fact)}</p>
-                  <small>
-                    {t("source")}: {b.sourceLabel}
-                    {b.sourceDate && b.sourceDateKind && (
-                      <>
-                        {" "}
-                        ·{" "}
-                        {t(
-                          b.sourceDateKind === "published"
-                            ? "sourcePublished"
-                            : "sourceUpdated"
-                        )}
-                        : {b.sourceDate}
-                      </>
-                    )}
-                    {b.sourceUrl && (
-                      <span className="v2-paper-source-url">{b.sourceUrl}</span>
-                    )}
-                  </small>
-                </article>
-              ))}
+            <p className="v2-paper-caption">
+              {evidenceNote}.{" "}
+              {say(
+                "접근 가능한 출처라는 사실만으로 주장이 검증된 것은 아닙니다. 표본·시점·지역의 제한을 실제 목표 조건과 대조해야 합니다.",
+                "Source accessibility does not prove a claim. Check sample, timing and geography against the actual target conditions."
+              )}
+            </p>
+            {sources(false)}
+            {intelligence.uncertainties.length > 0 && (
+              <p className="v2-paper-caption">
+                {t("uncertainty")}:{" "}
+                {intelligence.uncertainties.map(evidenceText).join(" · ")}
+              </p>
+            )}
+            <div className="v2-paper-context">
+              <strong>
+                {say("고객 입력 맥락", "Customer decision context")}
+              </strong>
+              <p>{state.decision}</p>
+              <p>A: {state.optionA}</p>
+              <p>B: {state.optionB}</p>
             </div>
           </>
         )}

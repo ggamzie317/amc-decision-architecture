@@ -43,6 +43,13 @@ export function v2ReportSubject(
   // Only fixed, general topics are permitted. Never copy free-form customer text
   // into a filename: it can contain names, employers, contact or health details.
   if (
+    caseType === "General Career Reconfiguration" &&
+    /교수|강사|학술|학회|임용|adjunct|faculty|lecturer|professor|academic/i.test(
+      decision
+    )
+  )
+    return language === "ko" ? "학술_경력_검토" : "Academic_Career_Review";
+  if (
     caseType === "Industry Transition" &&
     /(?:\bIT\b|정보기술|소프트웨어|데이터|인공지능|\bAI\b)/i.test(decision)
   )

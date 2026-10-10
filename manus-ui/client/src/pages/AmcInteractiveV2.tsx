@@ -42,6 +42,7 @@ import {
 import V2Dashboard from "../components/V2Dashboard";
 import V2Simulator from "../components/V2Simulator";
 import V2Report from "../components/V2Report";
+import { v2PublicSearchTarget } from "../data/amcV2Analysis";
 import {
   prepareV2PrintTitle,
   v2ReportFileName,
@@ -59,7 +60,13 @@ export default function AmcInteractiveV2() {
   const demoMode = params.get("demo") === "1";
   const initialKind: V2DemoKind =
     params.get("fixture") === "industry" ? "industry" : "entrepreneurship";
-  const initialLanguage: V2Language = params.get("lang") === "ko" ? "ko" : "en";
+  const initialLanguage: V2Language =
+    params.get("lang") === "ko" ||
+    (!params.has("lang") &&
+      typeof navigator !== "undefined" &&
+      navigator.language.startsWith("ko"))
+      ? "ko"
+      : "en";
   const [language, setLanguage] = useState<V2Language>(initialLanguage);
   const [kind, setKind] = useState<V2DemoKind>(initialKind);
   const [state, setState] = useState<V2State>(() =>
@@ -82,6 +89,7 @@ export default function AmcInteractiveV2() {
   const [evidenceLoadingLanguage, setEvidenceLoadingLanguage] =
     useState<V2Language | null>(null);
   const evidencePending = useRef(false);
+  const languagePinned = useRef(params.has("lang"));
   const simOpened = useRef(false);
   const restorePrintTitle = useRef<(() => void) | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
@@ -175,7 +183,10 @@ export default function AmcInteractiveV2() {
     : evidenceLoadingLanguage === language
       ? "loading"
       : (evidenceByLanguage[language]?.status ?? "not_checked");
-  const input = useMemo(() => buildV2Input(state), [state]);
+  const input = useMemo(
+    () => buildV2Input(state, intelligence),
+    [state, intelligence]
+  );
   const core = useMemo(() => buildProductApplicationV3(input), [input]);
   const analysisVisible = phase === "dashboard" || phase === "report";
   const sensitivity = useMemo(
@@ -337,6 +348,16 @@ export default function AmcInteractiveV2() {
               v2ExternalOptions(state.caseType)
             )}
             <label className="v2-optional">
+              {language === "ko"
+                ? "공개 검색 주제 / 직무·기관·산업 키워드"
+                : "Public research topic / role, institution or industry keywords"}
+              <input
+                value={v2PublicSearchTarget(state)}
+                maxLength={120}
+                onChange={e => update({ publicSearchTarget: e.target.value })}
+              />
+            </label>
+            <label className="v2-optional">
               {t("targetGeography")}
               <input
                 value={state.targetGeography}
@@ -344,7 +365,11 @@ export default function AmcInteractiveV2() {
                 onChange={e => update({ targetGeography: e.target.value })}
               />
             </label>
-            <p className="v2-guidance">{t("evidenceOptionalLater")}</p>
+            <p className="v2-guidance">
+              {language === "ko"
+                ? "최종 분석 버튼에서 위 주제·지역·선택한 공개 항목으로 검색합니다. 개인 메모와 내부 준비·재정 조건은 전송하지 않습니다."
+                : "The final analysis action searches this topic, geography and selected public areas. Personal notes and internal readiness or financial bands are not sent."}
+            </p>
           </>
         );
       case 3:
@@ -431,7 +456,7 @@ export default function AmcInteractiveV2() {
         );
     }
   };
-  const finish = () => {
+  const finish = (withEvidence = true) => {
     if (!v2AllBandsAnswered(state)) {
       const firstIncomplete = [3, 4, 5, 6].find(
         i => v2UnansweredBands(state, i).length
@@ -474,8 +499,10 @@ export default function AmcInteractiveV2() {
     );
     setPhase("dashboard");
     window.scrollTo(0, 0);
+    if (withEvidence) void checkCurrentEvidence();
   };
   const switchLanguage = (next: V2Language) => {
+    languagePinned.current = true;
     if (next === language) return;
     track("language_changed", {}, { from: language, to: next });
     setLanguage(next);
@@ -592,15 +619,20 @@ export default function AmcInteractiveV2() {
                   value={state.decision}
                   placeholder={t("decisionPlaceholder")}
                   maxLength={240}
-                  onChange={e =>
+                  onChange={e => {
+                    if (
+                      !languagePinned.current &&
+                      /[가-힣]/.test(e.target.value)
+                    )
+                      setLanguage("ko");
                     setState(s => ({
                       ...s,
                       decision: e.target.value,
                       caseType: casePinned
                         ? s.caseType
                         : suggestV2CaseType(e.target.value),
-                    }))
-                  }
+                    }));
+                  }}
                 />
               </label>
               <label>
@@ -741,6 +773,40 @@ export default function AmcInteractiveV2() {
             </div>
             <h2>{t(v2ModuleKeys[step])}</h2>
             <div className="v2-module-fields">{moduleBody()}</div>
+            {step === 7 && (
+              <div className="v2-search-review">
+                <strong>
+                  {language === "ko"
+                    ? "최종 분석에 사용할 공개 검색"
+                    : "Public research for the final analysis"}
+                </strong>
+                <p>
+                  {v2PublicSearchTarget(state)}
+                  {state.targetGeography && ` / ${state.targetGeography}`}
+                </p>
+                <p>
+                  {state.externalAreas.length
+                    ? state.externalAreas.map(t).join(" · ")
+                    : language === "ko"
+                      ? "이 사례에 필요한 기본 공개 요건"
+                      : "Default public requirements for this case"}
+                </p>
+                <small>
+                  {language === "ko"
+                    ? "이 버튼을 누르면 AMC에 연결된 외부 검색으로 근거를 확인하고 분석에 반영합니다."
+                    : "This action checks evidence using AMC's connected public research service and integrates it into the analysis."}
+                </small>
+                <button
+                  type="button"
+                  className="v2-link-button"
+                  onClick={() => finish(false)}
+                >
+                  {language === "ko"
+                    ? "외부 검색 없이 구조 초안 먼저 보기"
+                    : "Review a structural draft without public research"}
+                </button>
+              </div>
+            )}
             <div className="v2-module-nav">
               <button
                 type="button"
@@ -769,7 +835,12 @@ export default function AmcInteractiveV2() {
                   }
                 }}
               >
-                {step === 7 ? t("finish") : t("next")} ↗
+                {step === 7
+                  ? language === "ko"
+                    ? "공개 근거와 함께 분석"
+                    : "Analyze with public evidence"
+                  : t("next")}{" "}
+                ↗
               </button>
             </div>
           </section>
@@ -798,6 +869,8 @@ export default function AmcInteractiveV2() {
             sensitivity={sensitivity}
             visibleVariables={visibleVariables}
             overrides={scenarioOverrides}
+            intelligence={intelligence}
+            evidencePhase={evidencePhase}
             onScenarioChange={setScenarioOverrides}
             onEvent={(event, metadata) => {
               if (!simOpened.current) {

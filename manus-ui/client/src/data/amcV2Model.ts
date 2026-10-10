@@ -48,6 +48,7 @@ export type V2State = {
   exposes: V2CopyKey[];
   externalAreas: V2CopyKey[];
   targetGeography: string;
+  publicSearchTarget?: string;
   bands: V2Bands;
   bandSelections: Record<keyof V2Bands, boolean>;
   missingAssets: V2CopyKey[];
@@ -333,9 +334,14 @@ export function v2SwitchCandidates(
 }
 const selected = (s: V2State, keys: V2CopyKey[]) =>
   keys.map(k => v2t(s.language, k)).join(s.language === "ko" ? " · " : " · ");
-export function buildV2Input(s: V2State): ProductApplicationBuildInput {
+export function buildV2Input(
+  s: V2State,
+  intelligence?: ExternalIntelligenceV2
+): ProductApplicationBuildInput {
   const language = s.language;
-  const neutral = {
+  // Public facts inform the reasoning below; they cannot establish this customer's
+  // employability, paid demand or recovery capacity. Personal validation stays unknown.
+  const personalValidation = {
     status: "unverified" as const,
     confidence: "low" as const,
     generatedAtLabel: "",
@@ -353,7 +359,7 @@ export function buildV2Input(s: V2State): ProductApplicationBuildInput {
     25: s.bands.constraintLoad,
   };
   const coreSignals = buildCurrentCaseStructuralSignals({
-    externalSnapshot: neutral,
+    externalSnapshot: personalValidation,
     selections,
   });
   const missing = v2MissingPoint(s.caseType, language);
@@ -400,7 +406,15 @@ export function buildV2Input(s: V2State): ProductApplicationBuildInput {
       ...(s.customCondition.trim() ? [s.customCondition.trim()] : []),
     ].slice(0, 3),
     validationFocus: externalArea || v2t(language, "evidenceUnavailable"),
-    externalImplication: v2t(language, "evidenceUnavailable"),
+    externalImplication:
+      intelligence?.status === "live"
+        ? [
+            intelligence.implication,
+            ...intelligence.evidenceBlocks.map(
+              block => `${block.dimension}: ${block.fact}`
+            ),
+          ].join("\n")
+        : v2t(language, "evidenceUnavailable"),
     plan: [
       {
         period: "30",

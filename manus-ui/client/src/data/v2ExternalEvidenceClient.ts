@@ -1,4 +1,5 @@
 import type { V2State } from "./amcV2Model";
+import { v2PublicSearchTarget } from "./amcV2Analysis";
 import {
   unavailableIntelligence,
   type ExternalIntelligenceV2,
@@ -16,7 +17,7 @@ export function buildV2EvidenceRequest(
     caseType: state.caseType,
     externalAreas: state.externalAreas,
     targetGeography: state.targetGeography,
-    targetLabel: state.optionB,
+    targetLabel: v2PublicSearchTarget(state),
     language: state.language,
   });
 }

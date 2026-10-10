@@ -1,4 +1,16 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
+import {
+  unavailableIntelligence,
+  type ExternalIntelligenceV2,
+} from "../data/externalIntelligenceV2";
+import {
+  V2DecisionMap,
+  V2SafetyView,
+  V2ChangingView,
+  V2ExperimentView,
+} from "./V2AnalysisView";
+import V2SwitchList from "./V2SwitchList";
 import type {
   ProductApplicationBuildInput,
   ProductApplicationV3,
@@ -17,7 +29,6 @@ import {
 import { v2t, type V2CopyKey } from "../data/v2Language";
 import {
   limitV2Overrides,
-  prioritizeV2Thresholds,
   v2ScenarioComparison,
 } from "../data/amcV2SensitivityView";
 import V2SensitivityMatrix from "./V2SensitivityMatrix";
@@ -43,6 +54,8 @@ export default function V2Simulator({
   sensitivity,
   visibleVariables,
   overrides,
+  intelligence = unavailableIntelligence(state.caseType, state.language),
+  evidencePhase = intelligence.status,
   onScenarioChange,
   onEvent,
 }: {
@@ -52,6 +65,8 @@ export default function V2Simulator({
   sensitivity: V2Sensitivity[];
   visibleVariables: readonly ScenarioVariable[];
   overrides: ScenarioOverrides;
+  intelligence?: ExternalIntelligenceV2;
+  evidencePhase?: V2EvidencePhase;
   onScenarioChange: (overrides: ScenarioOverrides) => void;
   onEvent?: (
     type:
@@ -63,6 +78,9 @@ export default function V2Simulator({
   ) => void;
 }) {
   const t = (k: V2CopyKey) => v2t(state.language, k);
+  const ko = state.language === "ko",
+    say = (a: string, b: string) => (ko ? a : b);
+  const [view, setView] = useState<"reading" | "map" | "plan">("reading");
   const baseBands = useMemo(() => baselineBands(input), [input]);
   const activeOverrides = useMemo(
     () => limitV2Overrides(input, visibleVariables, overrides),
@@ -71,6 +89,12 @@ export default function V2Simulator({
   const scenario = useMemo(
     () => v2Scenario(input, activeOverrides).result,
     [input, activeOverrides]
+  );
+  const analysis = buildV2Analysis(
+    state,
+    scenario,
+    intelligence,
+    evidencePhase
   );
   const setBand = (variable: ScenarioVariable, band: string) => {
     if (!visibleVariables.includes(variable)) return;
@@ -107,19 +131,6 @@ export default function V2Simulator({
   };
   const compare = v2ScenarioComparison(baseline, scenario, state.language);
   const changedImpact = compare.filter(([, before, after]) => before !== after);
-  const changeLabels = (row: (typeof sensitivity)[number]) =>
-    [
-      row.posture ? t("postureShifts") : null,
-      row.safety ? t("safetyChanges") : null,
-      row.changing ? t("changingChanges") : null,
-      row.nextTest ? t("testChanges") : null,
-    ]
-      .filter(Boolean)
-      .join(" · ") || t("noChange");
-  const thresholds = prioritizeV2Thresholds(
-    sensitivity.filter(row => visibleVariables.includes(row.variable)),
-    baseBands
-  );
   const leverImpacts = (variable: ScenarioVariable) =>
     (["posture", "safety", "changing", "nextTest"] as const)
       .filter(impact =>
@@ -130,6 +141,7 @@ export default function V2Simulator({
   const overrideCount = Object.keys(activeOverrides).length;
   return (
     <section
+      id="v2-simulator"
       className="v2-lab"
       aria-label={t("simulator")}
       data-testid="v2-simulator"
@@ -211,6 +223,15 @@ export default function V2Simulator({
               ? `${overrideCount}${state.language === "ko" ? "" : " "}${t(overrideCount === 1 ? "conditionChanged" : "conditionsChanged")}`
               : t("noChange")}
           </h3>
+          <p>{analysis.posture}</p>
+          <p>
+            {overrideCount
+              ? analysis.summary
+              : say(
+                  "왼쪽 조건을 바꾸면 같은 구조 분석이 다시 실행됩니다. 개선된 부분과 여전히 남는 제약을 함께 확인하세요.",
+                  "Change the conditions to rerun the same analysis. Review both improvements and constraints that remain."
+                )}
+          </p>
           <ul>
             {changedImpact.map(([label, before, after]) => (
               <li key={label} className="v2-impact-changed">
@@ -243,7 +264,103 @@ export default function V2Simulator({
           </div>
         </section>
       </div>
-      <section className="v2-sensitivity">
+      <section
+        className="v2-scenario-reading"
+        data-testid="v2-scenario-reading"
+      >
+        <div className="v2-section-top">
+          <div>
+            <p className="v2-kicker">
+              {overrideCount ? t("hypotheticalScenario") : t("baselineReading")}
+            </p>
+            <h2>
+              {say(
+                "조건을 바꾼 뒤의 전체 해석",
+                "The full reading after changing conditions"
+              )}
+            </h2>
+          </div>
+        </div>
+        <p className="v2-analysis-note">{t("hypotheticalNotEvidence")}</p>
+        <div
+          className="v2-scenario-tabs"
+          role="tablist"
+          aria-label={say("시나리오 결과 보기", "Scenario result view")}
+        >
+          {(["reading", "map", "plan"] as const).map(item => (
+            <button
+              key={item}
+              id={`v2-scenario-tab-${item}`}
+              type="button"
+              role="tab"
+              aria-selected={view === item}
+              aria-controls="v2-scenario-panel"
+              tabIndex={view === item ? 0 : -1}
+              onClick={() => setView(item)}
+              onKeyDown={e => {
+                const tabs = ["reading", "map", "plan"] as const;
+                if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                e.preventDefault();
+                const next =
+                  tabs[
+                    (tabs.indexOf(item) + (e.key === "ArrowRight" ? 1 : 2)) % 3
+                  ];
+                setView(next);
+                document.getElementById(`v2-scenario-tab-${next}`)?.focus();
+              }}
+            >
+              {item === "reading"
+                ? say("해석과 안전마진", "Reading and safety")
+                : item === "map"
+                  ? "Decision Map"
+                  : say("Changing과 다음 실험", "Changing and next test")}
+            </button>
+          ))}
+        </div>
+        <div
+          id="v2-scenario-panel"
+          role="tabpanel"
+          aria-labelledby={`v2-scenario-tab-${view}`}
+          tabIndex={0}
+        >
+          {view === "reading" ? (
+            <>
+              <div className="v2-scenario-reasons">
+                {analysis.findings.map(f => (
+                  <article key={f.id}>
+                    <h3>{f.title}</h3>
+                    <p>{f.basis}</p>
+                    <p>{f.implication}</p>
+                  </article>
+                ))}
+              </div>
+              <V2SafetyView
+                analysis={analysis}
+                band={scenario.safetyMargin.band}
+              />
+            </>
+          ) : view === "map" ? (
+            <V2DecisionMap
+              state={state}
+              analysis={analysis}
+              phase={evidencePhase}
+              safetyBand={scenario.safetyMargin.band}
+            />
+          ) : (
+            <>
+              <V2ChangingView analysis={analysis} />
+              <V2ExperimentView analysis={analysis} compact />
+            </>
+          )}
+        </div>
+      </section>
+      <details className="v2-sensitivity">
+        <summary>
+          {say(
+            "조건별 구조 변화표 자세히 보기",
+            "Inspect the condition-by-condition structure changes"
+          )}
+        </summary>
         <div className="v2-section-top">
           <div>
             <p className="v2-kicker">05 / {t("sensitivity")}</p>
@@ -256,33 +373,19 @@ export default function V2Simulator({
           variables={visibleVariables}
           language={state.language}
         />
-      </section>
+      </details>
       <section className="v2-thresholds">
         <div>
           <p className="v2-kicker">06 / {t("thresholds")}</p>
           <h2>{t("thresholds")}</h2>
         </div>
-        <ol>
-          {thresholds.length ? (
-            thresholds.map(row => (
-              <li
-                key={`${row.variable}-${row.band}`}
-                data-testid="v2-decision-switch"
-                data-variable={row.variable}
-              >
-                <strong>
-                  {t(key[row.variable])} → {t(row.band as V2CopyKey)}
-                </strong>
-                <span>{changeLabels(row)}</span>
-              </li>
-            ))
-          ) : (
-            <li>
-              <strong>{t("noChange")}</strong>
-              <span>{t("noThreshold")}</span>
-            </li>
-          )}
-        </ol>
+        <V2SwitchList
+          state={state}
+          input={input}
+          baseline={baseline}
+          sensitivity={sensitivity}
+          variables={visibleVariables}
+        />
       </section>
     </section>
   );
