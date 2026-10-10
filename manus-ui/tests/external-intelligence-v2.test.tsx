@@ -10,6 +10,11 @@ import { selectV2SimulatorVariables } from "../client/src/data/amcV2SensitivityV
 import { v2DemoFixture } from "../client/src/data/amcV2Demos";
 import { buildProductApplicationV3 } from "../client/src/data/amcProductApplicationV3";
 import {
+  v2MissingPoint,
+  v2CustomerEvidenceText,
+} from "../client/src/data/amcV2Presentation";
+import { v2t } from "../client/src/data/v2Language";
+import {
   demoIntelligence,
   unavailableIntelligence,
 } from "../client/src/data/externalIntelligenceV2";
@@ -126,6 +131,111 @@ afterEach(() => {
 });
 
 describe("V2 live External Intelligence boundary", () => {
+  it("localizes established AMC terms only while rendering synthetic Korean evidence", () => {
+    const fixture = v2DemoFixture("industry", "ko");
+    const phrase = "TRANSFERABLE PROOF";
+    const intelligence = {
+      ...fixture.intelligence,
+      status: "live" as const,
+      generatedAt: "2026-10-09T16:30:00.000Z",
+      evidenceBlocks: fixture.intelligence.evidenceBlocks.map((block, index) =>
+        index === 0
+          ? {
+              ...block,
+              headline: `${phrase}: 42%는 아직 확인되지 않았습니다`,
+              fact: "IT·AI·MBA 관련 42% 수치는 transferable proof를 입증하지 않습니다.",
+              whyItMatters:
+                "(Transferable Proof)는 2026-09-12 이후에도 별도로 확인해야 합니다.",
+              sourceLabel: "Transferable Proof Institute",
+              sourceUrl: "https://example.org/transferable-proof",
+              sourceDate: "2026-09-12",
+              sourceDateKind: "published" as const,
+            }
+          : block
+      ),
+      metrics: [
+        {
+          label: "Transferable Proof 표본",
+          value: 42,
+          unit: "%",
+          sourceLabel: "Transferable Proof Institute",
+        },
+      ],
+      opportunitySignals: ["transferable proof를 시험할 수 있습니다"],
+      frictionSignals: ["Transferable Proof는 아직 불확실합니다"],
+      uncertainties: ["(transferable proof)는 확인되지 않았습니다"],
+      implication: "Transferable Proof는 42%만으로 확정할 수 없습니다.",
+    };
+    const snapshot = JSON.stringify(intelligence);
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const visibleVariables = selectV2SimulatorVariables(
+      fixture.sensitivity,
+      baselineBands(fixture.input)
+    );
+    const dashboard = renderToStaticMarkup(
+      React.createElement(V2Dashboard, {
+        state: fixture.state,
+        core: fixture.baseline,
+        intelligence,
+        evidencePhase: "live",
+        onReport: () => {},
+      })
+    );
+    const report = renderToStaticMarkup(
+      React.createElement(V2Report, {
+        state: fixture.state,
+        input: fixture.input,
+        core: fixture.baseline,
+        sensitivity: fixture.sensitivity,
+        visibleVariables,
+        intelligence,
+        evidencePhase: "live",
+        onClose: () => {},
+        onPrint: () => {},
+      })
+    );
+    const koreanTerm = v2MissingPoint("Industry Transition", "ko").point;
+    expect(koreanTerm).toBe("새 산업에서도 통하는 기존 성과");
+    for (const html of [dashboard, report]) {
+      expect(html).toContain(koreanTerm);
+      expect(html).toContain("핵심 득실");
+      expect(html).toContain("42%");
+      expect(html).toContain("확인되지 않았습니다");
+      expect(html).toContain("2026-09-12");
+      expect(html).toContain("https://example.org/transferable-proof");
+      expect(html).toContain("Transferable Proof Institute");
+      expect(html).not.toContain("TRANSFERABLE PROOF: 42%");
+      expect(html).not.toContain("(Transferable Proof)는");
+    }
+    expect(dashboard).toContain(`(${koreanTerm})는 확인되지 않았습니다`);
+    expect(dashboard).toContain("IT·AI·MBA 관련 42% 수치는");
+    expect(dashboard).toContain("새 산업에서도 통하는 기존 성과 표본");
+    expect(report).toContain(`${koreanTerm}는 42%만으로 확정할 수 없습니다`);
+    expect(JSON.stringify(intelligence)).toBe(snapshot);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(
+      v2CustomerEvidenceText("en", "(Transferable Proof), IT, AI, MBA")
+    ).toBe("(Transferable Proof), IT, AI, MBA");
+    const englishFixture = v2DemoFixture("industry", "en");
+    const englishDashboard = renderToStaticMarkup(
+      React.createElement(V2Dashboard, {
+        state: englishFixture.state,
+        core: englishFixture.baseline,
+        intelligence,
+        evidencePhase: "live",
+        onReport: () => {},
+      })
+    );
+    expect(englishDashboard).toContain("TRANSFERABLE PROOF: 42%");
+    expect(englishDashboard).toContain("IT·AI·MBA 관련 42% 수치는 transferable proof를");
+    expect(
+      v2CustomerEvidenceText("ko", "IT, AI, MBA, transferable proofing")
+    ).toBe("IT, AI, MBA, transferable proofing");
+    expect(v2t("ko", "tradeoff")).toBe("핵심 득실");
+    expect(v2t("ko", "material")).toBe("무시하기 어려움");
+    expect(v2t("ko", "unknown")).toBe("아직 확인되지 않음");
+  });
   it("accepts only the five bounded public-search fields and canonical case areas", () => {
     const fixture = v2DemoFixture("entrepreneurship", "en");
     const state = {

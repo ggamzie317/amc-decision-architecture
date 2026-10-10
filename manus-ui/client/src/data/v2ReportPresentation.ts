@@ -48,8 +48,10 @@ export function v2ReportSubject(
   )
     return language === "ko" ? "IT_산업_전환" : "IT_Career_Transition";
   if (caseType === "MBA / EMBA / PhD Decision") {
-    if (/\bEMBA\b/i.test(decision)) return "EMBA_진학";
-    if (/\bMBA\b/i.test(decision)) return "MBA_진학";
+    if (/\bEMBA\b/i.test(decision))
+      return language === "ko" ? "EMBA_진학" : "EMBA_Study";
+    if (/\bMBA\b/i.test(decision))
+      return language === "ko" ? "MBA_진학" : "MBA_Study";
     if (/\bPhD\b|박사/i.test(decision))
       return language === "ko" ? "박사_진학" : "PhD_Study";
   }

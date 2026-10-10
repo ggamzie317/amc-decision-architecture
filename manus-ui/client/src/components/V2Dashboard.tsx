@@ -1,6 +1,7 @@
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2State } from "../data/amcV2Model";
 import { v2DecisionReadings } from "../data/amcV2Model";
+import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import {
   v2CustomerPosture,
   v2EvidenceCheckedDate,
@@ -44,6 +45,8 @@ export function V2ExternalBoard({
 }) {
   const t = (key: V2CopyKey) => fmt(state, key),
     demo = phase === "demo";
+  const evidenceText = (value: string) =>
+    v2CustomerEvidenceText(state.language, value);
   const metrics = intelligence.metrics.filter(metric =>
     Number.isFinite(metric.value)
   );
@@ -109,15 +112,17 @@ export function V2ExternalBoard({
                 <div className="v2-evidence-number">
                   0{index + 1}{" "}
                   <span>
-                    {v2EvidenceDimensionLabel(state.language, block.dimension)}{" "}
+                    {evidenceText(
+                      v2EvidenceDimensionLabel(state.language, block.dimension)
+                    )}{" "}
                     · {v2DirectionLabel(state.language, block.direction)}
                   </span>
                 </div>
-                <h3>{block.headline}</h3>
-                <p>{block.fact}</p>
+                <h3>{evidenceText(block.headline)}</h3>
+                <p>{evidenceText(block.fact)}</p>
                 <div className="v2-evidence-why">
                   <strong>{t("whyMatters")}</strong>
-                  <p>{block.whyItMatters}</p>
+                  <p>{evidenceText(block.whyItMatters)}</p>
                 </div>
                 <div className="v2-source">
                   {t("source")}:{" "}
@@ -151,7 +156,7 @@ export function V2ExternalBoard({
                   <strong>
                     {m.value} {m.unit}
                   </strong>
-                  <span>{m.label}</span>
+                  <span>{evidenceText(m.label)}</span>
                   <small>{m.sourceLabel}</small>
                 </article>
               ))}
@@ -161,19 +166,27 @@ export function V2ExternalBoard({
             {intelligence.opportunitySignals.length > 0 && (
               <div>
                 <strong>{t("opportunity")}</strong>
-                <p>{intelligence.opportunitySignals.join(" · ")}</p>
+                <p>
+                  {intelligence.opportunitySignals
+                    .map(evidenceText)
+                    .join(" · ")}
+                </p>
               </div>
             )}
             {intelligence.frictionSignals.length > 0 && (
               <div>
                 <strong>{t("friction")}</strong>
-                <p>{intelligence.frictionSignals.join(" · ")}</p>
+                <p>
+                  {intelligence.frictionSignals.map(evidenceText).join(" · ")}
+                </p>
               </div>
             )}
             {intelligence.uncertainties.length > 0 && (
               <div>
                 <strong>{t("uncertainty")}</strong>
-                <p>{intelligence.uncertainties.join(" · ")}</p>
+                <p>
+                  {intelligence.uncertainties.map(evidenceText).join(" · ")}
+                </p>
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
 import type { V2CaseType } from "./amcV2Model";
-import type { V2Language } from "./v2Language";
+import { v2t, type V2Language } from "./v2Language";
 
 type Bilingual = readonly [string, string];
 type MissingPoint = { point: Bilingual; why: Bilingual };
@@ -74,6 +74,39 @@ export function v2MissingPoint(caseType: V2CaseType, language: V2Language) {
   const entry = missingByCase[caseType];
   const index = language === "ko" ? 1 : 0;
   return { point: entry.point[index], why: entry.why[index] };
+}
+
+// Provider prose can reuse AMC's English labels even in a Korean response.
+// Localize only established AMC terms at render time; source titles and the
+// evidence snapshot are never rewritten.
+const evidenceTerms: Bilingual[] = [
+  ...Object.values(missingByCase).map(entry => entry.point),
+  ...(["safety", "tradeoff", "posture", "switches", "changing"] as const).map(
+    key => [v2t("en", key), v2t("ko", key)] as const
+  ),
+  ["Missing Point", v2t("ko", "missing")],
+];
+const evidenceTermLabels = new Map(
+  evidenceTerms.map(([english, korean]) => [english.toLowerCase(), korean])
+);
+const evidenceTermPattern = new RegExp(
+  `\\b(?:${evidenceTerms
+    .map(([english]) => english.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .sort((a, b) => b.length - a.length)
+    .join("|")})\\b`,
+  "gi"
+);
+
+export function v2CustomerEvidenceText(
+  language: V2Language,
+  value: string
+): string {
+  return language === "ko"
+    ? value.replace(
+        evidenceTermPattern,
+        term => evidenceTermLabels.get(term.toLowerCase()) ?? term
+      )
+    : value;
 }
 
 const koreanNextTest: Record<V2CaseType, string> = {

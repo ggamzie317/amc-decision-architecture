@@ -114,6 +114,29 @@ describe("V2 report presentation", () => {
     );
   });
 
+  it("uses the customer's language for all three degree topics", () => {
+    const day = new Date("2026-10-10T09:00:00+08:00");
+    for (const [degree, english, korean] of [
+      ["MBA", "MBA_Study", "MBA_진학"],
+      ["EMBA", "EMBA_Study", "EMBA_진학"],
+      ["PhD", "PhD_Study", "박사_진학"],
+    ]) {
+      for (const [language, subject] of [
+        ["en", english],
+        ["ko", korean],
+      ] as const) {
+        expect(
+          v2ReportFileName(
+            `${degree} application; private@example.com`,
+            "MBA / EMBA / PhD Decision",
+            language,
+            day
+          )
+        ).toBe(`${subject}_allofmycareer_2026-10-10.pdf`);
+      }
+    }
+  });
+
   it("keeps Korean but strips unsafe filename characters and overlong suffixes", () => {
     expect(v2SafeFileStem("  창업: 검토*/.  ")).toBe("창업_검토");
     expect(v2SafeFileStem("x".repeat(100))).toHaveLength(64);

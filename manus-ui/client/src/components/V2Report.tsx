@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import V2SensitivityMatrix from "./V2SensitivityMatrix";
 import {
   limitV2Overrides,
@@ -69,6 +70,8 @@ export default function V2Report({
 }) {
   const t = (k: V2CopyKey) => v2t(state.language, k),
     d = v2DecisionReadings(state, core);
+  const evidenceText = (value: string) =>
+    v2CustomerEvidenceText(state.language, value);
   const posture = v2CustomerPosture(
     state.language,
     core.currentStructuralPosture.label,
@@ -256,13 +259,15 @@ export default function V2Report({
               intelligence.evidenceBlocks.map((b, i) => (
                 <article key={i} data-provenance="EXTERNAL_EVIDENCE">
                   <span>
-                    {v2EvidenceDimensionLabel(state.language, b.dimension)} /{" "}
-                    {v2DirectionLabel(state.language, b.direction)}
+                    {evidenceText(
+                      v2EvidenceDimensionLabel(state.language, b.dimension)
+                    )}{" "}
+                    / {v2DirectionLabel(state.language, b.direction)}
                   </span>
-                  <h3>{b.headline}</h3>
-                  <p>{b.fact}</p>
+                  <h3>{evidenceText(b.headline)}</h3>
+                  <p>{evidenceText(b.fact)}</p>
                   <p>
-                    <b>{t("whyMatters")}</b> {b.whyItMatters}
+                    <b>{t("whyMatters")}</b> {evidenceText(b.whyItMatters)}
                   </p>
                   <small>
                     {t("source")}:{" "}
@@ -296,7 +301,7 @@ export default function V2Report({
           </div>
           <div className="v2-paper-note">
             <strong>{t("implication")}</strong>
-            <p>{intelligence.implication}</p>
+            <p>{evidenceText(intelligence.implication)}</p>
           </div>
         </>
       )}
@@ -517,17 +522,19 @@ export default function V2Report({
             <div className="v2-paper-band">
               <span>{evidenceLabel}</span>
               <strong>{evidenceNote}</strong>
-              <p>{intelligence.implication}</p>
+              <p>{evidenceText(intelligence.implication)}</p>
             </div>
             <div className="v2-paper-play-list">
               {intelligence.evidenceBlocks.map((b, i) => (
                 <article key={i}>
                   <span>
                     0{i + 1} /{" "}
-                    {v2EvidenceDimensionLabel(state.language, b.dimension)}
+                    {evidenceText(
+                      v2EvidenceDimensionLabel(state.language, b.dimension)
+                    )}
                   </span>
-                  <h3>{b.headline}</h3>
-                  <p>{b.fact}</p>
+                  <h3>{evidenceText(b.headline)}</h3>
+                  <p>{evidenceText(b.fact)}</p>
                   <small>
                     {t("source")}: {b.sourceLabel}
                     {b.sourceDate && b.sourceDateKind && (
