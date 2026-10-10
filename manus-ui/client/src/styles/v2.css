@@ -1794,6 +1794,7 @@
   .v2-cover {
     min-height: 0;
     padding: 25px;
+    flex-direction: column;
   }
   .v2-cover h1 {
     font-size: 28px;
