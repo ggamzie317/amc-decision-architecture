@@ -28,7 +28,10 @@ import {
   resolveV2ExternalIntelligence,
   v2EvidenceFocus,
 } from "../server/externalIntelligenceV2Service";
-import { publicSourceAvailable } from "../server/publicSourceAvailability";
+import {
+  pinnedSourceLookup,
+  publicSourceAvailable,
+} from "../server/publicSourceAvailability";
 
 (globalThis as any).React = React;
 
@@ -420,6 +423,18 @@ describe("V2 live External Intelligence boundary", () => {
         dependencies
       )
     ).toBe(true);
+  });
+
+  it("pins DNS for Node's all-address HTTPS lookup without resolving again", () => {
+    const callback = vi.fn();
+    pinnedSourceLookup({ address: "8.8.8.8", family: 4 })(
+      "example.com",
+      { all: true },
+      callback as never
+    );
+    expect(callback).toHaveBeenCalledWith(null, [
+      { address: "8.8.8.8", family: 4 },
+    ]);
   });
 
   it("fails closed for missing key, bad sources, provider HTTP failure, and timeout", async () => {

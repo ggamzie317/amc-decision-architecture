@@ -1,6 +1,6 @@
 import { lookup } from "node:dns/promises";
 import { request as httpsRequest } from "node:https";
-import { BlockList, isIP } from "node:net";
+import { BlockList, isIP, type LookupFunction } from "node:net";
 
 const blocked = new BlockList();
 for (const [address, prefix] of [
@@ -101,8 +101,7 @@ function responseHeaders(
           "User-Agent": "AMC-Evidence-Source-Check/1.0",
         },
         // Reuse the already validated address; a second DNS lookup could resolve privately.
-        lookup: (_hostname, _options, callback) =>
-          callback(null, address.address, address.family),
+        lookup: pinnedSourceLookup(address),
       },
       response => {
         const status = response.statusCode ?? 0;
@@ -115,6 +114,17 @@ function responseHeaders(
     req.on("error", reject);
     req.end();
   });
+}
+
+/** Node may request either a scalar or an all-address DNS callback. */
+export function pinnedSourceLookup(address: Address): LookupFunction {
+  return (_hostname, options, callback) => {
+    if (options.all)
+      callback(null, [
+        { address: address.address, family: address.family },
+      ] as never);
+    else callback(null, address.address, address.family);
+  };
 }
 
 /** Availability only: this cannot establish whether the page supports a claim. */
