@@ -418,7 +418,7 @@ export default function V2Report({
                 <h3>{v2CustomerPlayText(state.language, play.title)}</h3>
                 <p>{v2CustomerPlayText(state.language, play.changes)}</p>
                 <small>
-                  {t("keyConstraint")}:{" "}
+                  {t("playNeeds")}:{" "}
                   {v2CustomerPlayText(state.language, play.needs)}
                 </small>
               </article>

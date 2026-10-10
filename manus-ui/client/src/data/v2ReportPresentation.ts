@@ -94,7 +94,7 @@ export function v2CustomerPosture(
     return {
       label: "현재 계획 유지",
       sentence: sentence.includes("기반을 보존하면서")
-        ? `현재 계획을 유지하면서 ${optionB}에 관한 외부 근거를 확인하는 방향이 더 뒷받침됩니다.`
+        ? `현재 계획을 유지하면서 ${optionB}에 필요한 외부 근거를 확인하세요. 지금 구조는 이 순서를 더 뒷받침합니다.`
         : sentence
             .replaceAll("Safety Margin", "안전 여유")
             .replaceAll("현재 자세", "현재 판단"),
@@ -120,7 +120,7 @@ const koreanPlayText: Record<string, string> = {
   "직접 전환 → 중간 경로": "한 번에 전환하지 않고 중간 경로를 시험합니다.",
   "가정 → 관찰 가능한 검증":
     "가정을 실제로 확인할 수 있는 작은 시험으로 바꿉니다.",
-  "시간, 자금 또는 지원": "필요한 시간·자금 또는 도움을 받을 수 있는 곳",
+  "시간, 자금 또는 지원": "시간·자금 또는 도움을 받을 수 있는 곳",
 };
 
 export function v2CustomerPlayText(
