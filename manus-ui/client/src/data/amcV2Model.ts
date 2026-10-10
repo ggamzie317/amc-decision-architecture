@@ -23,7 +23,7 @@ import {
 } from "./externalIntelligenceV2";
 import { caseTypes } from "../../../shared/interactivePrivacy";
 import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
-import { v2MissingPoint } from "./amcV2Presentation";
+import { v2CustomerNextTest, v2MissingPoint } from "./amcV2Presentation";
 export const V2_SCHEMA = "AMC-MODULES-V2-8";
 export const V2_EXPERIENCE = "interactive-v2";
 export type V2CaseType = (typeof caseTypes)[number];
@@ -435,10 +435,11 @@ export function v2DecisionReadings(s: V2State, core: ProductApplicationV3) {
     caseStructure.optionAProtects
   );
   const tradeoffOpens = label(s.opens.slice(0, 2), caseStructure.optionBOpens);
-  const nextTest =
-    s.language === "ko" && s.caseType === "Entrepreneurship"
-      ? "작은 유료 시범 운영으로 수요 검증"
-      : core.presentation.nextTestKeyword;
+  const nextTest = v2CustomerNextTest(
+    s.caseType,
+    s.language,
+    core.presentation.nextTestKeyword
+  );
   return {
     posture: {
       value: core.currentStructuralPosture.label,
@@ -449,7 +450,10 @@ export function v2DecisionReadings(s: V2State, core: ProductApplicationV3) {
       provenance: "DERIVED_CORE_RULE",
     },
     missing: {
-      value: core.presentation.missingPointKeyword,
+      value:
+        s.language === "ko"
+          ? v2MissingPoint(s.caseType, s.language).point
+          : core.presentation.missingPointKeyword,
       provenance: "DERIVED_CORE_RULE",
     },
     missingDetail: {

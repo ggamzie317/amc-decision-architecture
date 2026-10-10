@@ -23,6 +23,11 @@ import {
 } from "../data/amcV2Model";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import {
+  v2CustomerPlayText,
+  v2CustomerPosture,
+  v2EvidenceCheckedDate,
+} from "../data/v2ReportPresentation";
+import {
   v2t,
   v2CaseLabel,
   v2FamilyLabel,
@@ -64,6 +69,13 @@ export default function V2Report({
 }) {
   const t = (k: V2CopyKey) => v2t(state.language, k),
     d = v2DecisionReadings(state, core);
+  const posture = v2CustomerPosture(
+    state.language,
+    core.currentStructuralPosture.label,
+    core.currentStructuralPosture.sentence,
+    state.optionA,
+    state.optionB
+  );
   const activeOverrides = limitV2Overrides(
     input,
     visibleVariables,
@@ -97,7 +109,7 @@ export default function V2Report({
             : t("evidenceUnavailable");
   const evidenceNote =
     intelligence.status === "live"
-      ? `${t("reviewedAt")}: ${intelligence.generatedAt?.slice(0, 10) ?? ""}`
+      ? `${t("reviewedAt")}: ${v2EvidenceCheckedDate(intelligence.generatedAt, state.language)}`
       : intelligence.status === "demo"
         ? t("demoOnly")
         : evidencePhase === "not_checked"
@@ -156,7 +168,7 @@ export default function V2Report({
             <div>
               <p>{t("reportSubtitle")}</p>
               {hypothetical && <p>{t("baselineReading")}</p>}
-              <h1>{core.currentStructuralPosture.label}</h1>
+              <h1>{posture.label}</h1>
               <div className="v2-cover-rule" />
               <p>
                 {t("caseConfirm")} {v2CaseLabel(state.language, state.caseType)}
@@ -180,7 +192,7 @@ export default function V2Report({
             </div>
           </div>
           <p className="v2-paper-caption">
-            {t("reading")} / {core.currentStructuralPosture.sentence}
+            {t("reading")} / {posture.sentence}
           </p>
         </>
       )}
@@ -190,8 +202,8 @@ export default function V2Report({
         <>
           <div className="v2-paper-band">
             <span>{t("posture")}</span>
-            <strong>{d.posture.value}</strong>
-            <p>{core.currentStructuralPosture.sentence}</p>
+            <strong>{posture.label}</strong>
+            <p>{posture.sentence}</p>
           </div>
           <div className="v2-paper-grid two">
             <article>
@@ -329,7 +341,7 @@ export default function V2Report({
           </div>
           <div className="v2-paper-note">
             <strong>{t("reading")}</strong>
-            <p>{core.currentStructuralPosture.sentence}</p>
+            <p>{posture.sentence}</p>
           </div>
         </>
       )}
@@ -403,10 +415,11 @@ export default function V2Report({
                 <span>
                   0{i + 1} / {v2FamilyLabel(state.language, play.family)}
                 </span>
-                <h3>{play.title}</h3>
-                <p>{play.changes}</p>
+                <h3>{v2CustomerPlayText(state.language, play.title)}</h3>
+                <p>{v2CustomerPlayText(state.language, play.changes)}</p>
                 <small>
-                  {t("keyConstraint")}: {play.needs}
+                  {t("keyConstraint")}:{" "}
+                  {v2CustomerPlayText(state.language, play.needs)}
                 </small>
               </article>
             ))}

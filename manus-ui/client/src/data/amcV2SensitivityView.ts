@@ -9,6 +9,7 @@ import type {
   ProductApplicationV3,
 } from "./amcProductApplicationV3";
 import type { V2Sensitivity } from "./amcV2Model";
+import { v2CustomerPosture } from "./v2ReportPresentation";
 import {
   v2FamilyLabel,
   v2t,
@@ -145,8 +146,20 @@ export function v2ScenarioComparison(
   return [
     [
       "posture",
-      baseline.currentStructuralPosture.label,
-      scenario.currentStructuralPosture.label,
+      v2CustomerPosture(
+        language,
+        baseline.currentStructuralPosture.label,
+        "",
+        "",
+        ""
+      ).label,
+      v2CustomerPosture(
+        language,
+        scenario.currentStructuralPosture.label,
+        "",
+        "",
+        ""
+      ).label,
     ],
     ["safety", t(baseline.safetyMargin.band), t(scenario.safetyMargin.band)],
     ["missing", baseline.missingPoint, scenario.missingPoint],

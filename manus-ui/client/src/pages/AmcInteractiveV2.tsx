@@ -42,6 +42,10 @@ import {
 import V2Dashboard from "../components/V2Dashboard";
 import V2Simulator from "../components/V2Simulator";
 import V2Report from "../components/V2Report";
+import {
+  prepareV2PrintTitle,
+  v2ReportFileName,
+} from "../data/v2ReportPresentation";
 import "../styles/v2.css";
 
 type Phase = "setup" | "modules" | "dashboard" | "report";
@@ -79,6 +83,7 @@ export default function AmcInteractiveV2() {
     useState<V2Language | null>(null);
   const evidencePending = useRef(false);
   const simOpened = useRef(false);
+  const restorePrintTitle = useRef<(() => void) | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
   const update = (patch: Partial<V2State>) =>
     setState(s => ({ ...s, ...patch }));
@@ -150,6 +155,13 @@ export default function AmcInteractiveV2() {
       setScenarioOverrides({});
     } else setState(s => ({ ...s, language }));
   }, [language, kind, demoMode]);
+  useEffect(() => {
+    if (phase !== "report") {
+      restorePrintTitle.current?.();
+      restorePrintTitle.current = null;
+    }
+  }, [phase]);
+  useEffect(() => () => restorePrintTitle.current?.(), []);
   const intelligence = useMemo(
     () =>
       demoMode
@@ -514,7 +526,7 @@ export default function AmcInteractiveV2() {
     <div className="v2-app" lang={language} data-testid="v2-app">
       <header className="v2-site-header">
         <a className="v2-wordmark" href="/amc-interactive-v2">
-          allofmycareer<span> / V2</span>
+          allofmycareer{language === "en" && <span> / V2</span>}
         </a>
         <div className="v2-header-right">
           {demoMode && <span className="v2-demo-label">{t("demoBadge")}</span>}
@@ -808,6 +820,8 @@ export default function AmcInteractiveV2() {
           intelligence={intelligence}
           evidencePhase={evidencePhase}
           onClose={() => {
+            restorePrintTitle.current?.();
+            restorePrintTitle.current = null;
             setPhase("dashboard");
             window.scrollTo(0, 0);
           }}
@@ -816,7 +830,17 @@ export default function AmcInteractiveV2() {
               currentStage: "print_save_clicked",
               printSaveClickedAt: new Date().toISOString(),
             });
-            window.print();
+            restorePrintTitle.current?.();
+            restorePrintTitle.current = prepareV2PrintTitle(
+              v2ReportFileName(state.decision, state.caseType, language)
+            );
+            try {
+              window.print();
+            } catch (error) {
+              restorePrintTitle.current?.();
+              restorePrintTitle.current = null;
+              throw error;
+            }
           }}
         />
       )}

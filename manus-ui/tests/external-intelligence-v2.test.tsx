@@ -686,7 +686,7 @@ describe("V2 live External Intelligence boundary", () => {
         onReport: () => {},
       })
     );
-    expect(koDashboard).toContain("현재 공개 근거 확인됨");
+    expect(koDashboard).toContain("현재 공개 근거 확인");
     expect(koDashboard).toContain("고객 수요");
     expect(koDashboard).toContain("공개 수요 자료");
     expect(koDashboard).toContain("반복 구매는 별도 검증이 필요합니다.");

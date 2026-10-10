@@ -1,6 +1,10 @@
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2State } from "../data/amcV2Model";
 import { v2DecisionReadings } from "../data/amcV2Model";
+import {
+  v2CustomerPosture,
+  v2EvidenceCheckedDate,
+} from "../data/v2ReportPresentation";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import {
   v2t,
@@ -92,9 +96,7 @@ export function V2ExternalBoard({
           {phase === "live" && intelligence.generatedAt && (
             <p className="v2-evidence-caveat">
               {t("reviewedAt")}:{" "}
-              {new Date(intelligence.generatedAt).toLocaleDateString(
-                state.language === "ko" ? "ko-KR" : "en-US"
-              )}
+              {v2EvidenceCheckedDate(intelligence.generatedAt, state.language)}
             </p>
           )}
           <div className="v2-evidence-grid">
@@ -197,6 +199,13 @@ export default function V2Dashboard({
 }) {
   const t = (key: V2CopyKey) => fmt(state, key),
     d = v2DecisionReadings(state, core);
+  const posture = v2CustomerPosture(
+    state.language,
+    d.posture.value,
+    core.currentStructuralPosture.sentence,
+    state.optionA,
+    state.optionB
+  );
   const items: [V2CopyKey, string, string][] = [
     ["posture", d.posture.value, d.posture.provenance],
     ["missing", d.missing.value, d.missing.provenance],
@@ -219,11 +228,9 @@ export default function V2Dashboard({
           <p className="v2-kicker">01 / {t("dashboard")}</p>
           <h1>{t("currentStructure")}</h1>
           <p className="v2-hero-posture" data-provenance="DERIVED_CORE_RULE">
-            {d.posture.value}
+            {posture.label}
           </p>
-          <p className="v2-hero-sub">
-            {core.currentStructuralPosture.sentence}
-          </p>
+          <p className="v2-hero-sub">{posture.sentence}</p>
         </div>
         <div className="v2-hero-side">
           <span>{t("safety")}</span>

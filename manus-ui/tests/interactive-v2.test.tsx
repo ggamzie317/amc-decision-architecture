@@ -157,9 +157,11 @@ describe("AMC interactive V2 experience", () => {
     const readings = v2DecisionReadings(state, core);
     expect(readings.tradeoff.value).toBe("소득 연속성 ↔ 창업가 주도 가치");
     expect(readings.tradeoff.provenance).toBe("DERIVED_CORE_RULE");
-    expect(readings.exposure.value).toContain("하방 위험");
+    expect(readings.exposure.value).toContain("손실 위험");
     expect(readings.constraint.value).toBe("소득 여유와 제공 부담");
-    expect(readings.nextTest.value).toBe("작은 유료 시범 운영으로 수요 검증");
+    expect(readings.nextTest.value).toBe(
+      "작은 유료 시범 운영으로 실제 구매 수요 확인"
+    );
     expect(readings.missingDetail.value).not.toContain(readings.missing.value);
   });
   it("keeps all 21 internal sensitivity cells but renders only selected rows with an impact legend", () => {
@@ -528,7 +530,7 @@ describe("AMC interactive V2 experience", () => {
       v2Choices.careerExternal
     );
     expect(v2t("ko", "posture")).toBe("현재 구조 판단");
-    expect(v2t("ko", "missing")).toBe("놓치고 있는 핵심 변수");
+    expect(v2t("ko", "missing")).toBe("아직 확인할 핵심 조건");
     expect(v2t("ko", "scenarioPlausibility")).toBe("시나리오 현실성");
     expect(v2CaseLabel("ko", "Entrepreneurship")).toBe("창업");
     expect(v2FamilyLabel("ko", "resource")).toBe("자원 조정");
