@@ -181,7 +181,7 @@ export const v2Copy = {
     "You can check current public evidence after the dashboard is built. This is optional.",
     "대시보드를 만든 뒤 현재 공개 근거를 선택적으로 확인할 수 있습니다.",
   ],
-  reviewedAt: ["Sources reviewed", "근거 확인일"],
+  reviewedAt: ["Evidence checked on", "외부 근거 확인일"],
   simulator: ["Key Condition Simulator", "핵심 조건 시뮬레이션"],
   controls: ["AMC-selected conditions", "AMC가 선별한 조건"],
   currentBand: ["Current state", "현재 상태"],
@@ -379,6 +379,8 @@ export const v2Copy = {
   briefKicker: ["V2 DECISION BRIEF", "V2 결정 보고서"],
   source: ["Source", "출처"],
   sourceDate: ["Source date", "근거 날짜"],
+  sourcePublished: ["Published", "발행일"],
+  sourceUpdated: ["Updated", "갱신일"],
   direction: ["Direction", "방향"],
 } as const satisfies Record<string, readonly [string, string]>;
 export type V2CopyKey = keyof typeof v2Copy;

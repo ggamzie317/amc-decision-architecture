@@ -126,7 +126,18 @@ export function V2ExternalBoard({
                   ) : (
                     block.sourceLabel
                   )}
-                  {block.sourceDate ? ` · ${block.sourceDate}` : ""}
+                  {block.sourceDate && block.sourceDateKind && (
+                    <>
+                      {" "}
+                      ·{" "}
+                      {t(
+                        block.sourceDateKind === "published"
+                          ? "sourcePublished"
+                          : "sourceUpdated"
+                      )}
+                      : {block.sourceDate}
+                    </>
+                  )}
                 </div>
               </article>
             ))}

@@ -28,6 +28,7 @@ import {
   resolveV2ExternalIntelligence,
   v2EvidenceFocus,
 } from "../server/externalIntelligenceV2Service";
+import { publicSourceAvailable } from "../server/publicSourceAvailability";
 
 (globalThis as any).React = React;
 
@@ -182,6 +183,7 @@ describe("V2 live External Intelligence boundary", () => {
     const result = await resolveV2ExternalIntelligence(request, {
       apiKey: "test-key",
       fetchImpl,
+      sourceAvailable: async () => true,
       observe: () => {},
     });
     expect(result.status).toBe("live");
@@ -231,6 +233,7 @@ describe("V2 live External Intelligence boundary", () => {
       expect(result.evidenceBlocks[0]).toMatchObject({
         sourceLabel: sourceRows[0].title,
         sourceDate: "2026-08-10",
+        sourceDateKind: "published",
       });
       expect(result.evidenceBlocks[1]).not.toHaveProperty("sourceDate");
       expect(result.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
@@ -263,6 +266,160 @@ describe("V2 live External Intelligence boundary", () => {
       request
     )!;
     expect(dated.evidenceBlocks[0]).not.toHaveProperty("sourceDate");
+  });
+
+  it("preserves publication and update metadata separately from the search timestamp", () => {
+    const result = normalizeV2AgentResponse(
+      envelope(providerContent(), [
+        { ...sourceRows[0], last_updated: "2026-10-02" },
+        { ...sourceRows[1], last_updated: "2026-10-03" },
+      ]),
+      request
+    )!;
+    expect(result.evidenceBlocks[0]).toMatchObject({
+      sourceDate: "2026-08-10",
+      sourceDateKind: "published",
+    });
+    expect(result.evidenceBlocks[1]).toMatchObject({
+      sourceDate: "2026-10-03",
+      sourceDateKind: "updated",
+    });
+    expect(result.generatedAt).not.toBe("2026-10-03");
+    const f = v2DemoFixture("entrepreneurship", "en");
+    const props = {
+      state: f.state,
+      core: f.baseline,
+      intelligence: result,
+      evidencePhase: "live" as const,
+      onCheckEvidence: () => {},
+      onReport: () => {},
+    };
+    const dashboard = renderToStaticMarkup(
+      React.createElement(V2Dashboard, props)
+    );
+    const report = renderToStaticMarkup(
+      React.createElement(V2Report, {
+        state: f.state,
+        input: f.input,
+        core: f.baseline,
+        sensitivity: f.sensitivity,
+        visibleVariables: selectV2SimulatorVariables(
+          f.sensitivity,
+          baselineBands(f.input)
+        ),
+        intelligence: result,
+        onClose: () => {},
+        onPrint: () => {},
+      })
+    );
+    for (const html of [dashboard, report]) {
+      expect(html).toContain("Published: 2026-08-10");
+      expect(html).toContain("Updated: 2026-10-03");
+      expect(html).toContain("Evidence checked on");
+    }
+    const ko = normalizeV2AgentResponse(
+      envelope(providerContent("ko"), [
+        { ...sourceRows[0], last_updated: "2026-10-02" },
+        { ...sourceRows[1], last_updated: "2026-10-03" },
+      ]),
+      { ...request, language: "ko" }
+    )!;
+    const koFixture = v2DemoFixture("entrepreneurship", "ko");
+    const koDashboard = renderToStaticMarkup(
+      React.createElement(V2Dashboard, {
+        ...props,
+        state: koFixture.state,
+        core: koFixture.baseline,
+        intelligence: ko,
+      })
+    );
+    expect(koDashboard).toContain("발행일: 2026-08-10");
+    expect(koDashboard).toContain("갱신일: 2026-10-03");
+    expect(koDashboard).toContain("외부 근거 확인일");
+  });
+
+  it("fails the whole provider response when a cited source is unavailable, without retry", async () => {
+    const provider = vi.fn(async () =>
+      Response.json(envelope())
+    ) as unknown as typeof fetch;
+    const observed = vi.fn();
+    const checked = vi.fn(async (url: string) => url !== sourceRows[1].url);
+    const result = await resolveV2ExternalIntelligence(request, {
+      apiKey: "test-key",
+      fetchImpl: provider,
+      sourceAvailable: checked,
+      observe: observed,
+    });
+    expect(provider).toHaveBeenCalledTimes(1);
+    expect(checked).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({
+      status: "unavailable",
+      evidenceBlocks: [],
+      opportunitySignals: [],
+      frictionSignals: [],
+      uncertainties: [],
+    });
+    expect(observed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reasonCode: "source_unavailable",
+        status: "fallback",
+      })
+    );
+  });
+
+  it("rejects 404/410, unsafe redirects, and private destinations before evidence is live", async () => {
+    const headers = vi.fn(async () => ({ status: 410 }));
+    const dependencies = {
+      resolve: async () => [{ address: "8.8.8.8", family: 4 as const }],
+      headers,
+    };
+    const signal = new AbortController().signal;
+    expect(
+      await publicSourceAvailable(
+        "https://example.com/item",
+        signal,
+        dependencies
+      )
+    ).toBe(false);
+    headers.mockResolvedValueOnce({ status: 404 });
+    expect(
+      await publicSourceAvailable(
+        "https://example.com/item",
+        signal,
+        dependencies
+      )
+    ).toBe(false);
+    headers.mockResolvedValueOnce({
+      status: 302,
+      location: "https://127.0.0.1/private",
+    });
+    expect(
+      await publicSourceAvailable(
+        "https://example.com/item",
+        signal,
+        dependencies
+      )
+    ).toBe(false);
+    expect(headers).toHaveBeenCalledTimes(3); // Redirect target was never requested.
+    expect(
+      await publicSourceAvailable("https://10.0.0.1/item", signal, dependencies)
+    ).toBe(false);
+    expect(
+      await publicSourceAvailable(
+        "http://example.com/item",
+        signal,
+        dependencies
+      )
+    ).toBe(false);
+    expect(headers).toHaveBeenCalledTimes(3);
+    headers.mockResolvedValueOnce({ status: 200 });
+    expect(
+      await publicSourceAvailable(
+        "https://example.com/item",
+        signal,
+        dependencies
+      )
+    ).toBe(true);
   });
 
   it("fails closed for missing key, bad sources, provider HTTP failure, and timeout", async () => {
@@ -463,7 +620,7 @@ describe("V2 live External Intelligence boundary", () => {
     expect(dashboard).toContain(live.evidenceBlocks[0].headline);
     expect(report).toContain(live.evidenceBlocks[0].headline);
     expect(report).toContain(live.evidenceBlocks[0].sourceUrl);
-    expect(report).toContain("Sources reviewed");
+    expect(report).toContain("Evidence checked on");
     expect(report).toContain("Current public evidence reviewed");
     expect(report).not.toContain("DEMO DATA — NOT LIVE EVIDENCE");
     expect(report.match(/class="v2-paper-page"/g) ?? []).toHaveLength(9);

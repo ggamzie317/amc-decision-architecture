@@ -13,18 +13,26 @@ import {
   recordProviderObservation,
   type ProviderObservation,
 } from "./providerObservation.js";
+import { publicSourceAvailable } from "./publicSourceAvailability.js";
 
 type ResolveOptions = {
   apiKey?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   observe?: (observation: ProviderObservation) => void | Promise<void>;
+  sourceAvailable?: (url: string, signal: AbortSignal) => Promise<boolean>;
 };
-type Source = { url: string; label: string; date?: string };
+type Source = {
+  url: string;
+  label: string;
+  date?: string;
+  dateKind?: "published" | "updated";
+};
 type Reason =
   | "live"
   | "provider_not_configured"
   | "provider_failure"
+  | "source_unavailable"
   | "invalid_provider_response";
 
 const defaults: Record<string, string[]> = {
@@ -235,8 +243,22 @@ export async function resolveV2ExternalIntelligence(
       const envelope: unknown = await response.json().catch(() => null);
       const live = normalizeV2AgentResponse(envelope, request, dimensions);
       if (live) {
-        result = live;
-        reason = "live";
+        const urls = Array.from(
+          new Set(live.evidenceBlocks.map(block => block.sourceUrl!))
+        );
+        const checks = await Promise.all(
+          urls.map(url =>
+            (options.sourceAvailable ?? publicSourceAvailable)(
+              url,
+              controller.signal
+            ).catch(() => false)
+          )
+        );
+        // Reject the entire response: model-written summaries could depend on any card.
+        if (checks.every(Boolean) && !controller.signal.aborted) {
+          result = live;
+          reason = "live";
+        } else reason = "source_unavailable";
       } else reason = "invalid_provider_response";
     }
   } catch {
@@ -278,10 +300,16 @@ export function normalizeV2AgentResponse(
       const url = safeSourceUrl(raw.url);
       if (!url) continue;
       const title = bounded(raw.title, 180) ?? new URL(url).hostname;
-      const date = reliableDate(
-        raw.published_date ?? raw.published_at ?? raw.last_updated
-      );
-      sources.set(url, { url, label: title, ...(date ? { date } : {}) });
+      const published =
+        reliableDate(raw.published_date) ?? reliableDate(raw.published_at);
+      const updated = reliableDate(raw.last_updated);
+      const date = published ?? updated;
+      const dateKind = published ? "published" : updated ? "updated" : null;
+      sources.set(url, {
+        url,
+        label: title,
+        ...(date && dateKind ? { date, dateKind } : {}),
+      });
     }
   }
   const final = envelope.output
@@ -353,7 +381,9 @@ export function normalizeV2AgentResponse(
       whyItMatters,
       sourceLabel: source.label,
       sourceUrl: source.url,
-      ...(source.date ? { sourceDate: source.date } : {}),
+      ...(source.date && source.dateKind
+        ? { sourceDate: source.date, sourceDateKind: source.dateKind }
+        : {}),
       provenance: "EXTERNAL_EVIDENCE",
     });
   }

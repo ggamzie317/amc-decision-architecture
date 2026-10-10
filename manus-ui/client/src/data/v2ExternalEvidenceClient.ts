@@ -81,7 +81,12 @@ export function acceptV2Evidence(
             (item[key] as string).trim().length > 0
         ) &&
         typeof item.sourceUrl === "string" &&
-        /^https:\/\//.test(item.sourceUrl)
+        /^https:\/\//.test(item.sourceUrl) &&
+        ((item.sourceDate === undefined && item.sourceDateKind === undefined) ||
+          (typeof item.sourceDate === "string" &&
+            /^\d{4}-\d{2}-\d{2}$/.test(item.sourceDate) &&
+            (item.sourceDateKind === "published" ||
+              item.sourceDateKind === "updated")))
       );
     })
   )

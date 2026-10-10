@@ -17,6 +17,7 @@ export type ExternalIntelligenceV2 = {
     sourceLabel: string;
     sourceUrl?: string;
     sourceDate?: string;
+    sourceDateKind?: "published" | "updated";
     provenance: "EXTERNAL_EVIDENCE";
   }>;
   metrics: Array<{

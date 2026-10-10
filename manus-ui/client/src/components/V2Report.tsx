@@ -259,7 +259,18 @@ export default function V2Report({
                     ) : (
                       b.sourceLabel
                     )}
-                    {b.sourceDate ? ` · ${b.sourceDate}` : ""}
+                    {b.sourceDate && b.sourceDateKind && (
+                      <>
+                        {" "}
+                        ·{" "}
+                        {t(
+                          b.sourceDateKind === "published"
+                            ? "sourcePublished"
+                            : "sourceUpdated"
+                        )}
+                        : {b.sourceDate}
+                      </>
+                    )}
                   </small>
                 </article>
               ))
@@ -506,7 +517,18 @@ export default function V2Report({
                   <p>{b.fact}</p>
                   <small>
                     {t("source")}: {b.sourceLabel}
-                    {b.sourceDate ? ` · ${b.sourceDate}` : ""}
+                    {b.sourceDate && b.sourceDateKind && (
+                      <>
+                        {" "}
+                        ·{" "}
+                        {t(
+                          b.sourceDateKind === "published"
+                            ? "sourcePublished"
+                            : "sourceUpdated"
+                        )}
+                        : {b.sourceDate}
+                      </>
+                    )}
                     {b.sourceUrl && (
                       <span className="v2-paper-source-url">{b.sourceUrl}</span>
                     )}
