@@ -764,7 +764,11 @@ describe("V2 live External Intelligence boundary", () => {
       "Current external evidence has not been checked."
     );
     expect(notChecked).toContain("Check current evidence");
-    expect(notChecked).toContain("short Option B label");
+    expect(notChecked).toContain("visible research topic");
+    expect(notChecked).toContain(
+      "Personal notes and internal financial or readiness conditions are not sent."
+    );
+    expect(notChecked).not.toContain("short Option B label");
     const loading = renderToStaticMarkup(
       React.createElement(V2Dashboard, {
         state: english.state,

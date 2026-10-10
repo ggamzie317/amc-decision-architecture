@@ -184,12 +184,12 @@ export const v2Copy = {
     "확인 가능한 출처를 찾지 못했습니다. 현재의 구조 판단은 그대로이며, 나중에 다시 확인할 수 있습니다.",
   ],
   evidenceDisclosure: [
-    "To search current public sources, your selected external areas, target geography (if given), and a short Option B label are sent transiently to the external search provider. allofmycareer does not store your written answers.",
-    "외부 근거를 확인하면 선택한 확인 항목, 대상 지역(입력한 경우), 대안의 짧은 이름이 외부 AI/검색 제공자에게 전달됩니다. 작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요.",
+    "Public research sends the visible research topic, selected areas and geography (if given) to AMC's connected search provider. Personal notes and internal financial or readiness conditions are not sent. allofmycareer does not store your written answers.",
+    "공개 검색 주제, 선택한 확인 항목, 대상 지역(입력한 경우)이 AMC에 연결된 검색 제공자에게 전달됩니다. 개인 메모와 내부 재정·준비 조건은 전송하지 않으며, 작성한 답변 원문은 allofmycareer에 저장하지 않습니다. 검색 주제에는 공개된 직무·기관·산업 키워드를 사용하세요.",
   ],
   evidenceOptionalLater: [
-    "You can check current public evidence after the dashboard is built. This is optional.",
-    "대시보드를 만든 뒤 현재 공개 근거를 선택적으로 확인할 수 있습니다.",
+    "The final analysis action includes public research. You can also review a structural draft without research.",
+    "최종 분석에서 공개 근거를 함께 확인합니다. 검색 없이 구조 초안을 먼저 볼 수도 있습니다.",
   ],
   reviewedAt: ["Evidence checked on", "외부 근거 확인일"],
   simulator: ["Key Condition Simulator", "핵심 조건 시뮬레이션"],

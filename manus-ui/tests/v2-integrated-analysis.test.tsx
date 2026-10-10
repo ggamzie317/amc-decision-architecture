@@ -11,6 +11,7 @@ import {
   v2Scenario,
   buildV2Sensitivity,
 } from "../client/src/data/amcV2Model";
+import { v2DemoFixture } from "../client/src/data/amcV2Demos";
 import { buildProductApplicationV3 } from "../client/src/data/amcProductApplicationV3";
 import { baselineBands } from "../client/src/data/amcScenario";
 import { selectV2SimulatorVariables } from "../client/src/data/amcV2SensitivityView";
@@ -126,6 +127,20 @@ describe("V2 integrated customer analysis", () => {
     expect(input.fifwmSource).toBe("unavailable");
     expect(Object.values(input.fifwm).every(f => f.score === null)).toBe(true);
     expect(JSON.stringify(evidence)).toBe(snapshot);
+  });
+  it("labels synthetic analysis as a demonstration and connects alternative offers to market pressure", () => {
+    const demo = v2DemoFixture("entrepreneurship", "en");
+    const input = buildV2Input(demo.state);
+    const a = buildV2Analysis(
+      demo.state,
+      buildProductApplicationV3(input),
+      demo.intelligence,
+      "demo"
+    );
+    expect(a.summary).toContain("synthetic evidence");
+    expect(a.summary).not.toContain("public evidence items");
+    expect(a.evidenceLinks[1].factor).toBe("marketPolicy");
+    expect(a.findings.find(f => f.id === "recovery")?.evidenceIds).toContain(1);
   });
   it("changes the full scenario reading while retaining the unresolved execution constraint and original snapshot", () => {
     const f = fixture(),

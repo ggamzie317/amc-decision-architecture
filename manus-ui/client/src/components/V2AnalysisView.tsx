@@ -7,6 +7,14 @@ import { v2t, type V2CopyKey } from "../data/v2Language";
 
 const cut = (s: string, max: number) =>
   s.length > max ? `${s.slice(0, max - 1)}…` : s;
+/** Diagram labels can wrap; complete evidence prose remains outside the diagram. */
+function diagramLines(value: string, ko: boolean): string[] {
+  const width = ko ? 16 : 26;
+  if (value.length <= width) return [value];
+  const breakAt = value.lastIndexOf(" ", width);
+  const split = breakAt >= width / 2 ? breakAt : width;
+  return [value.slice(0, split).trim(), cut(value.slice(split).trim(), width)];
+}
 export function V2DecisionMap({
   state,
   analysis,
@@ -139,7 +147,11 @@ export function V2DecisionMap({
               {n.title}
             </text>
             <text x={n.x + 18} y={n.y + 56} className="v2-map-node-value">
-              {n.value}
+              {diagramLines(n.value, ko).map((line, index) => (
+                <tspan key={index} x={n.x + 18} dy={index ? 16 : 0}>
+                  {line}
+                </tspan>
+              ))}
             </text>
           </g>
         ))}
@@ -224,6 +236,12 @@ export function V2Reasoning({
                   <>
                     <p>
                       {v2CustomerEvidenceText(analysis.language, block.fact)}
+                    </p>
+                    <p>
+                      {v2CustomerEvidenceText(
+                        analysis.language,
+                        block.whyItMatters
+                      )}
                     </p>
                     <p>{link.interpretation}</p>
                   </>

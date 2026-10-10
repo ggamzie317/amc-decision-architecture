@@ -392,7 +392,7 @@ export function buildV2Analysis(
           );
   const factorFor = (dimension: string): V2EvidenceLink["factor"] => {
     if (
-      /compensation|pricing|funding|market|competition|industry|보상|가격|재원|시장|경쟁|산업/i.test(
+      /compensation|pricing|funding|market|competition|alternatives|industry|보상|가격|재원|시장|경쟁|대안|산업/i.test(
         dimension
       )
     )
@@ -725,7 +725,21 @@ export function buildV2Analysis(
     state.optionA,
     state.optionB
   ).label;
-  const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${blocks.length ? say(` 공개 근거 ${blocks.length}건을 목표 요건과 현재 조건에 대조했습니다. 각 근거의 적용 범위와 다음 확인 항목은 아래에 연결했습니다.`, ` ${blocks.length} public evidence items are mapped to target requirements and current conditions below, with applicability limits and next checks.`) : say(" 외부 요건을 확인하기 전까지는 이 판단을 구조 초안으로 사용하세요.", " Treat this as a structural draft until external requirements are checked.")}`;
+  const evidenceSummary = live
+    ? say(
+        ` 공개 근거 ${blocks.length}건을 목표 요건과 현재 조건에 대조했습니다. 각 근거의 적용 범위와 다음 확인 항목은 아래에 연결했습니다.`,
+        ` ${blocks.length} public evidence items are mapped to target requirements and current conditions below, with applicability limits and next checks.`
+      )
+    : demo
+      ? say(
+          ` 합성 근거 ${blocks.length}건으로 분석 흐름을 보여 주는 예시입니다. 실제 외부 검색을 수행한 결과가 아닙니다.`,
+          ` ${blocks.length} synthetic evidence items illustrate the analysis flow. They are not results of live public research.`
+        )
+      : say(
+          " 외부 요건을 확인하기 전까지는 이 판단을 구조 초안으로 사용하세요.",
+          " Treat this as a structural draft until external requirements are checked."
+        );
+  const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary}`;
   return {
     language: state.language,
     topic: text(profile.topic),
