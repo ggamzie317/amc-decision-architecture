@@ -302,13 +302,12 @@ export function normalizeV2AgentResponse(
       const title = bounded(raw.title, 180) ?? new URL(url).hostname;
       const published =
         reliableDate(raw.published_date) ?? reliableDate(raw.published_at);
-      const updated = reliableDate(raw.last_updated);
-      const date = published ?? updated;
-      const dateKind = published ? "published" : updated ? "updated" : null;
+      // Search-result last_updated is not proof of the source's own revision date.
+      // Keep an uncertain date off the source card; generatedAt records our check.
       sources.set(url, {
         url,
         label: title,
-        ...(date && dateKind ? { date, dateKind } : {}),
+        ...(published ? { date: published, dateKind: "published" } : {}),
       });
     }
   }

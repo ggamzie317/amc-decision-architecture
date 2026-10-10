@@ -271,7 +271,7 @@ describe("V2 live External Intelligence boundary", () => {
     expect(dated.evidenceBlocks[0]).not.toHaveProperty("sourceDate");
   });
 
-  it("preserves publication and update metadata separately from the search timestamp", () => {
+  it("omits ambiguous provider update dates while keeping publication and search dates separate", () => {
     const result = normalizeV2AgentResponse(
       envelope(providerContent(), [
         { ...sourceRows[0], last_updated: "2026-10-02" },
@@ -283,10 +283,7 @@ describe("V2 live External Intelligence boundary", () => {
       sourceDate: "2026-08-10",
       sourceDateKind: "published",
     });
-    expect(result.evidenceBlocks[1]).toMatchObject({
-      sourceDate: "2026-10-03",
-      sourceDateKind: "updated",
-    });
+    expect(result.evidenceBlocks[1]).not.toHaveProperty("sourceDate");
     expect(result.generatedAt).not.toBe("2026-10-03");
     const f = v2DemoFixture("entrepreneurship", "en");
     const props = {
@@ -317,7 +314,7 @@ describe("V2 live External Intelligence boundary", () => {
     );
     for (const html of [dashboard, report]) {
       expect(html).toContain("Published: 2026-08-10");
-      expect(html).toContain("Updated: 2026-10-03");
+      expect(html).not.toContain("Updated: 2026-10-03");
       expect(html).toContain("Evidence checked on");
     }
     const ko = normalizeV2AgentResponse(
@@ -337,7 +334,7 @@ describe("V2 live External Intelligence boundary", () => {
       })
     );
     expect(koDashboard).toContain("발행일: 2026-08-10");
-    expect(koDashboard).toContain("갱신일: 2026-10-03");
+    expect(koDashboard).not.toContain("갱신일: 2026-10-03");
     expect(koDashboard).toContain("외부 근거 확인일");
   });
 
