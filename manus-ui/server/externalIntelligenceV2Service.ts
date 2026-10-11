@@ -8,6 +8,10 @@ import {
   allowedV2ExternalAreas,
   type V2EvidenceRequest,
 } from "../shared/externalIntelligenceV2Request.js";
+import {
+  v2EvidenceLimits as limit,
+  v2TextLength,
+} from "../shared/externalIntelligenceV2Contract.js";
 import { configuredAgentPreset } from "./externalSnapshotService.js";
 import {
   recordProviderObservation,
@@ -35,6 +39,36 @@ type Reason =
   | "provider_failure"
   | "source_unavailable"
   | "invalid_provider_response";
+
+export type V2ResponseDiagnostic = {
+  category:
+    | "upstream_http"
+    | "transport_error"
+    | "timeout"
+    | "terminal_status"
+    | "response_json"
+    | "response_shape"
+    | "assistant_output_missing"
+    | "citation_mismatch"
+    | "duplicate_citation"
+    | "invalid_field"
+    | "limit_exceeded"
+    | "no_evidence"
+    | "source_probe_failure";
+  field?: "status" | "output" | "content" | "evidenceBlocks" |
+    "dimension" | "headline" | "direction" | "fact" | "whyItMatters" |
+    "sourceUrl" | "opportunitySignals" | "frictionSignals" |
+    "uncertainties" | "implication";
+  terminalStatus?: "failed" | "cancelled" | "incomplete" | "other";
+  incompleteReason?: "max_output_tokens" | "other";
+  actualCount?: number;
+  actualLength?: number;
+};
+
+type NormalizedResponse = {
+  value: ExternalIntelligenceV2 | null;
+  diagnostic?: V2ResponseDiagnostic;
+};
 
 const defaults: Record<string, string[]> = {
   Entrepreneurship: [
@@ -180,6 +214,8 @@ export async function resolveV2ExternalIntelligence(
   const startedAt = Date.now();
   let timedOut = false;
   let sourceFailureCategory: SourceProbeFailure | undefined;
+  let responseDiagnostic: V2ResponseDiagnostic | undefined;
+  let upstreamHttpStatus: number | undefined;
   const unavailable = () =>
     unavailableIntelligence(request.caseType, request.language);
   const finish = async (result: ExternalIntelligenceV2, reasonCode: Reason) => {
@@ -198,6 +234,8 @@ export async function resolveV2ExternalIntelligence(
       timedOut,
       completedAt: new Date().toISOString(),
       ...(sourceFailureCategory ? { sourceFailureCategory } : {}),
+      ...(responseDiagnostic ? { responseDiagnostic } : {}),
+      ...(upstreamHttpStatus ? { upstreamHttpStatus } : {}),
     };
     let telemetryTimer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -254,40 +292,57 @@ export async function resolveV2ExternalIntelligence(
         }),
       }
     );
+    upstreamHttpStatus = response.status;
     if (response.ok) {
-      const envelope: unknown = await response.json().catch(() => null);
-      const live = normalizeV2AgentResponse(envelope, request, dimensions);
-      if (live?.status === "unavailable") {
-        reason = "source_unavailable";
-      } else if (live) {
-        const urls = Array.from(
-          new Set(live.evidenceBlocks.map(block => block.sourceUrl!))
-        );
-        const checks = await Promise.all(urls.map(async url => {
-          if (options.sourceAvailable) {
-            try { return { available: await options.sourceAvailable(url, controller.signal) }; }
-            catch { return { available: false, category: "network" as const }; }
-          }
-          return probePublicSource(url, controller.signal);
-        }));
-        // Reject the entire response: model-written summaries could depend on any card.
-        if (checks.every(check => check.available) && !controller.signal.aborted) {
-          result = live;
-          reason = "live";
-        } else {
-          sourceFailureCategory = checks.find(check => !check.available && "category" in check)?.category;
+      const parsed = await response.json().then(
+        (value: unknown) => ({ ok: true as const, value }),
+        () => ({ ok: false as const })
+      );
+      if (!parsed.ok) {
+        responseDiagnostic = { category: "response_json" };
+        reason = "invalid_provider_response";
+      } else {
+        const normalized = inspectV2AgentResponse(parsed.value, request, dimensions);
+        const live = normalized.value;
+        responseDiagnostic = normalized.diagnostic;
+        if (live?.status === "unavailable") {
           reason = "source_unavailable";
-        }
-      } else reason = "invalid_provider_response";
-    }
+        } else if (live) {
+          const urls = Array.from(
+            new Set(live.evidenceBlocks.map(block => block.sourceUrl!))
+          );
+          const checks = await Promise.all(urls.map(async url => {
+            if (options.sourceAvailable) {
+              try { return { available: await options.sourceAvailable(url, controller.signal) }; }
+              catch { return { available: false, category: "network" as const }; }
+            }
+            return probePublicSource(url, controller.signal);
+          }));
+          // Reject the entire response: model-written summaries could depend on any card.
+          if (checks.every(check => check.available) && !controller.signal.aborted) {
+            result = live;
+            reason = "live";
+          } else {
+            sourceFailureCategory = checks.find(check => !check.available && "category" in check)?.category;
+            responseDiagnostic = {
+              category: "source_probe_failure",
+              actualCount: checks.filter(check => !check.available).length,
+            };
+            reason = "source_unavailable";
+          }
+        } else reason = "invalid_provider_response";
+      }
+    } else responseDiagnostic = { category: "upstream_http" };
   } catch {
     /* Fail closed without exposing provider details. */
+    responseDiagnostic = { category: "transport_error" };
   } finally {
     clearTimeout(timer);
   }
   if (timedOut) {
     result = unavailable();
     reason = "provider_failure";
+    responseDiagnostic = { category: "timeout" };
   }
   return finish(result, reason);
 }
@@ -298,14 +353,39 @@ export function normalizeV2AgentResponse(
   request: V2EvidenceRequest,
   dimensions = v2EvidenceFocus(request)
 ): ExternalIntelligenceV2 | null {
-  if (
-    !record(envelope) ||
-    envelope.object !== "response" ||
-    envelope.status !== "completed" ||
-    envelope.error ||
-    !Array.isArray(envelope.output)
-  )
-    return null;
+  return inspectV2AgentResponse(envelope, request, dimensions).value;
+}
+
+/** Inspect transient provider data; expose only predefined labels and numeric sizes. */
+export function inspectV2AgentResponse(
+  envelope: unknown,
+  request: V2EvidenceRequest,
+  dimensions = v2EvidenceFocus(request)
+): NormalizedResponse {
+  const fail = (diagnostic: V2ResponseDiagnostic): NormalizedResponse => ({
+    value: null,
+    diagnostic,
+  });
+  if (!record(envelope) || envelope.object !== "response")
+    return fail({ category: "response_shape", field: "output" });
+  if (envelope.status !== "completed" || envelope.error) {
+    const status = envelope.status;
+    const terminalStatus = status === "failed" || status === "cancelled" ||
+      status === "incomplete" ? status : "other";
+    const reason = record(envelope.incomplete_details)
+      ? envelope.incomplete_details.reason
+      : null;
+    return fail({
+      category: "terminal_status",
+      field: "status",
+      terminalStatus,
+      ...(terminalStatus === "incomplete"
+        ? { incompleteReason: reason === "max_output_tokens" ? "max_output_tokens" as const : "other" as const }
+        : {}),
+    });
+  }
+  if (!Array.isArray(envelope.output))
+    return fail({ category: "response_shape", field: "output" });
   const sources = new Map<string, Source>();
   for (const item of envelope.output) {
     if (
@@ -348,54 +428,63 @@ export function normalizeV2AgentResponse(
         typeof part.text === "string"
     )
   )
-    return null;
+    return fail({ category: "assistant_output_missing", field: "content" });
   let raw: unknown;
   try {
     raw = JSON.parse(
       final.content.map(part => (part as { text: string }).text).join("")
     );
   } catch {
-    return null;
+    return fail({ category: "response_json", field: "content" });
   }
-  if (
-    !record(raw) ||
-    !Array.isArray(raw.evidenceBlocks) ||
-    raw.evidenceBlocks.length > 4
-  )
-    return null;
+  if (!record(raw) || !Array.isArray(raw.evidenceBlocks))
+    return fail({ category: "response_shape", field: "evidenceBlocks" });
+  if (raw.evidenceBlocks.length > limit.blocks)
+    return fail({ category: "limit_exceeded", field: "evidenceBlocks", actualCount: raw.evidenceBlocks.length });
   // A source-free provider result is an explicit unavailable outcome, not a
   // reason to display model-written dependent summaries as evidence.
   if (raw.evidenceBlocks.length === 0)
-    return unavailableIntelligence(request.caseType, request.language);
+    return {
+      value: unavailableIntelligence(request.caseType, request.language),
+      diagnostic: { category: "no_evidence", field: "evidenceBlocks", actualCount: 0 },
+    };
   const evidenceBlocks: ExternalIntelligenceV2["evidenceBlocks"] = [];
   const citedUrls = new Set<string>();
   for (const block of raw.evidenceBlocks) {
-    if (!record(block)) return null;
-    const dimension = bounded(block.dimension, 80);
-    const headline = bounded(block.headline, 180);
+    if (!record(block))
+      return fail({ category: "invalid_field", field: "evidenceBlocks" });
+    for (const [field, max] of [
+      ["dimension", limit.dimension],
+      ["headline", limit.headline],
+      ["fact", limit.fact],
+      ["whyItMatters", limit.whyItMatters],
+      ["sourceUrl", limit.sourceUrl],
+    ] as const) {
+      const problem = textProblem(block[field], max, field);
+      if (problem) return fail(problem);
+    }
+    const dimension = bounded(block.dimension, limit.dimension)!;
+    const headline = bounded(block.headline, limit.headline)!;
     const direction = ["supportive", "caution", "mixed"].includes(
       String(block.direction)
     )
       ? (block.direction as "supportive" | "caution" | "mixed")
       : null;
-    const fact = bounded(block.fact, 600);
-    const whyItMatters = bounded(block.whyItMatters, 500);
+    const fact = bounded(block.fact, limit.fact)!;
+    const whyItMatters = bounded(block.whyItMatters, limit.whyItMatters)!;
     const url =
       typeof block.sourceUrl === "string"
         ? safeSourceUrl(block.sourceUrl)
         : null;
     const source = url ? sources.get(url) : null;
-    if (
-      !dimension ||
-      !dimensions.includes(dimension) ||
-      !headline ||
-      !direction ||
-      !fact ||
-      !whyItMatters ||
-      !source ||
-      citedUrls.has(source.url)
-    )
-      return null;
+    if (!dimensions.includes(dimension))
+      return fail({ category: "invalid_field", field: "dimension" });
+    if (!direction)
+      return fail({ category: "invalid_field", field: "direction" });
+    if (!source)
+      return fail({ category: "citation_mismatch", field: "sourceUrl", actualCount: sources.size });
+    if (citedUrls.has(source.url))
+      return fail({ category: "duplicate_citation", field: "sourceUrl" });
     citedUrls.add(source.url);
     evidenceBlocks.push({
       dimension,
@@ -411,13 +500,21 @@ export function normalizeV2AgentResponse(
       provenance: "EXTERNAL_EVIDENCE",
     });
   }
-  const opportunitySignals = textArray(raw.opportunitySignals, 2);
-  const frictionSignals = textArray(raw.frictionSignals, 2);
-  const uncertainties = textArray(raw.uncertainties, 3, 1);
-  const implication = bounded(raw.implication, 600);
-  if (!opportunitySignals || !frictionSignals || !uncertainties || !implication)
-    return null;
-  return {
+  for (const [field, max, min] of [
+    ["opportunitySignals", limit.opportunitySignals, 0],
+    ["frictionSignals", limit.frictionSignals, 0],
+    ["uncertainties", limit.uncertainties, 1],
+  ] as const) {
+    const problem = arrayProblem(raw[field], max, min, field);
+    if (problem) return fail(problem);
+  }
+  const implicationProblem = textProblem(raw.implication, limit.implication, "implication");
+  if (implicationProblem) return fail(implicationProblem);
+  const opportunitySignals = textArray(raw.opportunitySignals, limit.opportunitySignals)!;
+  const frictionSignals = textArray(raw.frictionSignals, limit.frictionSignals)!;
+  const uncertainties = textArray(raw.uncertainties, limit.uncertainties, 1)!;
+  const implication = bounded(raw.implication, limit.implication)!;
+  return { value: {
     status: "live",
     generatedAt: new Date().toISOString(),
     caseType: request.caseType,
@@ -427,7 +524,37 @@ export function normalizeV2AgentResponse(
     frictionSignals,
     uncertainties,
     implication,
-  };
+  } };
+}
+
+function textProblem(
+  raw: unknown,
+  max: number,
+  field: NonNullable<V2ResponseDiagnostic["field"]>
+): V2ResponseDiagnostic | null {
+  if (typeof raw !== "string" || !raw.trim())
+    return { category: "invalid_field", field };
+  const actualLength = v2TextLength(raw);
+  return actualLength > max
+    ? { category: "limit_exceeded", field, actualLength }
+    : null;
+}
+
+function arrayProblem(
+  raw: unknown,
+  max: number,
+  min: number,
+  field: "opportunitySignals" | "frictionSignals" | "uncertainties"
+): V2ResponseDiagnostic | null {
+  if (!Array.isArray(raw) || raw.length < min)
+    return { category: "invalid_field", field };
+  if (raw.length > max)
+    return { category: "limit_exceeded", field, actualCount: raw.length };
+  for (const item of raw) {
+    const problem = textProblem(item, limit.signal, field);
+    if (problem) return problem;
+  }
+  return null;
 }
 
 function safeSourceUrl(raw: string): string | null {
@@ -460,11 +587,11 @@ function reliableDate(raw: unknown): string | null {
 function bounded(raw: unknown, max: number): string | null {
   if (typeof raw !== "string") return null;
   const value = raw.trim();
-  return value && value.length <= max ? value : null;
+  return value && v2TextLength(value) <= max ? value : null;
 }
 function textArray(raw: unknown, max: number, min = 0): string[] | null {
   if (!Array.isArray(raw) || raw.length < min || raw.length > max) return null;
-  const rows = raw.map(item => bounded(item, 240));
+  const rows = raw.map(item => bounded(item, limit.signal));
   return rows.every(Boolean) ? (rows as string[]) : null;
 }
 function record(raw: unknown): raw is Record<string, any> {

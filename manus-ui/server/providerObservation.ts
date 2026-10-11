@@ -1,4 +1,5 @@
 import { getFounderOpsStore } from "./founderOpsStore.js";
+import type { V2ResponseDiagnostic } from "./externalIntelligenceV2Service.js";
 
 export type ProviderObservation = {
   provider: "perplexity";
@@ -10,6 +11,9 @@ export type ProviderObservation = {
   timedOut: boolean;
   completedAt: string;
   sourceFailureCategory?: import("./publicSourceAvailability.js").SourceProbeFailure;
+  /** Static failure taxonomy and numeric metadata only; no response text or URLs. */
+  responseDiagnostic?: V2ResponseDiagnostic;
+  upstreamHttpStatus?: number;
 };
 
 export async function recordProviderObservation(
