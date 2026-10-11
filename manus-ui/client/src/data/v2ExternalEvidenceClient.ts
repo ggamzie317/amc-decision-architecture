@@ -8,6 +8,10 @@ import {
   parseV2EvidenceRequest,
   type V2EvidenceRequest,
 } from "../../../shared/externalIntelligenceV2Request";
+import {
+  v2BoundedText,
+  v2EvidenceLimits as limit,
+} from "../../../shared/externalIntelligenceV2Contract";
 
 /** Explicit click only. No decision prose, internal bands, notes, or simulator state. */
 export function buildV2EvidenceRequest(
@@ -71,7 +75,7 @@ export function acceptV2Evidence(
     Number.isNaN(Date.parse(value.generatedAt)) ||
     !Array.isArray(value.evidenceBlocks) ||
     value.evidenceBlocks.length < 1 ||
-    value.evidenceBlocks.length > 4
+    value.evidenceBlocks.length > limit.blocks
   )
     return null;
   const blocks = value.evidenceBlocks;
@@ -86,12 +90,12 @@ export function acceptV2Evidence(
       return (
         item.provenance === "EXTERNAL_EVIDENCE" &&
         ["supportive", "caution", "mixed"].includes(String(item.direction)) &&
-        ["dimension", "headline", "fact", "whyItMatters", "sourceLabel"].every(
-          key =>
-            typeof item[key] === "string" &&
-            (item[key] as string).trim().length > 0
-        ) &&
-        typeof item.sourceUrl === "string" &&
+        v2BoundedText(item.dimension, limit.dimension) &&
+        v2BoundedText(item.headline, limit.headline) &&
+        v2BoundedText(item.fact, limit.fact) &&
+        v2BoundedText(item.whyItMatters, limit.whyItMatters) &&
+        v2BoundedText(item.sourceLabel, limit.headline) &&
+        v2BoundedText(item.sourceUrl, limit.sourceUrl) &&
         /^https:\/\//.test(item.sourceUrl) &&
         ((item.sourceDate === undefined && item.sourceDateKind === undefined) ||
           (typeof item.sourceDate === "string" &&
@@ -107,7 +111,17 @@ export function acceptV2Evidence(
     !Array.isArray(value.opportunitySignals) ||
     !Array.isArray(value.frictionSignals) ||
     !Array.isArray(value.uncertainties) ||
-    typeof value.implication !== "string"
+    !v2BoundedText(value.implication, limit.implication) ||
+    ![
+      [value.opportunitySignals, limit.opportunitySignals, 0],
+      [value.frictionSignals, limit.frictionSignals, 0],
+      [value.uncertainties, limit.uncertainties, 1],
+    ].every(([rows, max, min]) =>
+      Array.isArray(rows) &&
+      rows.length >= (min as number) &&
+      rows.length <= (max as number) &&
+      rows.every(row => v2BoundedText(row, limit.signal))
+    )
   )
     return null;
   return value as ExternalIntelligenceV2;

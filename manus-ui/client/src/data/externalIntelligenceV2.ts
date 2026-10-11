@@ -189,7 +189,7 @@ export function customerEvidence(
   if (
     intelligence.status === "live" &&
     !demoMode &&
-    intelligence.evidenceBlocks.length >= 2 &&
+    intelligence.evidenceBlocks.length >= 1 &&
     intelligence.evidenceBlocks.length <= 4 &&
     intelligence.evidenceBlocks.every(
       block =>

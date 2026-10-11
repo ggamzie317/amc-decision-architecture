@@ -63,6 +63,7 @@ export type V2ResponseDiagnostic = {
   incompleteReason?: "max_output_tokens" | "other";
   actualCount?: number;
   actualLength?: number;
+  eligibleSearchUrlCount?: number;
 };
 
 type NormalizedResponse = {
@@ -114,7 +115,7 @@ function evidenceSchema(dimensions: string[]) {
       evidenceBlocks: {
         type: "array",
         minItems: 0,
-        maxItems: 4,
+        maxItems: limit.blocks,
         items: {
           type: "object",
           additionalProperties: false,
@@ -127,35 +128,35 @@ function evidenceSchema(dimensions: string[]) {
             "sourceUrl",
           ],
           properties: {
-            dimension: { type: "string", enum: dimensions },
-            headline: { type: "string", minLength: 1 },
+            dimension: { type: "string", enum: dimensions, maxLength: limit.dimension },
+            headline: { type: "string", minLength: 1, maxLength: limit.headline },
             direction: {
               type: "string",
               enum: ["supportive", "caution", "mixed"],
             },
-            fact: { type: "string", minLength: 1 },
-            whyItMatters: { type: "string", minLength: 1 },
-            sourceUrl: { type: "string", minLength: 1 },
+            fact: { type: "string", minLength: 1, maxLength: limit.fact },
+            whyItMatters: { type: "string", minLength: 1, maxLength: limit.whyItMatters },
+            sourceUrl: { type: "string", minLength: 1, maxLength: limit.sourceUrl },
           },
         },
       },
       opportunitySignals: {
         type: "array",
-        maxItems: 2,
-        items: { type: "string" },
+        maxItems: limit.opportunitySignals,
+        items: { type: "string", minLength: 1, maxLength: limit.signal },
       },
       frictionSignals: {
         type: "array",
-        maxItems: 2,
-        items: { type: "string" },
+        maxItems: limit.frictionSignals,
+        items: { type: "string", minLength: 1, maxLength: limit.signal },
       },
       uncertainties: {
         type: "array",
         minItems: 1,
-        maxItems: 3,
-        items: { type: "string" },
+        maxItems: limit.uncertainties,
+        items: { type: "string", minLength: 1, maxLength: limit.signal },
       },
-      implication: { type: "string", minLength: 1 },
+      implication: { type: "string", minLength: 1, maxLength: limit.implication },
     },
   } as const;
 }
@@ -183,6 +184,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         "Do not claim public market evidence validates this person's employability, this product's paid demand, or private internal conditions.",
         "No final recommendation, prediction, score, or legal, tax, medical, immigration, or financial advice.",
         "Return only the required JSON schema, in the requested language. Keep claims concise and non-prescriptive.",
+        "Keep each headline within 180 Unicode characters, each fact within 600, each applicability explanation within 500, each signal and uncertainty within 240, and the implication within 600. Do not truncate a claim or omit a qualification to fit a limit; use a narrower fully supported claim or return no evidence.",
       ].join(" "),
     },
     {
@@ -285,7 +287,6 @@ export async function resolveV2ExternalIntelligence(
             type: "json_schema",
             json_schema: {
               name: "AmcV2ExternalEvidence",
-              strict: true,
               schema: evidenceSchema(dimensions),
             },
           },
@@ -398,7 +399,8 @@ export function inspectV2AgentResponse(
       if (!record(raw) || typeof raw.url !== "string") continue;
       const url = safeSourceUrl(raw.url);
       if (!url) continue;
-      const title = bounded(raw.title, 180) ?? new URL(url).hostname;
+      const title = bounded(raw.title, limit.headline) ??
+        bounded(new URL(url).hostname, limit.headline) ?? "Public source";
       const published =
         reliableDate(raw.published_date) ?? reliableDate(raw.published_at);
       // Search-result last_updated is not proof of the source's own revision date.
@@ -446,7 +448,7 @@ export function inspectV2AgentResponse(
   if (raw.evidenceBlocks.length === 0)
     return {
       value: unavailableIntelligence(request.caseType, request.language),
-      diagnostic: { category: "no_evidence", field: "evidenceBlocks", actualCount: 0 },
+      diagnostic: { category: "no_evidence", field: "evidenceBlocks", actualCount: 0, eligibleSearchUrlCount: sources.size },
     };
   const evidenceBlocks: ExternalIntelligenceV2["evidenceBlocks"] = [];
   const citedUrls = new Set<string>();
