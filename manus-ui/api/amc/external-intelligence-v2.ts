@@ -1,8 +1,6 @@
 import { unavailableIntelligence } from "../../client/src/data/externalIntelligenceV2.js";
 import type { V2EvidenceLanguage } from "../../shared/externalIntelligenceV2Request.js";
 import { caseTypes } from "../../shared/interactivePrivacy.js";
-import * as serviceModule from "../../server/externalIntelligenceV2Service.js";
-import * as requestParser from "../../shared/externalIntelligenceV2Request.js";
 
 type VercelRequest = { method?: string; body?: unknown };
 type VercelResponse = {
@@ -14,9 +12,10 @@ type VercelResponse = {
 type Service = typeof import("../../server/externalIntelligenceV2Service.js");
 type Parser = typeof import("../../shared/externalIntelligenceV2Request.js");
 type Load = () => Promise<{ service: Service; parser: Parser }>;
-// Keep the default modules in the serverless entrypoint's static dependency graph.
-// Vercel's compiled function did not include the dynamically imported .js targets.
-const load: Load = async () => ({ service: serviceModule, parser: requestParser });
+const load: Load = async () => ({
+  service: await import("../../server/externalIntelligenceV2Service.js"),
+  parser: await import("../../shared/externalIntelligenceV2Request.js"),
+});
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   return handleV2ExternalIntelligence(req, res);

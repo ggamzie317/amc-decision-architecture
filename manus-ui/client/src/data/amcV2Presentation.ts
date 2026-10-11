@@ -1,5 +1,5 @@
 import type { V2CaseType } from "./amcV2Model";
-import { v2t, type V2Language } from "./v2Language";
+import { v2t, type V2Language } from "./v2Language.js";
 
 type Bilingual = readonly [string, string];
 type MissingPoint = { point: Bilingual; why: Bilingual };
