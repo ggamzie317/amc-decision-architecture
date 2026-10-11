@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
+import type { EvidenceComparisons } from "../data/v2EvidenceComparison";
 import {
   unavailableIntelligence,
   type ExternalIntelligenceV2,
@@ -57,6 +58,7 @@ export default function V2Simulator({
   overrides,
   intelligence = unavailableIntelligence(state.caseType, state.language),
   selfChecks,
+  comparisons,
   evidencePhase = intelligence.status,
   onScenarioChange,
   onEvent,
@@ -69,6 +71,7 @@ export default function V2Simulator({
   overrides: ScenarioOverrides;
   intelligence?: ExternalIntelligenceV2;
   selfChecks?: SelfChecks;
+  comparisons?: EvidenceComparisons;
   evidencePhase?: V2EvidencePhase;
   onScenarioChange: (overrides: ScenarioOverrides) => void;
   onEvent?: (
@@ -98,7 +101,8 @@ export default function V2Simulator({
     scenario,
     intelligence,
     evidencePhase,
-    selfChecks
+    selfChecks,
+    comparisons,
   );
   const setBand = (variable: ScenarioVariable, band: string) => {
     if (!visibleVariables.includes(variable)) return;

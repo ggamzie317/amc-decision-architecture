@@ -24,6 +24,7 @@ import { caseTypes } from "../../../shared/interactivePrivacy";
 import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
 import { v2CustomerNextTest, v2MissingPoint } from "./amcV2Presentation";
 import { buildV2CanonicalFifwm, type CanonicalFifwmAssessment } from "./v2CanonicalFifwm";
+import { v2ExternalContext } from "./v2ExternalContext";
 export const V2_SCHEMA = "AMC-MODULES-V2-8";
 export const V2_EXPERIENCE = "interactive-v2";
 export type V2CaseType = (typeof caseTypes)[number];
@@ -339,17 +340,6 @@ export function buildV2Input(
   fifwmAssessment?: CanonicalFifwmAssessment,
 ): ProductApplicationBuildInput {
   const language = s.language;
-  // Public facts inform the reasoning below; they cannot establish this customer's
-  // employability, paid demand or recovery capacity. Personal validation stays unknown.
-  const personalValidation = {
-    status: "unverified" as const,
-    confidence: "low" as const,
-    generatedAtLabel: "",
-    externalSignals: [],
-    sourceNotes: [],
-    uncertaintyNotes: [],
-    implication: "",
-  };
   const selections = {
     17: s.bands.internalReadiness,
     19: s.bands.financialRoom,
@@ -359,7 +349,7 @@ export function buildV2Input(
     25: s.bands.constraintLoad,
   };
   const coreSignals = buildCurrentCaseStructuralSignals({
-    externalSnapshot: personalValidation,
+    externalSnapshot: v2ExternalContext(intelligence?.caseType === s.caseType ? intelligence : undefined),
     selections,
   });
   const missing = v2MissingPoint(s.caseType, language);

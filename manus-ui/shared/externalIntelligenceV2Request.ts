@@ -46,6 +46,15 @@ export function allowedV2ExternalAreas(
       : careerAreas;
 }
 
+/** Same existing defaults in server and customer coverage display. */
+export function v2EvidenceAreas(request: Pick<V2EvidenceRequest, "caseType" | "externalAreas">): readonly string[] {
+  if (request.externalAreas.length) return request.externalAreas;
+  if (request.caseType === "Entrepreneurship") return ["customerDemand", "competition", "pricing", "distribution"];
+  if (request.caseType === "MBA / EMBA / PhD Decision") return ["programOutcomes", "employmentRelevance", "funding"];
+  if (request.caseType === "Industry Transition") return ["hiringDemand", "roleDemand", "requiredSkills", "compensation"];
+  return allowedV2ExternalAreas(request.caseType).slice(0, 3);
+}
+
 /** Exact, bounded public-search context. Unknown fields cannot be forwarded. */
 export function parseV2EvidenceRequest(raw: unknown): V2EvidenceRequest | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;

@@ -43,6 +43,7 @@ import V2Dashboard from "../components/V2Dashboard";
 import V2Simulator from "../components/V2Simulator";
 import V2Report from "../components/V2Report";
 import { v2PublicSearchTarget } from "../data/amcV2Analysis";
+import type { EvidenceComparisons } from "../data/v2EvidenceComparison";
 import {
   prepareV2PrintTitle,
   v2ReportFileName,
@@ -91,11 +92,11 @@ export default function AmcInteractiveV2() {
   const [phase, setPhase] = useState<Phase>(demoMode ? "dashboard" : "setup");
   const [step, setStep] = useState(0);
   const [casePinned, setCasePinned] = useState(false);
-  const [caseOpen, setCaseOpen] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [showBandError, setShowBandError] = useState(false);
   const [showSelfCheckError, setShowSelfCheckError] = useState(false);
   const [selfChecks, setSelfChecks] = useState(initialSelfChecks);
+  const [evidenceComparisons, setEvidenceComparisons] = useState<EvidenceComparisons>({});
   const [fifwmAssessment, setFifwmAssessment] = useState(initialCanonicalFifwmAssessment);
   const [scenarioOverrides, setScenarioOverrides] = useState<ScenarioOverrides>(
     {}
@@ -192,6 +193,7 @@ export default function AmcInteractiveV2() {
   }, [language, kind, demoMode]);
   useEffect(() => {
     setSelfChecks(initialSelfChecks());
+    setEvidenceComparisons({});
     setFifwmAssessment(initialCanonicalFifwmAssessment());
   }, [state.caseType]);
   useEffect(() => {
@@ -611,7 +613,7 @@ export default function AmcInteractiveV2() {
     const structuralOutputJson = {
       ...v2Identity,
       completedIntakeQuestionCount: 8,
-      baselineBands: { ...state.bands, externalValidation: "unknown" },
+      baselineBands: baselineBands(input),
       currentStructuralPosture: { label: core.currentStructuralPosture.label },
       safetyMargin: { band: core.safetyMargin.band },
       changingPlays: core.changingPlays.map(p => ({ family: p.family })),
@@ -680,11 +682,25 @@ export default function AmcInteractiveV2() {
       ...previous,
       [request.language]: result,
     }));
+    const updatedInput = buildV2Input({ ...state, language: request.language }, result, fifwmAssessment);
+    const updatedCore = buildProductApplicationV3(updatedInput);
     track(
       result.status === "live"
         ? "external_evidence_live"
         : "external_evidence_fallback",
-      { externalEvidenceMode: result.status === "live" ? "live" : "fallback" },
+      {
+        externalEvidenceMode: result.status === "live" ? "live" : "fallback",
+        structuralOutputJson: {
+          ...v2Identity,
+          completedIntakeQuestionCount: 8,
+          baselineBands: baselineBands(updatedInput),
+          currentStructuralPosture: { label: updatedCore.currentStructuralPosture.label },
+          safetyMargin: { band: updatedCore.safetyMargin.band },
+          changingPlays: updatedCore.changingPlays.map(play => ({ family: play.family })),
+          decisionSwitchCount: updatedCore.decisionSwitches.length,
+          externalEvidenceStatus: result.status,
+        },
+      },
       { externalEvidenceMode: result.status === "live" ? "live" : "unverified" }
     );
     evidencePending.current = false;
@@ -815,18 +831,15 @@ export default function AmcInteractiveV2() {
                 {t("caseConfirm")}{" "}
                 <b>{v2CaseLabel(language, state.caseType)}</b>
               </span>
-              <button type="button" onClick={() => setCaseOpen(!caseOpen)}>
-                {t("change")}
-              </button>
             </div>
-            {caseOpen && (
+            <label className="v2-case-selector">
+              <span>{language === "ko" ? "검토할 결정에 맞는 유형을 선택하세요" : "Choose the type that matches your decision"}</span>
               <select
                 aria-label={t("caseConfirm")}
                 value={state.caseType}
                 onChange={e => {
                   update({ caseType: e.target.value as V2CaseType, publicSearchTarget: undefined });
                   setCasePinned(true);
-                  setCaseOpen(false);
                 }}
               >
                 {caseTypes.map(c => (
@@ -835,7 +848,7 @@ export default function AmcInteractiveV2() {
                   </option>
                 ))}
               </select>
-            )}
+            </label>
             <p className="v2-privacy">{t("privacy")}</p>
             <label className="v2-consent">
               <input
@@ -863,6 +876,7 @@ export default function AmcInteractiveV2() {
                 !state.serviceConsent
               }
               onClick={() => {
+                setCasePinned(true);
                 track(
                   "preview_started",
                   {
@@ -1017,6 +1031,8 @@ export default function AmcInteractiveV2() {
           <V2Dashboard
             state={state}
             selfChecks={selfChecks}
+            comparisons={evidenceComparisons}
+            onComparisonChange={(key, answer) => setEvidenceComparisons(current => ({ ...current, [key]: answer }))}
             core={core}
             intelligence={intelligence}
             evidencePhase={evidencePhase}
@@ -1032,6 +1048,7 @@ export default function AmcInteractiveV2() {
           <V2Simulator
             state={state}
             selfChecks={selfChecks}
+            comparisons={evidenceComparisons}
             input={input}
             baseline={core}
             sensitivity={sensitivity}
@@ -1054,6 +1071,7 @@ export default function AmcInteractiveV2() {
         <V2Report
           state={state}
           selfChecks={selfChecks}
+          comparisons={evidenceComparisons}
           input={input}
           core={core}
           sensitivity={sensitivity}

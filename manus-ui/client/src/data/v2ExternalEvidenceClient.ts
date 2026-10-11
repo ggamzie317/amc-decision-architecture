@@ -1,4 +1,5 @@
 import type { V2State } from "./amcV2Model";
+import { v2t, type V2CopyKey } from "./v2Language";
 import { v2PublicSearchTarget } from "./amcV2Analysis";
 import {
   unavailableIntelligence,
@@ -6,6 +7,7 @@ import {
 } from "./externalIntelligenceV2";
 import {
   parseV2EvidenceRequest,
+  v2EvidenceAreas,
   type V2EvidenceRequest,
 } from "../../../shared/externalIntelligenceV2Request";
 import {
@@ -84,6 +86,9 @@ export function acceptV2Evidence(
   const blocks = value.evidenceBlocks;
   if (value.sourceCoverage !== undefined && !["complete", "partial"].includes(String(value.sourceCoverage)))
     return null;
+  if (value.contextConfidence !== undefined &&
+      (value.sourceCoverage !== "complete" || !["low", "medium", "high"].includes(String(value.contextConfidence))))
+    return null;
   const citedUrls = new Set<string>();
   if (
     !blocks.every(block => {
@@ -94,6 +99,8 @@ export function acceptV2Evidence(
       citedUrls.add(item.sourceUrl);
       return (
         item.provenance === "EXTERNAL_EVIDENCE" &&
+        (item.area === undefined || (v2EvidenceAreas(request).includes(String(item.area)) &&
+          v2t("en", item.area as V2CopyKey) === item.dimension)) &&
         ["supportive", "caution", "mixed"].includes(String(item.direction)) &&
         v2BoundedText(item.dimension, limit.dimension) &&
         v2BoundedText(item.headline, limit.headline) &&

@@ -41,6 +41,31 @@ const envelope = (value: unknown = content()) => ({
 const diagnostic = (raw: unknown) => inspectV2AgentResponse(raw, request).diagnostic;
 
 describe("V2 provider diagnostics without retaining provider text", () => {
+  it("preserves explicit context confidence on fully accessible sources and removes it on partial coverage", async () => {
+    const value = { ...content(), contextConfidence: "high" };
+    const result = await resolveV2ExternalIntelligence(request, {
+      apiKey: "synthetic-key", fetchImpl: (async () => Response.json(envelope(value))) as typeof fetch,
+      sourceAvailable: async () => true, observe: () => {},
+    });
+    expect(result).toMatchObject({ status: "live", sourceCoverage: "complete", contextConfidence: "high" });
+    expect(result.evidenceBlocks[0].area).toBe("customerDemand");
+    expect(acceptV2Evidence(result, request)?.contextConfidence).toBe("high");
+    const mixedValue = { ...value, evidenceBlocks: [...value.evidenceBlocks, {
+      ...value.evidenceBlocks[0], sourceUrl: "https://example.org/blocked", headline: "Other synthetic source",
+    }] };
+    const mixedEnvelope = envelope(mixedValue);
+    (mixedEnvelope.output[0] as any).results.push({ url: "https://example.org/blocked", title: "Other source" });
+    const partial = await resolveV2ExternalIntelligence(request, {
+      apiKey: "synthetic-key", fetchImpl: (async () => Response.json(mixedEnvelope)) as typeof fetch,
+      sourceAvailable: async url => url === sourceUrl, observe: () => {},
+    });
+    expect(partial).toMatchObject({ status: "live", sourceCoverage: "partial" });
+    expect(partial.evidenceBlocks).toHaveLength(1);
+    expect(partial.contextConfidence).toBeUndefined();
+    expect(acceptV2Evidence(partial, request)?.contextConfidence).toBeUndefined();
+    expect(diagnostic(envelope({ ...value, contextConfidence: "unsupported" })))
+      .toEqual({ category: "invalid_field", field: "contextConfidence" });
+  });
   it("accepts one source and the exact Unicode code-point boundary", () => {
     const value = content();
     value.evidenceBlocks[0].headline = "a".repeat(limit.headline - 1) + "😀";

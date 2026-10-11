@@ -1,4 +1,72 @@
 /* Shared customer analysis: restrained diagrams, explicit evidence, readable decisions. */
+.v2-case-selector { display: block; font-size: 12px; color: #4c676b; margin: 12px 0 20px; }
+.v2-case-selector > span { display: block; margin-bottom: 8px; }
+.v2-case-selector select { width: 100%; padding: 12px; border: 1px solid #bbcfc5; border-radius: 4px; background: white; color: #264a4e; font: inherit; }
+.v2-condition-comparison table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
+}
+.v2-comparison-caption {
+  text-align: left;
+  color: #536d73;
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 8px 0 14px;
+  margin: 0;
+}
+.v2-condition-comparison th,
+.v2-condition-comparison td {
+  padding: 18px;
+  border: 1px solid var(--line);
+  vertical-align: top;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.v2-condition-comparison th { font-size: 12px; color: #244c50; background: #eaf1ed; }
+.v2-condition-comparison td { font-size: 12px; line-height: 1.8; }
+.v2-condition-comparison td p { margin: 8px 0; white-space: pre-wrap; }
+.v2-condition-comparison td strong { font-size: 11px; }
+.v2-condition-comparison a { color: #17655c; font-size: 11px; }
+.v2-condition-comparison small { color: #5a6f72; font-size: 10px; }
+.v2-comparison-reference { font-size: 10px; color: #3b7166; font-weight: 700; }
+.v2-comparison-status { display: block; color: #274b4d; font-size: 11px; font-weight: 700; margin-top: 12px; }
+.v2-condition-comparison fieldset { border: 0; border-top: 1px solid var(--line); padding: 12px 0 0; margin: 14px 0 0; min-width: 0; }
+.v2-condition-comparison legend,
+.v2-condition-comparison label > span { font-size: 10px; color: #536d73; }
+.v2-comparison-options { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; }
+.v2-comparison-options button { padding: 7px 9px; border: 1px solid #b9cbc2; background: #fff; color: #294a4a; font-size: 10px; line-height: 1.5; border-radius: 3px; }
+.v2-comparison-options button[aria-pressed="true"] { background: #194b48; color: white; border-color: #194b48; }
+.v2-comparison-options button:focus-visible,
+.v2-condition-comparison textarea:focus-visible { outline: 2px solid #267568; outline-offset: 2px; }
+.v2-condition-comparison textarea { display: block; width: 100%; box-sizing: border-box; resize: vertical; border: 1px solid #b9cbc2; border-radius: 3px; padding: 9px; margin-top: 6px; font: inherit; font-size: 12px; background: #fff; color: #294a4a; }
+.v2-research-coverage { display: flex; flex-wrap: wrap; list-style: none; padding: 0; gap: 7px; margin: 16px 0; }
+.v2-research-coverage li { display: flex; flex-wrap: wrap; gap: 5px 8px; border: 1px solid #cad6cd; padding: 7px 10px; font-size: 10px; background: #f4f7f3; color: #51666a; }
+.v2-research-coverage li[data-covered="true"] { background: #eaf2ed; color: #225b50; }
+.v2-analysis-report .v2-condition-comparison th,
+.v2-analysis-report .v2-condition-comparison td { padding: 11px; font-size: 10px; line-height: 1.65; }
+.v2-analysis-report .v2-condition-comparison td strong,
+.v2-analysis-report .v2-condition-comparison a { font-size: 9px; }
+.v2-analysis-report .v2-comparison-caption { padding-bottom: 8px; font-size: 9px; }
+@media screen and (max-width: 760px) {
+  .v2-condition-comparison thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .v2-condition-comparison table,
+  .v2-condition-comparison tbody,
+  .v2-condition-comparison tr,
+  .v2-condition-comparison td { display: block; width: 100%; box-sizing: border-box; }
+  .v2-condition-comparison tr { margin-bottom: 15px; }
+  .v2-condition-comparison td + td { border-top: 0; }
+  .v2-condition-comparison td::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 700; color: #386662; padding-bottom: 9px; }
+}
+@media print {
+  .v2-condition-comparison table { display: table; break-inside: auto; page-break-inside: auto; }
+  .v2-condition-comparison thead { display: table-header-group; position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .v2-condition-comparison tbody { display: table-row-group; break-inside: auto; page-break-inside: auto; }
+  .v2-condition-comparison tr { display: table-row; break-inside: avoid; page-break-inside: avoid; }
+  .v2-condition-comparison td { display: table-cell; width: auto; }
+  .v2-condition-comparison td::before { content: none; }
+}
 .v2-analysis-dashboard,
 .v2-lab,
 .v2-analysis-report {
@@ -1168,19 +1236,38 @@
 }
 @media print {
   .v2-analysis-report .v2-paper-page > footer {
-    margin-top: auto;
+    display: none;
   }
+  .v2-analysis-report .v2-paper-page { display: block; min-height: 0; }
+  .v2-analysis-report .v2-paper-body { flex: none; }
+  .v2-analysis-report .v2-paper-priorities { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .v2-analysis-report .v2-paper-priorities article { padding: 12px; }
+  .v2-analysis-report .v2-paper-priorities h3 { font-size: 13px; line-height: 1.55; }
+  .v2-analysis-report .v2-paper-priorities p { font-size: 10px; line-height: 1.65; }
+  .v2-analysis-report .v2-reasoning { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .v2-analysis-report .v2-reasoning article { padding: 12px; }
+  .v2-analysis-report .v2-condition-comparison tr { margin: 0; }
+  .v2-analysis-report .v2-factor-map article { padding: 7px 0; }
+  .v2-analysis-report .v2-factor-map h3 { margin: 2px 0 4px; }
+  .v2-analysis-report .v2-changing-analysis article { padding: 10px 12px; }
+  .v2-analysis-report .v2-changing-analysis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .v2-analysis-report .v2-changing-analysis h3 { font-size: 13px; margin: 4px 0 6px; }
+  .v2-analysis-report .v2-changing-analysis p { margin: 5px 0; line-height: 1.55; }
+  .v2-analysis-report .v2-changing-analysis dl { grid-template-columns: 1fr; margin: 6px 0 0; gap: 4px; }
+  .v2-analysis-report .v2-changing-analysis dl > div { padding: 4px 0; }
+  .v2-analysis-report .v2-changing-analysis dd { margin: 3px 0 0; }
+  .v2-analysis-report .v2-experiment-now { padding: 12px; }
+  .v2-analysis-report .v2-experiment-conditions { margin: 8px 0; }
+  .v2-analysis-report .v2-experiment-conditions article { padding: 10px; }
 }
 @page amc-v2-decision-brief {
   size: A4;
   margin: 12mm;
+  @bottom-right { content: counter(page) " / " counter(pages); font: 8pt sans-serif; color: #536d73; }
 }
 @media print {
   :root:has(.v2-analysis-report) {
     page: amc-v2-decision-brief;
-  }
-  .v2-analysis-report .v2-factor-map article {
-    padding: 10px 0;
   }
   .v2-analysis-report .v2-map-context {
     grid-template-columns: 1fr 1fr;

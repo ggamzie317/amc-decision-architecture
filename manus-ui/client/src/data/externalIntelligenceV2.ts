@@ -10,7 +10,12 @@ export type ExternalIntelligenceV2 = {
   caseType: string;
   /** Partial means at least one cited source failed the public body check. */
   sourceCoverage?: "complete" | "partial";
+  /** Provider confidence in bounded public context, never personal fit.
+   * Absent for older snapshots and removed when a cited source is excluded. */
+  contextConfidence?: "low" | "medium" | "high";
   evidenceBlocks: Array<{
+    /** Existing public-research ID; presentation routing only, never a score. */
+    area?: string;
     dimension: string;
     headline: string;
     direction: "supportive" | "caution" | "mixed";

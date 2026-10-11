@@ -5,7 +5,7 @@ import {
 } from "../client/src/data/externalIntelligenceV2.js";
 import { v2t, type V2CopyKey } from "../client/src/data/v2Language.js";
 import {
-  allowedV2ExternalAreas,
+  v2EvidenceAreas,
   type V2EvidenceRequest,
 } from "../shared/externalIntelligenceV2Request.js";
 import {
@@ -58,7 +58,7 @@ export type V2ResponseDiagnostic = {
   field?: "status" | "output" | "content" | "evidenceBlocks" |
     "dimension" | "headline" | "direction" | "fact" | "whyItMatters" |
     "sourceUrl" | "opportunitySignals" | "frictionSignals" |
-    "uncertainties" | "implication";
+    "uncertainties" | "implication" | "contextConfidence";
   terminalStatus?: "failed" | "cancelled" | "incomplete" | "other";
   incompleteReason?: "max_output_tokens" | "other";
   actualCount?: number;
@@ -74,33 +74,9 @@ type NormalizedResponse = {
   diagnostic?: V2ResponseDiagnostic;
 };
 
-const defaults: Record<string, string[]> = {
-  Entrepreneurship: [
-    "customerDemand",
-    "competition",
-    "pricing",
-    "distribution",
-  ],
-  "MBA / EMBA / PhD Decision": [
-    "programOutcomes",
-    "employmentRelevance",
-    "funding",
-  ],
-  "Industry Transition": [
-    "hiringDemand",
-    "roleDemand",
-    "requiredSkills",
-    "compensation",
-  ],
-};
-
 /** Selective public research questions, never personal/internal conditions. */
 export function v2EvidenceFocus(request: V2EvidenceRequest) {
-  const selected = request.externalAreas.length
-    ? request.externalAreas
-    : (defaults[request.caseType] ??
-      allowedV2ExternalAreas(request.caseType).slice(0, 3));
-  return selected.map(area => v2t("en", area as V2CopyKey));
+  return v2EvidenceAreas(request).map(area => v2t("en", area as V2CopyKey));
 }
 
 function evidenceSchema(dimensions: string[]) {
@@ -113,8 +89,10 @@ function evidenceSchema(dimensions: string[]) {
       "frictionSignals",
       "uncertainties",
       "implication",
+      "contextConfidence",
     ],
     properties: {
+      contextConfidence: { type: "string", enum: ["low", "medium", "high"] },
       evidenceBlocks: {
         type: "array",
         minItems: 0,
@@ -189,6 +167,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         targetSearch,
         "Explain what each fact establishes for this public target and what it does not establish. If qualifications or appointment requirements are relevant, separate formal eligibility from evidence of research, teaching or job performance.",
         "Distinguish source facts from inference and preserve uncertainty.",
+        "contextConfidence describes confidence in the bounded public external context, as in AMC's existing external snapshot. It is not confidence in personal eligibility, purchase demand, a prediction or a recommendation. Preserve uncertainty when evidence is narrow; do not rate confidence from link accessibility or manufacture stronger evidence.",
         "Every evidence block must use a sourceUrl copied exactly from a retrieved search result.",
         "Do not invent URLs, source names, dates, statistics, rankings, or market claims.",
         "Do not claim public market evidence validates this person's employability, this product's paid demand, or private internal conditions.",
@@ -354,6 +333,7 @@ export async function resolveV2ExternalIntelligence(
               result = {
                 ...live,
                 sourceCoverage: "partial",
+                contextConfidence: undefined,
                 evidenceBlocks: remaining,
                 opportunitySignals: [],
                 frictionSignals: [],
@@ -525,6 +505,7 @@ export function inspectV2AgentResponse(
       return fail({ category: "duplicate_citation", field: "sourceUrl" });
     citedUrls.add(source.url);
     evidenceBlocks.push({
+      area: v2EvidenceAreas(request).find(area => v2t("en", area as V2CopyKey) === dimension),
       dimension,
       headline,
       direction,
@@ -548,6 +529,8 @@ export function inspectV2AgentResponse(
   }
   const implicationProblem = textProblem(raw.implication, limit.implication, "implication");
   if (implicationProblem) return fail(implicationProblem);
+  if (raw.contextConfidence !== undefined && !["low", "medium", "high"].includes(String(raw.contextConfidence)))
+    return fail({ category: "invalid_field", field: "contextConfidence" });
   const opportunitySignals = textArray(raw.opportunitySignals, limit.opportunitySignals)!;
   const frictionSignals = textArray(raw.frictionSignals, limit.frictionSignals)!;
   const uncertainties = textArray(raw.uncertainties, limit.uncertainties, 1)!;
@@ -556,6 +539,7 @@ export function inspectV2AgentResponse(
     status: "live",
     generatedAt: new Date().toISOString(),
     caseType: request.caseType,
+    ...(raw.contextConfidence ? { contextConfidence: raw.contextConfidence as "low" | "medium" | "high" } : {}),
     evidenceBlocks,
     metrics: [],
     opportunitySignals,

@@ -11,6 +11,8 @@ import {
 } from "../data/v2Language";
 import { buildV2Analysis, type V2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
 import type { SelfChecks } from "../data/v2SelfDiagnostic";
+import type { EvidenceComparison, EvidenceComparisons } from "../data/v2EvidenceComparison";
+import { V2EvidenceComparisonView } from "./V2EvidenceComparisonView";
 import {
   V2DecisionMap,
   V2Reasoning,
@@ -228,6 +230,8 @@ export default function V2Dashboard({
   core,
   intelligence,
   selfChecks,
+  comparisons,
+  onComparisonChange,
   evidencePhase = intelligence.status,
   onCheckEvidence = () => {},
   onReport,
@@ -236,6 +240,8 @@ export default function V2Dashboard({
   core: ProductApplicationV3;
   intelligence: ExternalIntelligenceV2;
   selfChecks?: SelfChecks;
+  comparisons?: EvidenceComparisons;
+  onComparisonChange?: (key: string, answer: EvidenceComparison) => void;
   evidencePhase?: V2EvidencePhase;
   onCheckEvidence?: () => void;
   onReport: () => void;
@@ -243,7 +249,7 @@ export default function V2Dashboard({
   const t = (key: V2CopyKey) => fmt(state, key),
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
-  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks);
+  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons);
   const draft = evidencePhase !== "live" && evidencePhase !== "demo";
   const head = (n: string, english: string, title: string, note?: string) => (
     <div className="v2-section-top">
@@ -308,6 +314,10 @@ export default function V2Dashboard({
           )
         )}
         <V2Reasoning analysis={analysis} intelligence={intelligence} />
+      </section>
+      <section className="v2-analysis-section" id="v2-conditions">
+        {head("01A", "External Conditions × Customer Evidence", say("공개 조건과 내 근거의 차이", "Public conditions and your evidence"))}
+        <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} onChange={onComparisonChange} />
       </section>
       <section className="v2-analysis-section" id="v2-map">
         {head(

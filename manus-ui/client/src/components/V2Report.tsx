@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
 import type { SelfChecks } from "../data/v2SelfDiagnostic";
+import type { EvidenceComparisons } from "../data/v2EvidenceComparison";
+import { V2EvidenceComparisonView } from "./V2EvidenceComparisonView";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import {
   limitV2Overrides,
@@ -49,6 +51,7 @@ export default function V2Report({
   scenarioOverrides = {},
   intelligence,
   selfChecks,
+  comparisons,
   evidencePhase = intelligence.status,
   onClose,
   onPrint,
@@ -61,6 +64,7 @@ export default function V2Report({
   scenarioOverrides?: ScenarioOverrides;
   intelligence: ExternalIntelligenceV2;
   selfChecks?: SelfChecks;
+  comparisons?: EvidenceComparisons;
   evidencePhase?: V2EvidencePhase;
   onClose: () => void;
   onPrint: () => void;
@@ -70,7 +74,7 @@ export default function V2Report({
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
   const evidenceText = (s: string) => v2CustomerEvidenceText(state.language, s);
-  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks);
+  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons);
   const activeOverrides = limitV2Overrides(
     input,
     visibleVariables,
@@ -80,7 +84,7 @@ export default function V2Report({
     ? v2Scenario(input, activeOverrides).result
     : null;
   const scenarioAnalysis = hypothetical
-    ? buildV2Analysis(state, hypothetical, intelligence, evidencePhase, selfChecks)
+    ? buildV2Analysis(state, hypothetical, intelligence, evidencePhase, selfChecks, comparisons)
     : null;
   const scenarioChanges = hypothetical
     ? v2ScenarioComparison(core, hypothetical, state.language).filter(
@@ -146,7 +150,7 @@ export default function V2Report({
           allofmycareer <i>/</i> Decision Brief
         </span>
         <span>
-          {String(n).padStart(2, "0")} / {hasSources ? "09" : "08"}
+          {say("섹션", "Section")} {String(n).padStart(2, "0")} / {hasSources ? "09" : "08"}
         </span>
       </header>
       <div className="v2-paper-body">
@@ -277,7 +281,7 @@ export default function V2Report({
           <p className="v2-paper-caption">
             {t("context")}: {state.decision}
           </p>
-          <p className="v2-paper-lead">{analysis.summary}</p>
+          <p className="v2-paper-lead">{analysis.executiveSummary}</p>
           <div className="v2-paper-priorities">
             <article>
               <span>01 / {say("핵심 질문", "Key question")}</span>
@@ -291,7 +295,7 @@ export default function V2Report({
             <article>
               <span>03 / {say("다음 확인", "Next test")}</span>
               <h3>{analysis.experiment.output}</h3>
-              <p>{analysis.experiment.action}</p>
+              <p>{say("구체적인 조건 대조는 3번 섹션, 실행 범위는 6번 섹션에서 확인하세요.", "See section 3 for the condition comparison and section 6 for the bounded test.")}</p>
             </article>
           </div>
           <p className="v2-paper-caption">
@@ -322,8 +326,8 @@ export default function V2Report({
             <p>{analysis.experiment.continue}</p>
             <p>
               {say(
-                "한 조건의 개선이 남은 제약을 해결하는지는 7·8쪽의 조건 변화 분석에서 확인하세요.",
-                "Check pages 7–8 to see whether improving one condition resolves the remaining constraints."
+                "한 조건의 개선이 남은 제약을 해결하는지는 7·8번 섹션의 조건 변화 분석에서 확인하세요.",
+                "Check sections 7–8 to see whether improving one condition resolves the remaining constraints."
               )}
             </p>
           </div>
@@ -350,12 +354,12 @@ export default function V2Report({
             )}
             <p>{analysis.externalReading}</p>
             {hasSources && <p>{say(
-              "개인의 자격·구매 반응·실행 여력은 이 자료만으로 확인되지 않습니다. 기존 실행 경로 조정과 실험은 6쪽, 전환 조건은 8쪽에서 확인하세요.",
-              "These sources alone do not establish personal eligibility, purchases or execution capacity. The existing Changing and experiment appear on page 6; switching conditions appear on page 8."
+              "개인의 자격·구매 반응·실행 여력은 이 자료만으로 확인되지 않습니다. 실행 경로 조정과 실험은 6번 섹션, 전환 조건은 8번 섹션에서 확인하세요.",
+              "These sources alone do not establish personal eligibility, purchases or execution capacity. Changing and the experiment appear in section 6; switching conditions appear in section 8."
             )}</p>}
           </div>
           {hasSources ? (
-            sources(true)
+            <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} compact />
           ) : (
             <div className="v2-paper-note">
               <strong>
@@ -492,7 +496,7 @@ export default function V2Report({
                 </span>
                 <div>
                   <h3>{s.title}</h3>
-                  <p>{s.action}</p>
+                <p>{s.briefAction ?? s.action}</p>
                   <strong>{s.output}</strong>
                 </div>
               </li>

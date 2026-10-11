@@ -34,7 +34,7 @@ export function V2DecisionMap({
     : say("현재 소득과 생활 기반", "Current income and living base");
   const play =
     analysis.plays[0]?.title ??
-    say("작은 범위에서 요건 확인", "Test requirements at a small scope");
+    say("조건 미확인 · 조정안 미도출", "Conditions unresolved · no play derived");
   const evidence =
     phase === "live"
       ? say("인용 링크 접근 가능 · 주장 미검증", "Cited links accessible · claims unverified")
@@ -48,14 +48,14 @@ export function V2DecisionMap({
       x: 320,
       y: 14,
       title: "External Evidence",
-      value: evidence,
+      value: analysis.priorityEvidence?.headline ?? evidence,
       tone: "evidence",
     },
     {
       x: 18,
       y: 145,
       title: say("A / 현재 기반", "A / Current base"),
-      value: cut(protectedLabel, ko ? 26 : 37),
+      value: cut(state.optionA.trim() || protectedLabel, ko ? 26 : 37),
       tone: "base",
     },
     {
@@ -69,7 +69,7 @@ export function V2DecisionMap({
       x: 622,
       y: 145,
       title: say("B / 탐색할 경로", "B / Path to explore"),
-      value: analysis.topic,
+      value: state.optionB.trim() || analysis.target,
       tone: "target",
     },
     {
@@ -121,8 +121,8 @@ export function V2DecisionMap({
         >
           <path d="M440 98 V145" />
           <path d="M258 188 H320" />
-          <path d="M622 188 H560" />
-          <path d="M440 229 V276" />
+          <path d="M622 188 H560" strokeDasharray={analysis.plays.length ? undefined : "5 5"} />
+          <path d="M440 229 V276" strokeDasharray={analysis.plays.length ? undefined : "5 5"} />
           <path d="M138 229 V318 H320" strokeDasharray="5 5" />
           <path d="M560 318 H742 V229" strokeDasharray="5 5" />
         </g>
@@ -134,10 +134,10 @@ export function V2DecisionMap({
             {say("유지", "Protect")}
           </text>
           <text x="568" y="177">
-            {say("검증", "Test")}
+            {analysis.plays.length ? say("검증", "Test") : say("미확인", "Unresolved")}
           </text>
           <text x="448" y="257">
-            {say("결과 확인", "Review results")}
+            {analysis.plays.length ? say("결과 확인", "Review results") : say("조건 확인", "Establish conditions")}
           </text>
         </g>
         {nodes.map(n => (
@@ -165,6 +165,7 @@ export function V2DecisionMap({
         ))}
       </div>
       <figcaption>
+        <p>{evidence}{analysis.priorityEvidence && ` / ${analysis.priorityEvidence.condition}`}</p>
         <div className="v2-map-tradeoff">
           <span>{v2t(state.language, "tradeoff")}</span>
           <strong>
@@ -183,6 +184,7 @@ export function V2DecisionMap({
         </div>
         <strong>{analysis.question}</strong>
         <p>{analysis.tradeoff}</p>
+        {analysis.switching[0] && <p><b>Switching / </b>{analysis.switching[0].signal}</p>}
         <dl className="v2-map-context">
           <div>
             <dt>{v2t(state.language, "missing")}</dt>
@@ -221,7 +223,7 @@ export function V2Reasoning({
             <h3>{f.title}</h3>
           </div>
           <p className="v2-reasoning-basis">{f.basis}</p>
-          <p>{f.implication}</p>
+          <p>{compact ? f.coreReading : f.implication}</p>
           {f.selfReports.map((report, index) => (
             <p className="v2-self-report" key={index}>{report}</p>
           ))}
@@ -270,6 +272,7 @@ export function V2FactorMap({
   return (
     <div className="v2-factor-map" data-testid="v2-framework-readings">
       <p className="v2-analysis-note">
+        {analysis.factorScopeNote}{" "}
         {analysis.fifwmSource === "unavailable"
           ? ko
             ? "기존 다섯 항목의 평가 입력이 없어 미확인 상태입니다. 준비 상태나 안전 여유로 대신 평가하지 않습니다."
@@ -283,12 +286,12 @@ export function V2FactorMap({
           <span className="v2-factor-number">0{i + 1}</span>
           <div>
             <h3>{f.title}</h3>
-            <p className="v2-factor-question">{f.questionTopic}</p>
-            <p>
+            {f.questionTopic && <p className="v2-factor-question">{f.questionTopic}</p>}
+            {(!compact || f.assessed) && <p>
               {compact
                 ? f.reading.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() || f.reading
                 : f.reading}
-            </p>
+            </p>}
           </div>
           <div className="v2-factor-state">
             <strong>{f.status}</strong>
@@ -416,7 +419,7 @@ export function V2ExperimentView({
       <div className="v2-experiment-now">
         <span>{ko ? "다음에 확인할 질문" : "Next question to test"}</span>
         <h3>{analysis.question}</h3>
-        <p>{analysis.experiment.action}</p>
+        <p>{compact ? analysis.experiment.briefAction : analysis.experiment.action}</p>
         <strong>{ko ? "남길 결과물" : "Deliverable"}</strong>
         <p>{analysis.experiment.output}</p>
       </div>

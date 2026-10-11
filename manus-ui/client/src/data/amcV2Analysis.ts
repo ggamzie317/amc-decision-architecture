@@ -11,6 +11,12 @@ import { v2CustomerEvidenceText, v2MissingPoint } from "./amcV2Presentation";
 import { v2CustomerPlayText, v2CustomerPosture } from "./v2ReportPresentation";
 import { v2t, type V2CopyKey } from "./v2Language";
 import { selfCheckCards, type SelfCheckId, type SelfChecks } from "./v2SelfDiagnostic";
+import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
+import { v2CanAskCanonicalFifwm } from "./v2CanonicalFifwm";
+import {
+  v2ComparisonKey, v2ComparisonLabel, v2ConditionGroup, v2EvidenceArea,
+  type EvidenceComparisons, type EvidenceComparisonStatus,
+} from "./v2EvidenceComparison";
 
 export type V2EvidencePhase =
   | "not_checked"
@@ -239,6 +245,7 @@ export type V2Finding = {
   title: string;
   basis: string;
   implication: string;
+  coreReading: string;
   evidenceIds: number[];
   provenance: V2Provenance[];
   selfReports: string[];
@@ -256,6 +263,13 @@ export type V2EvidenceLink = {
   interpretation: string;
   unresolved: string;
   test: string;
+  comparisonKey: string;
+  comparisonStatus: EvidenceComparisonStatus;
+  comparisonLabel: string;
+  comparisonDetail: string;
+  customerEvidence: string;
+  comparisonReading: string;
+  testReference: string;
 };
 export type V2Analysis = {
   language: V2State["language"];
@@ -263,6 +277,7 @@ export type V2Analysis = {
   topic: string;
   posture: string;
   summary: string;
+  executiveSummary: string;
   question: string;
   missingConcept: string;
   tradeoff: string;
@@ -270,6 +285,11 @@ export type V2Analysis = {
   externalReading: string;
   findings: V2Finding[];
   evidenceLinks: V2EvidenceLink[];
+  target: string;
+  researchCoverage: Array<{ area: string; title: string; evidenceIds: number[] }>;
+  externalContextReading: string;
+  factorScopeNote: string;
+  switching: Array<{ signal: string; direction: string }>;
   priorityEvidence: {
     headline: string;
     condition: string;
@@ -283,6 +303,7 @@ export type V2Analysis = {
     reading: string;
     evidenceIds: number[];
     status: string;
+    assessed: boolean;
   }>;
   safety: Array<{
     id: string;
@@ -304,6 +325,7 @@ export type V2Analysis = {
   }>;
   experiment: {
     action: string;
+    briefAction: string;
     output: string;
     continue: string;
     pause: string;
@@ -311,6 +333,7 @@ export type V2Analysis = {
       day: string;
       title: string;
       action: string;
+      briefAction?: string;
       output: string;
     }>;
   };
@@ -323,7 +346,8 @@ export function buildV2Analysis(
   core: ProductApplicationV3,
   intelligence: ExternalIntelligenceV2,
   phase: V2EvidencePhase = intelligence.status,
-  selfChecks?: SelfChecks
+  selfChecks?: SelfChecks,
+  comparisons: EvidenceComparisons = {},
 ): V2Analysis {
   const ko = state.language === "ko",
     say = (koText: string, enText: string) => (ko ? koText : enText);
@@ -438,17 +462,13 @@ export function buildV2Analysis(
             "실행을 뒷받침할 조건이 일부 갖춰져 있습니다. 실제로 확보한 일정과 지원을 작은 시험에서 확인하고 추가 약속을 결정하세요.",
             "Some execution support is present. Test actual schedule and support commitments before adding further obligations."
           );
-  const conditionGroupFor = (dimension: string): V2EvidenceLink["conditionGroup"] => {
-    if (/compensation|funding|opportunity.cost|보상|재원|기회비용/i.test(dimension))
-      return "finance";
-    if (/visa.mobility|geography.mobility|이동 요건/i.test(dimension))
-      return "capacity";
-    if (/required.skills|필요 역량/i.test(dimension))
-      return "readiness";
-    return "public";
-  };
+  const target = v2PublicSearchTarget(state) || state.optionB.trim() || text(profile.topic);
   const evidenceLinks: V2EvidenceLink[] = blocks.map((block, id) => {
-    const conditionGroup = conditionGroupFor(block.dimension);
+    const conditionGroup = v2ConditionGroup(v2EvidenceArea(block, state));
+    const comparisonKey = v2ComparisonKey(block, state.language);
+    const comparison = comparisons[comparisonKey];
+    const comparisonStatus = comparison?.status ?? "unreviewed";
+    const comparisonLabel = v2ComparisonLabel(comparisonStatus, ko);
     const condition =
       conditionGroup === "finance"
         ? say(
@@ -463,10 +483,7 @@ export function buildV2Analysis(
           : conditionGroup === "readiness" ? say(
               `준비 상태: ${t(ready)} / 지원 기반: ${t(support)}`,
               `Readiness: ${t(ready)} / support: ${t(support)}`
-            ) : say(
-              `기존 미확인 조건: ${v2MissingPoint(state.caseType, state.language).point}`,
-              `Existing unresolved condition: ${v2MissingPoint(state.caseType, state.language).point}`
-            );
+            ) : `${t((v2EvidenceArea(block, state) ?? "externalPressure") as V2CopyKey)} / ${target}`;
     const linkedSelfReport = selfReport(
       conditionGroup === "finance" ? "financial"
         : conditionGroup === "capacity" ? "capacity"
@@ -500,15 +517,49 @@ export function buildV2Analysis(
             ? readinessReading
             : say("공개 자료만으로 이 개인의 조건이나 수요 충족을 확정할 수 없습니다.", "Public material alone does not establish this person's conditions or demand fit.");
     const headline = v2CustomerEvidenceText(state.language, block.headline);
+    const criterion = v2CustomerEvidenceText(state.language, block.fact);
+    const customerEvidence = comparison?.detail.trim() || linkedSelfReport || say(
+      "이 조건에 대응하는 개인의 결과물·비용·실제 반응은 아직 제시되지 않았습니다.",
+      "Personal work, costs or actual responses addressing this condition have not been supplied."
+    );
+    const comparisonReading = comparisonStatus === "gap"
+      ? say(
+          `고객은 이 조건에 부족한 점이 있다고 응답했습니다. ‘${criterion}’과 현재 근거(${customerEvidence}) 사이의 간격을 먼저 확인해야 합니다.`,
+          `You report a gap between “${criterion}” and your current evidence (${customerEvidence}). Establish what is missing before increasing commitment.`
+        )
+      : comparisonStatus === "matches"
+        ? say(
+            `고객은 현재 근거(${customerEvidence})가 ‘${criterion}’에 부합한다고 응답했습니다. 원문의 적용 범위와 실제 상대방이 이 근거를 인정하는지는 별도 확인이 필요합니다.`,
+            `You report that your evidence (${customerEvidence}) matches “${criterion}”. Source applicability and recognition by the actual counterpart still need independent confirmation.`
+          )
+        : comparisonStatus === "not_applicable"
+          ? say(
+              `고객은 ‘${criterion}’이 목표(${target})에 적용되지 않는다고 응답했습니다. 이 자료로 개인의 적합성을 판단하지 않으며, 목표에 맞는 요건을 다시 확인해야 합니다.`,
+              `You report that “${criterion}” does not apply to ${target}. It cannot establish personal fit; obtain requirements specific to your target.`
+            )
+          : say(
+              `공개 조건 ‘${criterion}’과 현재 근거(${customerEvidence})는 아직 직접 대조되지 않았습니다. 같은 목표·지역·시점에 해당하는 조건인지 먼저 확인해야 합니다.`,
+              `The public condition “${criterion}” has not been compared directly with your evidence (${customerEvidence}). First establish whether the target, location and timing match.`
+            );
+    const makeCheck = (reference: string) => comparisonStatus === "gap"
+      ? say(`‘${reference}’에서 부족하다고 작성한 조건(${customerEvidence})을 작은 결과물·비용표·실제 상대방의 피드백으로 확인하세요.`,
+          `Test the reported gap (${customerEvidence}) against “${reference}” with a bounded work sample, cost comparison or counterpart feedback.`)
+      : comparisonStatus === "matches"
+        ? say(`현재 근거(${customerEvidence})를 ‘${reference}’의 실제 담당자·고객·기관에 대조해 인정되는 범위와 예외를 확인하세요.`,
+            `Check your evidence (${customerEvidence}) against “${reference}” with the actual employer, buyer or institution; record recognition and exceptions.`)
+        : comparisonStatus === "not_applicable"
+          ? say(`목표(${target})와 같은 지역·직무·고객군의 원문을 찾으세요. 제외한 조건 ‘${reference}’을 목표 요건으로 사용하지 마세요.`,
+              `Find original requirements for ${target} in the same region, role or customer segment. Do not use the excluded condition “${reference}” as a target requirement.`)
+          : say(`목표(${target})에 ‘${reference}’이 적용되는지 원문에서 확인한 뒤, 현재 성과·비용·실제 반응과 항목별로 대조하세요.`,
+              `Check whether “${reference}” applies to ${target}, then compare it item by item with your achievements, costs and actual responses.`);
+    const scopedCheck = makeCheck(criterion);
+    const testReference = makeCheck(say(`대조표 근거 ${id + 1}: ${headline}`, `comparison-table evidence ${id + 1}: ${headline}`));
     const check = demo
       ? say(
           `‘${headline}’에 해당하는 실제 공개 자료를 찾아 ${targetScope}과 현재 조건(${condition})에 적용되는지 확인하세요.`,
           `Find actual public evidence for “${headline}” and check its applicability to the ${targetScope} and current conditions (${condition}).`
         )
-      : say(
-          `‘${headline}’의 주장과 적용 범위를 원문에서 대조하고, ${targetScope}과 현재 조건(${condition})에 맞는지 확인하세요.`,
-          `Compare the claim and scope of “${headline}” with its source text, then check the ${targetScope} and current conditions (${condition}).`
-        );
+      : scopedCheck;
     return {
       id,
       conditionGroup,
@@ -518,8 +569,16 @@ export function buildV2Analysis(
       sourceDate: block.sourceDate,
       conditionProvenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
       condition,
+      comparisonKey,
+      comparisonStatus,
+      comparisonLabel,
+      comparisonDetail: comparison?.detail ?? "",
+      customerEvidence,
+      comparisonReading,
+      testReference: demo ? say(`대조표 근거 ${id + 1}은 합성 예시입니다. 같은 조건의 실제 원문부터 확인하세요.`,
+        `Comparison-table evidence ${id + 1} is synthetic. Find an actual original source for the same condition first.`) : testReference,
       ...(linkedSelfReport ? { selfReport: linkedSelfReport } : {}),
-      interpretation: `${v2CustomerEvidenceText(state.language, block.whyItMatters)} ${implication} ${personal}`,
+      interpretation: `${comparisonReading} ${v2CustomerEvidenceText(state.language, block.whyItMatters)} ${implication} ${personal}`,
       unresolved: say(
         `이 공개 자료가 ${targetScope}에 적용되는지, ${personalUnknown}이 성립하는지는 아직 확인되지 않았습니다.`,
         `Applicability to the ${targetScope} and ${personalUnknown} remain unverified.`
@@ -530,17 +589,12 @@ export function buildV2Analysis(
   // Link only dimensions that directly inform a named comparison. A market
   // statistic is never treated as proof of personal readiness or recovery.
   const relatedEvidence = (finding: "recovery" | "fit" | "capacity") =>
-    blocks.flatMap((block, id) => {
-      const dimension = block.dimension;
-      const related = finding === "recovery"
-        ? /compensation|funding|opportunity.cost|보상|재원|기회비용/i.test(dimension)
-        : finding === "fit"
-          ? /required.skills|program.outcomes|employment.relevance|research.relevance|필요 역량|과정 성과|취업 관련|연구 관련/i.test(dimension)
-          : /geography|mobility|지역|이동 요건/i.test(dimension);
-      return related ? [id] : [];
-    });
-  const priorityId = blocks.findIndex(block => block.direction === "caution");
-  const priorityLink = evidenceLinks[priorityId < 0 ? 0 : priorityId];
+    evidenceLinks.filter(link => link.comparisonStatus !== "not_applicable" &&
+      link.conditionGroup === ({ recovery: "finance", fit: "readiness", capacity: "capacity" } as const)[finding])
+      .map(link => link.id);
+  const applicableLinks = evidenceLinks.filter(link => link.comparisonStatus !== "not_applicable");
+  const priorityLink = applicableLinks.find(link => link.comparisonStatus === "gap") ??
+    applicableLinks.find(link => blocks[link.id].direction === "caution") ?? applicableLinks[0];
   const priorityEvidence = priorityLink
     ? {
         headline: v2CustomerEvidenceText(
@@ -549,10 +603,7 @@ export function buildV2Analysis(
         ),
         condition: priorityLink.condition,
         check: priorityLink.test,
-        nextCheck: say(
-          `‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’의 적용 범위를 현재 조건(${priorityLink.condition})과 대조하세요.`,
-          `Compare the applicability of “${blocks[priorityLink.id].headline}” with current conditions (${priorityLink.condition}).`
-        ),
+        nextCheck: priorityLink.test,
       }
     : null;
   const externalReading =
@@ -576,6 +627,7 @@ export function buildV2Analysis(
       ),
       basis: `${t("financial")}: ${t(money)} · ${t("reversibility")}: ${t(reverse)} · ${t("downside")}: ${t(risk)}`,
       implication: safetyReading,
+      coreReading: safetyReading,
       evidenceIds: relatedEvidence("recovery"),
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
       selfReports: reports("financial", "recovery"),
@@ -588,6 +640,7 @@ export function buildV2Analysis(
       ),
       basis: `${t("readinessBand")}: ${t(ready)} · ${t("supportBand")}: ${t(support)}`,
       implication: `${readinessReading} ${text(profile.question)}`,
+      coreReading: `${readinessReading} ${text(profile.question)}`,
       evidenceIds: relatedEvidence("fit"),
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
       selfReports: reports("public", "readiness"),
@@ -600,11 +653,31 @@ export function buildV2Analysis(
       ),
       basis: `${t("constraint")}: ${t(load)} · ${t("supportBand")}: ${t(support)}`,
       implication: capacityReading,
+      coreReading: capacityReading,
       evidenceIds: relatedEvidence("capacity"),
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
       selfReports: reports("capacity"),
     },
   ];
+  // Fact-specific comparisons alter narrative reasoning, never the core bands.
+  for (const finding of findings) {
+    const links = finding.evidenceIds.map(id => evidenceLinks[id]);
+    if (links.length) {
+      finding.implication += " " + links.map(link => link.interpretation).join(" ");
+      finding.provenance.push("EXTERNAL_EVIDENCE");
+    }
+  }
+  const researchCoverage = v2EvidenceAreas(state).map(area => ({
+    area,
+    title: t(area as V2CopyKey),
+    evidenceIds: blocks.flatMap((block, id) => v2EvidenceArea(block, state) === area ? [id] : []),
+  }));
+  const uncovered = researchCoverage.filter(item => !item.evidenceIds.length).map(item => item.title);
+  const coverageReading = uncovered.length ? say(
+    `검색 대상 중 ${uncovered.join(" · ")}에 대응하는 공개 근거는 없습니다. 확보한 자료로 이 조건까지 확인됐다고 볼 수 없습니다.`,
+    `No public evidence addresses these research topics: ${uncovered.join(", ")}. The retrieved material does not establish them.`
+  ) : say("선택한 검색 항목에 공개 자료가 연결됐습니다. 주장·목표 적용·개인 조건은 별도로 대조해야 합니다.",
+    "Public material is linked to the selected research topics. Claims, target applicability and personal conditions still need separate comparison.");
   const factorNames: Record<keyof ProductApplicationV3["decisionStructure"]["fifwm"], Pair> = {
     formal: ["기회의 조건", "Opportunity conditions"],
     informal: ["연결 가능성", "Connection potential"],
@@ -624,7 +697,8 @@ export function buildV2Analysis(
     id => ({
       id,
       title: text(factorNames[id]),
-      questionTopic: text(factorQuestionTopics[id]),
+      questionTopic: v2CanAskCanonicalFifwm(state.caseType) ? text(factorQuestionTopics[id]) : "",
+      assessed: core.decisionStructure.fifwm[id].score !== null,
       evidenceIds: [],
       status: core.decisionStructure.fifwm[id].score === null
         ? say("미확인", "Not established")
@@ -743,7 +817,7 @@ export function buildV2Analysis(
   const evidenceSummary = live
     ? say(
         ` 공개 근거 ${blocks.length}건을 현재 조건 옆에 표시했습니다. 적용 여부는 각 출처와 대상 범위를 대조해 확인해야 합니다.`,
-        ` ${blocks.length} public evidence items are shown beside current conditions. Check each source and target scope before treating it as applicable.`
+        ` ${blocks.length} public evidence ${blocks.length === 1 ? "item is" : "items are"} shown beside current conditions. Check each source and target scope before treating it as applicable.`
       )
     : demo
       ? say(
@@ -754,13 +828,20 @@ export function buildV2Analysis(
           " 외부 요건을 확인하기 전까지는 이 판단을 구조 초안으로 사용하세요.",
           " Treat this as a structural draft until external requirements are checked."
         );
-  const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary}${priorityEvidence ? say(` 우선 ‘${priorityEvidence.headline}’의 적용 범위를 현재 조건과 대조하세요.`, ` First compare the scope of “${priorityEvidence.headline}” with the current conditions.`) : ""}`;
+  const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary} ${coverageReading}${priorityLink ? ` ${priorityLink.interpretation}` : ""}`;
+  const executiveSummary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading} ${coverageReading}${priorityLink ? say(
+    ` 우선 대조할 자료는 ‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’이며, 현재 상태는 ‘${priorityLink.comparisonLabel}’입니다. 세부 조건과 내 근거의 차이는 대조표에서 확인하세요.`,
+    ` The first comparison is “${blocks[priorityLink.id].headline}”: ${priorityLink.comparisonLabel}. The comparison table details the condition and your evidence.`
+  ) : ""}`;
+  const briefAction = `${priorityLink?.testReference ? `${priorityLink.testReference} ` : ""}${text(profile.action)}`;
   return {
     language: state.language,
     fifwmSource: core.decisionStructure.fifwmSource,
     topic: text(profile.topic),
+    target,
     posture,
     summary,
+    executiveSummary,
     question: text(profile.question),
     missingConcept: v2MissingPoint(state.caseType, state.language).point,
     tradeoff: say(
@@ -771,13 +852,32 @@ export function buildV2Analysis(
     externalReading,
     findings,
     evidenceLinks,
+    researchCoverage,
+    externalContextReading: b.externalValidation.source === "live-external-evidence"
+      ? say(`공개 외부 맥락: ${t(b.externalValidation.band)}. 확보한 자료로 외부 환경의 조건을 살펴봤습니다. 개인의 자격·구매 반응·실행 여력은 별도로 확인해야 합니다.`,
+          `Public external context: ${t(b.externalValidation.band)}. The retrieved material informs external conditions. Personal eligibility, purchases and execution capacity need separate validation.`)
+      : say("외부 환경을 종합적으로 판단할 근거는 아직 부족합니다. 현재 확보한 자료의 범위에서 조건을 대조하세요.",
+          "Evidence for an overall reading of the external environment is still limited. Compare conditions within the scope of the available material."),
+    factorScopeNote: v2CanAskCanonicalFifwm(state.caseType)
+      ? say("조직·직무를 아는 경우에만 원본 다섯 질문으로 평가합니다. 확인하지 않은 항목은 미평가입니다.",
+          "The original five questions assess a known organization and role. Unestablished items remain unassessed.")
+      : say("이 사례에는 원본 조직·직무 질문을 그대로 적용할 수 없어 다섯 항목을 평가하지 않았습니다. 준비 상태와 안전마진의 입력으로 대신 점수를 만들지 않습니다.",
+          "The original organization and role questions do not apply directly to this case, so the five factors are unassessed. Readiness and Safety Margin inputs do not create substitute scores."),
+    switching: core.decisionSwitches.map(item => ({
+      signal: v2CustomerPlayText(state.language, item.signal),
+      direction: v2CustomerPlayText(state.language, item.direction),
+    })),
     priorityEvidence,
     factors,
     safety,
     plays,
     experiment: {
-      action: `${priorityEvidence ? `${priorityEvidence.nextCheck} ` : ""}${text(profile.action)}`,
-      output: text(profile.output),
+      action: `${priorityEvidence ? `${priorityEvidence.nextCheck} ` : ""}${uncovered.length ? `${coverageReading} ` : ""}${text(profile.action)}`,
+      briefAction,
+      output: priorityLink ? say(
+        `‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’의 적용 여부, 내 근거, 남은 조건을 대조한 기록`,
+        `A comparison of applicability, your evidence and remaining gaps for “${blocks[priorityLink.id].headline}”`
+      ) : text(profile.output),
       continue: continueCondition,
       pause,
       stages: [
@@ -787,7 +887,8 @@ export function buildV2Analysis(
             "목표 요건과 현재 성과 대조",
             "Compare requirements with current evidence"
           ),
-          action: text(profile.action),
+          action: `${priorityEvidence?.nextCheck ?? text(profile.action)} ${coverageReading}`,
+          briefAction: `${priorityLink?.testReference ?? text(profile.action)} ${coverageReading}`,
           output: text(profile.output),
         },
         {
