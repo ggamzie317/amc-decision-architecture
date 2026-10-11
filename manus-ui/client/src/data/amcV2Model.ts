@@ -1,7 +1,6 @@
 import { buildCurrentCaseStructuralSignals } from "./amcCurrentCaseStructuralSignals";
 import {
   buildProductApplicationV3,
-  buildUnavailableFifwm,
   type ProductApplicationBuildInput,
   type ProductApplicationV3,
   type StructuralStrength,
@@ -24,6 +23,7 @@ import {
 import { caseTypes } from "../../../shared/interactivePrivacy";
 import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
 import { v2CustomerNextTest, v2MissingPoint } from "./amcV2Presentation";
+import { buildV2CanonicalFifwm, type CanonicalFifwmAssessment } from "./v2CanonicalFifwm";
 export const V2_SCHEMA = "AMC-MODULES-V2-8";
 export const V2_EXPERIENCE = "interactive-v2";
 export type V2CaseType = (typeof caseTypes)[number];
@@ -335,7 +335,8 @@ const selected = (s: V2State, keys: V2CopyKey[]) =>
   keys.map(k => v2t(s.language, k)).join(s.language === "ko" ? " · " : " · ");
 export function buildV2Input(
   s: V2State,
-  intelligence?: ExternalIntelligenceV2
+  intelligence?: ExternalIntelligenceV2,
+  fifwmAssessment?: CanonicalFifwmAssessment,
 ): ProductApplicationBuildInput {
   const language = s.language;
   // Public facts inform the reasoning below; they cannot establish this customer's
@@ -390,8 +391,7 @@ export function buildV2Input(
     optionA: s.optionA,
     optionB: s.optionB,
     answers,
-    fifwm: buildUnavailableFifwm(language),
-    fifwmSource: "unavailable",
+    ...buildV2CanonicalFifwm(s.caseType, language, fifwmAssessment),
     ...coreSignals,
     missingPoint: missing.point,
     missingPointWhy: missing.why,

@@ -463,6 +463,11 @@
   flex: 1;
   text-align: center;
 }
+@media (max-width: 560px) {
+  .v2-canonical-fifwm .v2-band-choices button {
+    flex-basis: 100%;
+  }
+}
 .v2-optional {
   max-width: 460px;
   color: #61747a;

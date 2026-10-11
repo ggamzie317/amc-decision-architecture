@@ -1,0 +1,74 @@
+{
+  "sourceSha256": {
+    "intake_parser.py": "e81fe8b4234c8eaaa9b9411050b77c80ed2c5de9bcc45fda76f8fe1b5607f4c6",
+    "engine.py": "e4aac60465ec46d43c6f555e82b4a18ed8e19617827a9d473d579e0efe91bd44",
+    "report_payload_builder.py": "baf5ae101eba1b45a0c494a1bb236f45ef2d69b4e73e9f5a4131c15285abdfe1"
+  },
+  "fields": [
+    {
+      "number": 18,
+      "field": "q18_change",
+      "factor": "framework",
+      "scoreField": "Q18_score",
+      "outputField": "F_Framework_Score",
+      "question": "18. Has the company (or target business unit) gone through major restructuring or leadership changes in the last 2–3 years?",
+      "choices": {
+        "major_changes": 0,
+        "some_changes": 1,
+        "no_changes": 2
+      }
+    },
+    {
+      "number": 19,
+      "field": "q19_sponsor",
+      "factor": "informal",
+      "scoreField": "Q19_score",
+      "outputField": "F_Informal_Score",
+      "question": "Section 6. Informal / Workflow / Policy Signals\n\n19. Do you already have a manager or senior colleague in the target role/team who would actively support your success?",
+      "choices": {
+        "none": 0,
+        "weak": 1,
+        "strong": 2
+      }
+    },
+    {
+      "number": 20,
+      "field": "q20_clarity",
+      "factor": "formal",
+      "scoreField": "Q20_score",
+      "outputField": "F_Formal_Score",
+      "question": "20. How clearly do you understand the decision-making and reporting lines in the target role?",
+      "choices": {
+        "not_clear": 0,
+        "somewhat_clear": 1,
+        "clear": 2
+      }
+    },
+    {
+      "number": 21,
+      "field": "q21_workflow",
+      "factor": "workflow",
+      "scoreField": "Q21_score",
+      "outputField": "F_Workflow_Score",
+      "question": "21. From what you can see, how would you describe the day-to-day workflow and pace in the target role?",
+      "choices": {
+        "very_slow_or_chaotic": 0,
+        "mixed": 1,
+        "clear_and_sustainable": 2
+      }
+    },
+    {
+      "number": 22,
+      "field": "q22_exposure",
+      "factor": "marketPolicy",
+      "scoreField": "Q22_score",
+      "outputField": "F_MarketPolicy_Score",
+      "question": "22. How exposed does this role feel to policy / regulatory / market shocks in the next 3–5 years?",
+      "choices": {
+        "high_exposure": 0,
+        "medium_exposure": 1,
+        "low_exposure": 2
+      }
+    }
+  ]
+}

@@ -275,8 +275,8 @@ export function V2FactorMap({
             ? "기존 다섯 항목의 평가 입력이 없어 미확인 상태입니다. 준비 상태나 안전 여유로 대신 평가하지 않습니다."
             : "The existing five-part assessment inputs are unavailable, so these items remain unassessed. Readiness and safety bands do not substitute for them."
           : ko
-            ? "기존 다섯 항목의 평가 결과입니다. 공개 근거는 항목의 점수를 바꾸지 않습니다."
-            : "These are the existing five-part assessment results. Public evidence does not change their scores."}
+            ? "응답한 항목만 기존 규칙으로 평가했습니다. 미응답·모름·해당 없음은 미평가이며, 공개 근거는 점수를 바꾸지 않습니다."
+            : "Only answered items use the existing rules. Unanswered, unsure and inapplicable items remain unassessed. Public evidence does not change the scores."}
       </p>
       {analysis.factors.map((f, i) => (
         <article key={f.id} data-factor={f.id}>

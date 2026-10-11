@@ -619,11 +619,11 @@ export function buildV2Analysis(
     },
   ];
   const factorNames: Record<keyof ProductApplicationV3["decisionStructure"]["fifwm"], Pair> = {
-    formal: ["기회의 조건", "Opportunity requirements"],
-    informal: ["연결 가능성", "Access and support"],
-    framework: ["구조 적합성", "Structural fit"],
-    workflow: ["실행 현실성", "Execution feasibility"],
-    marketPolicy: ["버틸 수 있는가", "Capacity to withstand pressure"],
+    formal: ["의사결정·보고 체계", "Decision and reporting lines"],
+    informal: ["목표 팀의 적극적 지원", "Active support in the target team"],
+    framework: ["조직 개편·리더십 변화", "Restructuring and leadership change"],
+    workflow: ["목표 직무의 업무 흐름", "Target-role workflow"],
+    marketPolicy: ["정책·규제·시장 충격 노출", "Policy, regulatory and market exposure"],
   };
   const factors = (Object.keys(factorNames) as (keyof typeof factorNames)[]).map(
     id => ({

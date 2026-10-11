@@ -54,6 +54,13 @@ import {
   type SelfCheckId,
   type SelfCheckStatus,
 } from "../data/v2SelfDiagnostic";
+import {
+  canonicalFifwmFields,
+  canonicalFifwmQuestion,
+  canonicalFifwmChoiceLabel,
+  initialCanonicalFifwmAssessment,
+  v2CanAskCanonicalFifwm,
+} from "../data/v2CanonicalFifwm";
 import "../styles/v2.css";
 
 type Phase = "setup" | "modules" | "dashboard" | "report";
@@ -89,6 +96,7 @@ export default function AmcInteractiveV2() {
   const [showBandError, setShowBandError] = useState(false);
   const [showSelfCheckError, setShowSelfCheckError] = useState(false);
   const [selfChecks, setSelfChecks] = useState(initialSelfChecks);
+  const [fifwmAssessment, setFifwmAssessment] = useState(initialCanonicalFifwmAssessment);
   const [scenarioOverrides, setScenarioOverrides] = useState<ScenarioOverrides>(
     {}
   );
@@ -179,7 +187,10 @@ export default function AmcInteractiveV2() {
       setScenarioOverrides({});
     } else setState(s => ({ ...s, language }));
   }, [language, kind, demoMode]);
-  useEffect(() => setSelfChecks(initialSelfChecks()), [state.caseType]);
+  useEffect(() => {
+    setSelfChecks(initialSelfChecks());
+    setFifwmAssessment(initialCanonicalFifwmAssessment());
+  }, [state.caseType]);
   useEffect(() => {
     if (phase !== "report") {
       restorePrintTitle.current?.();
@@ -201,8 +212,8 @@ export default function AmcInteractiveV2() {
       ? "loading"
       : (evidenceByLanguage[language]?.status ?? "not_checked");
   const input = useMemo(
-    () => buildV2Input(state, intelligence),
-    [state, intelligence]
+    () => buildV2Input(state, intelligence, fifwmAssessment),
+    [state, intelligence, fifwmAssessment]
   );
   const core = useMemo(() => buildProductApplicationV3(input), [input]);
   const analysisVisible = phase === "dashboard" || phase === "report";
@@ -439,6 +450,57 @@ export default function AmcInteractiveV2() {
               v2Choices.missingAssets
             )}
             </>)}
+            {v2CanAskCanonicalFifwm(state.caseType) && (
+              <section className="v2-self-card v2-canonical-fifwm" aria-label={language === "ko" ? "목표 조직·직무의 기존 평가" : "Existing target organization and role assessment"}>
+                <div className="v2-self-card-head"><h3>{language === "ko" ? "목표 조직·직무의 기존 평가" : "Existing target organization and role assessment"}</h3></div>
+                <p>{language === "ko"
+                  ? "구체적인 목표 회사·사업부와 직무·팀이 있을 때만 답하세요. 창업 계획이나 학위 과정으로 바꿔 평가하지 않습니다. 답하지 못한 항목은 미평가로 남습니다."
+                  : "Answer only if you have a specific target company or unit and role or team. Unanswered items remain unassessed."}</p>
+                <fieldset className="v2-field">
+                  <legend>{language === "ko" ? "구체적인 목표 조직과 직무가 있나요?" : "Do you have a specific target organization and role?"}</legend>
+                  <div className="v2-band-choices">
+                    {(["known", "not_applicable", "unsure"] as const).map(status => (
+                      <button key={status} type="button" aria-pressed={fifwmAssessment.targetRoleStatus === status}
+                        onClick={() => setFifwmAssessment(previous => status === "known"
+                          ? { ...previous, targetRoleStatus: status }
+                          : { ...initialCanonicalFifwmAssessment(), targetRoleStatus: status })}>
+                        {status === "known"
+                          ? (language === "ko" ? "있음" : "Yes")
+                          : status === "not_applicable"
+                            ? (language === "ko" ? "해당 없음" : "Not applicable")
+                            : (language === "ko" ? "아직 모름" : "Not sure yet")}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                {fifwmAssessment.targetRoleStatus === "known" && canonicalFifwmFields.map(field => (
+                  <fieldset className="v2-field" key={field.field}>
+                    <legend>{canonicalFifwmQuestion(field.number, language)}</legend>
+                    <div className="v2-band-choices">
+                      {Object.keys(field.choices).map(choice => (
+                        <button type="button" key={choice} aria-pressed={fifwmAssessment.answers[field.field] === choice}
+                          onClick={() => setFifwmAssessment(previous => ({ ...previous,
+                            answers: { ...previous.answers, [field.field]: choice },
+                          }))}>
+                          {canonicalFifwmChoiceLabel(choice, language)}
+                        </button>
+                      ))}
+                      {(["__unknown__", "__na__"] as const).map(choice => (
+                        <button type="button" key={choice} aria-pressed={fifwmAssessment.answers[field.field] === choice}
+                          onClick={() => setFifwmAssessment(previous => ({ ...previous,
+                            answers: { ...previous.answers, [field.field]: choice },
+                          }))}>
+                          {choice === "__unknown__"
+                            ? (language === "ko" ? "아직 모름" : "Not sure yet")
+                            : (language === "ko" ? "해당 없음" : "Not applicable")}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                ))}
+                <small>{language === "ko" ? "선택한 내용은 자기보고입니다. 공개 자료로 개인의 조직 경험을 검증한 것은 아닙니다." : "These answers are self-reported. Public sources do not verify your personal experience in the organization."}</small>
+              </section>
+            )}
           </>
         );
       case 4:

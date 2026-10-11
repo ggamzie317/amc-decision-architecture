@@ -87,10 +87,12 @@ async function pinnedAddress(
   return answers[0] as Address;
 }
 
-function responseHeaders(
+export function responseHeaders(
   url: URL,
   address: Address,
-  signal: AbortSignal
+  signal: AbortSignal,
+  // A test-only trust anchor lets the bounded reader run against a local TLS server.
+  ca?: string
 ): Promise<SourceResponse> {
   return new Promise((resolve, reject) => {
     const req = httpsRequest(
@@ -106,6 +108,7 @@ function responseHeaders(
         },
         // Reuse the already validated address; a second DNS lookup could resolve privately.
         lookup: pinnedSourceLookup(address),
+        ...(ca ? { ca } : {}),
       },
       response => {
         const status = response.statusCode ?? 0;
@@ -122,19 +125,40 @@ function responseHeaders(
         // never retain or log the public response body.
         const chunks: Buffer[] = [];
         let bytes = 0;
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          resolve({
+            ...base,
+            contentGate: sourceHtmlLooksUnavailable(Buffer.concat(chunks, bytes).toString("utf8")),
+          });
+        };
         response.on("data", (chunk: Buffer) => {
-          bytes += chunk.length;
-          if (bytes > 4096) {
+          if (settled) return;
+          const prefix = chunk.subarray(0, 4096 - bytes);
+          if (prefix.length) chunks.push(prefix);
+          bytes += prefix.length;
+          if (bytes === 4096) {
+            // Inspect the retained prefix even when Range is ignored or one
+            // network chunk crosses the cap. Never keep the remainder.
+            finish();
             response.destroy();
-            resolve(base);
-          } else {
-            chunks.push(chunk);
           }
         });
-        response.on("end", () => resolve({
-          ...base,
-          contentGate: sourceHtmlLooksUnavailable(Buffer.concat(chunks).toString("utf8")),
-        }));
+        response.on("end", finish);
+        response.on("aborted", () => {
+          if (!settled) reject(new Error("source response aborted"));
+          settled = true;
+        });
+        response.on("error", error => {
+          if (!settled) reject(error);
+          settled = true;
+        });
+        response.on("close", () => {
+          if (!settled) reject(new Error("source response closed before completion"));
+          settled = true;
+        });
       }
     );
     req.on("timeout", () => req.destroy(new Error("source timeout")));
