@@ -8,6 +8,8 @@ export type ExternalIntelligenceV2 = {
   status: "live" | "unavailable" | "demo";
   generatedAt: string | null;
   caseType: string;
+  /** Partial means at least one cited source failed the public body check. */
+  sourceCoverage?: "complete" | "partial";
   evidenceBlocks: Array<{
     dimension: string;
     headline: string;

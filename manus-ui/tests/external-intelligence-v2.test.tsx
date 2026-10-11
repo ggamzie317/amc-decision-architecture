@@ -251,6 +251,7 @@ describe("V2 live External Intelligence boundary", () => {
       optionalNote: "PRIVATE NOTE",
       customCondition: "PRIVATE CONDITION",
       targetGeography: "Seoul",
+      publicSearchTarget: "Advisory service for Seoul small businesses",
       externalAreas: [
         "customerDemand",
         "pricing",
@@ -270,7 +271,7 @@ describe("V2 live External Intelligence boundary", () => {
       caseType: "Entrepreneurship",
       externalAreas: ["customerDemand", "pricing"],
       targetGeography: "Seoul",
-      targetLabel: "Business validation",
+      targetLabel: "Advisory service for Seoul small businesses",
     });
     expect(JSON.stringify(built)).not.toMatch(
       /PRIVATE|optionalNote|customCondition|financialRoom|supportSources|researchConsent|scenario/
@@ -290,6 +291,8 @@ describe("V2 live External Intelligence boundary", () => {
     expect(
       parseV2EvidenceRequest({ ...built, targetLabel: "a".repeat(121) })
     ).toBeNull();
+    expect(parseV2EvidenceRequest({ ...built, targetLabel: "" })).toBeNull();
+    expect(parseV2EvidenceRequest({ ...built, targetGeography: "" })).toBeNull();
     expect(
       parseV2EvidenceRequest({
         ...built,
@@ -488,7 +491,7 @@ describe("V2 live External Intelligence boundary", () => {
     expect(koDashboard).toContain("외부 근거 확인일");
   });
 
-  it("fails the whole provider response when a cited source is unavailable, without retry", async () => {
+  it("keeps independently cited accessible cards when another source fails, without retry", async () => {
     const provider = vi.fn(async () =>
       Response.json(envelope())
     ) as unknown as typeof fetch;
@@ -503,16 +506,37 @@ describe("V2 live External Intelligence boundary", () => {
     expect(provider).toHaveBeenCalledTimes(1);
     expect(checked).toHaveBeenCalledTimes(2);
     expect(result).toMatchObject({
-      status: "unavailable",
-      evidenceBlocks: [],
+      status: "live",
+      sourceCoverage: "partial",
+      evidenceBlocks: [expect.objectContaining({ sourceUrl: sourceRows[0].url })],
       opportunitySignals: [],
       frictionSignals: [],
-      uncertainties: [],
     });
+    expect(result.evidenceBlocks).toHaveLength(1);
+    expect(result.implication).not.toBe(providerContent("en").implication);
+    const f = v2DemoFixture("entrepreneurship", "en");
+    const dashboard = renderToStaticMarkup(React.createElement(V2Dashboard, {
+      state: f.state, core: f.baseline, intelligence: result,
+      evidencePhase: "live", onReport: () => {},
+    }));
+    const report = renderToStaticMarkup(React.createElement(V2Report, {
+      state: f.state, input: f.input, core: f.baseline,
+      sensitivity: f.sensitivity,
+      visibleVariables: selectV2SimulatorVariables(f.sensitivity, baselineBands(f.input)),
+      intelligence: result, evidencePhase: "live", onClose: () => {}, onPrint: () => {},
+    }));
+    for (const html of [dashboard, report]) {
+      expect(html).toContain("Public demand context");
+      expect(html).toContain(sourceRows[0].url);
+      expect(html).toContain("Some sources could not be checked");
+      expect(html).not.toContain("Pricing context");
+      expect(html).not.toContain(sourceRows[1].url);
+      expect(html).not.toContain(providerContent("en").implication);
+    }
     expect(observed).toHaveBeenCalledWith(
       expect.objectContaining({
-        reasonCode: "source_unavailable",
-        status: "fallback",
+        reasonCode: "live",
+        status: "live",
       })
     );
   });

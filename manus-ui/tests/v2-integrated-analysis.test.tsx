@@ -284,10 +284,11 @@ describe("V2 integrated customer analysis", () => {
     const f = fixture();
     f.state.optionalNote = "PRIVATE NOTE";
     f.state.customCondition = "PRIVATE CONDITION";
-    expect(v2PublicSearchTarget(f.state)).toContain("임용 자격");
+    expect(v2PublicSearchTarget(f.state)).toBe("");
     const request = buildV2EvidenceRequest({
       ...f.state,
       publicSearchTarget: "Example University adjunct appointment",
+      targetGeography: "Seoul",
     });
     expect(request?.targetLabel).toBe("Example University adjunct appointment");
     expect(Object.keys(request!).sort()).toEqual([
@@ -312,10 +313,8 @@ describe("V2 integrated customer analysis", () => {
       optionB: "PRIVATE PERSON at PRIVATE COMPANY with a private income figure",
       publicSearchTarget: undefined,
     };
-    expect(v2PublicSearchTarget(privateOption)).toBe("산업 전환");
-    expect(JSON.stringify(buildV2EvidenceRequest(privateOption))).not.toMatch(
-      /PRIVATE|income figure/i
-    );
+    expect(v2PublicSearchTarget(privateOption)).toBe("");
+    expect(buildV2EvidenceRequest(privateOption)).toBeNull();
   });
   it("renders the shared interpretation, relationship map and evidence-backed scope on all three surfaces", () => {
     const f = fixture(),

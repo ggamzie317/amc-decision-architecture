@@ -160,8 +160,51 @@ describe("V2 provider diagnostics without retaining provider text", () => {
     });
     expect(blocked).toHaveBeenCalledWith(expect.objectContaining({
       reasonCode: "source_unavailable", upstreamHttpStatus: 200,
-      responseDiagnostic: { category: "source_probe_failure", actualCount: 1 },
+      responseDiagnostic: { category: "source_probe_failure", actualCount: 1, candidateCount: 1, acceptedCount: 0, excludedCount: 1 },
     }));
+  });
+
+  it("keeps only independently cited accessible cards and drops dependent provider summaries", async () => {
+    const blockedUrl = "https://example.org/blocked";
+    const value = content();
+    value.evidenceBlocks.push({ ...value.evidenceBlocks[0],
+      headline: "Blocked claim", fact: "PRIVATE BLOCKED CLAIM",
+      whyItMatters: "PRIVATE BLOCKED MEANING", sourceUrl: blockedUrl });
+    value.opportunitySignals = ["PRIVATE COMBINED OPPORTUNITY"];
+    value.frictionSignals = ["PRIVATE COMBINED FRICTION"];
+    value.implication = "PRIVATE COMBINED IMPLICATION";
+    const raw = envelope(value);
+    raw.output[0] = { type: "search_results", results: [
+      { url: sourceUrl, title: "Original source", date: "2026-10-10" },
+      { url: blockedUrl, title: "Blocked source", date: "2026-10-09" },
+    ] } as never;
+    const observe = vi.fn();
+    const result = await resolveV2ExternalIntelligence(request, {
+      apiKey: "synthetic-key",
+      fetchImpl: (async () => Response.json(raw)) as typeof fetch,
+      sourceAvailable: async url => url === sourceUrl,
+      observe,
+    });
+    expect(result).toMatchObject({ status: "live", sourceCoverage: "partial" });
+    expect(result.evidenceBlocks.map(block => block.sourceUrl)).toEqual([sourceUrl]);
+    expect(result.opportunitySignals).toEqual([]);
+    expect(result.frictionSignals).toEqual([]);
+    expect(JSON.stringify(result)).not.toMatch(/PRIVATE/);
+    expect(acceptV2Evidence(result, request)?.evidenceBlocks).toHaveLength(1);
+    expect(observe).toHaveBeenCalledWith(expect.objectContaining({
+      reasonCode: "live",
+      responseDiagnostic: { category: "source_probe_failure", actualCount: 1,
+        candidateCount: 2, acceptedCount: 1, excludedCount: 1 },
+    }));
+    expect(JSON.stringify(observe.mock.calls)).not.toMatch(/example\.org|PRIVATE|synthetic-key/);
+
+    const allBlocked = await resolveV2ExternalIntelligence(request, {
+      apiKey: "synthetic-key",
+      fetchImpl: (async () => Response.json(raw)) as typeof fetch,
+      sourceAvailable: async () => false,
+      observe: () => {},
+    });
+    expect(allBlocked).toMatchObject({ status: "unavailable", evidenceBlocks: [], opportunitySignals: [] });
   });
 
   it("uses the same string and array limits in the Agent request contract", async () => {
@@ -179,6 +222,7 @@ describe("V2 provider diagnostics without retaining provider text", () => {
     const block = properties.evidenceBlocks.items.properties;
     expect(sent.response_format.json_schema.name).toBe("AmcV2ExternalEvidence");
     expect(sent.response_format.json_schema.strict).toBeUndefined();
+    expect(sent.tools).toEqual([{ type: "web_search" }]);
     for (const field of ["headline", "fact", "whyItMatters", "sourceUrl"] as const)
       expect(block[field].maxLength).toBe(limit[field]);
     expect(properties.evidenceBlocks.maxItems).toBe(limit.blocks);

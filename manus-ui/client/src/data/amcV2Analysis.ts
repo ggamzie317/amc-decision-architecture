@@ -230,15 +230,9 @@ export function isV2AcademicCase(
 }
 /** A visible, editable public search target. Customer prose and notes are not inferred into new request fields. */
 export function v2PublicSearchTarget(state: V2State): string {
-  if (state.publicSearchTarget !== undefined) return state.publicSearchTarget;
-  if (isV2AcademicCase(state))
-    return state.language === "ko"
-      ? "겸임교수 임용 자격 연구 실적 강의 경력 요건"
-      : "Adjunct faculty appointment research teaching and qualification requirements";
-  // Option B is free-form customer prose. Never copy it into a provider request.
-  const profile =
-    profiles[state.caseType] ?? profiles["General Career Reconfiguration"];
-  return profile.topic[state.language === "ko" ? 0 : 1];
+  // Search only an explicitly entered public target. Neither option prose nor
+  // a generic case-family label identifies a customer's actual research target.
+  return state.publicSearchTarget?.trim() ?? "";
 }
 export type V2Finding = {
   id: string;
@@ -445,19 +439,11 @@ export function buildV2Analysis(
             "Some execution support is present. Test actual schedule and support commitments before adding further obligations."
           );
   const conditionGroupFor = (dimension: string): V2EvidenceLink["conditionGroup"] => {
-    if (
-      /compensation|pricing|funding|opportunity.cost|보상|가격|재원|기회비용/i.test(
-        dimension
-      )
-    )
+    if (/compensation|funding|opportunity.cost|보상|재원|기회비용/i.test(dimension))
       return "finance";
-    if (
-      /distribution|geography|mobility|고객 확보|지역|이동/i.test(
-        dimension
-      )
-    )
+    if (/visa.mobility|geography.mobility|이동 요건/i.test(dimension))
       return "capacity";
-    if (/required.skills|role.demand|program.outcomes|employment.relevance|research.relevance|필요 역량|직무 수요|과정 성과|취업 관련|연구 관련/i.test(dimension))
+    if (/required.skills|필요 역량/i.test(dimension))
       return "readiness";
     return "public";
   };
@@ -533,7 +519,7 @@ export function buildV2Analysis(
       conditionProvenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
       condition,
       ...(linkedSelfReport ? { selfReport: linkedSelfReport } : {}),
-      interpretation: `${implication} ${personal}`,
+      interpretation: `${v2CustomerEvidenceText(state.language, block.whyItMatters)} ${implication} ${personal}`,
       unresolved: say(
         `이 공개 자료가 ${targetScope}에 적용되는지, ${personalUnknown}이 성립하는지는 아직 확인되지 않았습니다.`,
         `Applicability to the ${targetScope} and ${personalUnknown} remain unverified.`

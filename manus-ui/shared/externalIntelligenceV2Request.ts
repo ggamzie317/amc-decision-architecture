@@ -78,9 +78,9 @@ export function parseV2EvidenceRequest(raw: unknown): V2EvidenceRequest | null {
     return null;
   if (new Set(value.externalAreas).size !== value.externalAreas.length)
     return null;
-  const targetGeography = bounded(value.targetGeography, 80, true);
-  const targetLabel = bounded(value.targetLabel, 120, true);
-  if (targetGeography === null || targetLabel === null) return null;
+  const targetGeography = bounded(value.targetGeography, 80, false);
+  const targetLabel = bounded(value.targetLabel, 120, false);
+  if (!targetGeography || !targetLabel) return null;
   return {
     caseType,
     externalAreas: value.externalAreas,

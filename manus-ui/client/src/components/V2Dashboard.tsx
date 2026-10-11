@@ -110,6 +110,13 @@ export function V2ExternalBoard({
                 : "Source links were reachable. Compare claims and applicability with the source text."}
             </p>
           )}
+          {phase === "live" && intelligence.sourceCoverage === "partial" && (
+            <p className="v2-evidence-caveat" role="status">
+              {state.language === "ko"
+                ? "일부 출처를 확인할 수 없어 해당 카드와 종합 요약을 제외했습니다. 아래에는 접근 가능한 출처의 제한된 주장만 표시합니다."
+                : "Some sources could not be checked. Their cards and dependent summaries were removed; only limited claims from accessible sources remain."}
+            </p>
+          )}
           <div className="v2-evidence-grid">
             {intelligence.evidenceBlocks.map((block, index) => (
               <article

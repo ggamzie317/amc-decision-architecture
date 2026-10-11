@@ -418,11 +418,22 @@ export default function AmcInteractiveV2() {
             )}
             <label className="v2-optional">
               {language === "ko"
-                ? "공개 검색 주제 / 직무·기관·산업 키워드"
-                : "Public research topic / role, institution or industry keywords"}
+                ? state.caseType === "Entrepreneurship"
+                  ? "공개 검색 대상: 고객군과 제안할 제품·서비스"
+                  : state.caseType === "Industry Transition"
+                    ? "공개 검색 대상: 전환할 산업과 직무"
+                    : "공개 검색 대상: 직무·기관·과정 등 구체적인 목표"
+                : state.caseType === "Entrepreneurship"
+                  ? "Public search target: customer group and offer"
+                  : state.caseType === "Industry Transition"
+                    ? "Public search target: target industry and role"
+                    : "Public search target: specific role, institution or program"}
               <input
                 value={v2PublicSearchTarget(state)}
                 maxLength={120}
+                placeholder={language === "ko"
+                  ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : "구체적인 공개 검색 대상을 입력하세요"
+                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : "Enter a specific public research target"}
                 onChange={e => update({ publicSearchTarget: e.target.value })}
               />
             </label>
@@ -436,8 +447,8 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "최종 분석 버튼에서 위에 보이는 공개 주제·지역·항목만 검색합니다. 선택지에 쓴 자유서술은 검색 주제로 자동 복사하지 않습니다. 개인 메모와 내부 준비·재정 조건은 전송하지 않습니다."
-                : "The final analysis action searches only the public topic, geography and areas shown above. Free-form option text is not copied into the search topic. Personal notes and internal readiness or financial bands are not sent."}
+                ? "외부 근거를 검색하려면 구체적인 공개 검색 대상과 지역을 직접 입력하세요. 입력하지 않아도 구조 분석은 진행되지만 검색은 실행되지 않습니다. 선택지의 자유서술·자가진단 메모·재정 정보는 검색에 복사하지 않습니다."
+                : "Enter a specific public target and geography to search for external evidence. Structural analysis still works without them, but no search runs. Option prose, self-check notes and financial information are never copied into the search."}
             </p>
             </>)}
           </>
@@ -647,10 +658,9 @@ export default function AmcInteractiveV2() {
       return;
     const request = buildV2EvidenceRequest({ ...state, language });
     if (!request) {
-      setEvidenceByLanguage(previous => ({
-        ...previous,
-        [language]: unavailableIntelligence(state.caseType, language),
-      }));
+      setStep(2);
+      setPhase("modules");
+      window.scrollTo(0, 0);
       return;
     }
     evidencePending.current = true;
@@ -763,13 +773,17 @@ export default function AmcInteractiveV2() {
                       /[가-힣]/.test(e.target.value)
                     )
                       setLanguage("ko");
-                    setState(s => ({
-                      ...s,
-                      decision: e.target.value,
-                      caseType: casePinned
+                    setState(s => {
+                      const nextCase = casePinned
                         ? s.caseType
-                        : suggestV2CaseType(e.target.value),
-                    }));
+                        : suggestV2CaseType(e.target.value);
+                      return {
+                        ...s,
+                        decision: e.target.value,
+                        caseType: nextCase,
+                        ...(nextCase === s.caseType ? {} : { publicSearchTarget: undefined }),
+                      };
+                    });
                   }}
                 />
               </label>
@@ -810,7 +824,7 @@ export default function AmcInteractiveV2() {
                 aria-label={t("caseConfirm")}
                 value={state.caseType}
                 onChange={e => {
-                  update({ caseType: e.target.value as V2CaseType });
+                  update({ caseType: e.target.value as V2CaseType, publicSearchTarget: undefined });
                   setCasePinned(true);
                   setCaseOpen(false);
                 }}
@@ -922,7 +936,7 @@ export default function AmcInteractiveV2() {
                     : "Public research for the final analysis"}
                 </strong>
                 <p>
-                  {v2PublicSearchTarget(state)}
+                  {v2PublicSearchTarget(state) || (language === "ko" ? "공개 검색 대상 미입력" : "Public target not entered")}
                   {state.targetGeography && ` / ${state.targetGeography}`}
                 </p>
                 <p>
@@ -933,9 +947,13 @@ export default function AmcInteractiveV2() {
                       : "Default public requirements for this case"}
                 </p>
                 <small>
-                  {language === "ko"
-                    ? "이 버튼을 누르면 AMC에 연결된 외부 검색으로 근거를 확인하고 분석에 반영합니다."
-                    : "This action checks evidence using AMC's connected public research service and integrates it into the analysis."}
+                  {buildV2EvidenceRequest(state)
+                    ? language === "ko"
+                      ? "이 버튼을 누르면 위에 입력한 대상과 지역의 공개 근거를 검색합니다."
+                      : "This action searches public evidence for the target and geography entered above."
+                    : language === "ko"
+                      ? "공개 근거를 검색하려면 3단계에서 검색 대상과 지역을 입력하세요. 구조 초안은 바로 볼 수 있습니다."
+                      : "Enter a public target and geography in step 3 to search. You can review the structural draft now."}
                 </small>
                 <button
                   type="button"
@@ -964,6 +982,7 @@ export default function AmcInteractiveV2() {
               <button
                 type="button"
                 className="v2-primary"
+                disabled={step === 7 && !buildV2EvidenceRequest(state)}
                 onClick={() => {
                   if (v2UnansweredBands(state, step).length) {
                     setShowBandError(true);

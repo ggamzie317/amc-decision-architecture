@@ -111,7 +111,13 @@ export default function V2Report({
           ? t("externalPending")
           : evidencePhase === "loading"
             ? t("evidenceLoadingHint")
-            : t("evidenceRetryHint");
+        : t("evidenceRetryHint");
+  const partialEvidenceNote = intelligence.sourceCoverage === "partial"
+    ? say(
+        "일부 출처를 확인할 수 없어 해당 카드와 종합 요약을 제외했습니다. 남은 주장도 원문과 대조해야 합니다.",
+        "Some sources could not be checked; their cards and dependent summaries were removed. Compare remaining claims with the source text."
+      )
+    : null;
   useEffect(() => {
     let active = true;
     const inspect = () => {
@@ -512,6 +518,7 @@ export default function V2Report({
                     "Source accessibility does not prove a claim. Check sample, timing and geography against the actual target conditions."
                   )}
             </p>
+            {partialEvidenceNote && <p className="v2-paper-caption">{partialEvidenceNote}</p>}
             {sources(false)}
             {intelligence.uncertainties.length > 0 && (
               <p className="v2-paper-caption">

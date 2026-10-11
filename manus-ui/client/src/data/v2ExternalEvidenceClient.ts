@@ -17,6 +17,9 @@ import {
 export function buildV2EvidenceRequest(
   state: V2State
 ): V2EvidenceRequest | null {
+  // A case-family default is too broad to support target-specific research.
+  // The customer must explicitly provide both public target and geography.
+  if (!v2PublicSearchTarget(state) || !state.targetGeography.trim()) return null;
   return parseV2EvidenceRequest({
     caseType: state.caseType,
     externalAreas: state.externalAreas,
@@ -79,6 +82,8 @@ export function acceptV2Evidence(
   )
     return null;
   const blocks = value.evidenceBlocks;
+  if (value.sourceCoverage !== undefined && !["complete", "partial"].includes(String(value.sourceCoverage)))
+    return null;
   const citedUrls = new Set<string>();
   if (
     !blocks.every(block => {
