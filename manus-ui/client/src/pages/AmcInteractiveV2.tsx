@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { buildProductApplicationV3 } from "../data/amcProductApplicationV3";
 import { baselineBands, type ScenarioOverrides } from "../data/amcScenario";
 import { selectV2SimulatorVariables } from "../data/amcV2SensitivityView";
@@ -47,6 +47,13 @@ import {
   prepareV2PrintTitle,
   v2ReportFileName,
 } from "../data/v2ReportPresentation";
+import {
+  initialSelfChecks,
+  selfCheckCards,
+  selfCheckComplete,
+  type SelfCheckId,
+  type SelfCheckStatus,
+} from "../data/v2SelfDiagnostic";
 import "../styles/v2.css";
 
 type Phase = "setup" | "modules" | "dashboard" | "report";
@@ -58,6 +65,7 @@ export default function AmcInteractiveV2() {
     typeof window === "undefined" ? "" : window.location.search
   );
   const demoMode = params.get("demo") === "1";
+  const diagnosticMode = params.get("diagnostic") === "1";
   const initialKind: V2DemoKind =
     params.get("fixture") === "industry" ? "industry" : "entrepreneurship";
   const initialLanguage: V2Language =
@@ -75,11 +83,14 @@ export default function AmcInteractiveV2() {
       : initialV2State(initialLanguage)
   );
   const [phase, setPhase] = useState<Phase>(demoMode ? "dashboard" : "setup");
+  const [diagnosticResult, setDiagnosticResult] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [casePinned, setCasePinned] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [showBandError, setShowBandError] = useState(false);
+  const [showSelfCheckError, setShowSelfCheckError] = useState(false);
+  const [selfChecks, setSelfChecks] = useState(initialSelfChecks);
   const [scenarioOverrides, setScenarioOverrides] = useState<ScenarioOverrides>(
     {}
   );
@@ -93,6 +104,13 @@ export default function AmcInteractiveV2() {
   const simOpened = useRef(false);
   const restorePrintTitle = useRef<(() => void) | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
+  const selfCards = useMemo(
+    () => selfCheckCards(state.caseType, language),
+    [state.caseType, language]
+  );
+  const completedSelfChecks = selfCards.filter(card =>
+    selfCheckComplete(card, selfChecks, state.bandSelections)
+  ).length;
   const update = (patch: Partial<V2State>) =>
     setState(s => ({ ...s, ...patch }));
   const setBand = <K extends keyof V2State["bands"]>(
@@ -163,6 +181,7 @@ export default function AmcInteractiveV2() {
       setScenarioOverrides({});
     } else setState(s => ({ ...s, language }));
   }, [language, kind, demoMode]);
+  useEffect(() => setSelfChecks(initialSelfChecks()), [state.caseType]);
   useEffect(() => {
     if (phase !== "report") {
       restorePrintTitle.current?.();
@@ -299,6 +318,43 @@ export default function AmcInteractiveV2() {
         ))}
     </div>
   );
+  const selfCheckCard = (id: SelfCheckId, controls: ReactNode) => {
+    const card = selfCards.find(item => item.id === id)!;
+    const answer = selfChecks[id];
+    const incomplete = showSelfCheckError && !selfCheckComplete(card, selfChecks, state.bandSelections);
+    const statusLabels: Record<SelfCheckStatus, string> = language === "ko"
+      ? { notChecked: "아직 확인하지 않음", unsure: "잘 모르겠음", checked: "직접 확인한 내용 있음" }
+      : { notChecked: "Not checked yet", unsure: "Not sure", checked: "I checked something" };
+    return (
+      <section className={`v2-self-card${incomplete ? " v2-band-error" : ""}`} key={id} aria-label={card.title}>
+        <div className="v2-self-card-head"><span>{selfCards.indexOf(card) + 1} / {selfCards.length}</span><h3>{card.title}</h3></div>
+        <p>{card.question}</p>
+        <p className="v2-self-example">{card.example}</p>
+        {controls}
+        <fieldset className="v2-field">
+          <legend>{language === "ko" ? "확인 근거의 현재 상태" : "Current basis for your answer"}</legend>
+          <div className="v2-band-choices">
+            {(["notChecked", "unsure", "checked"] as const).map(status => (
+              <button type="button" key={status} aria-pressed={answer.status === status}
+                onClick={() => setSelfChecks(previous => ({...previous, [id]: {...previous[id], status}}))}>
+                {statusLabels[status]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        {answer.status === "checked" && (
+          <label className="v2-optional">
+            {language === "ko" ? "직접 확인한 내용을 간단히 적어 주세요 (자기보고)" : "Briefly note what you checked (self-reported)"}
+            <textarea maxLength={180} value={answer.detail} onChange={event =>
+              setSelfChecks(previous => ({...previous, [id]: {...previous[id], detail: event.target.value}}))
+            } />
+          </label>
+        )}
+        {incomplete && <p className="v2-band-error-text">{language === "ko" ? "현재 상태와 각 조건을 선택해 주세요. 확인한 내용이 있다면 간단히 적어 주세요." : "Select a basis and each condition. If checked, briefly describe what you checked."}</p>}
+        <small>{language === "ko" ? "이 답변은 자기보고이며 외부 검증 완료를 뜻하지 않습니다." : "This is self-reported and does not mean external verification is complete."}</small>
+      </section>
+    );
+  };
   const moduleBody = () => {
     switch (step) {
       case 0:
@@ -342,6 +398,7 @@ export default function AmcInteractiveV2() {
       case 2:
         return (
           <>
+            {selfCheckCard("public", <>
             {chipGroup(
               "validateArea",
               "externalAreas",
@@ -370,25 +427,31 @@ export default function AmcInteractiveV2() {
                 ? "최종 분석 버튼에서 위에 보이는 공개 주제·지역·항목만 검색합니다. 선택지에 쓴 자유서술은 검색 주제로 자동 복사하지 않습니다. 개인 메모와 내부 준비·재정 조건은 전송하지 않습니다."
                 : "The final analysis action searches only the public topic, geography and areas shown above. Free-form option text is not copied into the search topic. Personal notes and internal readiness or financial bands are not sent."}
             </p>
+            </>)}
           </>
         );
       case 3:
         return (
           <>
+            {selfCheckCard("readiness", <>
             {bandGroup("readinessBand", "internalReadiness", bandStrength)}
             {chipGroup(
               "missingAssets",
               "missingAssets",
               v2Choices.missingAssets
             )}
+            </>)}
           </>
         );
       case 4:
         return (
           <>
+            {selfCheckCard("financial", <>
             {bandGroup("financial", "financialRoom", bandStrength)}
-            {bandGroup("reversibility", "reversibility", bandStrength)}
             {bandGroup("downside", "downsideExposure", bandRisk)}
+            </>)}
+            {selfCheckCard("recovery", <>
+            {bandGroup("reversibility", "reversibility", bandStrength)}
             <button
               type="button"
               className="v2-link-button"
@@ -406,28 +469,27 @@ export default function AmcInteractiveV2() {
                 />
               </label>
             )}
+            </>)}
           </>
         );
       case 5:
         return (
           <>
+            {selfCheckCard("capacity", <>
             {bandGroup("supportBand", "optionBSupport", bandStrength)}
             {chipGroup(
               "supportSource",
               "supportSources",
               v2Choices.supportSources
             )}
+            {bandGroup("constraint", "constraintLoad", bandLoad)}
+            {chipGroup("constraintSources", "constraints", v2Choices.constraints)}
+            </>)}
           </>
         );
       case 6:
         return (
           <>
-            {bandGroup("constraint", "constraintLoad", bandLoad)}
-            {chipGroup(
-              "constraintSources",
-              "constraints",
-              v2Choices.constraints
-            )}
             {radioGroup("timingEffect", "timingEffect", [
               "waitReduces",
               "waitLittle",
@@ -463,6 +525,12 @@ export default function AmcInteractiveV2() {
       );
       setStep(firstIncomplete ?? 3);
       setShowBandError(true);
+      return;
+    }
+    const firstIncompleteCard = selfCards.find(card => !selfCheckComplete(card, selfChecks, state.bandSelections));
+    if (firstIncompleteCard) {
+      setStep(firstIncompleteCard.step);
+      setShowSelfCheckError(true);
       return;
     }
     const now = new Date().toISOString();
@@ -595,6 +663,15 @@ export default function AmcInteractiveV2() {
       )}
       {phase === "setup" && (
         <main className="v2-intake">
+          {diagnosticMode && <div className="v2-guidance">
+            <button type="button" onClick={async () => {
+              const response = await fetch("/api/amc/external-intelligence-v2", {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+              });
+              setDiagnosticResult(`${response.status} / ${response.headers.get("X-AMC-Evidence-Reason") || "header missing"}`);
+            }}>Check evidence loader without provider</button>
+            {diagnosticResult && <p role="status">{diagnosticResult}</p>}
+          </div>}
           <div className="v2-intake-intro">
             <p className="v2-kicker">{t("eyebrow")}</p>
             <h1>{t("startTitle")}</h1>
@@ -743,6 +820,9 @@ export default function AmcInteractiveV2() {
             <div className="v2-progress">
               <i style={{ width: `${(step + 1) * 12.5}%` }} />
             </div>
+            <p className="v2-self-progress" aria-live="polite">
+              {language === "ko" ? `${selfCards.length}개 중 ${completedSelfChecks}개 응답` : `${completedSelfChecks} of ${selfCards.length} check cards answered`}
+            </p>
             <ol>
               {v2ModuleKeys.map((key, i) => (
                 <li
@@ -812,6 +892,7 @@ export default function AmcInteractiveV2() {
                 type="button"
                 onClick={() => {
                   setShowBandError(false);
+                  setShowSelfCheckError(false);
                   if (step === 0) setPhase("setup");
                   else setStep(step - 1);
                   window.scrollTo(0, 0);
@@ -827,7 +908,12 @@ export default function AmcInteractiveV2() {
                     setShowBandError(true);
                     return;
                   }
+                  if (selfCards.some(card => card.step === step && !selfCheckComplete(card, selfChecks, state.bandSelections))) {
+                    setShowSelfCheckError(true);
+                    return;
+                  }
                   setShowBandError(false);
+                  setShowSelfCheckError(false);
                   if (step === 7) finish();
                   else {
                     setStep(step + 1);

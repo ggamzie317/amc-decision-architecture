@@ -247,8 +247,7 @@ export const v2RequiredBandsByStep: Partial<
 > = {
   3: ["internalReadiness"],
   4: ["financialRoom", "reversibility", "downsideExposure"],
-  5: ["optionBSupport"],
-  6: ["constraintLoad"],
+  5: ["optionBSupport", "constraintLoad"],
 };
 export function v2UnansweredBands(
   state: V2State,

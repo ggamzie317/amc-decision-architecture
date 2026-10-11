@@ -384,6 +384,45 @@
   gap: 24px;
   min-height: 270px;
 }
+.v2-self-progress {
+  margin: 16px 0;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--teal);
+}
+.v2-self-card {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: clamp(16px, 3vw, 26px);
+  border: 1px solid #d4ded9;
+  background: #fff;
+}
+.v2-self-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.v2-self-card-head span {
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.v2-self-card h3 { margin: 0; font-size: 21px; }
+.v2-self-card p { margin: 0; line-height: 1.55; }
+.v2-self-card .v2-self-example { color: var(--muted); font-size: 13px; }
+.v2-self-card small { color: var(--muted); line-height: 1.5; }
+.v2-self-card textarea {
+  width: 100%;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid #c3ceca;
+  color: var(--ink);
+  background: #fbfbf8;
+  resize: vertical;
+  font: inherit;
+}
 .v2-field {
   padding: 0;
   margin: 0;

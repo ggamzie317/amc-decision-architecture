@@ -9,7 +9,7 @@ import {
   v2EvidenceDimensionLabel,
   type V2CopyKey,
 } from "../data/v2Language";
-import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
+import { buildV2Analysis, type V2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
 import {
   V2DecisionMap,
   V2Reasoning,
@@ -36,11 +36,13 @@ export function v2EvidenceStatusLabel(phase: V2EvidencePhase): V2CopyKey {
 export function V2ExternalBoard({
   state,
   intelligence,
+  analysis,
   phase,
   onCheckEvidence,
 }: {
   state: V2State;
   intelligence: ExternalIntelligenceV2;
+  analysis: V2Analysis;
   phase: V2EvidencePhase;
   onCheckEvidence: () => void;
 }) {
@@ -129,6 +131,14 @@ export function V2ExternalBoard({
                   <strong>{t("whyMatters")}</strong>
                   <p>{evidenceText(block.whyItMatters)}</p>
                 </div>
+                {analysis.evidenceLinks[index] && (
+                  <div className="v2-evidence-why">
+                    <strong>{state.language === "ko" ? "비교할 현재 조건" : "Current condition to compare"}</strong>
+                    <p>{analysis.evidenceLinks[index].condition}</p>
+                    <p>{analysis.evidenceLinks[index].unresolved}</p>
+                    <p>{analysis.evidenceLinks[index].test}</p>
+                  </div>
+                )}
                 <div className="v2-source">
                   {t("source")}:{" "}
                   {block.sourceUrl ? (
@@ -343,6 +353,7 @@ export default function V2Dashboard({
       <V2ExternalBoard
         state={state}
         intelligence={intelligence}
+        analysis={analysis}
         phase={evidencePhase}
         onCheckEvidence={onCheckEvidence}
       />

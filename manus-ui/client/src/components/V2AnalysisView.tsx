@@ -240,9 +240,6 @@ export function V2Reasoning({
                     <div><dt>{ko ? "구조 해석" : "Structural reading"}</dt><dd>{link.interpretation}</dd></div>
                     <div><dt>{ko ? "아직 확인되지 않은 점" : "Still unverified"}</dt><dd>{link.unresolved}</dd></div>
                     <div><dt>{ko ? "다음 확인" : "Next check"}</dt><dd>{link.test}</dd></div>
-                    {link.changingTitles.length > 0 && <div><dt>{ko ? "기존 실행 경로 조정 · 아래 상세 내용" : "Existing Changing · details below"}</dt><dd>{link.changingTitles.join(" · ")}</dd></div>}
-                    <div><dt>{ko ? "기존 실험" : "Existing experiment"}</dt><dd>{link.experimentCheck}</dd></div>
-                    {link.switchingCondition && <div><dt>{ko ? "기존 전환 조건" : "Existing switching condition"}</dt><dd>{link.switchingCondition}</dd></div>}
                   </dl>
                 )}
                 {block.sourceUrl && (
@@ -294,8 +291,8 @@ export function V2FactorMap({
               {f.evidenceIds.length
                 ? `${ko ? "관련 공개 근거" : "Related public evidence"} ${f.evidenceIds.map(id => id + 1).join(", ")}`
                 : ko
-                  ? "관련 공개 근거 없음"
-                  : "No related public evidence"}
+                  ? "이 평가에 연결된 공개 근거 없음"
+                  : "No public evidence mapped to this assessment"}
             </small>
           </div>
         </article>

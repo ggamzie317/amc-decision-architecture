@@ -260,9 +260,6 @@ export type V2EvidenceLink = {
   interpretation: string;
   unresolved: string;
   test: string;
-  changingTitles: string[];
-  experimentCheck: string;
-  switchingCondition: string | null;
 };
 export type V2Analysis = {
   language: V2State["language"];
@@ -508,9 +505,6 @@ export function buildV2Analysis(
         `Applicability to the ${targetScope} and ${personalUnknown} remain unverified.`
       ),
       test: check,
-      changingTitles: core.changingPlays.map(play => v2CustomerPlayText(state.language, play.title)),
-      experimentCheck: core.nextStepExperiment.whatToTest,
-      switchingCondition: core.decisionSwitches[0]?.signal ?? null,
     };
   });
   const priorityId = blocks.findIndex(block => block.direction === "caution");
@@ -550,9 +544,7 @@ export function buildV2Analysis(
       ),
       basis: `${t("financial")}: ${t(money)} · ${t("reversibility")}: ${t(reverse)} · ${t("downside")}: ${t(risk)}`,
       implication: safetyReading,
-      evidenceIds: evidenceLinks
-        .filter(e => e.factor === "marketPolicy")
-        .map(e => e.id),
+      evidenceIds: [],
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
     },
     {
@@ -563,9 +555,7 @@ export function buildV2Analysis(
       ),
       basis: `${t("readinessBand")}: ${t(ready)} · ${t("supportBand")}: ${t(support)}`,
       implication: `${readinessReading} ${text(profile.question)}`,
-      evidenceIds: evidenceLinks
-        .filter(e => e.factor === "formal" || e.factor === "framework")
-        .map(e => e.id),
+      evidenceIds: [],
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
     },
     {
@@ -576,9 +566,7 @@ export function buildV2Analysis(
       ),
       basis: `${t("constraint")}: ${t(load)} · ${t("supportBand")}: ${t(support)}`,
       implication: capacityReading,
-      evidenceIds: evidenceLinks
-        .filter(e => e.factor === "workflow")
-        .map(e => e.id),
+      evidenceIds: [],
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
     },
   ];
@@ -598,7 +586,7 @@ export function buildV2Analysis(
     id => ({
       id,
       title: text(factorNames[id]),
-      evidenceIds: evidenceLinks.filter(e => e.factor === id).map(e => e.id),
+      evidenceIds: [],
       status: core.decisionStructure.fifwm[id].score === null
         ? say("미확인", "Not established")
         : (["■□□", "■■□", "■■■"] as const)[core.decisionStructure.fifwm[id].score],
