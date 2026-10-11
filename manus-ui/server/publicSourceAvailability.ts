@@ -166,7 +166,14 @@ export async function probePublicSource(
         return { available: false, category: "http_other" };
       if (!response.location || redirect === 3)
         return { available: false, category: "redirect" };
-      url = new URL(response.location, url);
+      const next = new URL(response.location, url);
+      // A deep citation redirected to a generic landing, login or sales page
+      // no longer exposes the cited material, even if that page returns 200.
+      const gate = /^\/(?:pricing|plans?|login|log-in|sign-?in|sign-?up|register|subscribe|upgrade|paywall)(?:\/|$)/i;
+      if ((next.pathname === "/" && url.pathname !== "/") ||
+          (gate.test(next.pathname) && !gate.test(url.pathname)))
+        return { available: false, category: "redirect" };
+      url = next;
     }
   } catch (error) {
     if (signal.aborted) return { available: false, category: "timeout" };

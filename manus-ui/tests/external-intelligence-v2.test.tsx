@@ -554,6 +554,12 @@ describe("V2 live External Intelligence boundary", () => {
       resolve,
       headers: async () => ({ status: 302, location: "https://127.0.0.1/private" }),
     })).toEqual({ available: false, category: "invalid_destination" });
+    const paywallHeaders = vi.fn(async () => ({ status: 302, location: "/pricing/" }));
+    expect(await probePublicSource("https://example.org/contract-opportunity/item", signal, {
+      resolve,
+      headers: paywallHeaders,
+    })).toEqual({ available: false, category: "redirect" });
+    expect(paywallHeaders).toHaveBeenCalledTimes(1);
     expect(await probePublicSource("https://example.org/source", signal, {
       resolve: async () => { throw Object.assign(new Error("lookup failed"), { code: "ENOTFOUND" }); },
     })).toEqual({ available: false, category: "dns" });
