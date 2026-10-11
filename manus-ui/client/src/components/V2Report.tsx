@@ -182,6 +182,10 @@ export default function V2Report({
                 {analysis.evidenceLinks[id]?.condition}
               </p>
               <p>{analysis.evidenceLinks[id]?.interpretation}</p>
+              <p>
+                <b>{say("다음 확인", "Next check")}</b>{" "}
+                {analysis.evidenceLinks[id]?.test}
+              </p>
             </>
           ) : (
             <p>
@@ -334,6 +338,10 @@ export default function V2Report({
               </p>
             )}
             <p>{analysis.externalReading}</p>
+            {hasSources && <p>{say(
+              "개인의 자격·구매 반응·실행 여력은 이 자료만으로 확인되지 않습니다. 기존 실행 경로 조정과 실험은 6쪽, 전환 조건은 8쪽에서 확인하세요.",
+              "These sources alone do not establish personal eligibility, purchases or execution capacity. The existing Changing and experiment appear on page 6; switching conditions appear on page 8."
+            )}</p>}
           </div>
           {hasSources ? (
             sources(true)

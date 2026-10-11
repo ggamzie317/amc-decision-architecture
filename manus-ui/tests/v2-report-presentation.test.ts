@@ -87,7 +87,8 @@ describe("V2 report presentation", () => {
         "김민수의 Acme 창업, abc@example.com, 010-1234-5678",
         "Entrepreneurship",
         "ko",
-        day
+        day,
+        "Asia/Shanghai"
       )
     ).toBe("창업_검토_allofmycareer_2026-10-10.pdf");
     expect(
@@ -95,7 +96,8 @@ describe("V2 report presentation", () => {
         "Acme IT industry transition with a private salary",
         "Industry Transition",
         "ko",
-        day
+        day,
+        "Asia/Shanghai"
       )
     ).toBe("IT_산업_전환_allofmycareer_2026-10-10.pdf");
     expect(
@@ -103,11 +105,12 @@ describe("V2 report presentation", () => {
         "MBA application with family health details",
         "MBA / EMBA / PhD Decision",
         "ko",
-        day
+        day,
+        "Asia/Shanghai"
       )
     ).toBe("MBA_진학_allofmycareer_2026-10-10.pdf");
     expect(
-      v2ReportFileName("Change jobs", "Industry Transition", "en", day)
+      v2ReportFileName("Change jobs", "Industry Transition", "en", day, "Asia/Shanghai")
     ).toBe("Career_Transition_allofmycareer_2026-10-10.pdf");
     expect(v2ReportSubject("private name", "unrecognized", "ko")).toBe(
       "결정_보고서"
@@ -130,10 +133,23 @@ describe("V2 report presentation", () => {
             `${degree} application; private@example.com`,
             "MBA / EMBA / PhD Decision",
             language,
-            day
+            day,
+            "Asia/Shanghai"
           )
         ).toBe(`${subject}_allofmycareer_2026-10-10.pdf`);
       }
+    }
+  });
+
+  it("uses the customer's local report day across UTC, Shanghai and New York", () => {
+    const instant = new Date("2026-10-10T01:00:00.000Z");
+    for (const [timeZone, day] of [
+      ["UTC", "2026-10-10"],
+      ["Asia/Shanghai", "2026-10-10"],
+      ["America/New_York", "2026-10-09"],
+    ]) {
+      expect(v2ReportFileName("MBA study", "MBA / EMBA / PhD Decision", "en", instant, timeZone))
+        .toBe(`MBA_Study_allofmycareer_${day}.pdf`);
     }
   });
 

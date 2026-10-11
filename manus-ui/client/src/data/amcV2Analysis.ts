@@ -8,7 +8,7 @@ import type {
   V2Provenance,
 } from "./externalIntelligenceV2";
 import { v2CustomerEvidenceText, v2MissingPoint } from "./amcV2Presentation";
-import { v2CustomerPosture } from "./v2ReportPresentation";
+import { v2CustomerPlayText, v2CustomerPosture } from "./v2ReportPresentation";
 import { v2t, type V2CopyKey } from "./v2Language";
 
 export type V2EvidencePhase =
@@ -250,12 +250,23 @@ export type V2Finding = {
 export type V2EvidenceLink = {
   id: number;
   factor: "formal" | "informal" | "framework" | "workflow" | "marketPolicy";
+  findingId: "recovery" | "fit" | "capacity";
+  sourceFact: string;
+  sourceScope: string;
+  sourceUrl?: string;
+  sourceDate?: string;
+  conditionProvenance: readonly V2Provenance[];
   condition: string;
   interpretation: string;
+  unresolved: string;
   test: string;
+  changingTitles: string[];
+  experimentCheck: string;
+  switchingCondition: string | null;
 };
 export type V2Analysis = {
   language: V2State["language"];
+  fifwmSource: ProductApplicationV3["decisionStructure"]["fifwmSource"];
   topic: string;
   posture: string;
   summary: string;
@@ -290,9 +301,12 @@ export type V2Analysis = {
     family: ChangingPlay["family"];
     title: string;
     move: string;
+    changes: string;
     protects: string;
     needs: string;
     evidence: string;
+    exposure: string;
+    timeExposure: string;
   }>;
   experiment: {
     action: string;
@@ -323,6 +337,16 @@ export function buildV2Analysis(
   const profile = isV2AcademicCase(state)
     ? academic
     : (profiles[state.caseType] ?? profiles["General Career Reconfiguration"]);
+  const targetScope = state.caseType === "Entrepreneurship"
+    ? say("목표 고객군·제안·지역", "target customer segment, offer and geography")
+    : state.caseType === "MBA / EMBA / PhD Decision" || isV2AcademicCase(state)
+      ? say("목표 과정·기관·지역", "target program, institution and geography")
+      : state.caseType === "Industry Transition"
+        ? say("목표 산업·직무·지역", "target industry, role and geography")
+        : say("목표 경로·지역", "target path and geography");
+  const personalUnknown = state.caseType === "Entrepreneurship"
+    ? say("실제 구매와 실행 여력", "actual purchases and execution capacity")
+    : say("본인의 자격·성과와 실행 여력", "personal eligibility, work evidence and execution capacity");
   const b = core.postureBasis,
     s = core.safetyMargin.inputs;
   const money = s.financialRoom.band,
@@ -417,6 +441,7 @@ export function buildV2Analysis(
   };
   const evidenceLinks: V2EvidenceLink[] = blocks.map((block, id) => {
     const factor = factorFor(block.dimension);
+    const findingId = factor === "marketPolicy" ? "recovery" : factor === "workflow" ? "capacity" : "fit";
     const condition =
       factor === "marketPolicy"
         ? say(
@@ -434,8 +459,8 @@ export function buildV2Analysis(
             );
     const implication = demo
       ? say(
-          "합성 자료는 실제 요건을 입증하지 않습니다. 목표 기관·직무·지역의 공개 자료에서 같은 조건을 확인해야 합니다.",
-          "Synthetic material does not establish actual requirements. Check the same condition in public sources for the target institution, role and location."
+          `합성 자료는 실제 요건을 입증하지 않습니다. ${targetScope}의 공개 자료에서 같은 조건을 확인해야 합니다.`,
+          `Synthetic material does not establish actual requirements. Check the same condition in public sources for the ${targetScope}.`
         )
       : block.direction === "caution"
         ? say(
@@ -444,12 +469,12 @@ export function buildV2Analysis(
           )
         : block.direction === "supportive"
           ? say(
-              "경로를 탐색할 근거는 있으나, 본인의 자격·성과와 실행 여력이 성립하는지 별도 확인이 필요합니다.",
-              "This supports exploring the path, while personal eligibility, work evidence and execution capacity still require validation."
+              `경로를 탐색할 근거는 있으나, ${personalUnknown}이 성립하는지 별도 확인이 필요합니다.`,
+              `This supports exploring the path, while ${personalUnknown} still require separate validation.`
             )
           : say(
-              "근거의 적용 범위가 제한적입니다. 목표 기관·직무·지역에 같은 조건이 적용되는지 확인해야 합니다.",
-              "The evidence has a limited scope. Check whether it applies to the target institution, role and location."
+              `근거의 적용 범위가 제한적입니다. ${targetScope}에 같은 조건이 적용되는지 확인해야 합니다.`,
+              `The evidence has a limited scope. Check whether it applies to the ${targetScope}.`
             );
     const personal =
       factor === "marketPolicy"
@@ -458,22 +483,34 @@ export function buildV2Analysis(
           ? capacityReading
           : readinessReading;
     const headline = v2CustomerEvidenceText(state.language, block.headline);
-    const publicClaim = v2CustomerEvidenceText(state.language, block.fact);
     const check = demo
       ? say(
-          `합성 예시의 ‘${headline}’는 ‘${publicClaim}’라고 가정합니다. 실제 공개 요건을 별도로 찾아 현재 조건(${condition})과 대조하세요.`,
-          `The synthetic example for “${headline}” assumes: “${publicClaim}” Find actual public requirements separately and compare them with current conditions (${condition}).`
+          `‘${headline}’에 해당하는 실제 공개 자료를 찾아 ${targetScope}과 현재 조건(${condition})에 적용되는지 확인하세요.`,
+          `Find actual public evidence for “${headline}” and check its applicability to the ${targetScope} and current conditions (${condition}).`
         )
       : say(
-          `‘${headline}’ 관련 검색 결과는 ‘${publicClaim}’라고 제시합니다. 원문에서 목표 기관·직무·지역에 적용되는지 확인하고, 현재 조건(${condition})과 대조하세요.`,
-          `The search result for “${headline}” states: “${publicClaim}” Check its applicability to the target institution, role and location in the source text, then compare it with current conditions (${condition}).`
+          `‘${headline}’의 주장과 적용 범위를 원문에서 대조하고, ${targetScope}과 현재 조건(${condition})에 맞는지 확인하세요.`,
+          `Compare the claim and scope of “${headline}” with its source text, then check the ${targetScope} and current conditions (${condition}).`
         );
     return {
       id,
       factor,
+      findingId,
+      sourceFact: block.fact,
+      sourceScope: block.whyItMatters,
+      sourceUrl: block.sourceUrl,
+      sourceDate: block.sourceDate,
+      conditionProvenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
       condition,
       interpretation: `${implication} ${personal}`,
+      unresolved: say(
+        `이 공개 자료가 ${targetScope}에 적용되는지, ${personalUnknown}이 성립하는지는 아직 확인되지 않았습니다.`,
+        `Applicability to the ${targetScope} and ${personalUnknown} remain unverified.`
+      ),
       test: check,
+      changingTitles: core.changingPlays.map(play => v2CustomerPlayText(state.language, play.title)),
+      experimentCheck: core.nextStepExperiment.whatToTest,
+      switchingCondition: core.decisionSwitches[0]?.signal ?? null,
     };
   });
   const priorityId = blocks.findIndex(block => block.direction === "caution");
@@ -492,15 +529,6 @@ export function buildV2Analysis(
         ),
       }
     : null;
-  const evidenceMeaning = (ids: number[]) => {
-    const block = blocks[ids[0]];
-    return block
-      ? say(
-          ` ${demo ? "합성 예시" : "검색 결과"} ‘${v2CustomerEvidenceText(state.language, block.headline)}’의 주장: ${v2CustomerEvidenceText(state.language, block.fact)} 판단에 주는 의미: ${v2CustomerEvidenceText(state.language, block.whyItMatters)} ${demo ? "실제 공개 자료와 대조해야 합니다." : "원문과 적용 범위를 확인해야 합니다."}`,
-          ` ${demo ? "Synthetic example" : "Search-result claim"} for “${block.headline}”: ${block.fact} Decision relevance: ${block.whyItMatters} ${demo ? "Compare this with actual public sources." : "Verify the source text and its scope."}`
-        )
-      : "";
-  };
   const externalReading =
     live || demo
       ? v2CustomerEvidenceText(state.language, intelligence.implication)
@@ -556,7 +584,6 @@ export function buildV2Analysis(
   ];
   findings.forEach(f => {
     if (f.evidenceIds.length) {
-      f.implication += evidenceMeaning(f.evidenceIds);
       f.provenance.push("EXTERNAL_EVIDENCE");
     }
   });
@@ -572,44 +599,17 @@ export function buildV2Analysis(
       id,
       title: text(factorNames[id]),
       evidenceIds: evidenceLinks.filter(e => e.factor === id).map(e => e.id),
-      status:
-        id === "formal"
-          ? say(
-              blocks.length ? "요건 대조 필요" : "외부 요건 미확인",
-              blocks.length
-                ? "Requirements need comparison"
-                : "Requirements unresolved"
-            )
-          : id === "informal"
-            ? t(support)
-            : id === "framework"
-              ? t(ready)
-              : id === "workflow"
-                ? t(load)
-                : t(core.safetyMargin.band),
-      reading:
-        id === "formal"
-          ? text(profile.question)
-          : id === "informal"
-            ? say(
-                "인맥이나 가족의 존재만으로 접근 경로가 확보되지는 않습니다. 실제 소개·일정·자원 지원을 확인하세요.",
-                "Contacts or family alone do not establish access. Confirm actual introductions, schedules and resource commitments."
-              )
-            : id === "framework"
-              ? readinessReading
-              : id === "workflow"
-                ? capacityReading
-                : safetyReading,
+      status: core.decisionStructure.fifwm[id].score === null
+        ? say("미확인", "Not established")
+        : (["■□□", "■■□", "■■■"] as const)[core.decisionStructure.fifwm[id].score],
+      reading: core.decisionStructure.fifwm[id].score === null
+        ? say(
+            "기존 평가에 필요한 입력이 없어 이 항목은 아직 평가되지 않았습니다.",
+            "This item has not been assessed because the required inputs are unavailable."
+          )
+        : core.decisionStructure.fifwm[id].reading,
     })
   );
-  factors.forEach(f => {
-    const block = blocks[f.evidenceIds[0]];
-    if (block)
-      f.reading += say(
-        ` 연결된 ${demo ? "합성 예시" : "검색 결과"}: ‘${v2CustomerEvidenceText(state.language, block.headline)}’. ${demo ? "실제 공개 자료로 확인하세요." : "적용 범위를 확인하세요."}`,
-        ` Linked ${demo ? "synthetic example" : "search result"}: “${block.headline}”. ${demo ? "Check actual public sources." : "Verify its scope."}`
-      );
-  });
   const strength = (band: string) =>
     band === "strong"
       ? 3
@@ -690,88 +690,16 @@ export function buildV2Analysis(
               ),
     },
   ];
-  const playText: Record<
-    ChangingPlay["family"],
-    { title: Pair; move: Pair; needs: Pair }
-  > = {
-    "parallel-validation": {
-      title: [
-        "현재 기반을 유지하며 병행 검증",
-        "Validate alongside the current path",
-      ],
-      move: [
-        "현재 역할을 유지하면서 목표 요건 하나를 작은 결과물로 시험하세요. 가능성이 확인되기 전에는 전면 이동을 전제로 준비하지 마세요.",
-        "Keep the current role while testing one target requirement with a small deliverable. Avoid structuring preparation around a full move before feasibility is demonstrated.",
-      ],
-      needs: [
-        "작은 시험의 범위, 검토 담당자, 결과 확인 날짜",
-        "A bounded test, a reviewer and a review date",
-      ],
-    },
-    resource: {
-      title: [
-        "시간과 비용을 먼저 재배치",
-        "Reallocate time and resources first",
-      ],
-      move: [
-        "새 활동을 추가하기 전 줄일 지출·업무·일정을 정하세요. 본업과 생활 기반을 유지한 상태에서 확보한 자원만 시험에 투입하세요.",
-        "Identify spending, duties or schedules to reduce before adding activity. Use only resources freed while maintaining the current work and living base.",
-      ],
-      needs: [
-        "지출 상한, 보호할 일정, 실제 지원 분담",
-        "A spending limit, protected schedule and actual support responsibilities",
-      ],
-    },
-    "role-scope": {
-      title: [
-        "역할과 참여 범위를 작게 조정",
-        "Narrow the role and participation scope",
-      ],
-      move: [
-        "전체 경로를 한 번에 바꾸기보다 프로젝트·강의·업무의 일부 범위부터 실제 부담과 인정 가능성을 시험하세요.",
-        "Test workload and recognition through a bounded project, teaching assignment or responsibility before changing the entire path.",
-      ],
-      needs: [
-        "명확한 역할 범위, 성공 기준, 현재 조직의 합의",
-        "Clear scope, success criteria and agreement with the current organization",
-      ],
-    },
-    timing: {
-      title: [
-        "준비 순서와 재검토 시점을 조정",
-        "Change sequencing and review timing",
-      ],
-      move: [
-        "활동의 양을 늘리기보다 먼저 해결해야 할 요건을 정하고, 해당 근거가 확보되는 시점에 다음 약속을 검토하세요.",
-        "Sequence the prerequisite requirements and review the next commitment when evidence is available, rather than increasing activity.",
-      ],
-      needs: [
-        "선행 요건, 준비 일정, 다음 결정을 내릴 날짜",
-        "Prerequisites, a preparation schedule and the next review date",
-      ],
-    },
-    pathway: {
-      title: [
-        "같은 목표에 도달하는 다른 경로 비교",
-        "Compare alternative routes to the same goal",
-      ],
-      move: [
-        "목표를 유지하면서 더 적은 비용·시간이나 다른 자격 경로로 같은 성과를 만들 수 있는지 비교하세요.",
-        "Keep the goal and compare routes that produce equivalent evidence with less cost, less time or different qualifications.",
-      ],
-      needs: [
-        "대체 경로의 실제 요건과 목표 기관의 인정 여부",
-        "Actual alternative-route requirements and recognition by the target institution",
-      ],
-    },
-  };
-  const plays = core.changingPlays.map((play, index) => ({
+  const plays = core.changingPlays.map(play => ({
     family: play.family,
-    title: text(playText[play.family].title),
-    move: `${text(playText[play.family].move)}${index === 0 && priorityEvidence ? ` ${priorityEvidence.check}` : ""}`,
-    protects: protectedBase,
-    needs: text(playText[play.family].needs),
-    evidence: text(profile.output),
+    title: v2CustomerPlayText(state.language, play.title),
+    move: v2CustomerPlayText(state.language, play.move),
+    changes: v2CustomerPlayText(state.language, play.changes),
+    protects: v2CustomerPlayText(state.language, play.protects),
+    needs: v2CustomerPlayText(state.language, play.needs),
+    evidence: v2CustomerPlayText(state.language, play.evidence),
+    exposure: v2CustomerPlayText(state.language, play.exposure),
+    timeExposure: v2CustomerPlayText(state.language, play.timeExposure),
   }));
   const continueCondition = `${text(profile.advance)}${priorityEvidence ? say(`, ‘${priorityEvidence.headline}’의 적용 여부와 현재 조건(${priorityEvidence.condition})을 확인한 뒤`, `, after confirming whether “${priorityEvidence.headline}” applies and checking current conditions (${priorityEvidence.condition})`) : ""}${ko ? ", 다음 범위를 검토하세요." : ", review the next scope."}`;
   const pause = say(
@@ -802,6 +730,7 @@ export function buildV2Analysis(
   const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary}${priorityEvidence ? say(` 우선 ‘${priorityEvidence.headline}’의 적용 범위를 현재 조건과 대조하세요.`, ` First compare the scope of “${priorityEvidence.headline}” with the current conditions.`) : ""}`;
   return {
     language: state.language,
+    fifwmSource: core.decisionStructure.fifwmSource,
     topic: text(profile.topic),
     posture,
     summary,

@@ -20,6 +20,7 @@ type ResolveOptions = {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   observe?: (observation: ProviderObservation) => void | Promise<void>;
+  onReason?: (reason: Reason) => void;
   sourceAvailable?: (url: string, signal: AbortSignal) => Promise<boolean>;
 };
 type Source = {
@@ -176,6 +177,11 @@ export async function resolveV2ExternalIntelligence(
   const unavailable = () =>
     unavailableIntelligence(request.caseType, request.language);
   const finish = async (result: ExternalIntelligenceV2, reasonCode: Reason) => {
+    try {
+      options.onReason?.(reasonCode);
+    } catch {
+      /* Diagnostic metadata must never change the evidence result. */
+    }
     const observation: ProviderObservation = {
       provider: "perplexity",
       apiGeneration: "agent-api",

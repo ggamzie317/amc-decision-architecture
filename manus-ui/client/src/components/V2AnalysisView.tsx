@@ -233,11 +233,17 @@ export function V2Reasoning({
                   {v2CustomerEvidenceText(analysis.language, block.headline)}
                 </strong>
                 {!compact && (
-                  <>
-                    <p>
-                      {ko ? "현재 조건" : "Current condition"}: {link.condition}
-                    </p>
-                  </>
+                  <dl className="v2-evidence-trace">
+                    <div><dt>{ko ? "검색 요약의 주장" : "Search-summary claim"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</dd></div>
+                    <div><dt>{ko ? "검색 요약의 적용 설명" : "Search-summary applicability"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
+                    <div><dt>{ko ? "현재 조건 · 입력 기반 구조 판단" : "Current condition · user input and core rules"}</dt><dd>{link.condition}</dd></div>
+                    <div><dt>{ko ? "구조 해석" : "Structural reading"}</dt><dd>{link.interpretation}</dd></div>
+                    <div><dt>{ko ? "아직 확인되지 않은 점" : "Still unverified"}</dt><dd>{link.unresolved}</dd></div>
+                    <div><dt>{ko ? "다음 확인" : "Next check"}</dt><dd>{link.test}</dd></div>
+                    {link.changingTitles.length > 0 && <div><dt>{ko ? "기존 실행 경로 조정 · 아래 상세 내용" : "Existing Changing · details below"}</dt><dd>{link.changingTitles.join(" · ")}</dd></div>}
+                    <div><dt>{ko ? "기존 실험" : "Existing experiment"}</dt><dd>{link.experimentCheck}</dd></div>
+                    {link.switchingCondition && <div><dt>{ko ? "기존 전환 조건" : "Existing switching condition"}</dt><dd>{link.switchingCondition}</dd></div>}
+                  </dl>
                 )}
                 {block.sourceUrl && (
                   <a href={block.sourceUrl} target="_blank" rel="noreferrer">
@@ -263,9 +269,13 @@ export function V2FactorMap({
   return (
     <div className="v2-factor-map" data-testid="v2-framework-readings">
       <p className="v2-analysis-note">
-        {ko
-          ? "다섯 관점으로 요건과 현재 조건을 연결한 해석입니다. 미확인 조건을 점수로 채우지 않습니다."
-          : "Five framework perspectives connect external requirements with current conditions. Unresolved conditions are not assigned scores."}
+        {analysis.fifwmSource === "unavailable"
+          ? ko
+            ? "기존 다섯 항목의 평가 입력이 없어 미확인 상태입니다. 준비 상태나 안전 여유로 대신 평가하지 않습니다."
+            : "The existing five-part assessment inputs are unavailable, so these items remain unassessed. Readiness and safety bands do not substitute for them."
+          : ko
+            ? "기존 다섯 항목의 평가 결과입니다. 공개 근거는 항목의 점수를 바꾸지 않습니다."
+            : "These are the existing five-part assessment results. Public evidence does not change their scores."}
       </p>
       {analysis.factors.map((f, i) => (
         <article key={f.id} data-factor={f.id}>
@@ -282,10 +292,10 @@ export function V2FactorMap({
             <strong>{f.status}</strong>
             <small>
               {f.evidenceIds.length
-                ? `${ko ? "연결 근거" : "Evidence"} ${f.evidenceIds.map(id => id + 1).join(", ")}`
+                ? `${ko ? "관련 공개 근거" : "Related public evidence"} ${f.evidenceIds.map(id => id + 1).join(", ")}`
                 : ko
-                  ? "추가 확인 필요"
-                  : "Further validation needed"}
+                  ? "관련 공개 근거 없음"
+                  : "No related public evidence"}
             </small>
           </div>
         </article>
@@ -355,6 +365,10 @@ export function V2ChangingView({ analysis }: { analysis: V2Analysis }) {
             <p>{p.move}</p>
             <dl>
               <div>
+                <dt>{ko ? "달라지는 점" : "What changes"}</dt>
+                <dd>{p.changes}</dd>
+              </div>
+              <div>
                 <dt>{ko ? "유지할 기반" : "Protect"}</dt>
                 <dd>{p.protects}</dd>
               </div>
@@ -365,6 +379,14 @@ export function V2ChangingView({ analysis }: { analysis: V2Analysis }) {
               <div>
                 <dt>{ko ? "확인할 결과" : "Evidence to collect"}</dt>
                 <dd>{p.evidence}</dd>
+              </div>
+              <div>
+                <dt>{ko ? "노출 범위" : "Exposure"}</dt>
+                <dd>{p.exposure}</dd>
+              </div>
+              <div>
+                <dt>{ko ? "재검토 시점" : "Review timing"}</dt>
+                <dd>{p.timeExposure}</dd>
               </div>
             </dl>
           </article>

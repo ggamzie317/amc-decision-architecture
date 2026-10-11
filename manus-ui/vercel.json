@@ -2,6 +2,9 @@
   "functions": {
     "api/amc/external-snapshot.ts": {
       "maxDuration": 60
+    },
+    "api/amc/external-intelligence-v2.ts": {
+      "maxDuration": 60
     }
   },
   "rewrites": [

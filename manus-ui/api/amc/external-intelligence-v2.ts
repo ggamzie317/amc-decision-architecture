@@ -54,19 +54,33 @@ export async function handleV2ExternalIntelligence(
     : "General Career Reconfiguration";
   const unavailable = () => unavailableIntelligence(caseType, language);
   if (!body || JSON.stringify(body).length > 4096) {
+    res.setHeader("X-AMC-Evidence-Reason", "malformed_request");
     res.status(400).json(unavailable());
     return;
   }
+  let loaded: Awaited<ReturnType<Load>>;
   try {
-    const { service, parser } = await loadService();
+    loaded = await loadService();
+  } catch {
+    res.setHeader("X-AMC-Evidence-Reason", "service_load_error");
+    res.status(503).json(unavailable());
+    return;
+  }
+  try {
+    const { service, parser } = loaded;
     const request = parser.parseV2EvidenceRequest(body);
     if (!request) {
+      res.setHeader("X-AMC-Evidence-Reason", "malformed_request");
       res.status(400).json(unavailable());
       return;
     }
-    res.status(200).json(await service.resolveV2ExternalIntelligence(request));
+    const result = await service.resolveV2ExternalIntelligence(request, {
+      onReason: reason => res.setHeader("X-AMC-Evidence-Reason", reason),
+    });
+    res.status(result.status === "live" ? 200 : 503).json(result);
   } catch {
-    res.status(200).json(unavailable());
+    res.setHeader("X-AMC-Evidence-Reason", "service_execution_error");
+    res.status(503).json(unavailable());
   }
 }
 

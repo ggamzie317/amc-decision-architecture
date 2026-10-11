@@ -120,6 +120,16 @@ describe("V2 integrated customer analysis", () => {
     expect(a.findings.find(f => f.id === "fit")?.evidenceIds).toContain(0);
     expect(a.evidenceLinks[1].condition).toContain("재정 여력");
     expect(a.evidenceLinks[1].interpretation).toContain("회복할 여유가 부족");
+    expect(a.evidenceLinks[1].findingId).toBe("recovery");
+    expect(a.evidenceLinks[1].sourceFact).toBe(evidence.evidenceBlocks[1].fact);
+    expect(a.evidenceLinks[1].sourceScope).toBe(evidence.evidenceBlocks[1].whyItMatters);
+    expect(a.evidenceLinks[1].sourceUrl).toBe(evidence.evidenceBlocks[1].sourceUrl);
+    expect(a.evidenceLinks[1].conditionProvenance).toEqual(["USER_STRUCTURED", "DERIVED_CORE_RULE"]);
+    expect(a.evidenceLinks[1].changingTitles).toEqual(a.plays.map(play => play.title));
+    expect(a.evidenceLinks[1].experimentCheck).toBe(core.nextStepExperiment.whatToTest);
+    expect(a.evidenceLinks[1].switchingCondition).toBe(core.decisionSwitches[0]?.signal ?? null);
+    expect(a.factors.map(f => f.status)).toEqual(Array(5).fill("미확인"));
+    expect(a.factors.every(f => !f.reading.includes("준비 상태"))).toBe(true);
     expect(core.postureBasis.externalValidation.band).toBe("unknown");
     expect(core.currentStructuralPosture.label).toBe(
       f.core.currentStructuralPosture.label
@@ -128,10 +138,26 @@ describe("V2 integrated customer analysis", () => {
     expect(Object.values(input.fifwm).every(f => f.score === null)).toBe(true);
     expect(JSON.stringify(evidence)).toBe(snapshot);
   });
-  it("changes reasoning, Changing and next-step conditions when a synthetic source claim changes, without changing core posture", () => {
+  it("shows canonical FIFWM readings only when the existing scorer supplied them", () => {
+    const f = fixture();
+    const canonical = structuredClone(f.core);
+    canonical.decisionStructure.fifwmSource = "canonical-current-case";
+    canonical.decisionStructure.fifwm.formal = {score: 2, reading: "확인된 공식 요건을 충족합니다."};
+    canonical.decisionStructure.fifwm.workflow = {score: 0, reading: "실행 일정이 제약됩니다."};
+    const analysis = buildV2Analysis(f.state, canonical, f.none);
+    expect(analysis.factors.find(factor => factor.id === "formal")).toMatchObject({
+      status: "■■■", reading: "확인된 공식 요건을 충족합니다."
+    });
+    expect(analysis.factors.find(factor => factor.id === "workflow")).toMatchObject({
+      status: "■□□", reading: "실행 일정이 제약됩니다."
+    });
+    expect(buildV2Analysis(f.state, f.core, f.none).factors.every(factor => factor.status === "미확인")).toBe(true);
+  });
+  it("changes source applicability and next checks for opposing synthetic claims while preserving core Changing and posture", () => {
     const f = fixture();
     const alternative: ExternalIntelligenceV2 = structuredClone(evidence);
     alternative.evidenceBlocks[1].headline = "합성 보상 조건 변경";
+    alternative.evidenceBlocks[1].direction = "supportive";
     alternative.evidenceBlocks[1].fact =
       "이 합성 표본은 보상 하한을 명시합니다.";
     alternative.evidenceBlocks[1].whyItMatters =
@@ -140,21 +166,52 @@ describe("V2 integrated customer analysis", () => {
     const first = buildV2Analysis(f.state, f.core, evidence, "live");
     const changed = buildV2Analysis(f.state, f.core, alternative, "live");
     expect(changed.posture).toBe(first.posture);
-    expect(changed.summary).toContain("합성 보상 조건 변경");
-    expect(changed.findings[0].implication).toContain(
-      "보상 하한이 실제 목표 역할과 지역에 적용되는지"
-    );
-    expect(changed.plays[0].move).toContain("합성 보상 조건 변경");
-    expect(changed.experiment.action).toContain("재정 여력");
-    expect(changed.experiment.continue).toContain("합성 보상 조건 변경");
+    expect(first.priorityEvidence?.headline).toBe("합성 보상 표본");
+    expect(changed.priorityEvidence?.headline).toBe("합성 임용 요건 표본");
+    expect(first.evidenceLinks[1].interpretation).toContain("제한");
+    expect(changed.evidenceLinks[1].interpretation).toContain("탐색할 근거");
+    expect(changed.evidenceLinks[1].sourceScope).toContain("적용되는지 확인");
+    expect(changed.evidenceLinks[1].condition).toBe(first.evidenceLinks[1].condition);
+    expect(changed.evidenceLinks[1].findingId).toBe(first.evidenceLinks[1].findingId);
+    expect(changed.plays).toEqual(first.plays);
+    expect(changed.plays.map(p => p.move)).toEqual(f.core.changingPlays.map(p => p.move));
+    expect(changed.evidenceLinks[1].changingTitles).toEqual(first.evidenceLinks[1].changingTitles);
+    expect(changed.evidenceLinks[1].unresolved).toContain("확인되지 않았습니다");
+    expect(changed.experiment.continue).not.toBe(first.experiment.continue);
     expect(changed.evidenceLinks[1].condition).toContain("재정 여력");
     expect(changed.evidenceLinks[1].test).not.toBe(first.evidenceLinks[1].test);
     const factOnly: ExternalIntelligenceV2 = structuredClone(evidence);
     factOnly.evidenceBlocks[1].fact = "서로 다른 합성 근거 사실입니다.";
-    expect(
-      buildV2Analysis(f.state, f.core, factOnly, "live").plays[0].move
-    ).not.toBe(first.plays[0].move);
+    expect(buildV2Analysis(f.state, f.core, factOnly, "live").plays[0].move)
+      .toBe(first.plays[0].move);
+    expect(buildV2Analysis(f.state, f.core, factOnly, "live").evidenceLinks[1].sourceFact)
+      .not.toBe(first.evidenceLinks[1].sourceFact);
     expect(JSON.stringify(alternative)).toBe(snapshot);
+  });
+  it("keeps the engine's recovery-path timing condition in dashboard and report Changing", () => {
+    const f = fixture();
+    f.state.bands.reversibility = "weak";
+    const core = buildProductApplicationV3(buildV2Input(f.state));
+    const timing = core.changingPlays.find(play => play.family === "timing");
+    expect(timing).toBeDefined();
+    const analysis = buildV2Analysis(f.state, core, f.none);
+    const visible = analysis.plays.find(play => play.family === "timing");
+    expect(visible?.move).toBe(timing?.move);
+    expect(visible?.move).toContain("회복 경로가 명확해질 때까지");
+    expect(visible?.changes).toBe(timing?.changes);
+    expect(visible?.needs).toBe(timing?.needs);
+    expect(visible?.evidence).toBe(timing?.evidence);
+    expect(visible?.exposure).toBe(timing?.exposure);
+    expect(visible?.timeExposure).toBe(timing?.timeExposure);
+  });
+  it("repairs only the Korean pathway particle while retaining the engine condition", () => {
+    const f = v2DemoFixture("industry", "ko");
+    const original = f.baseline.changingPlays.find(play => play.family === "pathway");
+    const shown = buildV2Analysis(f.state, f.baseline, f.intelligence, "demo")
+      .plays.find(play => play.family === "pathway");
+    expect(original?.move).toContain("탐색로 완전히 전환하기 전에");
+    expect(shown?.move).toContain("탐색으로 완전히 전환하기 전에");
+    expect(shown?.move.replace("탐색으로", "탐색로")).toBe(original?.move);
   });
   it("labels synthetic analysis as a demonstration and connects alternative offers to market pressure", () => {
     const demo = v2DemoFixture("entrepreneurship", "en");
@@ -347,7 +404,8 @@ describe("V2 integrated customer analysis", () => {
         "PRIVATE PERSON 교수 경로",
         "General Career Reconfiguration",
         "ko",
-        new Date("2026-10-10T12:00:00Z")
+        new Date("2026-10-10T12:00:00Z"),
+        "UTC"
       )
     ).toBe("학술_경력_검토_allofmycareer_2026-10-10.pdf");
   });

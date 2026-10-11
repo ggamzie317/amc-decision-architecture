@@ -85,10 +85,11 @@ export function v2ReportFileName(
   decision: string,
   caseType: string,
   language: V2Language,
-  createdAt: Date = new Date()
+  createdAt: Date = new Date(),
+  timeZone?: string
 ): string {
   const subject = v2SafeFileStem(v2ReportSubject(decision, caseType, language));
-  return `${subject}_allofmycareer_${v2LocalDate(createdAt)}.pdf`;
+  return `${subject}_allofmycareer_${v2LocalDate(createdAt, timeZone)}.pdf`;
 }
 
 export function v2CustomerPosture(
@@ -136,7 +137,16 @@ export function v2CustomerPlayText(
   language: V2Language,
   value: string
 ): string {
-  return language === "ko" ? (koreanPlayText[value] ?? value) : value;
+  if (language !== "ko") return value;
+  return (koreanPlayText[value] ?? value).replace(
+    /([가-힣])로 완전히 전환하기 전에/g,
+    (match, syllable: string) => {
+      const finalConsonant = (syllable.charCodeAt(0) - 0xac00) % 28;
+      return finalConsonant !== 0 && finalConsonant !== 8
+        ? `${syllable}으로 완전히 전환하기 전에`
+        : match;
+    }
+  );
 }
 
 export function prepareV2PrintTitle(fileName: string): () => void {

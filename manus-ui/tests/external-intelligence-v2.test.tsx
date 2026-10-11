@@ -641,6 +641,8 @@ describe("V2 live External Intelligence boundary", () => {
       status: "unavailable",
       evidenceBlocks: [],
     });
+    expect(failure.statusCode).toBe(503);
+    expect(failure.headers["X-AMC-Evidence-Reason"]).toBe("service_load_error");
     expect(JSON.stringify(failure.body)).not.toContain("SECRET");
     for (const item of [get, options, malformed, failure])
       expect(item.headers["Cache-Control"]).toBe("no-store");
@@ -654,7 +656,8 @@ describe("V2 live External Intelligence boundary", () => {
       { method: "POST", body: request },
       response.response
     );
-    expect(response.statusCode).toBe(200);
+    expect(response.statusCode).toBe(503);
+    expect(response.headers["X-AMC-Evidence-Reason"]).toBe("provider_not_configured");
     expect(response.body).toMatchObject({
       status: "unavailable",
       caseType: "Entrepreneurship",
@@ -665,6 +668,21 @@ describe("V2 live External Intelligence boundary", () => {
       uncertainties: [],
     });
     expect(response.headers["Cache-Control"]).toBe("no-store");
+  });
+
+  it("distinguishes service execution failure from module loading without exposing exception text", async () => {
+    const response = recorder();
+    await handleV2ExternalIntelligence(
+      { method: "POST", body: request },
+      response.response,
+      async () => ({
+        parser: { parseV2EvidenceRequest: () => request },
+        service: { resolveV2ExternalIntelligence: async () => { throw new Error("SECRET"); } },
+      }) as never
+    );
+    expect(response.statusCode).toBe(503);
+    expect(response.headers["X-AMC-Evidence-Reason"]).toBe("service_execution_error");
+    expect(JSON.stringify(response.body)).not.toContain("SECRET");
   });
 
   it("calls the V2 route only through an explicit client request and rejects malformed live JSON", async () => {
