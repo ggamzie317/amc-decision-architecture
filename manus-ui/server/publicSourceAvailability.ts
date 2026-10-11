@@ -32,10 +32,10 @@ for (const [address, prefix] of [
   blocked.addSubnet(address, prefix, "ipv6");
 
 type Address = { address: string; family: 4 | 6 };
-type SourceResponse = { status: number; location?: string };
+type SourceResponse = { status: number; location?: string; contentGate?: boolean };
 export type SourceProbeFailure =
   | "invalid_destination" | "dns" | "tls" | "timeout" | "redirect"
-  | "http_denied" | "http_gone" | "http_method" | "http_other" | "network";
+  | "http_denied" | "http_gone" | "http_method" | "http_other" | "content_gate" | "network";
 export type SourceProbeResult = { available: true } | { available: false; category: SourceProbeFailure };
 type ProbeDependencies = {
   resolve?: (hostname: string) => Promise<Address[]>;
@@ -101,7 +101,7 @@ function responseHeaders(
         timeout: 3_500,
         headers: {
           Accept: "text/html,application/pdf,application/xhtml+xml,*/*;q=0.1",
-          Range: "bytes=0-0",
+          Range: "bytes=0-4095",
           "User-Agent": "AMC-Evidence-Source-Check/1.0",
         },
         // Reuse the already validated address; a second DNS lookup could resolve privately.
@@ -110,14 +110,43 @@ function responseHeaders(
       response => {
         const status = response.statusCode ?? 0;
         const location = response.headers.location;
-        response.destroy(); // No source body is read or retained.
-        resolve({ status, ...(location ? { location } : {}) });
+        const base = { status, ...(location ? { location } : {}) };
+        if (status < 200 || status >= 300 ||
+            !String(response.headers["content-type"] ?? "").includes("text/html")) {
+          response.destroy();
+          resolve(base);
+          return;
+        }
+        // Some sources return HTTP 200 with only a script that alerts and
+        // navigates away. Read at most 4 KiB in memory to reject that gate;
+        // never retain or log the public response body.
+        const chunks: Buffer[] = [];
+        let bytes = 0;
+        response.on("data", (chunk: Buffer) => {
+          bytes += chunk.length;
+          if (bytes > 4096) {
+            response.destroy();
+            resolve(base);
+          } else {
+            chunks.push(chunk);
+          }
+        });
+        response.on("end", () => resolve({
+          ...base,
+          contentGate: sourceHtmlLooksUnavailable(Buffer.concat(chunks).toString("utf8")),
+        }));
       }
     );
     req.on("timeout", () => req.destroy(new Error("source timeout")));
     req.on("error", reject);
     req.end();
   });
+}
+
+export function sourceHtmlLooksUnavailable(html: string): boolean {
+  return !/<(?:body|main|article)\b/i.test(html) &&
+    /<script(?:\s|>)/i.test(html) &&
+    /\b(?:alertHistory|alertpopclose(?:Reload|NewTab)?|alterloc)\s*\(\s*["'`]/i.test(html);
 }
 
 /** Node may request either a scalar or an all-address DNS callback. */
@@ -155,6 +184,7 @@ export async function probePublicSource(
       if (!address) return { available: false, category: signal.aborted ? "timeout" : "invalid_destination" };
       if (signal.aborted) return { available: false, category: "timeout" };
       const response = await headers(url, address, signal);
+      if (response.contentGate) return { available: false, category: "content_gate" };
       if (response.status >= 200 && response.status < 300) return { available: true };
       if (response.status === 401 || response.status === 403) return { available: false, category: "http_denied" };
       if (response.status === 404 || response.status === 410) return { available: false, category: "http_gone" };

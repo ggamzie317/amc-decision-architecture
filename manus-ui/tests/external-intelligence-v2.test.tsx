@@ -37,6 +37,7 @@ import {
   pinnedSourceLookup,
   probePublicSource,
   publicSourceAvailable,
+  sourceHtmlLooksUnavailable,
 } from "../server/publicSourceAvailability";
 
 (globalThis as any).React = React;
@@ -560,6 +561,13 @@ describe("V2 live External Intelligence boundary", () => {
       headers: paywallHeaders,
     })).toEqual({ available: false, category: "redirect" });
     expect(paywallHeaders).toHaveBeenCalledTimes(1);
+    const scriptGate = '<script>function alertHistory(message){ alert(message); history.back(); } alertHistory("not open");</script>';
+    expect(sourceHtmlLooksUnavailable(scriptGate)).toBe(true);
+    expect(sourceHtmlLooksUnavailable('<html><body><article>Original job requirements</article></body></html>')).toBe(false);
+    expect(await probePublicSource("https://example.org/job", signal, {
+      resolve,
+      headers: async () => ({ status: 200, contentGate: sourceHtmlLooksUnavailable(scriptGate) }),
+    })).toEqual({ available: false, category: "content_gate" });
     expect(await probePublicSource("https://example.org/source", signal, {
       resolve: async () => { throw Object.assign(new Error("lookup failed"), { code: "ENOTFOUND" }); },
     })).toEqual({ available: false, category: "dns" });
