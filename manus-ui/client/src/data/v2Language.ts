@@ -62,8 +62,8 @@ export const v2Copy = {
   externalPressure: ["External Pressure", "외부 환경"],
   readiness: ["Internal Readiness", "실행 준비도"],
   safety: ["Safety Margin", "안전 여유"],
-  support: ["Support System", "지원 기반"],
-  timing: ["Timing and Constraints", "시기와 제약"],
+  support: ["Time and Support", "시간과 지원"],
+  timing: ["Timing and Waiting", "시기와 기다림"],
   switches: ["Decision Switches", "판단 전환 조건"],
   whyNow: [
     "Why now? Choose up to two.",

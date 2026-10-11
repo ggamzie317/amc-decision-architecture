@@ -831,13 +831,13 @@ export default function AmcInteractiveV2() {
                 {t("step")} {step + 1} {t("of")} 8
               </span>
               <span>
-                {v2RequiredBandsByStep[step]
-                  ? v2UnansweredBands(state, step).length === 0
-                    ? t("complete")
-                    : v2UnansweredBands(state, step).length === 1
+                {v2UnansweredBands(state, step).length > 0
+                  ? v2UnansweredBands(state, step).length === 1
                       ? t("oneSelectionNeeded")
                       : `${v2UnansweredBands(state, step).length}${language === "ko" ? "" : " "}${t("selectionsNeeded")}`
-                  : t("optional")}
+                  : selfCards.some(card => card.step === step && !selfCheckComplete(card, selfChecks, state.bandSelections))
+                    ? language === "ko" ? "점검 카드 응답 필요" : "Check card needs an answer"
+                    : v2RequiredBandsByStep[step] ? t("complete") : t("optional")}
               </span>
             </div>
             <h2>{t(v2ModuleKeys[step])}</h2>
