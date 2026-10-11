@@ -133,13 +133,17 @@ export function V2ExternalBoard({
                   <p>{evidenceText(block.whyItMatters)}</p>
                 </div>
                 {analysis.evidenceLinks[index] && (
-                  <div className="v2-evidence-why">
-                    <strong>{state.language === "ko" ? "비교할 현재 조건" : "Current condition to compare"}</strong>
-                    <p>{analysis.evidenceLinks[index].condition}</p>
-                    {analysis.evidenceLinks[index].selfReport && <p className="v2-self-report">{analysis.evidenceLinks[index].selfReport}</p>}
-                    <p>{analysis.evidenceLinks[index].unresolved}</p>
-                    <p>{analysis.evidenceLinks[index].test}</p>
-                  </div>
+                  <details className="v2-evidence-trace-detail">
+                    <summary>{state.language === "ko" ? "현재 조건과 판단 근거 보기" : "How this relates to current conditions"}</summary>
+                    <dl className="v2-evidence-trace">
+                      <div><dt>{state.language === "ko" ? "출처가 주장하는 사실" : "Claim from source summary"}</dt><dd>{evidenceText(analysis.evidenceLinks[index].sourceFact)}</dd></div>
+                      <div><dt>{state.language === "ko" ? "관련 고객 조건" : "Related customer condition"}</dt><dd>{analysis.evidenceLinks[index].condition}</dd></div>
+                      {analysis.evidenceLinks[index].selfReport && <div><dt>{state.language === "ko" ? "고객 자기보고" : "Customer self-report"}</dt><dd>{analysis.evidenceLinks[index].selfReport}</dd></div>}
+                      <div><dt>{state.language === "ko" ? "기존 구조에 따른 해석" : "Reading under existing rules"}</dt><dd>{analysis.evidenceLinks[index].interpretation}</dd></div>
+                      <div><dt>{state.language === "ko" ? "아직 확인할 조건" : "Still to verify"}</dt><dd>{analysis.evidenceLinks[index].unresolved}</dd></div>
+                      <div><dt>{state.language === "ko" ? "다음 행동" : "Next action"}</dt><dd>{analysis.evidenceLinks[index].test}</dd></div>
+                    </dl>
+                  </details>
                 )}
                 <div className="v2-source">
                   {t("source")}:{" "}
@@ -335,8 +339,8 @@ export default function V2Dashboard({
           "03",
           "Decision Structure",
           say(
-            "환경과 준비 조건의 연결",
-            "How environment and readiness fit together"
+            "환경–준비 적합도",
+            "Environment–readiness fit"
           )
         )}
         <V2FactorMap analysis={analysis} />

@@ -164,7 +164,7 @@ export const v2Copy = {
     "Synthetic fixture for visual review only. No live search was performed.",
     "화면 검토용 합성 자료입니다. 실시간 검색 결과가 아닙니다.",
   ],
-  liveEvidence: ["Current public evidence reviewed", "현재 공개 근거 확인"],
+  liveEvidence: ["Public source links accessible", "공개 출처 링크 접근 가능"],
   evidenceNotChecked: [
     "Current external evidence has not been checked.",
     "현재 외부 근거를 확인하지 않았습니다.",

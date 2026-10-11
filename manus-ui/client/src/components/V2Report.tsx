@@ -186,6 +186,7 @@ export default function V2Report({
               </p>
               {analysis.evidenceLinks[id]?.selfReport && <p className="v2-self-report">{analysis.evidenceLinks[id].selfReport}</p>}
               <p>{analysis.evidenceLinks[id]?.interpretation}</p>
+              <p><b>{say("아직 확인할 조건", "Still to verify")}</b>{" "}{analysis.evidenceLinks[id]?.unresolved}</p>
               <p>
                 <b>{say("다음 확인", "Next check")}</b>{" "}
                 {analysis.evidenceLinks[id]?.test}
@@ -372,7 +373,7 @@ export default function V2Report({
       {page(
         4,
         "Decision Map / Decision Structure",
-        say("경로와 조건의 관계", "Relationships between paths and conditions"),
+        say("경로의 관계와 환경–준비 적합도", "Path relationships and environment–readiness fit"),
         <>
           <V2DecisionMap
             state={state}

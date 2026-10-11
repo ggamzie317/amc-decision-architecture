@@ -19,6 +19,7 @@ import {
   unavailableIntelligence,
 } from "../client/src/data/externalIntelligenceV2";
 import {
+  acceptV2Evidence,
   buildV2EvidenceRequest,
   requestV2Evidence,
 } from "../client/src/data/v2ExternalEvidenceClient";
@@ -322,6 +323,7 @@ describe("V2 live External Intelligence boundary", () => {
     expect(
       sent.response_format.json_schema.schema.properties.evidenceBlocks.maxItems
     ).toBe(4);
+    expect(sent.response_format.json_schema.schema.properties.evidenceBlocks.minItems).toBe(0);
     expect(
       v2EvidenceFocus({
         ...request,
@@ -389,6 +391,34 @@ describe("V2 live External Intelligence boundary", () => {
       request
     )!;
     expect(dated.evidenceBlocks[0]).not.toHaveProperty("sourceDate");
+  });
+
+  it("accepts one bounded original card but never presents one URL as independent cards", () => {
+    const one = providerContent();
+    one.evidenceBlocks = [one.evidenceBlocks[0]];
+    const accepted = normalizeV2AgentResponse(envelope(one), request);
+    expect(accepted?.evidenceBlocks).toHaveLength(1);
+
+    const repeated = providerContent();
+    repeated.evidenceBlocks[1].sourceUrl = repeated.evidenceBlocks[0].sourceUrl;
+    expect(normalizeV2AgentResponse(envelope(repeated), request)).toBeNull();
+  });
+
+  it("treats no suitable source as unavailable and drops dependent provider summaries", async () => {
+    const empty = { ...providerContent(), evidenceBlocks: [] };
+    const normalized = normalizeV2AgentResponse(envelope(empty), request);
+    expect(normalized).toMatchObject({ status: "unavailable", evidenceBlocks: [], opportunitySignals: [] });
+    const sourceAvailable = vi.fn();
+    const observed = vi.fn();
+    const result = await resolveV2ExternalIntelligence(request, {
+      apiKey: "test-key",
+      fetchImpl: (async () => Response.json(envelope(empty))) as typeof fetch,
+      sourceAvailable,
+      observe: observed,
+    });
+    expect(result).toMatchObject({ status: "unavailable", evidenceBlocks: [], frictionSignals: [] });
+    expect(sourceAvailable).not.toHaveBeenCalled();
+    expect(observed).toHaveBeenCalledWith(expect.objectContaining({ reasonCode: "source_unavailable" }));
   });
 
   it("omits ambiguous provider update dates while keeping publication and search dates separate", () => {
@@ -555,8 +585,8 @@ describe("V2 live External Intelligence boundary", () => {
       resolve,
       headers: async () => ({ status: 302, location: "https://127.0.0.1/private" }),
     })).toEqual({ available: false, category: "invalid_destination" });
-    const paywallHeaders = vi.fn(async () => ({ status: 302, location: "/pricing/" }));
-    expect(await probePublicSource("https://example.org/contract-opportunity/item", signal, {
+    const paywallHeaders = vi.fn(async () => ({ status: 302, location: "https://www.highergov.com/pricing/" }));
+    expect(await probePublicSource("https://www.highergov.com/sl/contract-opportunity/in-professional-development-and-consulting-72450198/", signal, {
       resolve,
       headers: paywallHeaders,
     })).toEqual({ available: false, category: "redirect" });
@@ -725,9 +755,10 @@ describe("V2 live External Intelligence boundary", () => {
 
   it("calls the V2 route only through an explicit client request and rejects malformed live JSON", async () => {
     const fetchImpl = vi.fn(async () =>
-      Response.json(live)
+      Response.json(live, { headers: { "X-AMC-Evidence-Reason": "live" } })
     ) as unknown as typeof fetch;
-    const result = await requestV2Evidence(request, fetchImpl);
+    const capture = vi.fn();
+    const result = await requestV2Evidence(request, fetchImpl, capture);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(fetchImpl.mock.calls[0][0]).toBe(
       "/api/amc/external-intelligence-v2"
@@ -736,6 +767,10 @@ describe("V2 live External Intelligence boundary", () => {
       request
     );
     expect(result.status).toBe("live");
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith({ status: 200, reason: "live" });
+    expect(acceptV2Evidence({ ...live, evidenceBlocks: [live.evidenceBlocks[0]] }, request)?.status).toBe("live");
+    expect(acceptV2Evidence({ ...live, evidenceBlocks: [live.evidenceBlocks[0], live.evidenceBlocks[0]] }, request)).toBeNull();
     const malformed = await requestV2Evidence(request, (async () =>
       Response.json({
         ...live,
@@ -807,7 +842,7 @@ describe("V2 live External Intelligence boundary", () => {
     expect(report).toContain(live.evidenceBlocks[0].headline);
     expect(report).toContain(live.evidenceBlocks[0].sourceUrl);
     expect(report).toContain("Evidence checked on");
-    expect(report).toContain("Current public evidence reviewed");
+    expect(report).toContain("Public source links accessible");
     expect(report).not.toContain("DEMO DATA — NOT LIVE EVIDENCE");
     expect(report.match(/class="v2-paper-page"/g) ?? []).toHaveLength(9);
   });
@@ -864,7 +899,7 @@ describe("V2 live External Intelligence boundary", () => {
         onReport: () => {},
       })
     );
-    expect(koDashboard).toContain("현재 공개 근거 확인");
+    expect(koDashboard).toContain("공개 출처 링크 접근 가능");
     expect(koDashboard).toContain("고객 수요");
     expect(koDashboard).toContain("공개 수요 자료");
     expect(koDashboard).toContain("반복 구매는 별도 검증이 필요합니다.");

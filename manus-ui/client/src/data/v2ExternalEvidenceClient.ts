@@ -24,7 +24,8 @@ export function buildV2EvidenceRequest(
 
 export async function requestV2Evidence(
   request: V2EvidenceRequest,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl: typeof fetch = fetch,
+  onResponse?: (observation: { status: number; reason: string | null }) => void
 ): Promise<ExternalIntelligenceV2> {
   const fallback = () =>
     unavailableIntelligence(request.caseType, request.language);
@@ -37,6 +38,12 @@ export async function requestV2Evidence(
       cache: "no-store",
       signal: controller.signal,
       body: JSON.stringify(request),
+    });
+    // Keep only protocol metadata in browser memory for Preview QA. Never log
+    // the body, customer input, credentials, or the provider response.
+    onResponse?.({
+      status: response.status,
+      reason: response.headers.get("X-AMC-Evidence-Reason"),
     });
     if (!response.ok) return fallback();
     const raw: unknown = await response.json();
@@ -63,16 +70,19 @@ export function acceptV2Evidence(
     typeof value.generatedAt !== "string" ||
     Number.isNaN(Date.parse(value.generatedAt)) ||
     !Array.isArray(value.evidenceBlocks) ||
-    value.evidenceBlocks.length < 2 ||
+    value.evidenceBlocks.length < 1 ||
     value.evidenceBlocks.length > 4
   )
     return null;
   const blocks = value.evidenceBlocks;
+  const citedUrls = new Set<string>();
   if (
     !blocks.every(block => {
       if (!block || typeof block !== "object" || Array.isArray(block))
         return false;
       const item = block as Record<string, unknown>;
+      if (typeof item.sourceUrl !== "string" || citedUrls.has(item.sourceUrl)) return false;
+      citedUrls.add(item.sourceUrl);
       return (
         item.provenance === "EXTERNAL_EVIDENCE" &&
         ["supportive", "caution", "mixed"].includes(String(item.direction)) &&

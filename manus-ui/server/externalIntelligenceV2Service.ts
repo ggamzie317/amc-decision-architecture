@@ -79,7 +79,7 @@ function evidenceSchema(dimensions: string[]) {
     properties: {
       evidenceBlocks: {
         type: "array",
-        minItems: 2,
+        minItems: 0,
         maxItems: 4,
         items: {
           type: "object",
@@ -138,6 +138,9 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         "Use only retrieved source evidence. Prioritize directly accessible original pages from official institutions, employers, universities, regulators, and original research publishers. Avoid SEO blogs, marketplace listings, paywalls, login-gated pages, and pages that block public automated access when a direct original source is available.",
         "Cite the exact public HTTPS result page that supports each bounded claim. If no suitable accessible original source is found, preserve uncertainty; do not substitute a broad unrelated statistic.",
         "For public procurements, cite the issuing institution's original solicitation rather than an aggregator's summary. If that original is login-gated or inaccessible, do not present the aggregator summary as verified original evidence.",
+        "Use one evidence block per distinct cited source URL. Combine claims from the same page into one bounded block; do not split one page into multiple apparently independent sources or fill a card quota. One suitable original source is preferable to several repeated or weak summaries.",
+        "If no suitable original page supports a bounded claim, return an empty evidenceBlocks array. Do not fill the response from an inaccessible aggregator or unrelated listing; the server will show unavailable instead of those summaries.",
+        "If a listing only shows example roles, do not infer that vacancies remain open, that detailed qualifications are met, or that its range represents the whole market. Describe policy targets as plans, not completed hiring demand.",
         "Keep research specific to the bounded target label and geography. A general statistic about a case family must not substitute for the target role, institution, product or qualification requirements.",
         "Explain what each fact establishes for this public target and what it does not establish. If qualifications or appointment requirements are relevant, separate formal eligibility from evidence of research, teaching or job performance.",
         "Distinguish source facts from inference and preserve uncertainty.",
@@ -254,7 +257,9 @@ export async function resolveV2ExternalIntelligence(
     if (response.ok) {
       const envelope: unknown = await response.json().catch(() => null);
       const live = normalizeV2AgentResponse(envelope, request, dimensions);
-      if (live) {
+      if (live?.status === "unavailable") {
+        reason = "source_unavailable";
+      } else if (live) {
         const urls = Array.from(
           new Set(live.evidenceBlocks.map(block => block.sourceUrl!))
         );
@@ -355,11 +360,15 @@ export function normalizeV2AgentResponse(
   if (
     !record(raw) ||
     !Array.isArray(raw.evidenceBlocks) ||
-    raw.evidenceBlocks.length < 2 ||
     raw.evidenceBlocks.length > 4
   )
     return null;
+  // A source-free provider result is an explicit unavailable outcome, not a
+  // reason to display model-written dependent summaries as evidence.
+  if (raw.evidenceBlocks.length === 0)
+    return unavailableIntelligence(request.caseType, request.language);
   const evidenceBlocks: ExternalIntelligenceV2["evidenceBlocks"] = [];
+  const citedUrls = new Set<string>();
   for (const block of raw.evidenceBlocks) {
     if (!record(block)) return null;
     const dimension = bounded(block.dimension, 80);
@@ -383,9 +392,11 @@ export function normalizeV2AgentResponse(
       !direction ||
       !fact ||
       !whyItMatters ||
-      !source
+      !source ||
+      citedUrls.has(source.url)
     )
       return null;
+    citedUrls.add(source.url);
     evidenceBlocks.push({
       dimension,
       headline,

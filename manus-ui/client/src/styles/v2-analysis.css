@@ -180,6 +180,19 @@
   gap: 10px 18px;
   margin: 12px 0;
 }
+.v2-evidence-trace-detail {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.v2-evidence-trace-detail summary {
+  color: var(--teal);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+.v2-evidence-trace-detail .v2-evidence-trace {
+  grid-template-columns: 1fr;
+}
 .v2-evidence-trace > div {
   min-width: 0;
   border-top: 1px solid #dae5dd;
@@ -304,6 +317,11 @@
 .v2-factor-map h3 {
   font-size: 16px;
   margin: 0 0 8px;
+}
+.v2-factor-map .v2-factor-question {
+  color: #586f74;
+  font-size: 11px;
+  margin-bottom: 4px;
 }
 .v2-factor-map p {
   font-size: 13px;

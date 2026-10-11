@@ -37,7 +37,7 @@ export function V2DecisionMap({
     say("작은 범위에서 요건 확인", "Test requirements at a small scope");
   const evidence =
     phase === "live"
-      ? say("공개 근거 확인됨", "Public evidence available")
+      ? say("인용 링크 접근 가능 · 주장 미검증", "Cited links accessible · claims unverified")
       : phase === "demo"
         ? say("합성 예시 근거", "Synthetic example evidence")
         : phase === "loading"
@@ -283,6 +283,7 @@ export function V2FactorMap({
           <span className="v2-factor-number">0{i + 1}</span>
           <div>
             <h3>{f.title}</h3>
+            <p className="v2-factor-question">{f.questionTopic}</p>
             <p>
               {compact
                 ? f.reading.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() || f.reading

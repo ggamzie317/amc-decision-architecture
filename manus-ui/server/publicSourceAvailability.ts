@@ -131,7 +131,7 @@ export function responseHeaders(
           settled = true;
           resolve({
             ...base,
-            contentGate: sourceHtmlLooksUnavailable(Buffer.concat(chunks, bytes).toString("utf8")),
+            contentGate: sourceHtmlLooksUnavailable(Buffer.concat(chunks, bytes).toString("utf8"), url),
           });
         };
         response.on("data", (chunk: Buffer) => {
@@ -167,7 +167,15 @@ export function responseHeaders(
   });
 }
 
-export function sourceHtmlLooksUnavailable(html: string): boolean {
+export function sourceHtmlLooksUnavailable(html: string, requestedUrl?: URL): boolean {
+  const title = html.match(/<title\b[^>]*>([^<]{1,160})<\/title>/i)?.[1]
+    ?.replace(/&amp;/gi, "&").trim() ?? "";
+  // A deep citation that returns a generic sales/authentication page with
+  // HTTP 200 does not expose the cited text, even if that page has a body.
+  if (requestedUrl &&
+      !/^\/(?:pricing|plans?|login|log-in|sign-?in|subscribe)(?:\/|$)/i.test(requestedUrl.pathname) &&
+      /^(?:plans? (?:and|&) pricing|pricing plans?|sign[ -]?in|log[ -]?in|access denied|just a moment)(?:[.!\s|-]|$)/i.test(title))
+    return true;
   return !/<(?:body|main|article)\b/i.test(html) &&
     /<script(?:\s|>)/i.test(html) &&
     /\b(?:alertHistory|alertpopclose(?:Reload|NewTab)?|alterloc)\s*\(\s*["'`]/i.test(html);

@@ -103,6 +103,9 @@ export default function AmcInteractiveV2() {
   const [evidenceByLanguage, setEvidenceByLanguage] = useState<
     Record<V2Language, ExternalIntelligenceV2 | null>
   >({ en: null, ko: null });
+  const [evidenceHttpByLanguage, setEvidenceHttpByLanguage] = useState<
+    Record<V2Language, { status: number; reason: string | null } | null>
+  >({ en: null, ko: null });
   const [evidenceLoadingLanguage, setEvidenceLoadingLanguage] =
     useState<V2Language | null>(null);
   const evidencePending = useRef(false);
@@ -657,7 +660,12 @@ export default function AmcInteractiveV2() {
       {},
       { externalEvidenceMode: "checking" }
     );
-    const result = await requestV2Evidence(request);
+    const result = await requestV2Evidence(request, fetch, observation => {
+      setEvidenceHttpByLanguage(previous => ({
+        ...previous,
+        [request.language]: observation,
+      }));
+    });
     setEvidenceByLanguage(previous => ({
       ...previous,
       [request.language]: result,
@@ -678,7 +686,9 @@ export default function AmcInteractiveV2() {
     setKind(next);
   };
   return (
-    <div className="v2-app" lang={language} data-testid="v2-app">
+    <div className="v2-app" lang={language} data-testid="v2-app"
+      data-evidence-http-status={evidenceHttpByLanguage[language]?.status}
+      data-evidence-reason-header={evidenceHttpByLanguage[language]?.reason ?? undefined}>
       <header className="v2-site-header">
         <a className="v2-wordmark" href="/amc-interactive-v2">
           allofmycareer{language === "en" && <span> / V2</span>}

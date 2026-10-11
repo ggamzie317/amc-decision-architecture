@@ -79,9 +79,25 @@ describe("canonical Python FIFWM in the private browser intake", () => {
       intelligence: fixture.intelligence, evidencePhase: "demo", onClose: () => {}, onPrint: () => {},
     }));
     for (const html of [dashboard, report]) {
+      expect(html).toContain("환경–준비 적합도");
+      for (const name of ["기회의 조건", "연결 가능성", "구조 적합성", "실행 현실성", "버틸 수 있는가"]) {
+        expect(html).toContain(name);
+      }
+      expect(html).toContain("이번 평가 질문: 조직 개편·리더십 변화");
       expect(html).toContain("조직 개편·리더십 변화");
       expect(html).toContain("큰 변화가 여러 차례 있었음");
       expect(html).toContain("고객 자기보고(외부 검증 전)");
+    }
+    const english = buildProductApplicationV3(buildV2Input(v2DemoFixture("industry", "en").state));
+    const englishHtml = renderToStaticMarkup(React.createElement(V2Dashboard, {
+      state: v2DemoFixture("industry", "en").state,
+      core: english,
+      intelligence: v2DemoFixture("industry", "en").intelligence,
+      evidencePhase: "demo",
+      onReport: () => {},
+    }));
+    for (const name of ["Opportunity conditions", "Connection potential", "Structural fit", "Execution reality", "Can this endure?"]) {
+      expect(englishHtml).toContain(name);
     }
     const changed = v2Scenario(input, { financialRoom: "strong" }).result;
     expect(changed.decisionStructure.fifwm).toEqual(core.decisionStructure.fifwm);

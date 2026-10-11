@@ -33,6 +33,7 @@ describe("public source bounded HTTPS body reader", () => {
         for (let index = 0; index < html.length; index += 300) response.write(html.slice(index, index + 300));
         response.end();
       } else if (path === "/normal") response.end('<html><body><article>Public source</article></body></html>'.padEnd(12000, "x"));
+      else if (path === "/pricing-gate") response.end('<html><head><title>Plans and Pricing</title></head><body><main>Subscription options</main></body></html>'.padEnd(5108, " "));
       else if (path === "/interrupted") {
         response.write("<html><script>");
         response.destroy();
@@ -63,6 +64,11 @@ describe("public source bounded HTTPS body reader", () => {
   it("accepts a large normal HTML document after inspecting its bounded prefix", async () => {
     expect(await read("/normal")).toEqual({ status: 200, contentGate: false });
     expect(await probe("/normal")).toEqual({ available: true });
+  });
+
+  it("rejects a deep citation served as an HTTP-200 pricing page through the real TLS reader", async () => {
+    expect(await read("/pricing-gate")).toEqual({ status: 200, contentGate: true });
+    expect(await probe("/pricing-gate")).toEqual({ available: false, category: "content_gate" });
   });
 
   it("fails closed on an interrupted body or abort", async () => {

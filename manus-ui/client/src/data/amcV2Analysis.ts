@@ -285,6 +285,7 @@ export type V2Analysis = {
   factors: Array<{
     id: keyof ProductApplicationV3["decisionStructure"]["fifwm"];
     title: string;
+    questionTopic: string;
     reading: string;
     evidenceIds: number[];
     status: string;
@@ -619,16 +620,25 @@ export function buildV2Analysis(
     },
   ];
   const factorNames: Record<keyof ProductApplicationV3["decisionStructure"]["fifwm"], Pair> = {
-    formal: ["의사결정·보고 체계", "Decision and reporting lines"],
-    informal: ["목표 팀의 적극적 지원", "Active support in the target team"],
-    framework: ["조직 개편·리더십 변화", "Restructuring and leadership change"],
-    workflow: ["목표 직무의 업무 흐름", "Target-role workflow"],
-    marketPolicy: ["정책·규제·시장 충격 노출", "Policy, regulatory and market exposure"],
+    formal: ["기회의 조건", "Opportunity conditions"],
+    informal: ["연결 가능성", "Connection potential"],
+    framework: ["구조 적합성", "Structural fit"],
+    workflow: ["실행 현실성", "Execution reality"],
+    marketPolicy: ["버틸 수 있는가", "Can this endure?"],
+  };
+  // Canonical Q18–Q22 topics are assessment inputs, not dimension names.
+  const factorQuestionTopics: Record<keyof typeof factorNames, Pair> = {
+    formal: ["이번 평가 질문: 의사결정·보고 체계", "Question used: decision and reporting lines"],
+    informal: ["이번 평가 질문: 목표 팀의 적극적 지원", "Question used: active support in the target team"],
+    framework: ["이번 평가 질문: 조직 개편·리더십 변화", "Question used: restructuring and leadership change"],
+    workflow: ["이번 평가 질문: 목표 직무의 업무 흐름", "Question used: target-role workflow"],
+    marketPolicy: ["이번 평가 질문: 정책·규제·시장 변화 노출", "Question used: policy, regulatory and market exposure"],
   };
   const factors = (Object.keys(factorNames) as (keyof typeof factorNames)[]).map(
     id => ({
       id,
       title: text(factorNames[id]),
+      questionTopic: text(factorQuestionTopics[id]),
       evidenceIds: [],
       status: core.decisionStructure.fifwm[id].score === null
         ? say("미확인", "Not established")
