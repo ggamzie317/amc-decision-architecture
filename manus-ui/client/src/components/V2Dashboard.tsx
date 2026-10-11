@@ -10,6 +10,7 @@ import {
   type V2CopyKey,
 } from "../data/v2Language";
 import { buildV2Analysis, type V2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
+import type { SelfChecks } from "../data/v2SelfDiagnostic";
 import {
   V2DecisionMap,
   V2Reasoning,
@@ -135,6 +136,7 @@ export function V2ExternalBoard({
                   <div className="v2-evidence-why">
                     <strong>{state.language === "ko" ? "비교할 현재 조건" : "Current condition to compare"}</strong>
                     <p>{analysis.evidenceLinks[index].condition}</p>
+                    {analysis.evidenceLinks[index].selfReport && <p className="v2-self-report">{analysis.evidenceLinks[index].selfReport}</p>}
                     <p>{analysis.evidenceLinks[index].unresolved}</p>
                     <p>{analysis.evidenceLinks[index].test}</p>
                   </div>
@@ -214,6 +216,7 @@ export default function V2Dashboard({
   state,
   core,
   intelligence,
+  selfChecks,
   evidencePhase = intelligence.status,
   onCheckEvidence = () => {},
   onReport,
@@ -221,6 +224,7 @@ export default function V2Dashboard({
   state: V2State;
   core: ProductApplicationV3;
   intelligence: ExternalIntelligenceV2;
+  selfChecks?: SelfChecks;
   evidencePhase?: V2EvidencePhase;
   onCheckEvidence?: () => void;
   onReport: () => void;
@@ -228,7 +232,7 @@ export default function V2Dashboard({
   const t = (key: V2CopyKey) => fmt(state, key),
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
-  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase);
+  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks);
   const draft = evidencePhase !== "live" && evidencePhase !== "demo";
   const head = (n: string, english: string, title: string, note?: string) => (
     <div className="v2-section-top">
@@ -254,7 +258,7 @@ export default function V2Dashboard({
             {draft && ` · ${say("구조 초안", "Structural draft")}`}
           </div>
           <h1>{analysis.posture}</h1>
-          <p className="v2-hero-sub">{analysis.summary}</p>
+          <p className="v2-hero-sub">{analysis.boundary}</p>
         </div>
         <aside className="v2-hero-side">
           <span>
@@ -264,6 +268,15 @@ export default function V2Dashboard({
           <small>Safety Margin / {t(core.safetyMargin.band)}</small>
         </aside>
       </section>
+      <div className="v2-first-fold" aria-label={say("판단의 핵심", "Decision essentials")}>
+        <div><span>{say("핵심 득실", "Core trade-off")}</span><strong>{analysis.tradeoff}</strong></div>
+        <div><span>{say("아직 확인할 조건", "Still to establish")}</span><strong>{analysis.missingConcept}</strong></div>
+        <div><span>{say("다음 확인", "Next check")}</span><strong>{analysis.experiment.output}</strong></div>
+      </div>
+      <details className="v2-overview-detail">
+        <summary>{say("판단 근거와 공개 자료의 한계 자세히 보기", "Read the reasoning and public-evidence limits")}</summary>
+        <p>{analysis.summary}</p>
+      </details>
       <nav
         className="v2-analysis-nav"
         aria-label={say("분석 바로가기", "Analysis navigation")}

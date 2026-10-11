@@ -222,6 +222,9 @@ export function V2Reasoning({
           </div>
           <p className="v2-reasoning-basis">{f.basis}</p>
           <p>{f.implication}</p>
+          {f.selfReports.map((report, index) => (
+            <p className="v2-self-report" key={index}>{report}</p>
+          ))}
           {f.evidenceIds.map(id => {
             const block = intelligence.evidenceBlocks[id],
               link = analysis.evidenceLinks[id];
@@ -237,6 +240,7 @@ export function V2Reasoning({
                     <div><dt>{ko ? "검색 요약의 주장" : "Search-summary claim"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</dd></div>
                     <div><dt>{ko ? "검색 요약의 적용 설명" : "Search-summary applicability"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
                     <div><dt>{ko ? "현재 조건 · 입력 기반 구조 판단" : "Current condition · user input and core rules"}</dt><dd>{link.condition}</dd></div>
+                    {link.selfReport && <div><dt>{ko ? "고객 자기보고" : "Customer self-report"}</dt><dd>{link.selfReport}</dd></div>}
                     <div><dt>{ko ? "구조 해석" : "Structural reading"}</dt><dd>{link.interpretation}</dd></div>
                     <div><dt>{ko ? "아직 확인되지 않은 점" : "Still unverified"}</dt><dd>{link.unresolved}</dd></div>
                     <div><dt>{ko ? "다음 확인" : "Next check"}</dt><dd>{link.test}</dd></div>

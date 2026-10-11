@@ -33,6 +33,10 @@ for (const [address, prefix] of [
 
 type Address = { address: string; family: 4 | 6 };
 type SourceResponse = { status: number; location?: string };
+export type SourceProbeFailure =
+  | "invalid_destination" | "dns" | "tls" | "timeout" | "redirect"
+  | "http_denied" | "http_gone" | "http_method" | "http_other" | "network";
+export type SourceProbeResult = { available: true } | { available: false; category: SourceProbeFailure };
 type ProbeDependencies = {
   resolve?: (hostname: string) => Promise<Address[]>;
   headers?: (
@@ -127,12 +131,13 @@ export function pinnedSourceLookup(address: Address): LookupFunction {
   };
 }
 
-/** Availability only: this cannot establish whether the page supports a claim. */
-export async function publicSourceAvailable(
+/** Availability only: this cannot establish whether the page supports a claim.
+ * Returns a category, never a URL, response body, or customer content. */
+export async function probePublicSource(
   sourceUrl: string,
   parentSignal: AbortSignal,
   dependencies: ProbeDependencies = {}
-): Promise<boolean> {
+): Promise<SourceProbeResult> {
   const signal = AbortSignal.any([parentSignal, AbortSignal.timeout(4_000)]);
   const resolve =
     dependencies.resolve ??
@@ -145,22 +150,43 @@ export async function publicSourceAvailable(
   try {
     let url = new URL(sourceUrl);
     for (let redirect = 0; redirect <= 3; redirect++) {
-      if (signal.aborted) return false;
+      if (signal.aborted) return { available: false, category: "timeout" };
       const address = await pinnedAddress(url, signal, resolve);
-      if (!address || signal.aborted) return false;
+      if (!address) return { available: false, category: signal.aborted ? "timeout" : "invalid_destination" };
+      if (signal.aborted) return { available: false, category: "timeout" };
       const response = await headers(url, address, signal);
-      if (response.status >= 200 && response.status < 300) return true;
+      if (response.status >= 200 && response.status < 300) return { available: true };
+      if (response.status === 401 || response.status === 403) return { available: false, category: "http_denied" };
+      if (response.status === 404 || response.status === 410) return { available: false, category: "http_gone" };
+      if (response.status === 405 || response.status === 416) return { available: false, category: "http_method" };
       if (
         response.status < 300 ||
-        response.status >= 400 ||
-        !response.location ||
-        redirect === 3
+        response.status >= 400
       )
-        return false;
+        return { available: false, category: "http_other" };
+      if (!response.location || redirect === 3)
+        return { available: false, category: "redirect" };
       url = new URL(response.location, url);
     }
-  } catch {
-    // DNS, TLS, timeout, denied destination, and definitive HTTP failures fail closed.
+  } catch (error) {
+    if (signal.aborted) return { available: false, category: "timeout" };
+    const code = error instanceof Error && "code" in error ? String(error.code) : "";
+    if (/^(ENOTFOUND|EAI_AGAIN|ENODATA|ESERVFAIL)$/.test(code))
+      return { available: false, category: "dns" };
+    if (/CERT|TLS|SSL|UNABLE_TO_VERIFY/i.test(code))
+      return { available: false, category: "tls" };
+    if (code === "ETIMEDOUT" || error instanceof Error && /timeout/i.test(error.message))
+      return { available: false, category: "timeout" };
+    if (error instanceof TypeError) return { available: false, category: "invalid_destination" };
+    return { available: false, category: "network" };
   }
-  return false;
+  return { available: false, category: "redirect" };
+}
+
+export async function publicSourceAvailable(
+  sourceUrl: string,
+  parentSignal: AbortSignal,
+  dependencies: ProbeDependencies = {}
+): Promise<boolean> {
+  return (await probePublicSource(sourceUrl, parentSignal, dependencies)).available;
 }

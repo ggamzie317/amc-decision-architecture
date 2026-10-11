@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
+import type { SelfChecks } from "../data/v2SelfDiagnostic";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import {
   limitV2Overrides,
@@ -47,6 +48,7 @@ export default function V2Report({
   visibleVariables,
   scenarioOverrides = {},
   intelligence,
+  selfChecks,
   evidencePhase = intelligence.status,
   onClose,
   onPrint,
@@ -58,6 +60,7 @@ export default function V2Report({
   visibleVariables: readonly ScenarioVariable[];
   scenarioOverrides?: ScenarioOverrides;
   intelligence: ExternalIntelligenceV2;
+  selfChecks?: SelfChecks;
   evidencePhase?: V2EvidencePhase;
   onClose: () => void;
   onPrint: () => void;
@@ -67,7 +70,7 @@ export default function V2Report({
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
   const evidenceText = (s: string) => v2CustomerEvidenceText(state.language, s);
-  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase);
+  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks);
   const activeOverrides = limitV2Overrides(
     input,
     visibleVariables,
@@ -77,7 +80,7 @@ export default function V2Report({
     ? v2Scenario(input, activeOverrides).result
     : null;
   const scenarioAnalysis = hypothetical
-    ? buildV2Analysis(state, hypothetical, intelligence, evidencePhase)
+    ? buildV2Analysis(state, hypothetical, intelligence, evidencePhase, selfChecks)
     : null;
   const scenarioChanges = hypothetical
     ? v2ScenarioComparison(core, hypothetical, state.language).filter(
@@ -181,6 +184,7 @@ export default function V2Report({
                 </b>{" "}
                 {analysis.evidenceLinks[id]?.condition}
               </p>
+              {analysis.evidenceLinks[id]?.selfReport && <p className="v2-self-report">{analysis.evidenceLinks[id].selfReport}</p>}
               <p>{analysis.evidenceLinks[id]?.interpretation}</p>
               <p>
                 <b>{say("다음 확인", "Next check")}</b>{" "}

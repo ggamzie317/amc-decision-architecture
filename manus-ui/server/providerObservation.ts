@@ -9,6 +9,7 @@ export type ProviderObservation = {
   latencyMs: number;
   timedOut: boolean;
   completedAt: string;
+  sourceFailureCategory?: import("./publicSourceAvailability.js").SourceProbeFailure;
 };
 
 export async function recordProviderObservation(

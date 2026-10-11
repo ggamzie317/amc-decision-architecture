@@ -10,6 +10,7 @@ import type {
 import { v2CustomerEvidenceText, v2MissingPoint } from "./amcV2Presentation";
 import { v2CustomerPlayText, v2CustomerPosture } from "./v2ReportPresentation";
 import { v2t, type V2CopyKey } from "./v2Language";
+import { selfCheckCards, type SelfCheckId, type SelfChecks } from "./v2SelfDiagnostic";
 
 export type V2EvidencePhase =
   | "not_checked"
@@ -246,6 +247,7 @@ export type V2Finding = {
   implication: string;
   evidenceIds: number[];
   provenance: V2Provenance[];
+  selfReports: string[];
 };
 export type V2EvidenceLink = {
   id: number;
@@ -256,6 +258,7 @@ export type V2EvidenceLink = {
   sourceDate?: string;
   conditionProvenance: readonly V2Provenance[];
   condition: string;
+  selfReport?: string;
   interpretation: string;
   unresolved: string;
   test: string;
@@ -324,7 +327,8 @@ export function buildV2Analysis(
   state: V2State,
   core: ProductApplicationV3,
   intelligence: ExternalIntelligenceV2,
-  phase: V2EvidencePhase = intelligence.status
+  phase: V2EvidencePhase = intelligence.status,
+  selfChecks?: SelfChecks
 ): V2Analysis {
   const ko = state.language === "ko",
     say = (koText: string, enText: string) => (ko ? koText : enText);
@@ -345,6 +349,26 @@ export function buildV2Analysis(
     : say("본인의 자격·성과와 실행 여력", "personal eligibility, work evidence and execution capacity");
   const b = core.postureBasis,
     s = core.safetyMargin.inputs;
+  const cards = selfCheckCards(state.caseType, state.language);
+  const selfReport = (id: SelfCheckId): string | null => {
+    if (!selfChecks) return null;
+    const answer = selfChecks[id];
+    if (answer.status === null) return null;
+    const title = cards.find(card => card.id === id)?.title ?? id;
+    const status = answer.status === "checked"
+      ? say("직접 확인했다고 작성한 내용", "What you reported checking directly")
+      : answer.status === "unsure"
+        ? say("잘 모르겠음", "Unsure")
+        : say("아직 확인하지 않음", "Not checked yet");
+    const detail = answer.status === "checked" && answer.detail.trim()
+      ? `: ${answer.detail.trim()}`
+      : "";
+    return `${title} · ${status}${detail}. ${say("고객 자기보고 · 독립 검증 전", "Customer self-report · not independently verified")}`;
+  };
+  const reports = (...ids: SelfCheckId[]) => ids.flatMap(id => {
+    const report = selfReport(id);
+    return report ? [report] : [];
+  });
   const money = s.financialRoom.band,
     reverse = s.reversibility.band,
     risk = s.downsideExposure.band;
@@ -456,6 +480,11 @@ export function buildV2Analysis(
               `기존 미확인 조건: ${v2MissingPoint(state.caseType, state.language).point}`,
               `Existing unresolved condition: ${v2MissingPoint(state.caseType, state.language).point}`
             );
+    const linkedSelfReport = selfReport(
+      conditionGroup === "finance" ? "financial"
+        : conditionGroup === "capacity" ? "capacity"
+          : conditionGroup === "readiness" ? "readiness" : "public"
+    );
     const implication = demo
       ? say(
           `합성 자료는 실제 요건을 입증하지 않습니다. ${targetScope}의 공개 자료에서 같은 조건을 확인해야 합니다.`,
@@ -502,6 +531,7 @@ export function buildV2Analysis(
       sourceDate: block.sourceDate,
       conditionProvenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
       condition,
+      ...(linkedSelfReport ? { selfReport: linkedSelfReport } : {}),
       interpretation: `${implication} ${personal}`,
       unresolved: say(
         `이 공개 자료가 ${targetScope}에 적용되는지, ${personalUnknown}이 성립하는지는 아직 확인되지 않았습니다.`,
@@ -510,6 +540,18 @@ export function buildV2Analysis(
       test: check,
     };
   });
+  // Link only dimensions that directly inform a named comparison. A market
+  // statistic is never treated as proof of personal readiness or recovery.
+  const relatedEvidence = (finding: "recovery" | "fit" | "capacity") =>
+    blocks.flatMap((block, id) => {
+      const dimension = block.dimension;
+      const related = finding === "recovery"
+        ? /compensation|funding|opportunity.cost|보상|재원|기회비용/i.test(dimension)
+        : finding === "fit"
+          ? /required.skills|program.outcomes|employment.relevance|research.relevance|필요 역량|과정 성과|취업 관련|연구 관련/i.test(dimension)
+          : /geography|mobility|지역|이동 요건/i.test(dimension);
+      return related ? [id] : [];
+    });
   const priorityId = blocks.findIndex(block => block.direction === "caution");
   const priorityLink = evidenceLinks[priorityId < 0 ? 0 : priorityId];
   const priorityEvidence = priorityLink
@@ -547,8 +589,9 @@ export function buildV2Analysis(
       ),
       basis: `${t("financial")}: ${t(money)} · ${t("reversibility")}: ${t(reverse)} · ${t("downside")}: ${t(risk)}`,
       implication: safetyReading,
-      evidenceIds: [],
+      evidenceIds: relatedEvidence("recovery"),
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
+      selfReports: reports("financial", "recovery"),
     },
     {
       id: "fit",
@@ -558,8 +601,9 @@ export function buildV2Analysis(
       ),
       basis: `${t("readinessBand")}: ${t(ready)} · ${t("supportBand")}: ${t(support)}`,
       implication: `${readinessReading} ${text(profile.question)}`,
-      evidenceIds: [],
+      evidenceIds: relatedEvidence("fit"),
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
+      selfReports: reports("public", "readiness"),
     },
     {
       id: "capacity",
@@ -569,8 +613,9 @@ export function buildV2Analysis(
       ),
       basis: `${t("constraint")}: ${t(load)} · ${t("supportBand")}: ${t(support)}`,
       implication: capacityReading,
-      evidenceIds: [],
+      evidenceIds: relatedEvidence("capacity"),
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
+      selfReports: reports("capacity"),
     },
   ];
   const factorNames: Record<keyof ProductApplicationV3["decisionStructure"]["fifwm"], Pair> = {

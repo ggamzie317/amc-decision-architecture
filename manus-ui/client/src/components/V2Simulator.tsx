@@ -27,6 +27,7 @@ import {
   type V2State,
 } from "../data/amcV2Model";
 import { v2t, type V2CopyKey } from "../data/v2Language";
+import type { SelfChecks } from "../data/v2SelfDiagnostic";
 import {
   limitV2Overrides,
   v2ScenarioComparison,
@@ -55,6 +56,7 @@ export default function V2Simulator({
   visibleVariables,
   overrides,
   intelligence = unavailableIntelligence(state.caseType, state.language),
+  selfChecks,
   evidencePhase = intelligence.status,
   onScenarioChange,
   onEvent,
@@ -66,6 +68,7 @@ export default function V2Simulator({
   visibleVariables: readonly ScenarioVariable[];
   overrides: ScenarioOverrides;
   intelligence?: ExternalIntelligenceV2;
+  selfChecks?: SelfChecks;
   evidencePhase?: V2EvidencePhase;
   onScenarioChange: (overrides: ScenarioOverrides) => void;
   onEvent?: (
@@ -94,7 +97,8 @@ export default function V2Simulator({
     state,
     scenario,
     intelligence,
-    evidencePhase
+    evidencePhase,
+    selfChecks
   );
   const setBand = (variable: ScenarioVariable, band: string) => {
     if (!visibleVariables.includes(variable)) return;

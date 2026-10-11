@@ -25,6 +25,7 @@ import V2Dashboard from "../client/src/components/V2Dashboard";
 import V2Report from "../client/src/components/V2Report";
 import V2Simulator from "../client/src/components/V2Simulator";
 import { projectInteractivePatch } from "../shared/interactivePrivacy";
+import { initialSelfChecks } from "../client/src/data/v2SelfDiagnostic";
 
 (globalThis as any).React = React;
 function fixture() {
@@ -92,6 +93,25 @@ const evidence: ExternalIntelligenceV2 = {
   implication: "공개 요건과 준비 성과를 대조해야 합니다.",
 };
 describe("V2 integrated customer analysis", () => {
+  it("shows the same session-only self-report beside its condition in dashboard and report", () => {
+    const f = v2DemoFixture("industry", "ko");
+    const selfChecks = initialSelfChecks();
+    selfChecks.readiness = { status: "checked", detail: "합성 포트폴리오 피드백" };
+    const visibleVariables = selectV2SimulatorVariables(f.sensitivity, baselineBands(f.input));
+    const dashboard = renderToStaticMarkup(React.createElement(V2Dashboard, {
+      state: f.state, core: f.baseline, intelligence: f.intelligence,
+      evidencePhase: "demo", selfChecks, onReport: () => {},
+    }));
+    const report = renderToStaticMarkup(React.createElement(V2Report, {
+      state: f.state, input: f.input, core: f.baseline,
+      sensitivity: f.sensitivity, visibleVariables, intelligence: f.intelligence,
+      evidencePhase: "demo", selfChecks, onClose: () => {}, onPrint: () => {},
+    }));
+    for (const html of [dashboard, report]) {
+      expect(html).toContain("합성 포트폴리오 피드백");
+      expect(html).toContain("고객 자기보고 · 독립 검증 전");
+    }
+  });
   it("explains the interaction of recovery room, readiness and constraints instead of repeating the intake", () => {
     const f = fixture(),
       a = buildV2Analysis(f.state, f.core, f.none, "not_checked");
@@ -117,7 +137,7 @@ describe("V2 integrated customer analysis", () => {
       "readiness",
       "finance",
     ]);
-    expect(a.findings.every(finding => finding.evidenceIds.length === 0)).toBe(true);
+    expect(a.findings.map(finding => finding.evidenceIds)).toEqual([[1], [0], []]);
     expect(a.evidenceLinks[1].condition).toContain("재정 여력");
     expect(a.evidenceLinks[1].interpretation).toContain("회복할 여유가 부족");
     expect(a.evidenceLinks[1].conditionGroup).toBe("finance");

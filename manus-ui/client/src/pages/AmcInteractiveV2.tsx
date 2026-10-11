@@ -925,6 +925,7 @@ export default function AmcInteractiveV2() {
         <>
           <V2Dashboard
             state={state}
+            selfChecks={selfChecks}
             core={core}
             intelligence={intelligence}
             evidencePhase={evidencePhase}
@@ -939,6 +940,7 @@ export default function AmcInteractiveV2() {
           />
           <V2Simulator
             state={state}
+            selfChecks={selfChecks}
             input={input}
             baseline={core}
             sensitivity={sensitivity}
@@ -960,6 +962,7 @@ export default function AmcInteractiveV2() {
       {phase === "report" && (
         <V2Report
           state={state}
+          selfChecks={selfChecks}
           input={input}
           core={core}
           sensitivity={sensitivity}

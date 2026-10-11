@@ -35,6 +35,7 @@ import {
 } from "../server/externalIntelligenceV2Service";
 import {
   pinnedSourceLookup,
+  probePublicSource,
   publicSourceAvailable,
 } from "../server/publicSourceAvailability";
 
@@ -538,6 +539,29 @@ describe("V2 live External Intelligence boundary", () => {
         dependencies
       )
     ).toBe(true);
+  });
+
+  it("classifies source-check failures without reading bodies or accepting blocked sources", async () => {
+    const signal = new AbortController().signal;
+    const resolve = async () => [{ address: "8.8.8.8", family: 4 as const }];
+    for (const [status, category] of [[403, "http_denied"], [410, "http_gone"], [405, "http_method"], [500, "http_other"]] as const) {
+      expect(await probePublicSource("https://example.org/source", signal, {
+        resolve,
+        headers: async () => ({ status }),
+      })).toEqual({ available: false, category });
+    }
+    expect(await probePublicSource("https://example.org/source", signal, {
+      resolve,
+      headers: async () => ({ status: 302, location: "https://127.0.0.1/private" }),
+    })).toEqual({ available: false, category: "invalid_destination" });
+    expect(await probePublicSource("https://example.org/source", signal, {
+      resolve: async () => { throw Object.assign(new Error("lookup failed"), { code: "ENOTFOUND" }); },
+    })).toEqual({ available: false, category: "dns" });
+    expect(await probePublicSource("https://example.org/source", signal, {
+      resolve,
+      headers: async () => { throw Object.assign(new Error("certificate failed"), { code: "CERT_HAS_EXPIRED" }); },
+    })).toEqual({ available: false, category: "tls" });
+    expect(await probePublicSource("http://example.org/source", signal, { resolve })).toEqual({ available: false, category: "invalid_destination" });
   });
 
   it("pins DNS for Node's all-address HTTPS lookup without resolving again", () => {

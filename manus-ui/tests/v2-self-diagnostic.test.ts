@@ -8,6 +8,8 @@ import {
   selfCheckComplete,
 } from "../client/src/data/v2SelfDiagnostic";
 import { buildV2EvidenceRequest } from "../client/src/data/v2ExternalEvidenceClient";
+import { buildV2Analysis } from "../client/src/data/amcV2Analysis";
+import { v2DemoFixture } from "../client/src/data/amcV2Demos";
 
 describe("V2 case-specific self-diagnostic", () => {
   it("has five contextual cards for every existing case, with six distinct structural selections", () => {
@@ -70,5 +72,28 @@ describe("V2 case-specific self-diagnostic", () => {
     expect(JSON.stringify(request)).not.toContain("PRIVATE CHECK CONTENT");
     expect(JSON.stringify(request)).not.toContain("financialRoom");
     expect(JSON.stringify(request)).not.toContain("internalReadiness");
+  });
+
+  it("updates the related structural reading and evidence comparison from self-report without scoring it", () => {
+    const fixture = v2DemoFixture("industry", "ko");
+    const checks = initialSelfChecks();
+    checks.readiness = { status: "checked", detail: "포트폴리오를 현업 담당자에게 보여 줌" };
+    checks.financial = { status: "unsure", detail: "" };
+    checks.public = { status: "notChecked", detail: "" };
+    const baseline = JSON.stringify(fixture.baseline);
+    const source = JSON.stringify(fixture.intelligence);
+    const first = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo", checks);
+    expect(first.findings.find(finding => finding.id === "fit")?.selfReports.join(" ")).toContain("포트폴리오를 현업 담당자에게 보여 줌");
+    expect(first.findings.find(finding => finding.id === "recovery")?.selfReports.join(" ")).toContain("잘 모르겠음");
+    expect(first.findings.find(finding => finding.id === "fit")?.selfReports.join(" ")).toContain("아직 확인하지 않음");
+    expect(first.evidenceLinks.filter(link => link.conditionGroup === "readiness").some(link => link.selfReport?.includes("포트폴리오"))).toBe(true);
+    checks.readiness.detail = "직무 결과물에 대한 피드백을 받음";
+    const updated = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo", checks);
+    expect(updated.findings.find(finding => finding.id === "fit")?.selfReports.join(" ")).toContain("직무 결과물에 대한 피드백");
+    expect(updated.findings.find(finding => finding.id === "fit")?.selfReports.join(" ")).not.toContain("포트폴리오");
+    expect(JSON.stringify(fixture.baseline)).toBe(baseline);
+    expect(JSON.stringify(fixture.intelligence)).toBe(source);
+    expect(JSON.stringify(buildV2EvidenceRequest(fixture.state))).not.toContain("직무 결과물");
+    expect(updated.factors.every(factor => factor.status === "미확인")).toBe(true);
   });
 });
