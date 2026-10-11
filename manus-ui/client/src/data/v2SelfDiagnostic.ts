@@ -90,8 +90,8 @@ export function selfCheckCards(caseType: V2CaseType, language: V2Language): Self
   const goal = c.goal[i], cost = c.cost[i], target = c.publicTarget[i];
   if (language === "ko") return [
     { id: "public", step: 2, title: "외부 요건·수요", question: `${objectWithParticle(target)} 직접 확인했나요? 관심이나 일반 자료와 본인에게 적용되는 조건을 구분해 보세요.`, example: `확인 근거 예: ${c.evidence[i]}`, bands: [] },
-    { id: "readiness", step: 3, title: "역량·부족한 자원", question: `${goal}에서 직접 할 수 있는 일은 무엇인가요? 부족한 역량과 필요한 도움을 구분했나요?`, example: "확인 근거 예: 수행한 일의 결과물과 부족한 역량 목록", bands: ["internalReadiness"] },
-    { id: "financial", step: 4, title: "재정·손실", question: `생활비와 ${objectWithParticle(cost)} 나눠 보았나요? 재정 여유와 감당할 손실 위험을 각각 선택하세요.`, example: "확인 근거 예: 생활비·추가 지출·손실 시나리오", bands: ["financialRoom", "downsideExposure"] },
+    { id: "readiness", step: 3, title: "역량·부족한 자원", question: `${objectWithParticle(goal)} 위해 직접 할 수 있는 일은 무엇인가요? 부족한 역량과 필요한 도움을 구분했나요?`, example: "확인 근거 예: 수행한 일의 결과물과 부족한 역량 목록", bands: ["internalReadiness"] },
+    { id: "financial", step: 4, title: "재정·손실", question: `생활비를 포함해 ${cost}까지 구분해 보았나요? 재정 여유와 감당할 손실 위험을 각각 선택하세요.`, example: "확인 근거 예: 생활비·추가 지출·손실 시나리오", bands: ["financialRoom", "downsideExposure"] },
     { id: "recovery", step: 4, title: "중단·복귀", question: `${objectWithParticle(goal)} 중단한다면 정리 비용과 현재 소득·경력으로 돌아갈 경로를 확인했나요?`, example: "확인 근거 예: 중단 시점, 계약 조건, 복귀 가능한 직무", bands: ["reversibility"] },
     { id: "capacity", step: 5, title: "시간·지원", question: `${goal}에 실제로 쓸 수 있는 시간과 도움은 무엇인가요? 제약의 크기와 대안 실행 지원을 따로 선택하세요.`, example: "확인 근거 예: 주간 일정과 도움을 약속한 사람·조직", bands: ["constraintLoad", "optionBSupport"] },
   ];

@@ -113,14 +113,14 @@ describe("V2 integrated customer analysis", () => {
     expect(core.decisionStructure.outsideEvidence).toContain(
       evidence.evidenceBlocks[0].fact
     );
-    expect(a.evidenceLinks.map(e => e.factor)).toEqual([
-      "formal",
-      "marketPolicy",
+    expect(a.evidenceLinks.map(e => e.conditionGroup)).toEqual([
+      "readiness",
+      "finance",
     ]);
     expect(a.findings.every(finding => finding.evidenceIds.length === 0)).toBe(true);
     expect(a.evidenceLinks[1].condition).toContain("재정 여력");
     expect(a.evidenceLinks[1].interpretation).toContain("회복할 여유가 부족");
-    expect(a.evidenceLinks[1].findingId).toBe("recovery");
+    expect(a.evidenceLinks[1].conditionGroup).toBe("finance");
     expect(a.evidenceLinks[1].sourceFact).toBe(evidence.evidenceBlocks[1].fact);
     expect(a.evidenceLinks[1].sourceScope).toBe(evidence.evidenceBlocks[1].whyItMatters);
     expect(a.evidenceLinks[1].sourceUrl).toBe(evidence.evidenceBlocks[1].sourceUrl);
@@ -170,7 +170,7 @@ describe("V2 integrated customer analysis", () => {
     expect(changed.evidenceLinks[1].interpretation).toContain("탐색할 근거");
     expect(changed.evidenceLinks[1].sourceScope).toContain("적용되는지 확인");
     expect(changed.evidenceLinks[1].condition).toBe(first.evidenceLinks[1].condition);
-    expect(changed.evidenceLinks[1].findingId).toBe(first.evidenceLinks[1].findingId);
+    expect(changed.evidenceLinks[1].conditionGroup).toBe(first.evidenceLinks[1].conditionGroup);
     expect(changed.plays).toEqual(first.plays);
     expect(changed.plays.map(p => p.move)).toEqual(f.core.changingPlays.map(p => p.move));
     expect(changed.evidenceLinks[1].unresolved).toContain("확인되지 않았습니다");
@@ -221,7 +221,7 @@ describe("V2 integrated customer analysis", () => {
     );
     expect(a.summary).toContain("synthetic evidence");
     expect(a.summary).not.toContain("public evidence items");
-    expect(a.evidenceLinks[1].factor).toBe("marketPolicy");
+    expect(a.evidenceLinks[1].conditionGroup).toBe("public");
     expect(a.findings.find(f => f.id === "recovery")?.evidenceIds).toEqual([]);
   });
   it("changes the full scenario reading while retaining the unresolved execution constraint and original snapshot", () => {

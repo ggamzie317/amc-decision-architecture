@@ -65,7 +65,6 @@ export default function AmcInteractiveV2() {
     typeof window === "undefined" ? "" : window.location.search
   );
   const demoMode = params.get("demo") === "1";
-  const diagnosticMode = params.get("diagnostic") === "1";
   const initialKind: V2DemoKind =
     params.get("fixture") === "industry" ? "industry" : "entrepreneurship";
   const initialLanguage: V2Language =
@@ -83,7 +82,6 @@ export default function AmcInteractiveV2() {
       : initialV2State(initialLanguage)
   );
   const [phase, setPhase] = useState<Phase>(demoMode ? "dashboard" : "setup");
-  const [diagnosticResult, setDiagnosticResult] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [casePinned, setCasePinned] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
@@ -663,15 +661,6 @@ export default function AmcInteractiveV2() {
       )}
       {phase === "setup" && (
         <main className="v2-intake">
-          {diagnosticMode && <div className="v2-guidance">
-            <button type="button" onClick={async () => {
-              const response = await fetch("/api/amc/external-intelligence-v2", {
-                method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
-              });
-              setDiagnosticResult(`${response.status} / ${response.headers.get("X-AMC-Evidence-Reason") || "header missing"}`);
-            }}>Check evidence loader without provider</button>
-            {diagnosticResult && <p role="status">{diagnosticResult}</p>}
-          </div>}
           <div className="v2-intake-intro">
             <p className="v2-kicker">{t("eyebrow")}</p>
             <h1>{t("startTitle")}</h1>

@@ -249,8 +249,7 @@ export type V2Finding = {
 };
 export type V2EvidenceLink = {
   id: number;
-  factor: "formal" | "informal" | "framework" | "workflow" | "marketPolicy";
-  findingId: "recovery" | "fit" | "capacity";
+  conditionGroup: "finance" | "capacity" | "readiness" | "public";
   sourceFact: string;
   sourceScope: string;
   sourceUrl?: string;
@@ -281,7 +280,7 @@ export type V2Analysis = {
     nextCheck: string;
   } | null;
   factors: Array<{
-    id: V2EvidenceLink["factor"];
+    id: keyof ProductApplicationV3["decisionStructure"]["fifwm"];
     title: string;
     reading: string;
     evidenceIds: number[];
@@ -420,39 +419,42 @@ export function buildV2Analysis(
             "실행을 뒷받침할 조건이 일부 갖춰져 있습니다. 실제로 확보한 일정과 지원을 작은 시험에서 확인하고 추가 약속을 결정하세요.",
             "Some execution support is present. Test actual schedule and support commitments before adding further obligations."
           );
-  const factorFor = (dimension: string): V2EvidenceLink["factor"] => {
+  const conditionGroupFor = (dimension: string): V2EvidenceLink["conditionGroup"] => {
     if (
-      /compensation|pricing|funding|market|competition|alternatives|industry|보상|가격|재원|시장|경쟁|대안|산업/i.test(
+      /compensation|pricing|funding|opportunity.cost|보상|가격|재원|기회비용/i.test(
         dimension
       )
     )
-      return "marketPolicy";
+      return "finance";
     if (
-      /distribution|opportunity.cost|geography|mobility|고객 확보|기회비용|지역|이동/i.test(
+      /distribution|geography|mobility|고객 확보|지역|이동/i.test(
         dimension
       )
     )
-      return "workflow";
-    if (/demand|relevance|수요|관련성/i.test(dimension)) return "framework";
-    return "formal";
+      return "capacity";
+    if (/required.skills|role.demand|program.outcomes|employment.relevance|research.relevance|필요 역량|직무 수요|과정 성과|취업 관련|연구 관련/i.test(dimension))
+      return "readiness";
+    return "public";
   };
   const evidenceLinks: V2EvidenceLink[] = blocks.map((block, id) => {
-    const factor = factorFor(block.dimension);
-    const findingId = factor === "marketPolicy" ? "recovery" : factor === "workflow" ? "capacity" : "fit";
+    const conditionGroup = conditionGroupFor(block.dimension);
     const condition =
-      factor === "marketPolicy"
+      conditionGroup === "finance"
         ? say(
             `재정 여력: ${t(money)} / 손실 위험: ${t(risk)}`,
             `Financial room: ${t(money)} / downside: ${t(risk)}`
           )
-        : factor === "workflow"
+        : conditionGroup === "capacity"
           ? say(
               `제약 부담: ${t(load)} / 복귀 가능성: ${t(reverse)}`,
               `Constraints: ${t(load)} / reversibility: ${t(reverse)}`
             )
-          : say(
+          : conditionGroup === "readiness" ? say(
               `준비 상태: ${t(ready)} / 지원 기반: ${t(support)}`,
               `Readiness: ${t(ready)} / support: ${t(support)}`
+            ) : say(
+              `기존 미확인 조건: ${v2MissingPoint(state.caseType, state.language).point}`,
+              `Existing unresolved condition: ${v2MissingPoint(state.caseType, state.language).point}`
             );
     const implication = demo
       ? say(
@@ -474,11 +476,13 @@ export function buildV2Analysis(
               `The evidence has a limited scope. Check whether it applies to the ${targetScope}.`
             );
     const personal =
-      factor === "marketPolicy"
+      conditionGroup === "finance"
         ? safetyReading
-        : factor === "workflow"
+        : conditionGroup === "capacity"
           ? capacityReading
-          : readinessReading;
+          : conditionGroup === "readiness"
+            ? readinessReading
+            : say("공개 자료만으로 이 개인의 조건이나 수요 충족을 확정할 수 없습니다.", "Public material alone does not establish this person's conditions or demand fit.");
     const headline = v2CustomerEvidenceText(state.language, block.headline);
     const check = demo
       ? say(
@@ -491,8 +495,7 @@ export function buildV2Analysis(
         );
     return {
       id,
-      factor,
-      findingId,
+      conditionGroup,
       sourceFact: block.fact,
       sourceScope: block.whyItMatters,
       sourceUrl: block.sourceUrl,
@@ -570,19 +573,14 @@ export function buildV2Analysis(
       provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
     },
   ];
-  findings.forEach(f => {
-    if (f.evidenceIds.length) {
-      f.provenance.push("EXTERNAL_EVIDENCE");
-    }
-  });
-  const factorNames: Record<V2EvidenceLink["factor"], Pair> = {
+  const factorNames: Record<keyof ProductApplicationV3["decisionStructure"]["fifwm"], Pair> = {
     formal: ["기회의 조건", "Opportunity requirements"],
     informal: ["연결 가능성", "Access and support"],
     framework: ["구조 적합성", "Structural fit"],
     workflow: ["실행 현실성", "Execution feasibility"],
     marketPolicy: ["버틸 수 있는가", "Capacity to withstand pressure"],
   };
-  const factors = (Object.keys(factorNames) as V2EvidenceLink["factor"][]).map(
+  const factors = (Object.keys(factorNames) as (keyof typeof factorNames)[]).map(
     id => ({
       id,
       title: text(factorNames[id]),
@@ -703,8 +701,8 @@ export function buildV2Analysis(
   ).label;
   const evidenceSummary = live
     ? say(
-        ` 공개 근거 ${blocks.length}건을 목표 요건과 현재 조건에 대조했습니다. 각 근거의 적용 범위와 다음 확인 항목은 아래에 연결했습니다.`,
-        ` ${blocks.length} public evidence items are mapped to target requirements and current conditions below, with applicability limits and next checks.`
+        ` 공개 근거 ${blocks.length}건을 현재 조건 옆에 표시했습니다. 적용 여부는 각 출처와 대상 범위를 대조해 확인해야 합니다.`,
+        ` ${blocks.length} public evidence items are shown beside current conditions. Check each source and target scope before treating it as applicable.`
       )
     : demo
       ? say(
