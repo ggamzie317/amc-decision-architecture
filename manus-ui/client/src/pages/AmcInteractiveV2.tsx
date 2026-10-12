@@ -8,7 +8,7 @@ import {
   projectInteractivePatch,
   v2Identity,
 } from "../../../shared/interactivePrivacy";
-import { trackV2Journey, type JourneyEventType } from "../data/amcFounderOps";
+import { trackV2Journey, type JourneyEventType, type JourneyTrackingObservation } from "../data/amcFounderOps";
 import {
   initialV2State,
   suggestV2CaseType,
@@ -116,6 +116,7 @@ export default function AmcInteractiveV2() {
   const languagePinned = useRef(params.has("lang"));
   const simOpened = useRef(false);
   const restorePrintTitle = useRef<(() => void) | null>(null);
+  const [trackingObservation, setTrackingObservation] = useState<JourneyTrackingObservation | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
   const selfCards = useMemo(
     () => selfCheckCards(state.caseType, language),
@@ -183,6 +184,10 @@ export default function AmcInteractiveV2() {
           ...((patch.structuralOutputJson as object) || {}),
         },
       }),
+    }, observation => {
+      // Retain the last attempted request; a skipped follow-up must not hide
+      // the backend failure that prevented creating its journey.
+      if (observation.outcome !== "skipped") setTrackingObservation(observation);
     });
   };
   useEffect(() => {
@@ -718,6 +723,10 @@ export default function AmcInteractiveV2() {
   };
   return (
     <div className="v2-app" lang={language} data-testid="v2-app"
+      data-ops-outcome={trackingObservation?.outcome}
+      data-ops-reason={trackingObservation?.reasonCode}
+      data-ops-http-status={trackingObservation?.httpStatus ?? undefined}
+      data-ops-event={trackingObservation?.eventType}
       data-evidence-language={!demoMode && evidenceByLanguage[researchLanguage] ? researchLanguage : undefined}
       data-evidence-http-status={evidenceHttpByLanguage[researchLanguage]?.status}
       data-evidence-reason-header={evidenceHttpByLanguage[researchLanguage]?.reason ?? undefined}

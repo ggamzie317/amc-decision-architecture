@@ -296,3 +296,39 @@ Two regression cases cover headline endings and source-fact preservation. Server
 API, request/response contract and original score/structural files are unchanged;
 the two Production live requests above are not relabelled as execution of this
 subsequent display revision. The final release identity and validation are in PR #92.
+
+## Operations acknowledgement verification — 2026-10-13
+
+This continuation starts from public Production `07b516b`. The operations endpoint
+deliberately returns HTTP 200 when persistence is unavailable, with `stored: false`.
+An HTTP success log alone therefore does not prove a database write. The existing
+queued client tracker now provides an optional, bounded response observer: event,
+HTTP status, outcome and an allowlisted reason. It exposes no submission identifier,
+customer input, response body, exception text or provider details. V2 places those
+categories in diagnostic DOM attributes, outside the customer-facing flow. A skipped
+follow-up retains the most recent attempted response so that a missing baseline does
+not hide its original storage failure. An error HTTP status cannot establish a stored
+journey even if its body resembles a success response. Tracking and observation
+failures remain non-blocking; no callback enters the request payload.
+
+The existing consent, privacy projection, correlation namespace, request schema,
+server persistence path and administrator authentication are unchanged. Original
+framework definitions, engine, FIFWM rules, thresholds, scenario calculations,
+provider requests and print behavior are unchanged. This adds no paid provider calls.
+
+The web suite passes 374/374 including nine acknowledgement boundary regressions.
+TypeScript, web/server build, public-bundle privacy and Founder Ops ESM checks pass.
+The isolated browser matrix covers all nine case families in EN and KO (18/18), with
+the real server tracking function backed by an in-memory test store. Each journey
+has one anonymous record, empty written answers and no private comparison note in
+its events or structural snapshot. Two additional EN/KO browser cases simulate
+HTTP 200 with backend-unavailable acknowledgements: the diagnostic preserves that
+failure while comparisons, language changes, scenarios/reset and the report continue
+to work. All external evidence in these 20 browser cases is explicitly synthetic;
+actual provider calls are zero. These are not Production database read-back tests.
+
+Live Production acknowledgement results and final deployment identity are recorded
+in PR #92 after verification. The AMC administrator page currently requires its own
+sign-in; a Vercel dashboard session does not authenticate that application. Native
+interactive PDF Save/Cancel remains outside the cloud browser's supported controls
+and is not relabelled as verified by the existing rendered PDF checks.
