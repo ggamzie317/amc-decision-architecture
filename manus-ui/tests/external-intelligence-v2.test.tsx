@@ -644,6 +644,45 @@ describe("V2 live External Intelligence boundary", () => {
     ]);
   });
 
+  it("pins all validated alternatives before a single source HTTP check", async () => {
+    const addresses = [
+      { address: "2001:4860:4860::8888", family: 6 as const },
+      { address: "8.8.8.8", family: 4 as const },
+      { address: "8.8.4.4", family: 4 as const },
+    ];
+    const resolve = vi.fn(async () => addresses);
+    const headers = vi.fn(async (_url: URL, _addresses: unknown, _signal: AbortSignal) => ({ status: 200 }));
+    expect(await probePublicSource("https://example.org/source", new AbortController().signal,
+      { resolve, headers })).toEqual({ available: true });
+    expect(resolve).toHaveBeenCalledTimes(1);
+    expect(headers).toHaveBeenCalledTimes(1);
+    expect(headers.mock.calls[0][1]).toEqual(addresses);
+    const callback = vi.fn();
+    pinnedSourceLookup(addresses)("example.org", { all: true }, callback as never);
+    expect(callback).toHaveBeenCalledWith(null, addresses);
+  });
+
+  it.each([
+    { address: "127.0.0.1", family: 4 as const },
+    { address: "::1", family: 6 as const },
+    { address: "10.0.0.1", family: 4 as const },
+    { address: "8.8.8.8", family: 6 as const },
+  ])("rejects the entire DNS set when an alternative is unsafe or malformed: $address / $family", async unsafe => {
+    const headers = vi.fn();
+    expect(await probePublicSource("https://example.org/source", new AbortController().signal, {
+      resolve: async () => [{ address: "8.8.4.4", family: 4 }, unsafe], headers,
+    })).toEqual({ available: false, category: "invalid_destination" });
+    expect(headers).not.toHaveBeenCalled();
+  });
+
+  it.each([403, 404, 410])("never retries an HTTP %s through another DNS address", async status => {
+    const headers = vi.fn(async () => ({ status }));
+    expect(await probePublicSource("https://example.org/source", new AbortController().signal, {
+      resolve: async () => [{ address: "8.8.8.8", family: 4 }, { address: "8.8.4.4", family: 4 }], headers,
+    })).toEqual({ available: false, category: status === 403 ? "http_denied" : "http_gone" });
+    expect(headers).toHaveBeenCalledTimes(1);
+  });
+
   it("fails closed for missing key, bad sources, provider HTTP failure, and timeout", async () => {
     const observe = vi.fn();
     const missing = await resolveV2ExternalIntelligence(request, {

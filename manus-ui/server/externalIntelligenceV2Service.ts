@@ -18,6 +18,9 @@ import {
   type ProviderObservation,
 } from "./providerObservation.js";
 import { probePublicSource, type SourceProbeFailure } from "./publicSourceAvailability.js";
+import type {
+  V2EvidenceExecution, v2EvidenceDiagnostics, v2EvidenceDiagnosticFields,
+} from "../shared/v2EvidenceProtocol.js";
 
 type ResolveOptions = {
   apiKey?: string;
@@ -25,6 +28,7 @@ type ResolveOptions = {
   timeoutMs?: number;
   observe?: (observation: ProviderObservation) => void | Promise<void>;
   onReason?: (reason: Reason) => void;
+  onDiagnostics?: (execution: V2EvidenceExecution) => void;
   sourceAvailable?: (url: string, signal: AbortSignal) => Promise<boolean>;
 };
 type Source = {
@@ -41,24 +45,8 @@ type Reason =
   | "invalid_provider_response";
 
 export type V2ResponseDiagnostic = {
-  category:
-    | "upstream_http"
-    | "transport_error"
-    | "timeout"
-    | "terminal_status"
-    | "response_json"
-    | "response_shape"
-    | "assistant_output_missing"
-    | "citation_mismatch"
-    | "duplicate_citation"
-    | "invalid_field"
-    | "limit_exceeded"
-    | "no_evidence"
-    | "source_probe_failure";
-  field?: "status" | "output" | "content" | "evidenceBlocks" |
-    "dimension" | "headline" | "direction" | "fact" | "whyItMatters" |
-    "sourceUrl" | "opportunitySignals" | "frictionSignals" |
-    "uncertainties" | "implication" | "contextConfidence";
+  category: (typeof v2EvidenceDiagnostics)[number];
+  field?: (typeof v2EvidenceDiagnosticFields)[number];
   terminalStatus?: "failed" | "cancelled" | "incomplete" | "other";
   incompleteReason?: "max_output_tokens" | "other";
   actualCount?: number;
@@ -207,6 +195,7 @@ export async function resolveV2ExternalIntelligence(
   let sourceFailureCategory: SourceProbeFailure | undefined;
   let responseDiagnostic: V2ResponseDiagnostic | undefined;
   let upstreamHttpStatus: number | undefined;
+  let stage: V2EvidenceExecution["stage"] = "configuration";
   const unavailable = () =>
     unavailableIntelligence(request.caseType, request.language);
   const finish = async (result: ExternalIntelligenceV2, reasonCode: Reason) => {
@@ -228,6 +217,17 @@ export async function resolveV2ExternalIntelligence(
       ...(responseDiagnostic ? { responseDiagnostic } : {}),
       ...(upstreamHttpStatus ? { upstreamHttpStatus } : {}),
     };
+    try {
+      options.onDiagnostics?.({
+        stage: result.status === "live" ? "ready" : stage,
+        ...(responseDiagnostic ? { diagnostic: responseDiagnostic.category } : {}),
+        ...(responseDiagnostic?.field ? { field: responseDiagnostic.field } : {}),
+        ...(sourceFailureCategory ? { sourceFailure: sourceFailureCategory } : {}),
+        ...(upstreamHttpStatus ? { upstreamStatus: upstreamHttpStatus } : {}),
+      });
+    } catch {
+      /* Protocol diagnostics never change a customer's evidence or result. */
+    }
     let telemetryTimer: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
@@ -258,6 +258,7 @@ export async function resolveV2ExternalIntelligence(
   let reason: Reason = "provider_failure";
   try {
     const dimensions = v2EvidenceFocus(request);
+    stage = "provider";
     const response = await (options.fetchImpl ?? fetch)(
       "https://api.perplexity.ai/v1/agent",
       {
@@ -285,6 +286,7 @@ export async function resolveV2ExternalIntelligence(
     );
     upstreamHttpStatus = response.status;
     if (response.ok) {
+      stage = "normalization";
       const parsed = await response.json().then(
         (value: unknown) => ({ ok: true as const, value }),
         () => ({ ok: false as const })
@@ -299,6 +301,7 @@ export async function resolveV2ExternalIntelligence(
         if (live?.status === "unavailable") {
           reason = "source_unavailable";
         } else if (live) {
+          stage = "sources";
           const urls = Array.from(
             new Set(live.evidenceBlocks.map(block => block.sourceUrl!))
           );

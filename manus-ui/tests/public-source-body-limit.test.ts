@@ -66,6 +66,18 @@ describe("public source bounded HTTPS body reader", () => {
     expect(await probe("/normal")).toEqual({ available: true });
   });
 
+  it("connects through an available address when the first resolved family cannot reach the TLS server", async () => {
+    // The fixture listens on IPv4 only. The first IPv6 address cannot connect;
+    // Node must use the remaining validated/pinned address, without a new lookup.
+    // Local destinations and this CA are test-only, below the production probe's
+    // public-address validation boundary.
+    const result = await responseHeaders(new URL(`https://source.example:${port}/normal`), [
+      { address: "::1", family: 6 },
+      { address: "127.0.0.1", family: 4 },
+    ], AbortSignal.timeout(2_000), certificate);
+    expect(result).toEqual({ status: 200, contentGate: false });
+  });
+
   it("rejects a deep citation served as an HTTP-200 pricing page through the real TLS reader", async () => {
     expect(await read("/pricing-gate")).toEqual({ status: 200, contentGate: true });
     expect(await probe("/pricing-gate")).toEqual({ available: false, category: "content_gate" });

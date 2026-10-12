@@ -14,6 +14,10 @@ import {
   v2BoundedText,
   v2EvidenceLimits as limit,
 } from "../../../shared/externalIntelligenceV2Contract";
+import {
+  v2EvidenceStages, v2EvidenceDiagnostics, v2EvidenceDiagnosticFields,
+  v2SourceFailures, v2EvidenceReasons, type V2EvidenceHttpObservation,
+} from "../../../shared/v2EvidenceProtocol";
 
 /** Explicit click only. No decision prose, internal bands, notes, or simulator state. */
 export function buildV2EvidenceRequest(
@@ -34,7 +38,7 @@ export function buildV2EvidenceRequest(
 export async function requestV2Evidence(
   request: V2EvidenceRequest,
   fetchImpl: typeof fetch = fetch,
-  onResponse?: (observation: { status: number; reason: string | null }) => void
+  onResponse?: (observation: V2EvidenceHttpObservation) => void
 ): Promise<ExternalIntelligenceV2> {
   const fallback = () =>
     unavailableIntelligence(request.caseType, request.language);
@@ -50,10 +54,28 @@ export async function requestV2Evidence(
     });
     // Keep only protocol metadata in browser memory for Preview QA. Never log
     // the body, customer input, credentials, or the provider response.
-    onResponse?.({
-      status: response.status,
-      reason: response.headers.get("X-AMC-Evidence-Reason"),
-    });
+    const readLabel = <T extends string>(name: string, allowed: readonly T[]): T | undefined => {
+      const value = response.headers.get(name);
+      return value && allowed.includes(value as T) ? value as T : undefined;
+    };
+    const stage = readLabel("X-AMC-Evidence-Stage", v2EvidenceStages);
+    const diagnostic = readLabel("X-AMC-Evidence-Diagnostic", v2EvidenceDiagnostics);
+    const field = readLabel("X-AMC-Evidence-Field", v2EvidenceDiagnosticFields);
+    const sourceFailure = readLabel("X-AMC-Source-Check", v2SourceFailures);
+    const upstream = response.headers.get("X-AMC-Upstream-Status");
+    try {
+      onResponse?.({
+        status: response.status,
+        reason: readLabel("X-AMC-Evidence-Reason", v2EvidenceReasons) ?? null,
+        ...(stage ? { stage } : {}),
+        ...(diagnostic ? { diagnostic } : {}),
+        ...(field ? { field } : {}),
+        ...(sourceFailure ? { sourceFailure } : {}),
+        ...(upstream && /^[1-5]\d{2}$/.test(upstream) ? { upstreamStatus: Number(upstream) } : {}),
+      });
+    } catch {
+      /* QA metadata must never discard valid customer evidence. */
+    }
     if (!response.ok) return fallback();
     const raw: unknown = await response.json();
     return acceptV2Evidence(raw, request) ?? fallback();

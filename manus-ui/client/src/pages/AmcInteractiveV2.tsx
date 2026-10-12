@@ -33,6 +33,7 @@ import {
   buildV2EvidenceRequest,
   requestV2Evidence,
 } from "../data/v2ExternalEvidenceClient";
+import type { V2EvidenceHttpObservation } from "../../../shared/v2EvidenceProtocol";
 import {
   v2t,
   v2CaseLabel,
@@ -105,7 +106,7 @@ export default function AmcInteractiveV2() {
     Record<V2Language, ExternalIntelligenceV2 | null>
   >({ en: null, ko: null });
   const [evidenceHttpByLanguage, setEvidenceHttpByLanguage] = useState<
-    Record<V2Language, { status: number; reason: string | null } | null>
+    Record<V2Language, V2EvidenceHttpObservation | null>
   >({ en: null, ko: null });
   const [evidenceLoadingLanguage, setEvidenceLoadingLanguage] =
     useState<V2Language | null>(null);
@@ -714,7 +715,12 @@ export default function AmcInteractiveV2() {
   return (
     <div className="v2-app" lang={language} data-testid="v2-app"
       data-evidence-http-status={evidenceHttpByLanguage[language]?.status}
-      data-evidence-reason-header={evidenceHttpByLanguage[language]?.reason ?? undefined}>
+      data-evidence-reason-header={evidenceHttpByLanguage[language]?.reason ?? undefined}
+      data-evidence-stage={evidenceHttpByLanguage[language]?.stage}
+      data-evidence-diagnostic={evidenceHttpByLanguage[language]?.diagnostic}
+      data-evidence-field={evidenceHttpByLanguage[language]?.field}
+      data-evidence-source-check={evidenceHttpByLanguage[language]?.sourceFailure}
+      data-evidence-upstream-status={evidenceHttpByLanguage[language]?.upstreamStatus}>
       <header className="v2-site-header">
         <a className="v2-wordmark" href="/amc-interactive-v2">
           allofmycareer{language === "en" && <span> / V2</span>}

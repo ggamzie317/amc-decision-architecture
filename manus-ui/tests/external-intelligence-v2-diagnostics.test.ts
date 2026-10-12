@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseV2EvidenceRequest } from "../shared/externalIntelligenceV2Request";
 import { v2EvidenceLimits as limit, v2TextLength } from "../shared/externalIntelligenceV2Contract";
-import { acceptV2Evidence } from "../client/src/data/v2ExternalEvidenceClient";
+import { acceptV2Evidence, requestV2Evidence } from "../client/src/data/v2ExternalEvidenceClient";
+import { handleV2ExternalIntelligence } from "../api/amc/external-intelligence-v2";
+import * as parserModule from "../shared/externalIntelligenceV2Request";
+import * as serviceModule from "../server/externalIntelligenceV2Service";
 import {
   inspectV2AgentResponse,
   resolveV2ExternalIntelligence,
@@ -39,6 +42,91 @@ const envelope = (value: unknown = content()) => ({
   ],
 });
 const diagnostic = (raw: unknown) => inspectV2AgentResponse(raw, request).diagnostic;
+
+const pipelineCases = [
+  { mode: "missing-key", status: 503, reason: "provider_not_configured", stage: "configuration" },
+  { mode: "upstream", status: 503, reason: "provider_failure", stage: "provider", diagnostic: "upstream_http", upstreamStatus: 429 },
+  { mode: "transport", status: 503, reason: "provider_failure", stage: "provider", diagnostic: "transport_error" },
+  { mode: "json", status: 503, reason: "invalid_provider_response", stage: "normalization", diagnostic: "response_json", upstreamStatus: 200 },
+  { mode: "field", status: 503, reason: "invalid_provider_response", stage: "normalization", diagnostic: "invalid_field", field: "fact", upstreamStatus: 200 },
+  { mode: "empty", status: 503, reason: "source_unavailable", stage: "normalization", diagnostic: "no_evidence", field: "evidenceBlocks", upstreamStatus: 200 },
+  { mode: "blocked", status: 503, reason: "source_unavailable", stage: "sources", diagnostic: "source_probe_failure", upstreamStatus: 200 },
+  { mode: "live", status: 200, reason: "live", stage: "ready", upstreamStatus: 200 },
+] as const;
+
+describe("V2 stage diagnostics through the actual resolver, route and browser client", () => {
+  it.each(pipelineCases)("identifies $mode without exposing provider text or search inputs", async expected => {
+    const headers: Record<string, string> = {};
+    let status = 0, body: unknown;
+    const response = {
+      setHeader: (name: string, value: string) => { headers[name] = value; },
+      status: (code: number) => { status = code; return response; },
+      json: (value: unknown) => { body = value; }, end: () => {},
+    };
+    const provider = vi.fn(async () => {
+      if (expected.mode === "transport") throw new Error("PRIVATE provider transport detail");
+      if (expected.mode === "upstream") return new Response("PRIVATE provider body", { status: 429 });
+      if (expected.mode === "json") return new Response("PRIVATE non-JSON body", { status: 200 });
+      const value = { ...content(), contextConfidence: "medium" };
+      if (expected.mode === "field") delete (value.evidenceBlocks[0] as any).fact;
+      if (expected.mode === "empty") value.evidenceBlocks = [];
+      return Response.json(envelope(value));
+    });
+    const observations = vi.fn();
+    const capture = vi.fn();
+    const client = await requestV2Evidence(request, (async () => {
+      await handleV2ExternalIntelligence({ method: "POST", body: request }, response, async () => ({
+        parser: parserModule,
+        service: {
+          ...serviceModule,
+          resolveV2ExternalIntelligence: (input, options) => resolveV2ExternalIntelligence(input, {
+            ...options, apiKey: expected.mode === "missing-key" ? "" : "synthetic-key",
+            fetchImpl: provider as typeof fetch, sourceAvailable: async () => expected.mode !== "blocked",
+            observe: observations,
+          }),
+        },
+      }));
+      return Response.json(body, { status, headers });
+    }) as typeof fetch, capture);
+    const { mode, ...metadata } = expected;
+    expect(capture).toHaveBeenCalledWith(metadata);
+    expect(headers["X-AMC-Evidence-Stage"]).toBe(expected.stage);
+    expect(client.status).toBe(expected.mode === "live" ? "live" : "unavailable");
+    expect(client.evidenceBlocks.length).toBe(expected.mode === "live" ? 1 : 0);
+    expect(provider).toHaveBeenCalledTimes(expected.mode === "missing-key" ? 0 : 1);
+    expect(JSON.stringify({ headers, observations: observations.mock.calls, clientMetadata: capture.mock.calls }))
+      .not.toMatch(/PRIVATE|synthetic-key|example\.org|Education consulting|United States/);
+  });
+
+  it("keeps successful evidence when server or client diagnostic callbacks throw", async () => {
+    const evidence = await resolveV2ExternalIntelligence(request, {
+      apiKey: "synthetic-key", fetchImpl: (async () => Response.json(envelope(content()))) as typeof fetch,
+      sourceAvailable: async () => true, observe: () => {},
+      onDiagnostics: () => { throw new Error("PRIVATE diagnostic failure"); },
+    });
+    expect(evidence.status).toBe("live");
+    expect(await requestV2Evidence(request, (async () => Response.json(evidence)) as typeof fetch,
+      () => { throw new Error("PRIVATE client metadata failure"); })).toEqual(evidence);
+  });
+
+  it("retains only known protocol labels and numeric upstream status in browser memory", async () => {
+    const capture = vi.fn();
+    await requestV2Evidence(request, (async () => Response.json({}, { status: 503, headers: {
+      "X-AMC-Evidence-Reason": "PRIVATE header", "X-AMC-Evidence-Stage": sourceUrl,
+      "X-AMC-Evidence-Diagnostic": "PRIVATE header", "X-AMC-Evidence-Field": "PRIVATE header",
+      "X-AMC-Source-Check": sourceUrl, "X-AMC-Upstream-Status": "200 PRIVATE",
+    } })) as typeof fetch, capture);
+    expect(capture).toHaveBeenCalledWith({ status: 503, reason: null });
+    capture.mockClear();
+    await requestV2Evidence(request, (async () => Response.json({}, { status: 503, headers: {
+      "X-AMC-Evidence-Reason": "source_unavailable", "X-AMC-Evidence-Stage": "sources",
+      "X-AMC-Evidence-Diagnostic": "source_probe_failure", "X-AMC-Source-Check": "http_denied",
+      "X-AMC-Upstream-Status": "200",
+    } })) as typeof fetch, capture);
+    expect(capture).toHaveBeenCalledWith({ status: 503, reason: "source_unavailable", stage: "sources",
+      diagnostic: "source_probe_failure", sourceFailure: "http_denied", upstreamStatus: 200 });
+  });
+});
 
 describe("V2 provider diagnostics without retaining provider text", () => {
   it("preserves explicit context confidence on fully accessible sources and removes it on partial coverage", async () => {

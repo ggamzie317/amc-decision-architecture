@@ -79,7 +79,7 @@ evidence call. Browser-produced test PDFs and native interactive save are report
 
 ## Implementation checks
 
-The web suite passes 342/342 across 21 files, including 24 focused evidence-reasoning
+At revision `433ab399`, the web suite passed 342/342 across 21 files, including 24 focused evidence-reasoning
 checks and the existing canonical 15-choice / 243-combination FIFWM parity checks.
 TypeScript, web/server/function builds, Founder Ops ESM and strict single/comparative
 renders pass. Ten golden fixtures render with zero unresolved placeholders using the
@@ -96,7 +96,54 @@ preserved, with no orphan sections. Logical section numbers and actual print pag
 counters are separate. The controlled print callback verifies proposed topic/brand/date
 titles and the real afterprint listener; it does not claim native Save or Cancel testing.
 
-Final deployed live verification remains a separate boundary. The current remote browser
+Final deployed live verification remained a separate boundary for that revision. The remote browser
 timed out opening the starting Preview, and an unauthenticated HTTP probe redirected to
 Vercel login. No shared bypass link, protection change, new provider key or extra paid
 research is used to resolve this access condition.
+
+## Transport repair and execution diagnostics — 2026-10-12
+
+This follow-up starts from `433ab399ba67a75e404ef093fc7c5adc7716096a`.
+It changes transport and safe execution reporting, not AMC definitions or analysis.
+
+- The source checker previously passed only the first DNS answer to HTTPS. A real
+  TLS fixture listening only on IPv4 reproduced failure when IPv6 came first.
+  It now validates the **entire** DNS set before connecting and supplies those pinned
+  addresses to Node's bounded family selection. There is no second DNS resolution,
+  HTTP-denial retry or additional provider request. The existing four-second total
+  probe bound, redirect checks, TLS validation and 4 KiB transient HTML prefix remain.
+- Each source request uses its own direct agent. A global proxy agent must not resolve
+  the hostname again after the public-address checks. Local fixture tests initially
+  exposed this execution environment's global proxy intercepting the pinned test
+  connection; with environment proxying disabled for that loopback-only RED test,
+  seven existing tests passed and the new address-list regression failed. After the
+  repair all reader tests pass without that test environment override.
+- A mixed public/private or malformed DNS set is rejected before any connection.
+  HTTP 403/404/410 still fail closed with one HTTP attempt. Source accessibility
+  remains separate from whether the original page supports the displayed claim.
+- The resolver reports a fixed execution stage, diagnostic category/field, source-check
+  category and numeric upstream HTTP status through response headers. The browser
+  retains only allowlisted labels in tab memory and DOM attributes. No key, source
+  URL, customer note, search input or provider text enters this diagnostic channel.
+- A throwing browser diagnostic callback previously discarded an otherwise valid
+  response. Metadata callback failures now leave successful evidence intact.
+- Provider key/preset lookup, the Agent request/schema, 3000-token cap, public request
+  fields, original derivation and partial-source confidence rules are unchanged.
+  Existing key metadata still targets Production and Preview without a branch override;
+  its value was not decrypted or copied. The earlier soft-launch Production stays separate.
+
+The final code passes **361/361 web tests** (21 files), TypeScript, web/server/function
+builds, Founder Ops ESM, canonical rule generation and protected-file/diff checks.
+The added checks include real TLS address fallback and the resolver → route → browser
+metadata flow for configuration, provider, normalization, source and success outcomes.
+Local EN/KO SPA QA uses synthetic responses: one mocked request per language,
+correct stage/upstream labels, private-note non-transmission/non-storage, unchanged
+annotations and baseline, simulator reset, shared report facts, 390/430px no-overflow
+and no additional research. Browser-produced PDFs have nine physical pages each;
+controlled print/afterprint restoration is not native interactive Save/Cancel proof.
+
+Actual provider requests in this follow-up: **0**. Runtime-log API still returns 403.
+Cloud browser control has responded and reached the ordinary Vercel login screen.
+Final deployed EN/KO research and native save remain pending the user's existing-account
+login in that verification browser; no protection bypass or new credentials are created.
+These findings do not prove that all historical source failures had the DNS cause.

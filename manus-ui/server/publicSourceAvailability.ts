@@ -1,6 +1,7 @@
 import { lookup } from "node:dns/promises";
 import { request as httpsRequest } from "node:https";
-import { BlockList, isIP, type LookupFunction } from "node:net";
+import { BlockList, isIP, type LookupFunction, type TcpNetConnectOpts } from "node:net";
+import type { v2SourceFailures } from "../shared/v2EvidenceProtocol.js";
 
 const blocked = new BlockList();
 for (const [address, prefix] of [
@@ -32,16 +33,20 @@ for (const [address, prefix] of [
   blocked.addSubnet(address, prefix, "ipv6");
 
 type Address = { address: string; family: 4 | 6 };
+type PinnedAddresses = Address | readonly Address[];
+// HTTPS forwards these socket options; older RequestOptions typings omit them.
+const addressSelection: Pick<TcpNetConnectOpts, "autoSelectFamily" | "autoSelectFamilyAttemptTimeout"> = {
+  autoSelectFamily: true,
+  autoSelectFamilyAttemptTimeout: 250,
+};
 type SourceResponse = { status: number; location?: string; contentGate?: boolean };
-export type SourceProbeFailure =
-  | "invalid_destination" | "dns" | "tls" | "timeout" | "redirect"
-  | "http_denied" | "http_gone" | "http_method" | "http_other" | "content_gate" | "network";
+export type SourceProbeFailure = (typeof v2SourceFailures)[number];
 export type SourceProbeResult = { available: true } | { available: false; category: SourceProbeFailure };
 type ProbeDependencies = {
   resolve?: (hostname: string) => Promise<Address[]>;
   headers?: (
     url: URL,
-    address: Address,
+    addresses: PinnedAddresses,
     signal: AbortSignal
   ) => Promise<SourceResponse>;
 };
@@ -55,11 +60,11 @@ function publicAddress(address: string): boolean {
   );
 }
 
-async function pinnedAddress(
+async function pinnedAddresses(
   url: URL,
   signal: AbortSignal,
   resolve: NonNullable<ProbeDependencies["resolve"]>
-): Promise<Address | null> {
+): Promise<readonly Address[] | null> {
   const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
   if (
     url.protocol !== "https:" ||
@@ -73,23 +78,33 @@ async function pinnedAddress(
   const literal = isIP(hostname);
   if (literal)
     return publicAddress(hostname)
-      ? { address: hostname, family: literal as 4 | 6 }
+      ? [{ address: hostname, family: literal as 4 | 6 }]
       : null;
-  const answers = await Promise.race([
-    resolve(hostname),
-    new Promise<null>(done =>
-      signal.addEventListener("abort", () => done(null), { once: true })
-    ),
-  ]);
+  let onAbort: () => void = () => {};
+  let answers: Address[] | null;
+  try {
+    answers = await Promise.race([
+      resolve(hostname),
+      new Promise<null>(done => {
+        onAbort = () => done(null);
+        signal.addEventListener("abort", onAbort, { once: true });
+        if (signal.aborted) onAbort();
+      }),
+    ]);
+  } finally {
+    signal.removeEventListener("abort", onAbort);
+  }
   if (!answers || signal.aborted) return null;
-  if (!answers.length || answers.some(answer => !publicAddress(answer.address)))
+  // Validate the entire set before dialing any address, including alternatives.
+  if (!answers.length || answers.some(answer =>
+    isIP(answer.address) !== answer.family || !publicAddress(answer.address)))
     return null;
-  return answers[0] as Address;
+  return answers;
 }
 
 export function responseHeaders(
   url: URL,
-  address: Address,
+  addresses: PinnedAddresses,
   signal: AbortSignal,
   // A test-only trust anchor lets the bounded reader run against a local TLS server.
   ca?: string
@@ -99,6 +114,10 @@ export function responseHeaders(
       url,
       {
         method: "GET",
+        // A proxy/global pooled agent may resolve the hostname again and ignore
+        // our pinned lookup. Each check must use only the validated destinations.
+        agent: false,
+        ...addressSelection,
         signal,
         timeout: 3_500,
         headers: {
@@ -106,8 +125,9 @@ export function responseHeaders(
           Range: "bytes=0-4095",
           "User-Agent": "AMC-Evidence-Source-Check/1.0",
         },
-        // Reuse the already validated address; a second DNS lookup could resolve privately.
-        lookup: pinnedSourceLookup(address),
+        // Node can try the other validated addresses if one family is unreachable.
+        // This is transport fallback, not another HTTP/provider request.
+        lookup: pinnedSourceLookup(addresses),
         ...(ca ? { ca } : {}),
       },
       response => {
@@ -182,13 +202,14 @@ export function sourceHtmlLooksUnavailable(html: string, requestedUrl?: URL): bo
 }
 
 /** Node may request either a scalar or an all-address DNS callback. */
-export function pinnedSourceLookup(address: Address): LookupFunction {
+export function pinnedSourceLookup(pinned: PinnedAddresses): LookupFunction {
+  const addresses = Array.isArray(pinned) ? pinned : [pinned as Address];
   return (_hostname, options, callback) => {
     if (options.all)
-      callback(null, [
-        { address: address.address, family: address.family },
-      ] as never);
-    else callback(null, address.address, address.family);
+      callback(null, addresses.map(address => ({
+        address: address.address, family: address.family,
+      })) as never);
+    else callback(null, addresses[0].address, addresses[0].family);
   };
 }
 
@@ -212,10 +233,10 @@ export async function probePublicSource(
     let url = new URL(sourceUrl);
     for (let redirect = 0; redirect <= 3; redirect++) {
       if (signal.aborted) return { available: false, category: "timeout" };
-      const address = await pinnedAddress(url, signal, resolve);
-      if (!address) return { available: false, category: signal.aborted ? "timeout" : "invalid_destination" };
+      const addresses = await pinnedAddresses(url, signal, resolve);
+      if (!addresses) return { available: false, category: signal.aborted ? "timeout" : "invalid_destination" };
       if (signal.aborted) return { available: false, category: "timeout" };
-      const response = await headers(url, address, signal);
+      const response = await headers(url, addresses, signal);
       if (response.contentGate) return { available: false, category: "content_gate" };
       if (response.status >= 200 && response.status < 300) return { available: true };
       if (response.status === 401 || response.status === 403) return { available: false, category: "http_denied" };

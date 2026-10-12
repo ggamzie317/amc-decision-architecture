@@ -27,6 +27,7 @@ export async function handleV2ExternalIntelligence(
   loadService: Load = load
 ) {
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-AMC-Evidence-Stage", "request");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") {
@@ -60,6 +61,7 @@ export async function handleV2ExternalIntelligence(
   }
   let loaded: Awaited<ReturnType<Load>>;
   try {
+    res.setHeader("X-AMC-Evidence-Stage", "initialization");
     loaded = await loadService();
   } catch {
     res.setHeader("X-AMC-Evidence-Reason", "service_load_error");
@@ -70,12 +72,21 @@ export async function handleV2ExternalIntelligence(
     const { service, parser } = loaded;
     const request = parser.parseV2EvidenceRequest(body);
     if (!request) {
+      res.setHeader("X-AMC-Evidence-Stage", "request");
       res.setHeader("X-AMC-Evidence-Reason", "malformed_request");
       res.status(400).json(unavailable());
       return;
     }
+    res.setHeader("X-AMC-Evidence-Stage", "execution");
     const result = await service.resolveV2ExternalIntelligence(request, {
       onReason: reason => res.setHeader("X-AMC-Evidence-Reason", reason),
+      onDiagnostics: execution => {
+        res.setHeader("X-AMC-Evidence-Stage", execution.stage);
+        if (execution.diagnostic) res.setHeader("X-AMC-Evidence-Diagnostic", execution.diagnostic);
+        if (execution.field) res.setHeader("X-AMC-Evidence-Field", execution.field);
+        if (execution.sourceFailure) res.setHeader("X-AMC-Source-Check", execution.sourceFailure);
+        if (execution.upstreamStatus) res.setHeader("X-AMC-Upstream-Status", String(execution.upstreamStatus));
+      },
     });
     res.status(result.status === "live" ? 200 : 503).json(result);
   } catch {
