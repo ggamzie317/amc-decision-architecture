@@ -1,7 +1,7 @@
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2State } from "../data/amcV2Model";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
-import { v2EvidenceCheckedDate } from "../data/v2ReportPresentation";
+import { v2EvidenceCheckedDate, v2EvidenceLanguageNote } from "../data/v2ReportPresentation";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import {
   v2t,
@@ -69,6 +69,9 @@ export function V2ExternalBoard({
             : t(v2EvidenceStatusLabel(phase))}
         </span>
       </div>
+      {phase === "live" && v2EvidenceLanguageNote(state.language, analysis.evidenceLanguage) && (
+        <p className="v2-evidence-language-note">{v2EvidenceLanguageNote(state.language, analysis.evidenceLanguage)}</p>
+      )}
       {phase === "not_checked" ||
       phase === "loading" ||
       phase === "unavailable" ? (
@@ -233,6 +236,7 @@ export default function V2Dashboard({
   comparisons,
   onComparisonChange,
   evidencePhase = intelligence.status,
+  evidenceLanguage = state.language,
   onCheckEvidence = () => {},
   onReport,
 }: {
@@ -243,13 +247,14 @@ export default function V2Dashboard({
   comparisons?: EvidenceComparisons;
   onComparisonChange?: (key: string, answer: EvidenceComparison) => void;
   evidencePhase?: V2EvidencePhase;
+  evidenceLanguage?: V2State["language"];
   onCheckEvidence?: () => void;
   onReport: () => void;
 }) {
   const t = (key: V2CopyKey) => fmt(state, key),
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
-  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons);
+  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage);
   const draft = evidencePhase !== "live" && evidencePhase !== "demo";
   const head = (n: string, english: string, title: string, note?: string) => (
     <div className="v2-section-top">

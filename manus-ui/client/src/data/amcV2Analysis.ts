@@ -273,6 +273,7 @@ export type V2EvidenceLink = {
 };
 export type V2Analysis = {
   language: V2State["language"];
+  evidenceLanguage: V2State["language"];
   fifwmSource: ProductApplicationV3["decisionStructure"]["fifwmSource"];
   topic: string;
   posture: string;
@@ -348,6 +349,7 @@ export function buildV2Analysis(
   phase: V2EvidencePhase = intelligence.status,
   selfChecks?: SelfChecks,
   comparisons: EvidenceComparisons = {},
+  evidenceLanguage: V2State["language"] = state.language,
 ): V2Analysis {
   const ko = state.language === "ko",
     say = (koText: string, enText: string) => (ko ? koText : enText);
@@ -465,7 +467,7 @@ export function buildV2Analysis(
   const target = v2PublicSearchTarget(state) || state.optionB.trim() || text(profile.topic);
   const evidenceLinks: V2EvidenceLink[] = blocks.map((block, id) => {
     const conditionGroup = v2ConditionGroup(v2EvidenceArea(block, state));
-    const comparisonKey = v2ComparisonKey(block, state.language);
+    const comparisonKey = v2ComparisonKey(block, evidenceLanguage);
     const comparison = comparisons[comparisonKey];
     const comparisonStatus = comparison?.status ?? "unreviewed";
     const comparisonLabel = v2ComparisonLabel(comparisonStatus, ko);
@@ -836,6 +838,7 @@ export function buildV2Analysis(
   const briefAction = `${priorityLink?.testReference ? `${priorityLink.testReference} ` : ""}${text(profile.action)}`;
   return {
     language: state.language,
+    evidenceLanguage,
     fifwmSource: core.decisionStructure.fifwmSource,
     topic: text(profile.topic),
     target,

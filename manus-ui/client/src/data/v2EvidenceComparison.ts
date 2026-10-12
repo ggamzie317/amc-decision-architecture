@@ -9,7 +9,7 @@ export type EvidenceComparison = { status: EvidenceComparisonStatus; detail: str
 export type EvidenceComparisons = Record<string, EvidenceComparison>;
 type Block = ExternalIntelligenceV2["evidenceBlocks"][number];
 
-/** A changed claim or language cannot silently reuse an earlier comparison. */
+/** Identity uses the research language. An interface toggle is not a new claim. */
 export function v2ComparisonKey(block: Block, language: V2State["language"]): string {
   return JSON.stringify([language, block.sourceUrl ?? "demo", block.dimension, block.fact]);
 }

@@ -23,7 +23,7 @@ import {
   type V2State,
 } from "../data/amcV2Model";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
-import { v2EvidenceCheckedDate } from "../data/v2ReportPresentation";
+import { v2EvidenceCheckedDate, v2EvidenceLanguageNote } from "../data/v2ReportPresentation";
 import {
   v2t,
   v2CaseLabel,
@@ -53,6 +53,7 @@ export default function V2Report({
   selfChecks,
   comparisons,
   evidencePhase = intelligence.status,
+  evidenceLanguage = state.language,
   onClose,
   onPrint,
 }: {
@@ -66,6 +67,7 @@ export default function V2Report({
   selfChecks?: SelfChecks;
   comparisons?: EvidenceComparisons;
   evidencePhase?: V2EvidencePhase;
+  evidenceLanguage?: V2State["language"];
   onClose: () => void;
   onPrint: () => void;
 }) {
@@ -74,7 +76,7 @@ export default function V2Report({
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
   const evidenceText = (s: string) => v2CustomerEvidenceText(state.language, s);
-  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons);
+  const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage);
   const activeOverrides = limitV2Overrides(
     input,
     visibleVariables,
@@ -84,7 +86,7 @@ export default function V2Report({
     ? v2Scenario(input, activeOverrides).result
     : null;
   const scenarioAnalysis = hypothetical
-    ? buildV2Analysis(state, hypothetical, intelligence, evidencePhase, selfChecks, comparisons)
+    ? buildV2Analysis(state, hypothetical, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage)
     : null;
   const scenarioChanges = hypothetical
     ? v2ScenarioComparison(core, hypothetical, state.language).filter(
@@ -344,6 +346,7 @@ export default function V2Report({
           <div className="v2-paper-band">
             <span>{evidenceLabel}</span>
             <p>{evidenceNote}</p>
+            {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p>{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
             {evidencePhase === "live" && (
               <p>
                 {say(
@@ -523,6 +526,7 @@ export default function V2Report({
                   )}
             </p>
             {partialEvidenceNote && <p className="v2-paper-caption">{partialEvidenceNote}</p>}
+            {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p className="v2-paper-caption">{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
             {sources(false)}
             {intelligence.uncertainties.length > 0 && (
               <p className="v2-paper-caption">

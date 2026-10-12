@@ -14,7 +14,7 @@ import { baselineBands } from "../client/src/data/amcScenario";
 import { selectV2SimulatorVariables } from "../client/src/data/amcV2SensitivityView";
 import V2Dashboard from "../client/src/components/V2Dashboard";
 import V2Report from "../client/src/components/V2Report";
-import { V2DecisionMap } from "../client/src/components/V2AnalysisView";
+import { V2DecisionMap, V2Reasoning } from "../client/src/components/V2AnalysisView";
 
 (globalThis as any).React = React;
 function fixture(language: "ko" | "en" = "ko") {
@@ -127,6 +127,49 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
       expect(a.evidenceLinks[0].comparisonStatus).toBe("unreviewed");
       expect(a.evidenceLinks[0].customerEvidence).not.toContain("prior-private-proof");
     }
+  });
+
+  it("retains the same research identity and private comparison across an interface toggle", () => {
+    const { state, evidence } = fixture("ko");
+    const key = v2ComparisonKey(evidence.evidenceBlocks[0], "ko");
+    const comparisons: EvidenceComparisons = { [key]: { status: "gap", detail: "session-only work sample missing" } };
+    const before = JSON.stringify({ state, evidence, comparisons });
+    const en = { ...state, language: "en" as const };
+    const koInput = buildV2Input(state, evidence), enInput = buildV2Input(en, evidence);
+    const koCore = buildProductApplicationV3(koInput), enCore = buildProductApplicationV3(enInput);
+    expect(enInput.structuralSignals).toEqual(koInput.structuralSignals);
+    expect(enInput.safetyMarginInputs).toEqual(koInput.safetyMarginInputs);
+    expect(Object.values(enInput.fifwm).map(item => item.score)).toEqual(Object.values(koInput.fifwm).map(item => item.score));
+    expect(derivePostureAssessment(enInput).effectivePosture).toBe(derivePostureAssessment(koInput).effectivePosture);
+    expect(derivePostureAssessment(enInput).guardrailApplied).toBe(derivePostureAssessment(koInput).guardrailApplied);
+    expect(enCore.safetyMargin.band).toBe(koCore.safetyMargin.band);
+    expect(enCore.changingPlays.map(play => play.family)).toEqual(koCore.changingPlays.map(play => play.family));
+    const a = buildV2Analysis(state, koCore, evidence, "live", undefined, comparisons, "ko");
+    const b = buildV2Analysis(en, enCore, evidence, "live", undefined, comparisons, "ko");
+    expect(b.evidenceLinks[0].comparisonKey).toBe(a.evidenceLinks[0].comparisonKey);
+    expect(b.evidenceLinks[0].comparisonStatus).toBe("gap");
+    expect(b.evidenceLinks[0].sourceFact).toBe(a.evidenceLinks[0].sourceFact);
+    expect(b.experiment.action).toContain("session-only work sample missing");
+    const html = renderToStaticMarkup(<V2Dashboard state={en} core={enCore} intelligence={evidence} comparisons={comparisons} evidenceLanguage="ko" onReport={() => {}} />);
+    expect(html).toContain("retain the Korean text returned by research");
+    expect(html).toContain(evidence.evidenceBlocks[0].fact);
+    expect(JSON.stringify({ state, evidence, comparisons })).toBe(before);
+    expect(JSON.stringify(buildV2EvidenceRequest(en))).not.toContain("session-only");
+  });
+
+  it("presents each core reading and cited condition once while retaining scope and next-check details", () => {
+    const { state, evidence } = fixture();
+    const core = buildProductApplicationV3(buildV2Input(state, evidence));
+    const analysis = buildV2Analysis(state, core, evidence);
+    const html = renderToStaticMarkup(<V2Reasoning analysis={analysis} intelligence={evidence} />);
+    for (const finding of analysis.findings) expect(html.split(finding.coreReading).length - 1).toBe(1);
+    expect(html.match(/class="v2-source-condition"/g)).toHaveLength(1);
+    expect(html).toContain(`<p class="v2-source-condition">${evidence.evidenceBlocks[0].fact}</p>`);
+    expect(html).toContain(evidence.evidenceBlocks[0].sourceUrl);
+    expect(html).toContain("<details");
+    expect(html).toContain(analysis.evidenceLinks[0].unresolved);
+    expect(html).toContain(analysis.evidenceLinks[0].sourceScope);
+    expect(html).toContain("다음 확인");
   });
 
   it("does not route unrelated public statistics into private readiness or FIFWM", () => {

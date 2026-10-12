@@ -7,6 +7,7 @@ import {
 } from "../data/externalIntelligenceV2";
 import {
   V2DecisionMap,
+  V2Reasoning,
   V2SafetyView,
   V2ChangingView,
   V2ExperimentView,
@@ -60,6 +61,7 @@ export default function V2Simulator({
   selfChecks,
   comparisons,
   evidencePhase = intelligence.status,
+  evidenceLanguage = state.language,
   onScenarioChange,
   onEvent,
 }: {
@@ -73,6 +75,7 @@ export default function V2Simulator({
   selfChecks?: SelfChecks;
   comparisons?: EvidenceComparisons;
   evidencePhase?: V2EvidencePhase;
+  evidenceLanguage?: V2State["language"];
   onScenarioChange: (overrides: ScenarioOverrides) => void;
   onEvent?: (
     type:
@@ -103,6 +106,7 @@ export default function V2Simulator({
     evidencePhase,
     selfChecks,
     comparisons,
+    evidenceLanguage,
   );
   const setBand = (variable: ScenarioVariable, band: string) => {
     if (!visibleVariables.includes(variable)) return;
@@ -234,7 +238,7 @@ export default function V2Simulator({
           <p>{analysis.posture}</p>
           <p>
             {overrideCount
-              ? analysis.summary
+              ? analysis.executiveSummary
               : say(
                   "왼쪽 조건을 바꾸면 같은 구조 분석이 다시 실행됩니다. 개선된 부분과 여전히 남는 제약을 함께 확인하세요.",
                   "Change the conditions to rerun the same analysis. Review both improvements and constraints that remain."
@@ -333,15 +337,7 @@ export default function V2Simulator({
         >
           {view === "reading" ? (
             <>
-              <div className="v2-scenario-reasons">
-                {analysis.findings.map(f => (
-                  <article key={f.id}>
-                    <h3>{f.title}</h3>
-                    <p>{f.basis}</p>
-                    <p>{f.implication}</p>
-                  </article>
-                ))}
-              </div>
+              <V2Reasoning analysis={analysis} intelligence={intelligence} compact />
               <V2SafetyView
                 analysis={analysis}
                 band={scenario.safetyMargin.band}

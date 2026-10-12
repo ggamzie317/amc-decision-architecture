@@ -199,3 +199,52 @@ The initial lookup for print commit `dcba996` showed no deployment or CI/check o
 That is an observed publish-trigger gap, not proof of a disconnected Vercel account.
 The normal Git push path is checked separately instead of repeatedly polling the
 unchanged lookup or changing integrations and access controls.
+
+## Soft-launch language and reading review — 2026-10-12
+
+This follow-up starts from `ddeffdb0fb2441da5eadcc243c93e55800eaff6d`.
+A reproduced presentation defect selected evidence by the interface language: changing
+EN/KO could turn a valid live snapshot into unknown context and change the original
+analysis inputs. Research language now identifies the active snapshot independently
+of the interface language. Sources, confidence, check date, self-checks, original factor
+answers, comparisons and hypothetical overrides remain the same when the UI changes.
+Private comparison identity still includes the research language, citation, dimension
+and exact fact; an actually different claim does not inherit an earlier match.
+
+The original reasoning model is retained. Each finding renders its core reading once;
+source conditions and the customer's comparison are presented separately, with scope,
+current conditions and next check available through a keyboard-accessible disclosure.
+The scenario panel uses the same compact reading and a concise executive summary.
+The KO diagram labels public evidence in Korean. EN/KO remain visible, accessible
+controls; no technical V2 suffix is shown in the customer wordmark.
+
+A report remains open during language changes. In demos the same hypothetical
+overrides remain active; changing the demo case still resets them. In a live session
+source cards retain the text returned in the research language, with an explicit
+notice in the source board and report sections 3/9 when it differs from the UI.
+This does not claim automatic translation of private inputs or public source claims.
+Print titles restore when the interface language changes, and the next print uses
+the existing topic/allofmycareer/customer-local-date convention.
+
+The 21-file web suite passes 363/363, including 72 V1 preservation checks, 26 evidence
+reasoning checks and canonical 15-choice/243-combination parity. TypeScript, web/server
+builds, the standalone V2 function, Founder Ops ESM and canonical generation checks
+pass. Original definitions, Python scoring, generated rules, V3, structural derivation,
+scenario engine, provider request/response contracts and source checker are unchanged.
+
+Isolated SPA checks use synthetic API responses and zero paid requests. Both EN/KO
+retain the live snapshot, response-derived diagnostic labels, private comparison note,
+factor answers, scenario controls and report through UI toggles. A controlled 503
+source denial shows no claim rows, preserves the eight-section draft across toggles,
+and reaches the same nine-section result after an explicit retry. Neither switching
+language nor editing comparisons, simulation/reset, report or print repeats research.
+Notes are absent from all API bodies and browser storage; no JS page errors occur.
+390/430px dashboard/report views have no horizontal overflow. Four browser-produced
+A4 test PDFs (ordinary and failure/retry cases, EN/KO) each have nine physical pages
+and no empty page. Normal EN/KO page renderings were visually inspected. Native
+interactive Save/Cancel remains distinct from this controlled printing check.
+
+Final deployed real research remains bounded to one EN and one KO request on the
+new Ready SHA, recorded in PR #92 after publication. Earlier live success on
+`189376d` is historical evidence and is not counted as verification of this follow-up.
+The existing Production and draft PR state are retained while preparing the candidate.

@@ -242,6 +242,11 @@
   color: #1e665f;
   font-size: 11px;
 }
+.v2-reasoning-source .v2-comparison-reading { color: #315b56; font-size: 12px; }
+.v2-reasoning-source .v2-source-condition { border-top: 1px solid #d7e3dc; padding-top: 12px; }
+.v2-evidence-language-note { border-left: 2px solid var(--teal); padding: 10px 14px; background: #eef4f0; color: #365a58; font-size: 12px; line-height: 1.75; }
+.v2-language button { min-height: 36px; min-width: 40px; }
+.v2-reasoning-source details > summary:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 .v2-evidence-trace {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

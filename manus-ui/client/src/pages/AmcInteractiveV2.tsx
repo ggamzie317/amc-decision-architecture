@@ -84,6 +84,8 @@ export default function AmcInteractiveV2() {
       ? "ko"
       : "en";
   const [language, setLanguage] = useState<V2Language>(initialLanguage);
+  // A language toggle changes presentation, not the research snapshot or its identity.
+  const [researchLanguage, setResearchLanguage] = useState<V2Language>(initialLanguage);
   const [kind, setKind] = useState<V2DemoKind>(initialKind);
   const [state, setState] = useState<V2State>(() =>
     demoMode
@@ -187,9 +189,6 @@ export default function AmcInteractiveV2() {
     if (demoMode) {
       const fixture = v2DemoFixture(kind, language);
       setState(fixture.state);
-      setPhase("dashboard");
-      simOpened.current = false;
-      setScenarioOverrides({});
     } else setState(s => ({ ...s, language }));
   }, [language, kind, demoMode]);
   useEffect(() => {
@@ -208,15 +207,15 @@ export default function AmcInteractiveV2() {
     () =>
       demoMode
         ? v2DemoFixture(kind, language).intelligence
-        : (evidenceByLanguage[language] ??
+        : (evidenceByLanguage[researchLanguage] ??
           unavailableIntelligence(state.caseType, language)),
-    [demoMode, kind, language, state.caseType, evidenceByLanguage]
+    [demoMode, kind, language, researchLanguage, state.caseType, evidenceByLanguage]
   );
   const evidencePhase = demoMode
     ? "demo"
-    : evidenceLoadingLanguage === language
+    : evidenceLoadingLanguage !== null
       ? "loading"
-      : (evidenceByLanguage[language]?.status ?? "not_checked");
+      : (evidenceByLanguage[researchLanguage]?.status ?? "not_checked");
   const input = useMemo(
     () => buildV2Input(state, intelligence, fifwmAssessment),
     [state, intelligence, fifwmAssessment]
@@ -650,6 +649,8 @@ export default function AmcInteractiveV2() {
     languagePinned.current = true;
     if (next === language) return;
     track("language_changed", {}, { from: language, to: next });
+    restorePrintTitle.current?.();
+    restorePrintTitle.current = null;
     setLanguage(next);
   };
   const checkCurrentEvidence = async () => {
@@ -667,6 +668,7 @@ export default function AmcInteractiveV2() {
       return;
     }
     evidencePending.current = true;
+    setResearchLanguage(request.language);
     setEvidenceLoadingLanguage(language);
     track(
       "external_evidence_requested",
@@ -710,24 +712,27 @@ export default function AmcInteractiveV2() {
   const switchDemo = (next: V2DemoKind) => {
     if (next === kind) return;
     setScenarioOverrides({});
+    setPhase("dashboard");
+    simOpened.current = false;
     setKind(next);
   };
   return (
     <div className="v2-app" lang={language} data-testid="v2-app"
-      data-evidence-http-status={evidenceHttpByLanguage[language]?.status}
-      data-evidence-reason-header={evidenceHttpByLanguage[language]?.reason ?? undefined}
-      data-evidence-stage={evidenceHttpByLanguage[language]?.stage}
-      data-evidence-diagnostic={evidenceHttpByLanguage[language]?.diagnostic}
-      data-evidence-field={evidenceHttpByLanguage[language]?.field}
-      data-evidence-source-check={evidenceHttpByLanguage[language]?.sourceFailure}
-      data-evidence-upstream-status={evidenceHttpByLanguage[language]?.upstreamStatus}>
+      data-evidence-language={!demoMode && evidenceByLanguage[researchLanguage] ? researchLanguage : undefined}
+      data-evidence-http-status={evidenceHttpByLanguage[researchLanguage]?.status}
+      data-evidence-reason-header={evidenceHttpByLanguage[researchLanguage]?.reason ?? undefined}
+      data-evidence-stage={evidenceHttpByLanguage[researchLanguage]?.stage}
+      data-evidence-diagnostic={evidenceHttpByLanguage[researchLanguage]?.diagnostic}
+      data-evidence-field={evidenceHttpByLanguage[researchLanguage]?.field}
+      data-evidence-source-check={evidenceHttpByLanguage[researchLanguage]?.sourceFailure}
+      data-evidence-upstream-status={evidenceHttpByLanguage[researchLanguage]?.upstreamStatus}>
       <header className="v2-site-header">
         <a className="v2-wordmark" href="/amc-interactive-v2">
-          allofmycareer{language === "en" && <span> / V2</span>}
+          allofmycareer
         </a>
         <div className="v2-header-right">
           {demoMode && <span className="v2-demo-label">{t("demoBadge")}</span>}
-          <div className="v2-language">
+          <div className="v2-language" role="group" aria-label={language === "ko" ? "화면 언어" : "Interface language"}>
             <button
               type="button"
               aria-pressed={language === "en"}
@@ -1041,6 +1046,7 @@ export default function AmcInteractiveV2() {
             onComparisonChange={(key, answer) => setEvidenceComparisons(current => ({ ...current, [key]: answer }))}
             core={core}
             intelligence={intelligence}
+            evidenceLanguage={demoMode ? language : researchLanguage}
             evidencePhase={evidencePhase}
             onCheckEvidence={checkCurrentEvidence}
             onReport={() => {
@@ -1061,6 +1067,7 @@ export default function AmcInteractiveV2() {
             visibleVariables={visibleVariables}
             overrides={scenarioOverrides}
             intelligence={intelligence}
+            evidenceLanguage={demoMode ? language : researchLanguage}
             evidencePhase={evidencePhase}
             onScenarioChange={setScenarioOverrides}
             onEvent={(event, metadata) => {
@@ -1084,6 +1091,7 @@ export default function AmcInteractiveV2() {
           visibleVariables={visibleVariables}
           scenarioOverrides={scenarioOverrides}
           intelligence={intelligence}
+          evidenceLanguage={demoMode ? language : researchLanguage}
           evidencePhase={evidencePhase}
           onClose={() => {
             restorePrintTitle.current?.();

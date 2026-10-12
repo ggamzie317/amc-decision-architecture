@@ -47,7 +47,7 @@ export function V2DecisionMap({
     {
       x: 320,
       y: 14,
-      title: "External Evidence",
+      title: say("공개 근거", "External Evidence"),
       value: analysis.priorityEvidence?.headline ?? evidence,
       tone: "evidence",
     },
@@ -223,7 +223,7 @@ export function V2Reasoning({
             <h3>{f.title}</h3>
           </div>
           <p className="v2-reasoning-basis">{f.basis}</p>
-          <p>{compact ? f.coreReading : f.implication}</p>
+          <p>{f.coreReading}</p>
           {f.selfReports.map((report, index) => (
             <p className="v2-self-report" key={index}>{report}</p>
           ))}
@@ -237,16 +237,22 @@ export function V2Reasoning({
                   {ko ? `근거 ${id + 1}` : `Evidence ${id + 1}`} /{" "}
                   {v2CustomerEvidenceText(analysis.language, block.headline)}
                 </strong>
+                <p className="v2-comparison-reading">{link.comparisonLabel}</p>
+                {link.comparisonDetail && <p className="v2-self-report">{ko ? "고객 자기보고: " : "Customer self-report: "}{link.comparisonDetail}</p>}
                 {!compact && (
-                  <dl className="v2-evidence-trace">
-                    <div><dt>{ko ? "검색 요약의 주장" : "Search-summary claim"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</dd></div>
+                  <>
+                    <p className="v2-source-condition">{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
+                    <details className="v2-evidence-trace-detail">
+                      <summary>{ko ? "자료의 범위·현재 조건·다음 확인" : "Source scope, current conditions and next check"}</summary>
+                      <dl className="v2-evidence-trace">
                     <div><dt>{ko ? "검색 요약의 적용 설명" : "Search-summary applicability"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
                     <div><dt>{ko ? "현재 조건 · 입력 기반 구조 판단" : "Current condition · user input and core rules"}</dt><dd>{link.condition}</dd></div>
-                    {link.selfReport && <div><dt>{ko ? "고객 자기보고" : "Customer self-report"}</dt><dd>{link.selfReport}</dd></div>}
-                    <div><dt>{ko ? "구조 해석" : "Structural reading"}</dt><dd>{link.interpretation}</dd></div>
+                    {link.selfReport && !f.selfReports.includes(link.selfReport) && <div><dt>{ko ? "고객 자기보고" : "Customer self-report"}</dt><dd>{link.selfReport}</dd></div>}
                     <div><dt>{ko ? "아직 확인되지 않은 점" : "Still unverified"}</dt><dd>{link.unresolved}</dd></div>
                     <div><dt>{ko ? "다음 확인" : "Next check"}</dt><dd>{link.test}</dd></div>
-                  </dl>
+                      </dl>
+                    </details>
+                  </>
                 )}
                 {block.sourceUrl && (
                   <a href={block.sourceUrl} target="_blank" rel="noreferrer">

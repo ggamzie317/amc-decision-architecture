@@ -1,5 +1,13 @@
 import type { V2Language } from "./v2Language";
 
+/** UI language never translates or replaces the immutable research snapshot. */
+export function v2EvidenceLanguageNote(language: V2Language, evidenceLanguage?: V2Language): string {
+  if (!evidenceLanguage || evidenceLanguage === language) return "";
+  return language === "ko"
+    ? "근거 카드는 검색 당시의 영어로 표시됩니다. 언어를 바꿔도 출처·고객 응답·분석 조건은 유지됩니다."
+    : "Evidence cards retain the Korean text returned by research. Switching the interface preserves sources, your answers and analysis conditions.";
+}
+
 // Calendar dates here describe a customer's local day, not a source's publication day.
 export function v2LocalDate(value: string | Date, timeZone?: string): string {
   const date = value instanceof Date ? value : new Date(value);
