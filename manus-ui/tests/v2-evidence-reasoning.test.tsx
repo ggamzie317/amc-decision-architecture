@@ -42,6 +42,23 @@ const combinations = (["low", "medium", "high"] as const).flatMap(confidence =>
   (["supportive", "mixed", "caution"] as const).map(direction => ({ confidence, direction })));
 
 describe("V2 real input routing and non-scored evidence reasoning", () => {
+  it.each(["직무 모집 사례", "공개 요건"])("uses natural Korean source references for %s without changing claims", headline => {
+    const { state, evidence } = fixture();
+    evidence.evidenceBlocks[0].headline = headline;
+    const fact = evidence.evidenceBlocks[0].fact;
+    const input = buildV2Input(state, evidence);
+    const core = buildProductApplicationV3(input);
+    const analysis = buildV2Analysis(state, core, evidence, "live");
+    expect(analysis.evidenceLinks[0].testReference).toContain(`자료 ‘대조표 근거 1: ${headline}’의 조건이 목표`);
+    expect(analysis.evidenceLinks[0].sourceFact).toBe(fact);
+    const key = v2ComparisonKey(evidence.evidenceBlocks[0], state.language);
+    const excluded = buildV2Analysis(state, core, evidence, "live", undefined, {
+      [key]: { status: "not_applicable", detail: "" },
+    });
+    expect(excluded.evidenceLinks[0].interpretation).toContain("이 공개 조건이 목표");
+    expect(excluded.evidenceLinks[0].sourceFact).toBe(fact);
+    expect(buildV2Input(state, evidence)).toEqual(input);
+  });
   it.each(combinations)("reuses original public-context derivation for $confidence / $direction", ({ confidence, direction }) => {
     const { state, evidence } = fixture();
     evidence.contextConfidence = confidence;

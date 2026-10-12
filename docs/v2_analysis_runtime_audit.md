@@ -278,3 +278,21 @@ the original branch. The previous Production deployment
 identity, live request results and public-route checks are recorded in PR #92 after
 verification. Public-source reachability remains distinct from claim support and
 personal eligibility; native Save/Cancel proof remains distinct from rendered PDF QA.
+
+Production revision `78010020e3b46e9cdbf40fdecec4593deb0de6aa` completed Ready and
+was verified at the public V2 route with one EN and one KO request: both returned
+HTTP 200/live, with upstream 200 and runtime latencies 5,872/9,341 ms. EN retained
+one Cal/OSHA card; KO retained the Samsung DS role description and the original
+2026 second-half recruitment PDF. The specific claims were compared with all three
+original sources; a dated recruitment example does not prove current vacancies.
+The original public V1 landing text was identical before and after release, and
+the original `main` branch was retained. Deployment logs still showed exactly two
+evidence POSTs after comparison, toggles, scenarios/reset and report operations.
+
+That final Korean reading exposed a small display-only suffix problem for arbitrary
+quoted headlines (e.g. `사례’이 적용`). The follow-up uses a fixed noun in the
+surrounding sentence, preserving the full fact, citation, dates and existing rules.
+Two regression cases cover headline endings and source-fact preservation. Server,
+API, request/response contract and original score/structural files are unchanged;
+the two Production live requests above are not relabelled as execution of this
+subsequent display revision. The final release identity and validation are in PR #92.

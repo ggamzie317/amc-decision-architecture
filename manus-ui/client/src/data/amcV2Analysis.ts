@@ -536,7 +536,7 @@ export function buildV2Analysis(
           )
         : comparisonStatus === "not_applicable"
           ? say(
-              `고객은 ‘${criterion}’이 목표(${target})에 적용되지 않는다고 응답했습니다. 이 자료로 개인의 적합성을 판단하지 않으며, 목표에 맞는 요건을 다시 확인해야 합니다.`,
+              `고객은 이 공개 조건이 목표(${target})에 적용되지 않는다고 응답했습니다. 이 자료로 개인의 적합성을 판단하지 않으며, 목표에 맞는 요건을 다시 확인해야 합니다.`,
               `You report that “${criterion}” does not apply to ${target}. It cannot establish personal fit; obtain requirements specific to your target.`
             )
           : say(
@@ -552,7 +552,7 @@ export function buildV2Analysis(
         : comparisonStatus === "not_applicable"
           ? say(`목표(${target})와 같은 지역·직무·고객군의 원문을 찾으세요. 제외한 조건 ‘${reference}’을 목표 요건으로 사용하지 마세요.`,
               `Find original requirements for ${target} in the same region, role or customer segment. Do not use the excluded condition “${reference}” as a target requirement.`)
-          : say(`목표(${target})에 ‘${reference}’이 적용되는지 원문에서 확인한 뒤, 현재 성과·비용·실제 반응과 항목별로 대조하세요.`,
+          : say(`자료 ‘${reference}’의 조건이 목표(${target})에 적용되는지 원문에서 확인한 뒤, 현재 성과·비용·실제 반응과 항목별로 대조하세요.`,
               `Check whether “${reference}” applies to ${target}, then compare it item by item with your achievements, costs and actual responses.`);
     const scopedCheck = makeCheck(criterion);
     const testReference = makeCheck(say(`대조표 근거 ${id + 1}: ${headline}`, `comparison-table evidence ${id + 1}: ${headline}`));
