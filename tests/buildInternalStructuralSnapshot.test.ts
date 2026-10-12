@@ -77,7 +77,8 @@ test("single-case output returns expected shape", () => {
   const result = buildInternalStructuralSnapshot(args as any);
 
   assert.equal(result.section, "internal_structural_snapshot");
-  assert.equal(result.title, "Internal Structural Snapshot");
+  // The builder's canonical title is localized; report locale is applied by the render adapter.
+  assert.equal(result.title, "현재 나의 준비 상태");
   assert.equal(result.caseType, "single");
   assert.ok(result.clarityLine.length > 0);
   assert.ok(result.readinessLine.length > 0);

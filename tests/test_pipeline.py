@@ -458,7 +458,8 @@ class PipelineTests(unittest.TestCase):
             },
             "en",
         )
-        self.assertEqual(payload["External_Snapshot_Title"], "External Snapshot — Academic Transition")
+        self.assertEqual(payload["External_Snapshot_Type"], "academic_transition")
+        self.assertEqual(payload["External_Snapshot_Title"], "외부 환경 요약 — 학업 전환")
 
     def test_external_snapshot_title_industry(self):
         payload = build_report_payload(
@@ -468,7 +469,8 @@ class PipelineTests(unittest.TestCase):
             },
             "en",
         )
-        self.assertEqual(payload["External_Snapshot_Title"], "External Snapshot — Industry Transition")
+        self.assertEqual(payload["External_Snapshot_Type"], "industry_transition")
+        self.assertEqual(payload["External_Snapshot_Title"], "외부 환경 요약 — 산업 전환")
 
     def test_mobility_block_category_switch_for_academic_transition(self):
         payload = build_report_payload(

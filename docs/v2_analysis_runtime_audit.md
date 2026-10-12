@@ -248,3 +248,33 @@ Final deployed real research remains bounded to one EN and one KO request on the
 new Ready SHA, recorded in PR #92 after publication. Earlier live success on
 `189376d` is historical evidence and is not counted as verification of this follow-up.
 The existing Production and draft PR state are retained while preparing the candidate.
+## Separate-branch release closure — 2026-10-12
+
+This follow-up starts at `e3aabcfac1d2917f43ec12f97e845260d3ceb38c`.
+The previously reported six root test failures were reproduced and traced to stale
+presentation assertions, not changed structural rules: two TypeScript tests expected
+older English titles instead of the existing canonical Korean titles; two asserted
+older fallback wording/punctuation; and two Python tests expected older English
+snapshot titles instead of the current canonical titles. Four test files now check
+the existing output contract. The weak-evidence test additionally checks the original
+fallback metadata, and the Python tests check the original snapshot type. No original
+engine, title, evaluation, weight, threshold, question or customer-facing copy changed.
+
+A missing `docxtpl` package caused separate local DOCX merge errors. Installing the
+existing DOCX test dependency in an isolated scratch target and supplying it to the
+test process resolved those environment errors. The root Node suite passes 78/78 and
+the original Python pipeline passes 56/56. CI now pins `docxtpl==0.20.2` and runs both
+root suites, web TypeScript/build and web/privacy regressions before strict/golden
+rendering. Thus these checks can fail the release pipeline rather than remain outside
+its coverage. The compiled customer application remains `index-DFHV9gZs.css` and
+`index-FPEIWV0B.js`, identical to the live-verified starting revision.
+
+The user's release instruction preserves `main` at
+`8b817ede5683f13ff28d11e92e551c79484d03e9` and retains the existing V2 branch
+`experiment/allofmycareer-v2-rebuild`. Release preparation uses the existing AMC
+project and Production configuration for the V2 route; it does not merge or replace
+the original branch. The previous Production deployment
+`dpl_DvjVkN2qsWWQtjRSGLwc5TLcq5g5` is retained as the prior release. Final deployment
+identity, live request results and public-route checks are recorded in PR #92 after
+verification. Public-source reachability remains distinct from claim support and
+personal eligibility; native Save/Cancel proof remains distinct from rendered PDF QA.

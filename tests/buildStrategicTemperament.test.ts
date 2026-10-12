@@ -77,7 +77,7 @@ test("single-case output returns expected shape", () => {
   const result = buildStrategicTemperament(args as any);
 
   assert.equal(result.section, "strategic_temperament");
-  assert.equal(result.title, "Strategic Temperament");
+  assert.equal(result.title, "성향과 선택의 적합성");
   assert.equal(result.caseType, "single");
   assert.ok(result.postureLine.length > 0);
   assert.ok(result.evidenceLine.length > 0);
@@ -193,7 +193,7 @@ test("weak or missing signal case returns safe fallback text", () => {
     } as any,
   });
 
-  assert.ok(result.postureLine.includes("cautious but not inactive"));
+  assert.match(result.postureLine, /cautious,? but not inactive/);
   assert.ok(result.evidenceLine.length > 0);
   assert.ok(result.paceLine.length > 0);
   assert.ok(result.disciplineLine.length > 0);
