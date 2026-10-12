@@ -1272,4 +1272,29 @@
   .v2-analysis-report .v2-map-context {
     grid-template-columns: 1fr 1fr;
   }
+  /* Keep the map and all five answered factors together at A4 print width. */
+  .v2-analysis-report .v2-paper-page[data-page="4"] .v2-relationship-map {
+    padding: 12px;
+  }
+  .v2-analysis-report .v2-paper-page[data-page="4"] .v2-relationship-map figcaption {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+  .v2-analysis-report .v2-paper-page[data-page="4"] .v2-relationship-map figcaption p {
+    margin-top: 6px;
+    line-height: 1.55;
+  }
+  .v2-analysis-report .v2-paper-page[data-page="4"] .v2-factor-map article {
+    padding: 4px 0;
+  }
+  .v2-analysis-report .v2-paper-page[data-page="4"] .v2-factor-map p {
+    margin: 0;
+    line-height: 1.55;
+  }
+  .v2-analysis-report .v2-paper-page[data-page="4"] .v2-factor-map h3 {
+    margin: 2px 0 3px;
+  }
+  .v2-analysis-report .v2-paper-page[data-page="4"] .v2-factor-map > .v2-analysis-note {
+    margin: 8px 0;
+  }
 }
