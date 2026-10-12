@@ -147,3 +147,55 @@ Cloud browser control has responded and reached the ordinary Vercel login screen
 Final deployed EN/KO research and native save remain pending the user's existing-account
 login in that verification browser; no protection bypass or new credentials are created.
 These findings do not prove that all historical source failures had the DNS cause.
+
+## Authenticated live verification and print repair — 2026-10-12
+
+The user completed ordinary Vercel sign-in in the verification browser. The exact
+`189376d855fd14b321504fc810561fb555b381e4` Preview was Ready and PR #92 remained
+Draft and unmerged. No key, environment scope, protection setting or Production
+deployment was changed.
+
+Actual research on that SHA was **two requests total**, one per language:
+
+| Synthetic case | App response | Captured response-derived metadata | Runtime observation |
+| --- | --- | --- | --- |
+| EN entrepreneurship | 200 | `live`, `ready`, upstream `200` | Perplexity Agent API, 5,245 ms |
+| KO industry transition | 200 | `live`, `ready`, upstream `200` | Perplexity Agent API, 7,148 ms |
+
+The displayed EN card was checked against Cal/OSHA's original outdoor heat-illness
+prevention page. Both KO cards were checked against the Samsung DS memory/process
+technology description and the Samsung Careers DS company/role page, including a
+browser check of the exact cited `?lang` URL. The checked claims concern workplace
+requirements and published job descriptions; they do not establish paid purchasing,
+current process-role vacancies, market-wide demand or the individual's qualifications.
+
+The KO case answered the five original organization/role questions. Their existing
+evaluations remained unchanged when a condition-comparison note or hypothetical
+scenario changed. The EN business case kept inapplicable organization/role factors
+unassessed. Both cases linked public conditions to self-reports, unresolved gaps and
+next checks. Keyboard-operated downside changes altered hypothetical Safety Margin
+and reset to baseline. The report retained the same source facts and comparison state
+in sections 3 and 9, with evidence-check date `2026-10-12`. After these operations the
+deployment's runtime log still contained exactly two evidence API requests.
+
+Printing the rendered live Preview DOM with its compiled stylesheet reproduced a
+real pagination defect: the KO report's map and five answered factors occupied two
+physical pages, producing ten pages for nine sections. Print-only spacing in section
+4 now retains the diagram, all five questions, readings and bands on one page. No
+text is hidden or truncated and font sizes are unchanged. With the repaired compiled
+stylesheet, both live-content renderings have nine physical A4 pages. A separate
+synthetic SPA check also covers longer canonical answers, 390/430px no-overflow,
+private-note non-transmission/non-storage and controlled afterprint restoration.
+
+The observed EN print title was
+`Entrepreneurship_Review_allofmycareer_2026-10-12`. The cloud browser did not expose
+the native Save dialog; Escape did not demonstrate cancellation or title restoration.
+Offline PDF rendering and controlled afterprint tests are not native Save/Cancel proof.
+The source/service/engine code is identical across the print-only follow-up. The two
+paid live requests belong to `189376d`; they must not be reported as requests on a
+later SHA. No additional provider request was made for the print repair.
+
+The initial lookup for print commit `dcba996` showed no deployment or CI/check objects.
+That is an observed publish-trigger gap, not proof of a disconnected Vercel account.
+The normal Git push path is checked separately instead of repeatedly polling the
+unchanged lookup or changing integrations and access controls.
