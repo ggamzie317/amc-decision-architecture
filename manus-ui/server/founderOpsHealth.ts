@@ -4,6 +4,21 @@ import postgres from "postgres";
 
 import { adminAuthConfigured } from "./founderAdminAuth.js";
 import type { FounderOpsStore, SubmissionRecord } from "./founderOpsTypes.js";
+import { usageEventTypes } from "./founderOpsTypes.js";
+
+/** Inspect PostgreSQL's canonical allowlist expression; unknown rules fail closed. */
+export function missingUsageEventTypes(definitions: readonly string[]): readonly string[] {
+  const rules = definitions.filter(value => /\bevent_type\b/i.test(value));
+  if (!rules.length) return [...usageEventTypes];
+  const allowed = rules.map(value => {
+    const normalized = value.replace(/\s+/g, "").replace(/::text/gi, "");
+    let body = /^CHECK\((.*)\)$/i.exec(normalized)?.[1] ?? "";
+    while (body.startsWith("(") && body.endsWith(")")) body = body.slice(1, -1);
+    const list = /^event_type=ANY\(ARRAY\[((?:'[a-z_]+')(?:,'[a-z_]+')*)\]\)$/i.exec(body)?.[1];
+    return new Set(list?.split(",").map(item => item.slice(1, -1)) ?? []);
+  });
+  return usageEventTypes.filter(event => allowed.some(rule => !rule.has(event)));
+}
 
 export const REQUIRED_SCHEMA: Record<string, readonly string[]> = {
   submissions: [
@@ -122,6 +137,15 @@ export async function inspectFounderOpsDatabase(
           .map(column => `${table}.${column}`);
       }
     );
+    if (found.has("usage_events")) {
+      const constraints = await sql<Array<{ definition: string }>>`
+        SELECT pg_get_constraintdef(oid) AS definition
+        FROM pg_constraint
+        WHERE conrelid = to_regclass('usage_events') AND contype = 'c'
+      `;
+      if (missingUsageEventTypes(constraints.map(row => row.definition)).length)
+        missing.push("usage_events.event_type_support");
+    }
     const submissionsReady = !missing.some(item =>
       item.startsWith("submissions")
     );

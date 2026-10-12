@@ -84,6 +84,18 @@ function method(req: ApiRequest, res: ApiResponse, allowed: string[]) {
   return true;
 }
 
+/** Classify known SQL failures without exposing statements, values or messages. */
+export function trackingStorageFailure(error: unknown) {
+  if (!error || typeof error !== "object") return undefined;
+  const value = error as { code?: unknown; constraint_name?: unknown };
+  if (value.code === "23514" && value.constraint_name === "usage_events_event_type_check")
+    return "event_contract" as const;
+  if (value.code === "42P01" || value.code === "42703") return "schema_missing" as const;
+  if (typeof value.code === "string" && ["23502", "23503", "23505", "23514"].includes(value.code))
+    return "schema_constraint" as const;
+  return undefined;
+}
+
 export async function handleTrack(
   req: ApiRequest,
   res: ApiResponse,
@@ -107,10 +119,12 @@ export async function handleTrack(
           (isInteractive(stored?.structuralOutputJson) ? projectInteractivePatch(stored) : body.patch || {}) as SubmissionPatch);
       })().catch(() => undefined);
     }
-  } catch {
+  } catch (error) {
+    const failureCode = trackingStorageFailure(error);
     res
       .status(200)
-      .json({ ok: true, stored: false, reason: "storage_unavailable" });
+      .json({ ok: true, stored: false, reason: "storage_unavailable",
+        ...(failureCode ? { failureCode } : {}) });
   }
 }
 

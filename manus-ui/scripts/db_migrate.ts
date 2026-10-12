@@ -7,13 +7,12 @@ async function main() {
   if (!connectionString) {
     throw new Error("DATABASE_URL is required.");
   }
-  const migrationPath = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    "../db/001_amc_founder_ops.sql"
-  );
   const sql = postgres(connectionString, { max: 1, connect_timeout: 8 });
   try {
-    await sql.file(migrationPath);
+    for (const file of ["001_amc_founder_ops.sql", "002_amc_usage_event_contract.sql"]) {
+      const migrationPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../db", file);
+      await sql.file(migrationPath);
+    }
     console.log("AMC founder operations migration applied successfully.");
   } finally {
     await sql.end({ timeout: 2 }).catch(() => undefined);

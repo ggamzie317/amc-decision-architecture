@@ -332,3 +332,40 @@ in PR #92 after verification. The AMC administrator page currently requires its 
 sign-in; a Vercel dashboard session does not authenticate that application. Native
 interactive PDF Save/Cancel remains outside the cloud browser's supported controls
 and is not relabelled as verified by the existing rendered PDF checks.
+
+### Production storage boundary and prepared migration
+
+Production `7afe0f8` acknowledged `stored: true` for preview/intake and dashboard
+generation. A deliberate no-search synthetic journey then returned HTTP 200,
+`stored: false`, `storage_unavailable` for scenario evaluation. Its customer analysis
+still rendered. This is an actual persistence failure, not a successful write.
+Preview returned `backend_unavailable`; the existing Neon resource's connected
+project list confirms that its connection is scoped to Production. That scope has
+not been widened to Preview.
+
+The repository's original initialization SQL allowed eleven legacy events but
+omitted the existing server's four simulator and three JEV event types. Fresh
+initialization now matches all eighteen existing types. Migration 002 updates only
+the named event-type check inside a bounded transaction; it preserves table/column
+definitions, records, permissions and all legacy event names. The normal migration
+runner applies both files. Including existing JEV event names does not activate JEV.
+Health inspection now reads constraint metadata as well as columns and rejects old,
+missing or unrecognized event rules, including an old restrictive check left beside
+a new rule. No public migration endpoint or authentication exception was added.
+
+Storage error responses expose only a bounded category for known SQL failures. The
+installed Postgres.js driver's `constraint_name` field is used; message, detail,
+query, values and other constraint names are never returned. V2 retains only those
+safe categories. The 24-file web suite passes 388/388, with specific post-driver-shape
+checks passing 23/23; TypeScript, builds and Founder Ops ESM pass. These tests include
+migration/server allowlist equivalence and health checks that catch a legacy rule
+even when every table/column exists. Real SQL execution is not inferred from tests.
+
+The existing AMC Neon SQL console is reached through the already signed-in Vercel
+session, but Vercel displays `Verify to Access Database` and requires the owner's
+authenticator code before even a read-only metadata query. No code, recovery value
+or credential was read or entered. Migration 002 has therefore NOT been applied and
+the current database check definition has NOT been read. Final-SHA diagnostics,
+release state and this authentication dependency are recorded in PR #92. No paid
+provider requests occur in this continuation; source research and all original
+framework/engine/scoring/scenario files remain unchanged.

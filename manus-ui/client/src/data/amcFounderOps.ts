@@ -48,6 +48,7 @@ export type JourneyTrackingObservation = {
   reasonCode: typeof trackingFailureReasons[number] | "stored" | "http_error" |
     "invalid_response" | "network_error" | "no_active_journey" | "active_journey_resumed";
   httpStatus: number | null;
+  storageFailure?: "event_contract" | "schema_missing" | "schema_constraint";
 };
 type JourneyObserver = (observation: JourneyTrackingObservation) => void;
 
@@ -100,8 +101,10 @@ export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
       outcome: JourneyTrackingObservation["outcome"],
       reasonCode: JourneyTrackingObservation["reasonCode"],
       httpStatus: number | null = null,
+      storageFailure?: JourneyTrackingObservation["storageFailure"],
     ) => {
-      try { observer?.({ eventType: input.eventType, outcome, reasonCode, httpStatus }); }
+      try { observer?.({ eventType: input.eventType, outcome, reasonCode, httpStatus,
+        ...(storageFailure ? { storageFailure } : {}) }); }
       catch { /* Observation must not block customer flow or queued tracking. */ }
     };
     if (!input.serviceStorageConsent) {
@@ -152,6 +155,7 @@ export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
           stored?: unknown;
           submissionId?: unknown;
           reason?: unknown;
+          failureCode?: unknown;
         } | null;
         const httpStatus = typeof response.status === "number" &&
           Number.isInteger(response.status) && response.status >= 100 && response.status <= 599
@@ -177,10 +181,12 @@ export function createFounderOpsJourneyTracker(options: JourneyTrackerOptions) {
           return;
         }
         const reasonCode = trackingFailureReasons.find(reason => reason === result?.reason);
+        const storageFailure = (["event_contract", "schema_missing", "schema_constraint"] as const)
+          .find(code => code === result?.failureCode);
         if (!successfulHttp) observe("unavailable", "http_error", httpStatus);
         else if (result?.stored === false && reasonCode) {
           observe(reasonCode === "backend_unavailable" || reasonCode === "storage_unavailable"
-            ? "unavailable" : "not_stored", reasonCode, httpStatus);
+            ? "unavailable" : "not_stored", reasonCode, httpStatus, storageFailure);
         } else observe("unavailable", "invalid_response", httpStatus);
         if (startsNewJourney) {
           removeStorageValue(sessionStorage, submissionKey);

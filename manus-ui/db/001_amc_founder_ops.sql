@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS usage_events (
   event_id UUID PRIMARY KEY,
   submission_id TEXT NOT NULL REFERENCES submissions(submission_id) ON DELETE CASCADE,
   event_type TEXT NOT NULL CHECK (event_type IN (
+    'simulator_opened', 'scenario_variable_changed', 'scenario_evaluated', 'scenario_reset',
+    'jev_assessment_requested', 'jev_assessment_completed', 'jev_assessment_unavailable',
     'preview_started', 'preview_completed', 'full_intake_started', 'full_intake_completed',
     'external_evidence_requested', 'external_evidence_live', 'external_evidence_fallback',
     'dashboard_generated', 'detailed_report_opened', 'print_save_clicked', 'language_changed'

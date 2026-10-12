@@ -727,6 +727,7 @@ export default function AmcInteractiveV2() {
       data-ops-reason={trackingObservation?.reasonCode}
       data-ops-http-status={trackingObservation?.httpStatus ?? undefined}
       data-ops-event={trackingObservation?.eventType}
+      data-ops-storage-failure={trackingObservation?.storageFailure}
       data-evidence-language={!demoMode && evidenceByLanguage[researchLanguage] ? researchLanguage : undefined}
       data-evidence-http-status={evidenceHttpByLanguage[researchLanguage]?.status}
       data-evidence-reason-header={evidenceHttpByLanguage[researchLanguage]?.reason ?? undefined}

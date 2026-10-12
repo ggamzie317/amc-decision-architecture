@@ -82,6 +82,16 @@ describe("V2 operations response observation", () => {
     expect(session.getItem(idKey)).toBeNull();
   });
 
+  it("retains only a known SQL failure category from a storage-unavailable response", async () => {
+    for (const failureCode of ["event_contract", "PRIVATE database error detail"]) {
+      const { track } = responseTracker({ stored: false, reason: "storage_unavailable", failureCode });
+      const observed: JourneyTrackingObservation[] = [];
+      await track(start, value => observed.push(value));
+      expect(observed[0].storageFailure).toBe(failureCode === "event_contract" ? "event_contract" : undefined);
+      expect(JSON.stringify(observed)).not.toContain("PRIVATE");
+    }
+  });
+
   it.each([
     { stored: true, submissionId: "PRIVATE invalid identifier" },
     { stored: false, reason: "PRIVATE provider or customer detail", secret: "DO NOT EXPOSE" },
