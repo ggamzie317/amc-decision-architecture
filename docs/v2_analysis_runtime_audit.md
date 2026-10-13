@@ -369,3 +369,46 @@ the current database check definition has NOT been read. Final-SHA diagnostics,
 release state and this authentication dependency are recorded in PR #92. No paid
 provider requests occur in this continuation; source research and all original
 framework/engine/scoring/scenario files remain unchanged.
+
+### Database migration applied and read back — 2026-10-13
+
+After the owner completed Vercel's database step-up authentication, the read-only
+console query confirmed the actual validated `usage_events_event_type_check`
+permitted only the eleven legacy events. There were 20 submissions and 135 events.
+The console rejects multiple commands in one prepared statement, so the initial
+transaction text did not execute. The same allowlist update was applied as one
+anonymous `DO` block with local timeout settings and one atomic `ALTER TABLE`
+containing both constraint subcommands. A subsequent metadata query confirmed the
+validated eighteen-event definition and the same 20/135 row counts. No rows,
+columns, permissions, credentials or connection scopes were changed. The console
+was restored to read-only mode.
+
+Production `869888a` then completed two new synthetic no-research journeys: KO
+entrepreneurship and EN industry transition. The actual response acknowledgements
+and independent SQL read-back confirmed all four simulator event types, both
+language transitions and report-open events. Both journeys had empty `answers_json`
+and `external_evidence_json`, service consent true and research consent false.
+The EN synthetic private-note marker was absent from both its submission and
+event metadata. Both persisted baseline bands and Safety Margin remained unchanged
+after overrides/reset. A constrained financial-room scenario changed Safety Margin
+from developing to weak in both interfaces and reset returned to the baseline.
+These are actual Production database checks, not in-memory fixture results.
+
+Read-back also exposed a separate language-record defect: `language_changed`
+captured the old React language for the submission even though its metadata's
+`from`/`to` values were correct. The tracker call now receives the chosen target
+language explicitly for that event, in both the request language and privacy
+projection. Other events retain their existing default language, and no analysis,
+evidence, consent or scoring behavior changes. Final-revision browser validation,
+deployment identity and database read-back are recorded in PR #92. This closure
+uses no paid research requests; native interactive PDF Save/Cancel remains outside
+the supported browser controls and is not claimed as verified.
+
+The language follow-up passes the 388-case web suite, TypeScript and web/server
+build. Four isolated browser journeys (both case families in both languages) also
+check the real page's two-way toggle against the real tracking function backed by
+an in-memory store: the persisted language must equal the newly selected interface
+language after each change. Private comparison notes remain absent from requests
+and stored records, baseline reset holds, and synthetic nine-section reports still
+render. These four fixture journeys make zero actual provider calls and are kept
+separate from the Production read-back.

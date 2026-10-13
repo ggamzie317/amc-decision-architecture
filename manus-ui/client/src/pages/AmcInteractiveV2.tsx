@@ -164,18 +164,19 @@ export default function AmcInteractiveV2() {
     eventType: JourneyEventType,
     patch: Record<string, unknown> = {},
     metadata: Record<string, unknown> = {},
-    newSubmission = false
+    newSubmission = false,
+    eventLanguage: V2Language = language
   ) => {
     if (demoMode || !state.serviceConsent) return;
     void trackV2Journey({
       eventType,
-      language,
+      language: eventLanguage,
       serviceStorageConsent: true,
       newSubmission,
       metadata: projectInteractiveMetadata({ ...v2Identity, ...metadata }),
       patch: projectInteractivePatch({
         ...patch,
-        language,
+        language: eventLanguage,
         caseType: state.caseType,
         serviceStorageConsent: true,
         researchUseConsent: state.researchConsent,
@@ -653,7 +654,7 @@ export default function AmcInteractiveV2() {
   const switchLanguage = (next: V2Language) => {
     languagePinned.current = true;
     if (next === language) return;
-    track("language_changed", {}, { from: language, to: next });
+    track("language_changed", {}, { from: language, to: next }, false, next);
     restorePrintTitle.current?.();
     restorePrintTitle.current = null;
     setLanguage(next);
