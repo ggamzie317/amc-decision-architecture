@@ -197,6 +197,14 @@
   gap: 11px;
 }
 .v2-reasoning-heading > span,
+.v2-changing-title > span,
+.v2-factor-number {
+  /* Two-digit indices must never shrink or wrap beside long Korean titles. */
+  flex: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.v2-reasoning-heading > span,
 .v2-changing-title > span {
   color: var(--teal);
   font-size: 12px;
@@ -1250,12 +1258,18 @@
   .v2-analysis-report .v2-paper-priorities h3 { font-size: 13px; line-height: 1.55; }
   .v2-analysis-report .v2-paper-priorities p { font-size: 10px; line-height: 1.65; }
   .v2-analysis-report .v2-reasoning { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .v2-analysis-report .v2-reasoning[data-count="1"] { grid-template-columns: 1fr; }
+  .v2-analysis-report .v2-reasoning[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .v2-analysis-report .v2-reasoning article { padding: 12px; }
   .v2-analysis-report .v2-condition-comparison tr { margin: 0; }
   .v2-analysis-report .v2-factor-map article { padding: 7px 0; }
   .v2-analysis-report .v2-factor-map h3 { margin: 2px 0 4px; }
   .v2-analysis-report .v2-changing-analysis article { padding: 10px 12px; }
   .v2-analysis-report .v2-changing-analysis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  /* One or two plays use the full width instead of empty third-columns. */
+  .v2-analysis-report .v2-changing-analysis[data-count="1"] { grid-template-columns: 1fr; }
+  .v2-analysis-report .v2-changing-analysis[data-count="1"] dl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 14px; }
+  .v2-analysis-report .v2-changing-analysis[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .v2-analysis-report .v2-changing-analysis h3 { font-size: 13px; margin: 4px 0 6px; }
   .v2-analysis-report .v2-changing-analysis p { margin: 5px 0; line-height: 1.55; }
   .v2-analysis-report .v2-changing-analysis dl { grid-template-columns: 1fr; margin: 6px 0 0; gap: 4px; }

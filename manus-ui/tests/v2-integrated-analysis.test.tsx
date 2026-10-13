@@ -242,14 +242,13 @@ describe("V2 integrated customer analysis", () => {
     expect(visible?.exposure).toBe(timing?.exposure);
     expect(visible?.timeExposure).toBe(timing?.timeExposure);
   });
-  it("repairs only the Korean pathway particle while retaining the engine condition", () => {
+  it("assembles the Korean pathway particle in the engine and keeps it unchanged in presentation", () => {
     const f = v2DemoFixture("industry", "ko");
     const original = f.baseline.changingPlays.find(play => play.family === "pathway");
     const shown = buildV2Analysis(f.state, f.baseline, f.intelligence, "demo")
       .plays.find(play => play.family === "pathway");
-    expect(original?.move).toContain("탐색로 완전히 전환하기 전에");
-    expect(shown?.move).toContain("탐색으로 완전히 전환하기 전에");
-    expect(shown?.move.replace("탐색으로", "탐색로")).toBe(original?.move);
+    expect(original?.move).toContain("탐색으로 완전히 전환하기 전에");
+    expect(shown?.move).toBe(original?.move);
   });
   it("labels synthetic analysis as a demonstration and connects alternative offers to market pressure", () => {
     const demo = v2DemoFixture("entrepreneurship", "en");

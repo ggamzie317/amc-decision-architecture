@@ -152,13 +152,30 @@ function evidenceSchema(dimensions: string[]) {
   } as const;
 }
 
+/**
+ * Static scope for each existing dimension label. Without it the provider sees
+ * only short labels such as "Funding" and may find nothing it can bound to
+ * them. These describe what to look for; they add no customer data and do
+ * not change which dimensions are requested.
+ */
+const v2DimensionScope: Record<string, string> = {
+  programOutcomes: "What the responsible institution publishes about this program's results and the structure needed to read them: graduate or career outcome reports, completion, format, length and schedule. Absence of a published outcome report is itself a bounded fact.",
+  employmentRelevance: "How the program is publicly connected to the target sector or role: stated career paths, career services, employer partnerships or published employer/sector distribution. Not proof of personal employability.",
+  researchRelevance: "Published faculty research areas, centres or research requirements of the program that relate to the target.",
+  opportunityCost: "Published tuition and fees, time commitment, class schedule and delivery format that determine cost and time away from work.",
+  funding: "Published tuition and fees and the funding routes for this program: scholarships, employer sponsorship, assistantships, loans or government support.",
+  geographyMobility: "Program location and delivery mode and any published residency, visa or relocation implications.",
+};
+
 function messages(request: V2EvidenceRequest, dimensions: string[]) {
   const missing = v2MissingPoint(request.caseType, "en").point;
   const targetSearch = request.caseType === "Entrepreneurship"
     ? "For a startup, keep the explicitly named customer group, product or service, and geography together in search queries. Look for original source facts about the specific offer's public conditions; do not call category interest proven paid demand."
     : request.caseType === "Industry Transition"
       ? "For an industry transition, keep the explicitly named industry, role, and geography together in search queries. Prefer original employer role pages and official occupational sources; a listing is only a dated example unless its current status and detailed requirements are visible."
-      : "Keep the explicitly named public target and geography together in search queries; prefer the responsible institution's original requirements and outcomes.";
+      : request.caseType === "MBA / EMBA / PhD Decision"
+        ? "For a degree decision, keep the explicitly named institution or program and geography together in search queries. Prefer the institution's own program, admissions, tuition and career/outcome pages, and official statistics bodies. Program facts such as published format, schedule, tuition and admission or assessment requirements are valid bounded facts even when the institution publishes no outcome report; state when an outcome report was not found rather than returning nothing. If the target names only a degree type without an institution, use official program pages in that geography and say the facts are not specific to one program."
+        : "Keep the explicitly named public target and geography together in search queries; prefer the responsible institution's original requirements and outcomes.";
   return [
     {
       type: "message",
@@ -194,6 +211,11 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         caseType: request.caseType,
         caseFamilyMissingPoint: missing,
         publicEvidenceDimensions: dimensions,
+        publicEvidenceDimensionScope: Object.fromEntries(
+          v2EvidenceAreas(request)
+            .filter(area => v2DimensionScope[area])
+            .map(area => [v2t("en", area as V2CopyKey), v2DimensionScope[area]])
+        ),
         targetGeography: request.targetGeography || undefined,
         boundedOptionBTargetLabel: request.targetLabel || undefined,
       }),

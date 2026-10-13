@@ -1,3 +1,4 @@
+import { withKoreanParticle } from "./koreanParticle";
 import type {
   ProductApplicationV3,
   ChangingPlay,
@@ -503,7 +504,7 @@ export function buildV2Analysis(
           )
         : block.direction === "supportive"
           ? say(
-              `경로를 탐색할 근거는 있으나, ${personalUnknown}이 성립하는지 별도 확인이 필요합니다.`,
+              `경로를 탐색할 근거는 있으나, ${withKoreanParticle(personalUnknown, "이/가")} 성립하는지 별도 확인이 필요합니다.`,
               `This supports exploring the path, while ${personalUnknown} still require separate validation.`
             )
           : say(
@@ -558,7 +559,7 @@ export function buildV2Analysis(
     const testReference = makeCheck(say(`대조표 근거 ${id + 1}: ${headline}`, `comparison-table evidence ${id + 1}: ${headline}`));
     const check = demo
       ? say(
-          `‘${headline}’에 해당하는 실제 공개 자료를 찾아 ${targetScope}과 현재 조건(${condition})에 적용되는지 확인하세요.`,
+          `‘${headline}’에 해당하는 실제 공개 자료를 찾아 ${withKoreanParticle(targetScope, "과/와")} 현재 조건(${condition})에 적용되는지 확인하세요.`,
           `Find actual public evidence for “${headline}” and check its applicability to the ${targetScope} and current conditions (${condition}).`
         )
       : scopedCheck;
@@ -577,12 +578,12 @@ export function buildV2Analysis(
       comparisonDetail: comparison?.detail ?? "",
       customerEvidence,
       comparisonReading,
-      testReference: demo ? say(`대조표 근거 ${id + 1}은 합성 예시입니다. 같은 조건의 실제 원문부터 확인하세요.`,
+      testReference: demo ? say(`${withKoreanParticle(`대조표 근거 ${id + 1}`, "은/는")} 합성 예시입니다. 같은 조건의 실제 원문부터 확인하세요.`,
         `Comparison-table evidence ${id + 1} is synthetic. Find an actual original source for the same condition first.`) : testReference,
       ...(linkedSelfReport ? { selfReport: linkedSelfReport } : {}),
       interpretation: `${comparisonReading} ${v2CustomerEvidenceText(state.language, block.whyItMatters)} ${implication} ${personal}`,
       unresolved: say(
-        `이 공개 자료가 ${targetScope}에 적용되는지, ${personalUnknown}이 성립하는지는 아직 확인되지 않았습니다.`,
+        `이 공개 자료가 ${targetScope}에 적용되는지, ${withKoreanParticle(personalUnknown, "이/가")} 성립하는지는 아직 확인되지 않았습니다.`,
         `Applicability to the ${targetScope} and ${personalUnknown} remain unverified.`
       ),
       test: check,

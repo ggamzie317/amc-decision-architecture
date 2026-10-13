@@ -215,7 +215,7 @@ export function V2Reasoning({
 }) {
   const ko = analysis.language === "ko";
   return (
-    <div className="v2-reasoning" data-testid="v2-integrated-reasoning">
+    <div className="v2-reasoning" data-testid="v2-integrated-reasoning" data-count={analysis.findings.length}>
       {analysis.findings.map((f, i) => (
         <article key={f.id} data-provenance={f.provenance.join(" ")}>
           <div className="v2-reasoning-heading">
@@ -365,7 +365,7 @@ export function V2SafetyView({
 export function V2ChangingView({ analysis }: { analysis: V2Analysis }) {
   const ko = analysis.language === "ko";
   return (
-    <div className="v2-changing-analysis" data-testid="v2-changing-analysis">
+    <div className="v2-changing-analysis" data-testid="v2-changing-analysis" data-count={analysis.plays.length}>
       {analysis.plays.length ? (
         analysis.plays.map((p, i) => (
           <article key={p.family} data-family={p.family}>

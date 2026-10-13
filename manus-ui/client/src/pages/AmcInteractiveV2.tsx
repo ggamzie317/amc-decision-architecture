@@ -63,9 +63,13 @@ import {
   initialCanonicalFifwmAssessment,
   v2CanAskCanonicalFifwm,
 } from "../data/v2CanonicalFifwm";
+import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
+import V2Processing from "../components/V2Processing";
 import "../styles/v2.css";
 
-type Phase = "setup" | "modules" | "dashboard" | "report";
+// "processing" holds the customer on an honest in-progress screen while the
+// explicit public-evidence analysis runs; results open only after it settles.
+type Phase = "setup" | "modules" | "processing" | "dashboard" | "report";
 const bandStrength = ["strong", "developing", "weak", "unknown"] as const;
 const bandRisk = ["low", "moderate", "high", "unknown"] as const;
 const bandLoad = ["light", "material", "heavy", "unknown"] as const;
@@ -116,6 +120,7 @@ export default function AmcInteractiveV2() {
   const languagePinned = useRef(params.has("lang"));
   const simOpened = useRef(false);
   const restorePrintTitle = useRef<(() => void) | null>(null);
+  const [processingSeconds, setProcessingSeconds] = useState(0);
   const [trackingObservation, setTrackingObservation] = useState<JourneyTrackingObservation | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
   const selfCards = useMemo(
@@ -209,6 +214,17 @@ export default function AmcInteractiveV2() {
     }
   }, [phase]);
   useEffect(() => () => restorePrintTitle.current?.(), []);
+  // Real elapsed time of the in-flight request; no simulated progress.
+  useEffect(() => {
+    if (phase !== "processing" || evidenceLoadingLanguage === null) return;
+    const started = Date.now();
+    setProcessingSeconds(0);
+    const timer = window.setInterval(
+      () => setProcessingSeconds(Math.floor((Date.now() - started) / 1000)),
+      1000
+    );
+    return () => window.clearInterval(timer);
+  }, [phase, evidenceLoadingLanguage]);
   const intelligence = useMemo(
     () =>
       demoMode
@@ -430,18 +446,22 @@ export default function AmcInteractiveV2() {
                   ? "공개 검색 대상: 고객군과 제안할 제품·서비스"
                   : state.caseType === "Industry Transition"
                     ? "공개 검색 대상: 전환할 산업과 직무"
-                    : "공개 검색 대상: 직무·기관·과정 등 구체적인 목표"
+                    : state.caseType === "MBA / EMBA / PhD Decision"
+                      ? "공개 검색 대상: 기관명과 과정명"
+                      : "공개 검색 대상: 직무·기관·과정 등 구체적인 목표"
                 : state.caseType === "Entrepreneurship"
                   ? "Public search target: customer group and offer"
                   : state.caseType === "Industry Transition"
                     ? "Public search target: target industry and role"
-                    : "Public search target: specific role, institution or program"}
+                    : state.caseType === "MBA / EMBA / PhD Decision"
+                      ? "Public search target: institution and program name"
+                      : "Public search target: specific role, institution or program"}
               <input
                 value={v2PublicSearchTarget(state)}
                 maxLength={120}
                 placeholder={language === "ko"
-                  ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : "구체적인 공개 검색 대상을 입력하세요"
-                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : "Enter a specific public research target"}
+                  ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : state.caseType === "MBA / EMBA / PhD Decision" ? "예: ○○대학교 경영전문대학원 EMBA 주말 과정" : "구체적인 공개 검색 대상을 입력하세요"
+                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : state.caseType === "MBA / EMBA / PhD Decision" ? "e.g. [University] Executive MBA, weekend format" : "Enter a specific public research target"}
                 onChange={e => update({ publicSearchTarget: e.target.value })}
               />
             </label>
@@ -600,6 +620,52 @@ export default function AmcInteractiveV2() {
         );
     }
   };
+  const structuralSummary = (
+    summaryInput: typeof input,
+    summaryCore: typeof core,
+    externalEvidenceStatus: ExternalIntelligenceV2["status"]
+  ) => ({
+    ...v2Identity,
+    completedIntakeQuestionCount: 8,
+    baselineBands: baselineBands(summaryInput),
+    currentStructuralPosture: { label: summaryCore.currentStructuralPosture.label },
+    safetyMargin: { band: summaryCore.safetyMargin.band },
+    changingPlays: summaryCore.changingPlays.map(p => ({ family: p.family })),
+    decisionSwitchCount: summaryCore.decisionSwitches.length,
+    externalEvidenceStatus,
+  });
+  // dashboard_generated is recorded only when results actually open: after the
+  // evidence analysis settles, or after an explicit structural-draft choice.
+  const openDashboard = (
+    summaryInput: typeof input,
+    summaryCore: typeof core,
+    externalEvidenceStatus: ExternalIntelligenceV2["status"]
+  ) => {
+    track(
+      "dashboard_generated",
+      {
+        currentStage: "dashboard_generated",
+        reportGeneratedAt: new Date().toISOString(),
+        structuralOutputJson: structuralSummary(summaryInput, summaryCore, externalEvidenceStatus),
+        externalEvidenceMode: externalEvidenceStatus === "live" ? "live" : "fallback",
+      },
+      {
+        selectedVariables: selectV2SimulatorVariables(
+          buildV2Sensitivity(summaryInput, summaryCore),
+          baselineBands(summaryInput)
+        ),
+      }
+    );
+    setPhase("dashboard");
+    window.scrollTo(0, 0);
+  };
+  const runEvidenceAnalysis = async () => {
+    setPhase("processing");
+    window.scrollTo(0, 0);
+    const outcome = await checkCurrentEvidence();
+    if (outcome?.result.status === "live")
+      openDashboard(outcome.input, outcome.core, "live");
+  };
   const finish = (withEvidence = true) => {
     if (!v2AllBandsAnswered(state)) {
       const firstIncomplete = [3, 4, 5, 6].find(
@@ -615,41 +681,14 @@ export default function AmcInteractiveV2() {
       setShowSelfCheckError(true);
       return;
     }
-    const now = new Date().toISOString();
-    const structuralOutputJson = {
-      ...v2Identity,
-      completedIntakeQuestionCount: 8,
-      baselineBands: baselineBands(input),
-      currentStructuralPosture: { label: core.currentStructuralPosture.label },
-      safetyMargin: { band: core.safetyMargin.band },
-      changingPlays: core.changingPlays.map(p => ({ family: p.family })),
-      decisionSwitchCount: core.decisionSwitches.length,
-      externalEvidenceStatus: intelligence.status,
-    };
     track("full_intake_completed", {
       currentStage: "full_intake_completed",
-      fullIntakeCompletedAt: now,
-      structuralOutputJson,
+      fullIntakeCompletedAt: new Date().toISOString(),
+      structuralOutputJson: structuralSummary(input, core, intelligence.status),
       externalEvidenceMode: "fallback",
     });
-    track(
-      "dashboard_generated",
-      {
-        currentStage: "dashboard_generated",
-        reportGeneratedAt: now,
-        structuralOutputJson,
-        externalEvidenceMode: "fallback",
-      },
-      {
-        selectedVariables: selectV2SimulatorVariables(
-          buildV2Sensitivity(input, core),
-          baselineBands(input)
-        ),
-      }
-    );
-    setPhase("dashboard");
-    window.scrollTo(0, 0);
-    if (withEvidence) void checkCurrentEvidence();
+    if (withEvidence && buildV2EvidenceRequest({ ...state, language })) void runEvidenceAnalysis();
+    else openDashboard(input, core, intelligence.status);
   };
   const switchLanguage = (next: V2Language) => {
     languagePinned.current = true;
@@ -660,18 +699,16 @@ export default function AmcInteractiveV2() {
     setLanguage(next);
   };
   const checkCurrentEvidence = async () => {
-    if (
-      demoMode ||
-      evidencePending.current ||
-      evidenceByLanguage[language]?.status === "live"
-    )
-      return;
+    if (demoMode || evidencePending.current) return null;
+    const existing = evidenceByLanguage[language];
+    if (existing?.status === "live")
+      return { result: existing, input, core };
     const request = buildV2EvidenceRequest({ ...state, language });
     if (!request) {
       setStep(2);
       setPhase("modules");
       window.scrollTo(0, 0);
-      return;
+      return null;
     }
     evidencePending.current = true;
     setResearchLanguage(request.language);
@@ -699,21 +736,13 @@ export default function AmcInteractiveV2() {
         : "external_evidence_fallback",
       {
         externalEvidenceMode: result.status === "live" ? "live" : "fallback",
-        structuralOutputJson: {
-          ...v2Identity,
-          completedIntakeQuestionCount: 8,
-          baselineBands: baselineBands(updatedInput),
-          currentStructuralPosture: { label: updatedCore.currentStructuralPosture.label },
-          safetyMargin: { band: updatedCore.safetyMargin.band },
-          changingPlays: updatedCore.changingPlays.map(play => ({ family: play.family })),
-          decisionSwitchCount: updatedCore.decisionSwitches.length,
-          externalEvidenceStatus: result.status,
-        },
+        structuralOutputJson: structuralSummary(updatedInput, updatedCore, result.status),
       },
       { externalEvidenceMode: result.status === "live" ? "live" : "unverified" }
     );
     evidencePending.current = false;
     setEvidenceLoadingLanguage(null);
+    return { result, input: updatedInput, core: updatedCore };
   };
   const switchDemo = (next: V2DemoKind) => {
     if (next === kind) return;
@@ -1048,6 +1077,24 @@ export default function AmcInteractiveV2() {
           </section>
         </main>
       )}
+      {phase === "processing" && (
+        <V2Processing
+          language={language}
+          running={evidenceLoadingLanguage !== null}
+          seconds={processingSeconds}
+          target={v2PublicSearchTarget(state)}
+          geography={state.targetGeography}
+          areas={(state.externalAreas.length ? state.externalAreas : v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] }) as V2CopyKey[]).map(t)}
+          observation={evidenceHttpByLanguage[researchLanguage]}
+          onRetry={() => void runEvidenceAnalysis()}
+          onEditTarget={() => {
+            setStep(2);
+            setPhase("modules");
+            window.scrollTo(0, 0);
+          }}
+          onDraft={() => openDashboard(input, core, intelligence.status)}
+        />
+      )}
       {phase === "dashboard" && (
         <>
           <V2Dashboard
@@ -1059,7 +1106,7 @@ export default function AmcInteractiveV2() {
             intelligence={intelligence}
             evidenceLanguage={demoMode ? language : researchLanguage}
             evidencePhase={evidencePhase}
-            onCheckEvidence={checkCurrentEvidence}
+            onCheckEvidence={() => void checkCurrentEvidence()}
             onReport={() => {
               track("detailed_report_opened", {
                 currentStage: "detailed_report_opened",
