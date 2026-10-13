@@ -331,7 +331,7 @@ export async function resolveV2ExternalIntelligence(
   const timer = setTimeout(() => {
     timedOut = true;
     controller.abort();
-  }, options.timeoutMs ?? 50_000);
+  }, options.timeoutMs ?? 110_000);
   let result = unavailable();
   let reason: Reason = "provider_failure";
   try {

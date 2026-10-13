@@ -4,7 +4,7 @@
       "maxDuration": 60
     },
     "api/amc/external-intelligence-v2.ts": {
-      "maxDuration": 60
+      "maxDuration": 120
     }
   },
   "rewrites": [

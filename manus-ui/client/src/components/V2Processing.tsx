@@ -168,7 +168,7 @@ export default function V2Processing({
         </dl>
         {running ? (
           <p className="v2-processing-elapsed">
-            {say(`경과 시간 ${seconds}초 · 보통 수십 초가 걸립니다`, `Elapsed ${seconds}s · usually takes tens of seconds`)}
+            {say(`경과 시간 ${seconds}초 · 깊이 있는 검색이라 1~2분 걸릴 수 있습니다`, `Elapsed ${seconds}s · a thorough search can take 1–2 minutes`)}
           </p>
         ) : (
           <>

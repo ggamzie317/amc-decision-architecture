@@ -43,7 +43,7 @@ export async function requestV2Evidence(
   const fallback = () =>
     unavailableIntelligence(request.caseType, request.language);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 62_000);
+  const timer = setTimeout(() => controller.abort(), 125_000);
   try {
     const response = await fetchImpl("/api/amc/external-intelligence-v2", {
       method: "POST",
