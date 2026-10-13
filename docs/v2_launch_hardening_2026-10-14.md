@@ -42,9 +42,24 @@ Preserved: FIFWM choices and score tables, posture support formula and 8/1 bound
 | Browser, mocked `live` response (fetch-level, synthetic) | processing → dashboard opens automatically; 1 call |
 | 390px dashboard | no horizontal overflow |
 
+## Real provider calls (owner-approved budget: 4; used: 2)
+
+Endpoint: production `app.allofmycareer.com` (recorded SHA `d6a86fc`; alias SHA not re-verified, no Vercel CLI auth).
+De-identified degree requests, KO, default scope. Only the five public fields were sent.
+
+| Call | Target / geography | HTTP | Reason / diagnostic | Cards | Notes |
+|---|---|---|---|---|---|
+| before-A | 서울대학교 경영전문대학원 EMBA / 서울 | 200 | live / duplicate_citation | 2 (partial) | outcomes (graduate counts) + program format/eligibility; no funding card |
+| before-B | 주말 EMBA 과정 / 서울 | 200 | live / duplicate_citation | 2 (partial) | SNU + Yonsei program pages |
+
+Findings:
+- The 2026-10-13 `no_evidence` failure **did not reproduce** with these inputs. Its cause still depends on the original case's exact target, geography and chosen areas, or on provider variance. Root cause stays unconfirmed. Recording the categorical request shape (case, area keys, target length, whether a geography was given) next to `no_evidence` would make the next occurrence diagnosable without storing the text.
+- Both calls hit `duplicate_citation`: the provider cited one page twice. By existing design (`limitedEvidence`), the extra card is dropped **and** all provider signals and the implication are replaced with a fixed scope note. So the customer receives facts but no synthesis. That design is a deliberate safety choice; changing it is a product decision.
+- After-calls on the Preview (`claude/v2-launch-hardening`) are blocked by Vercel deployment protection (302 to SSO).
+
 ## Not verified (must not be reported as done)
 
-- Real Perplexity call for the degree case (cost; needs approval and a key). Root cause #2 remains a hypothesis.
+- Real call through the **new** code (Preview is SSO-protected). Root cause #2 remains a hypothesis; production did not reproduce it.
 - Native browser Save as PDF: file name, cancel/title restore, physical pages and clipping.
 - Real DB round trip of operations events (no `DATABASE_URL` locally).
 - Vercel serverless runtime of the changed service module (ESM; see PR #79). Preview deploy needed.
