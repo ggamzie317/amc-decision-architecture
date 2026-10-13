@@ -333,7 +333,15 @@ function deriveChangingPlays(input: ProductApplicationBuildInput, presentation: 
   const roleScopeEligible = input.caseType === "Corporate Stay vs Exit" || input.caseType === "Role Upgrade / Downgrade";
   const pathwayEligible = input.caseType === "MBA / EMBA / PhD Decision" || input.caseType === "Industry Transition" || input.caseType === "Overseas Relocation";
 
-  if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"], [`Test whether ${optionA} can be redesigned before treating departure as necessary.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서 역할과 범위를 재설계할 수 있는지 먼저 검증합니다.`], ["Exit decision → role redesign test", "퇴사 결정 → 역할 재설계 검증"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
+  // Role Upgrade / Downgrade is a role-level change, not an exit decision.
+  const roleChange = input.caseType === "Role Upgrade / Downgrade";
+  if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"],
+    roleChange
+      ? [`Test whether the scope of ${optionA} can be adjusted before committing fully to the role change.`, `역할 변경을 확정하기 전에 ${optionA}의 범위를 조정할 수 있는지 먼저 검증합니다.`]
+      : [`Test whether ${optionA} can be redesigned before treating departure as necessary.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서 역할과 범위를 재설계할 수 있는지 먼저 검증합니다.`],
+    roleChange
+      ? ["Full role change → scope adjustment test", "역할 전면 변경 → 범위 조정 검증"]
+      : ["Exit decision → role redesign test", "퇴사 결정 → 역할 재설계 검증"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
   else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Test an intermediate route that can create evidence for ${optionB} before full conversion.`, `${withKoreanParticle(optionB, "으로/로")} 완전히 전환하기 전에 근거를 만들 수 있는 중간 경로를 검증합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One bounded pathway test", "한 번의 제한된 경로 검증"]);
   else if (externalNeedsValidation) add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as the base while testing ${optionB} with real evidence.`, `${withKoreanParticle(optionA, "을/를")} 기반으로 유지하면서 실제 근거로 ${withKoreanParticle(optionB, "을/를")} 검증합니다.`], ["Assumption → observable test", "가정 → 관찰 가능한 검증"], presentation.protects, ["External proof", "외부 근거"], ["One bounded validation cycle", "한 번의 제한된 검증 주기"]);
 

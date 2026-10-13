@@ -36,6 +36,25 @@ Preserved: FIFWM choices and score tables, posture support formula and 8/1 bound
 - Dashboard and report label later cards from the same page "근거 N과 같은 출처 / same source as evidence N". The summary states the distinct source count, e.g. "공개 근거 2건(출처 1곳)".
 - Source probe strictness is unchanged; each URL is still probed once.
 
+## Step 1–2 results (2026-10-14, after one-card-per-(page, dimension))
+
+Real calls on the Preview (`82d532b`), owner-approved 2 extra calls (6 total):
+
+| Call | Target / geography | HTTP | Reason | Cards | Distinct sources | Coverage | Provider synthesis |
+|---|---|---|---|---|---|---|---|
+| after2-A | 서울대학교 경영전문대학원 EMBA / 서울 | 200 | live | 4 (outcomes, employment, funding, cost) | 1 | complete | kept (2 opportunity, 2 friction) |
+| after2-B | 주말 EMBA 과정 / 서울 | 200 | live | 4 | 1 | complete | kept; states one program does not represent the market |
+
+That is 1 card → 4. Tuition, schedule and employer-support conditions are now present. All cards cite one page, so the UI labels later cards as the same source and the summary shows "출처 1곳".
+
+Additional fixes:
+- The provider observation log now carries `requestShape`: case and area keys, whether the default areas were used, target and geography lengths. It holds no customer text. It goes only to the server log; there is no DB change.
+- Role Upgrade / Downgrade role-scope play no longer uses exit wording ("퇴사 결정"). Corporate Stay vs Exit keeps it.
+
+9-case walk-through (local prod build, structural-draft path, no provider, ops calls stubbed):
+- All 9 cases in KO, plus degree, role and family in EN, reach the dashboard and an 8-section report with no `undefined` / `NaN` / `[object`, no detected particle errors, 0 evidence calls and no horizontal overflow.
+- Changing card counts per case: 1–3, all rendered with the count-aware grid.
+
 ## Verification performed
 
 | Check | Result |

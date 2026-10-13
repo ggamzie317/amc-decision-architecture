@@ -186,3 +186,41 @@ describe("printed Changing section adapts to the number of plays", () => {
     expect(css).toMatch(/\.v2-factor-number \{[^}]*white-space: nowrap/);
   });
 });
+
+describe("evidence observation records request shape without customer text", () => {
+  it("logs enumerated areas and lengths only", async () => {
+    const observed: any[] = [];
+    await resolveV2ExternalIntelligence(
+      { caseType: "MBA / EMBA / PhD Decision", externalAreas: [], targetGeography: "서울",
+        targetLabel: "PRIVATE-LOOKING TARGET 123", language: "ko" },
+      { apiKey: "test-key", observe: o => { observed.push(o); },
+        fetchImpl: (async () => new Response("{}", { status: 500 })) as typeof fetch }
+    );
+    expect(observed[0].requestShape).toEqual({
+      caseType: "MBA / EMBA / PhD Decision", language: "ko",
+      areas: ["programOutcomes", "employmentRelevance", "funding", "opportunityCost"],
+      defaultAreas: true, targetLength: 26, geographyLength: 2,
+    });
+    const text = JSON.stringify(observed);
+    expect(text).not.toContain("PRIVATE-LOOKING");
+    expect(text).not.toContain("서울");
+  });
+});
+
+describe("Role Upgrade / Downgrade is not framed as an exit", () => {
+  it("uses role-change wording while Corporate Stay vs Exit keeps exit wording", () => {
+    const base = v2DemoFixture("industry", "ko");
+    const plays = (caseType: string) => {
+      const state = { ...base.state, caseType: caseType as never, optionA: "현재 팀장 역할", optionB: "본부장 역할" };
+      return JSON.stringify(buildProductApplicationV3(buildV2Input(state, base.intelligence)).changingPlays);
+    };
+    const role = plays("Role Upgrade / Downgrade");
+    if (role.includes("role-scope")) {
+      expect(role).not.toContain("퇴사");
+      expect(role).toContain("역할 변경을 확정하기 전에 현재 팀장 역할의 범위를");
+    }
+    const exit = plays("Corporate Stay vs Exit");
+    if (exit.includes("role-scope")) expect(exit).toContain("퇴사 결정 → 역할 재설계 검증");
+    expect(role.includes("role-scope") || exit.includes("role-scope")).toBe(true);
+  });
+});

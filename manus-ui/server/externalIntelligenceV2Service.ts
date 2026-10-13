@@ -260,6 +260,14 @@ export async function resolveV2ExternalIntelligence(
       ...(sourceFailureCategory ? { sourceFailureCategory } : {}),
       ...(responseDiagnostic ? { responseDiagnostic } : {}),
       ...(upstreamHttpStatus ? { upstreamHttpStatus } : {}),
+      requestShape: {
+        caseType: request.caseType,
+        language: request.language,
+        areas: [...v2EvidenceAreas(request)],
+        defaultAreas: request.externalAreas.length === 0,
+        targetLength: request.targetLabel.length,
+        geographyLength: request.targetGeography.length,
+      },
     };
     try {
       options.onDiagnostics?.({
