@@ -394,7 +394,7 @@ export function buildV2Input(
       ...conditionNames,
       ...(s.customCondition.trim() ? [s.customCondition.trim()] : []),
     ].slice(0, 3),
-    validationFocus: externalArea || v2t(language, "evidenceUnavailable"),
+    validationFocus: externalArea || missing.point,
     externalImplication:
       intelligence?.status === "live"
         ? [

@@ -118,8 +118,8 @@ export function V2ExternalBoard({
           {phase === "live" && intelligence.sourceCoverage === "partial" && (
             <p className="v2-evidence-caveat" role="status">
               {state.language === "ko"
-                ? "일부 출처를 확인할 수 없어 해당 카드와 종합 요약을 제외했습니다. 아래에는 접근 가능한 출처의 제한된 주장만 표시합니다."
-                : "Some sources could not be checked. Their cards and dependent summaries were removed; only limited claims from accessible sources remain."}
+                ? "일부 카드가 제외되어 종합 요약은 표시하지 않습니다. 남은 주장도 원문과 대조해야 합니다."
+                : "Some cards were excluded, so dependent summaries are omitted. Compare each remaining claim with its source text."}
             </p>
           )}
           <div className="v2-evidence-grid">

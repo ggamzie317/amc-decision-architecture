@@ -532,7 +532,7 @@ describe("V2 live External Intelligence boundary", () => {
     for (const html of [dashboard, report]) {
       expect(html).toContain("Public demand context");
       expect(html).toContain(sourceRows[0].url);
-      expect(html).toContain("Some sources could not be checked");
+      expect(html).toContain("Some cards were excluded, so dependent summaries are omitted.");
       expect(html).not.toContain("Pricing context");
       expect(html).not.toContain(sourceRows[1].url);
       expect(html).not.toContain(providerContent("en").implication);

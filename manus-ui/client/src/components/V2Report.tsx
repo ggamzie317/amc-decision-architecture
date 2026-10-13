@@ -120,8 +120,8 @@ export default function V2Report({
         : t("evidenceRetryHint");
   const partialEvidenceNote = intelligence.sourceCoverage === "partial"
     ? say(
-        "일부 출처를 확인할 수 없어 해당 카드와 종합 요약을 제외했습니다. 남은 주장도 원문과 대조해야 합니다.",
-        "Some sources could not be checked; their cards and dependent summaries were removed. Compare remaining claims with the source text."
+        "일부 카드가 제외되어 종합 요약은 표시하지 않습니다. 남은 주장도 원문과 대조해야 합니다.",
+        "Some cards were excluded, so dependent summaries are omitted. Compare each remaining claim with its source text."
       )
     : null;
   useEffect(() => {

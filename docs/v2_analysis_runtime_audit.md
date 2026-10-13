@@ -447,3 +447,19 @@ The candidate passes all 393 web regressions (24 files), TypeScript and the
 web/server build. The additional five cases exercise the actual resolver, API
 route and browser response contract, including both languages; the original
 structural-equivalence and canonical FIFWM tests remain unchanged and pass.
+
+Live review of `1f4ad73` also found an input-adapter wording mismatch: when the
+optional external-area selections were empty, research correctly used the case's
+default public questions, but Changing's validation focus still received the
+unavailable-evidence placeholder. The fallback now uses the existing case-specific
+missing condition as an unverified test goal. It does not populate written answer
+14, certify that condition, change evidence status or alter the original engine.
+EN/KO regressions compare posture, Safety Margin and Changing families with the
+prior input while checking that the test goal remains useful in both live and
+unavailable states. Final-revision checks are recorded separately in PR #92.
+
+Dashboard/report partial-coverage notes describe excluded cards without falsely
+attributing every exclusion to inaccessible links; repeated citations can be
+excluded even when the remaining URL is accessible. The same EN/KO note is used
+in both views. No component hooks, event handlers, storage or evidence snapshots
+are changed by this wording correction.

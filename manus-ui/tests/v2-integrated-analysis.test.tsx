@@ -26,6 +26,7 @@ import V2Report from "../client/src/components/V2Report";
 import V2Simulator from "../client/src/components/V2Simulator";
 import { projectInteractivePatch } from "../shared/interactivePrivacy";
 import { initialSelfChecks } from "../client/src/data/v2SelfDiagnostic";
+import { v2t } from "../client/src/data/v2Language";
 
 (globalThis as any).React = React;
 function fixture() {
@@ -93,6 +94,26 @@ const evidence: ExternalIntelligenceV2 = {
   implication: "공개 요건과 준비 성과를 대조해야 합니다.",
 };
 describe("V2 integrated customer analysis", () => {
+  it.each(["en", "ko"] as const)("keeps the existing missing condition as an unverified test goal when optional search areas are empty in %s", language => {
+    const { state } = fixture();
+    state.language = language;
+    state.caseType = "Entrepreneurship";
+    state.externalAreas = [];
+    const live = { ...evidence, caseType: state.caseType };
+    for (const intelligence of [live, unavailableIntelligence(state.caseType, language)]) {
+      const input = buildV2Input(state, intelligence);
+      const core = buildProductApplicationV3(input);
+      const prior = buildProductApplicationV3({ ...input,
+        validationFocus: v2t(language, "evidenceUnavailable") });
+      expect(input.answers?.[14]).toBe("");
+      expect(input.validationFocus).toBe(input.missingPoint);
+      expect(core.changingPlays.some(play => play.evidence === input.missingPoint)).toBe(true);
+      expect(core.currentStructuralPosture.label).toBe(prior.currentStructuralPosture.label);
+      expect(core.safetyMargin.band).toBe(prior.safetyMargin.band);
+      expect(core.changingPlays.map(play => play.family)).toEqual(prior.changingPlays.map(play => play.family));
+    }
+  });
+
   it("shows the same session-only self-report beside its condition in dashboard and report", () => {
     const f = v2DemoFixture("industry", "ko");
     const selfChecks = initialSelfChecks();
