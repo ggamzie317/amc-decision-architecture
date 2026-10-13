@@ -12,7 +12,6 @@ import {
   v2EvidenceLimits as limit,
   v2TextLength,
 } from "../shared/externalIntelligenceV2Contract.js";
-import { configuredAgentPreset } from "./externalSnapshotService.js";
 import {
   recordProviderObservation,
   type ProviderObservation,
@@ -240,6 +239,16 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
   ];
 }
 
+/**
+ * V2 searches several official sources per decision (procedures, market, pay),
+ * which the shallow "fast" preset rarely reaches. Owner decision 2026-10-14:
+ * V2 defaults to "medium"; PERPLEXITY_V2_AGENT_PRESET overrides it.
+ */
+export function configuredV2AgentPreset() {
+  const value = process.env.PERPLEXITY_V2_AGENT_PRESET?.trim();
+  return value && ["fast", "low", "medium", "high", "xhigh"].includes(value) ? value : "medium";
+}
+
 export async function resolveV2ExternalIntelligence(
   request: V2EvidenceRequest,
   options: ResolveOptions = {}
@@ -250,7 +259,7 @@ export async function resolveV2ExternalIntelligence(
     process.env.PPLX_API_KEY ??
     ""
   ).trim();
-  const preset = configuredAgentPreset();
+  const preset = configuredV2AgentPreset();
   const startedAt = Date.now();
   let timedOut = false;
   let sourceFailureCategory: SourceProbeFailure | undefined;
