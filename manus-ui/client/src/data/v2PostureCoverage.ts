@@ -19,7 +19,9 @@ export function v2PostureCoverageNote(core: ProductApplicationV3, language: V2La
       : ` The ${total - known} unconfirmed inputs were treated as middle values, so the reading may change once they are confirmed.`
     : "";
   const fifwm = fifwmKnown
-    ? ko ? ` 기존 조직·직무 평가는 ${fifwmKnown}개 항목이 반영되었습니다.` : ` ${fifwmKnown} existing organization and role assessment items are included.`
+    ? core.decisionStructure.fifwmSource === "case-adapted"
+      ? ko ? ` 사례 맞춤 구조 평가는 ${fifwmKnown}개 항목이 반영되었습니다.` : ` ${fifwmKnown} case-adapted structure assessment items are included.`
+      : ko ? ` 기존 조직·직무 평가는 ${fifwmKnown}개 항목이 반영되었습니다.` : ` ${fifwmKnown} existing organization and role assessment items are included.`
     : "";
   const lead = level === "limited"
     ? ko ? "근거 제한적: " : "Limited basis: "

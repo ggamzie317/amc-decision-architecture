@@ -220,7 +220,7 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
       const state = { ...initialV2State("ko"), caseType };
       const a = buildV2Analysis(state, buildProductApplicationV3(buildV2Input(state)), unavailableIntelligence(caseType, "ko"));
       expect(a.factors.every(item => item.status === "미확인")).toBe(true);
-      expect(a.factorScopeNote).toMatch(/원본|조직·직무/);
+      expect(a.factorScopeNote).toMatch(/원본|조직·직무|사례 맞춤 구조 평가/);
       expect(a.factors.map(item => item.title)).toEqual(["기회의 조건", "연결 가능성", "구조 적합성", "실행 현실성", "버틸 수 있는가"]);
     }
   });

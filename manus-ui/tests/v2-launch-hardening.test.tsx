@@ -270,3 +270,39 @@ describe("waiting screen shows only real step states", () => {
     expect(html).not.toMatch(/\d+\s*%/);
   });
 });
+
+describe("case-adapted structure assessment", () => {
+  it("scores only exact 0/1/2 answers under a separate source and keeps unsure/n.a. unassessed", async () => {
+    const { buildV2CaseFifwm, v2CaseFifwmSet } = await import("../client/src/data/v2CaseFifwm");
+    const set = v2CaseFifwmSet("MBA / EMBA / PhD Decision")!;
+    expect(set.questions.map(q => q.factor)).toEqual(["formal", "informal", "framework", "workflow", "marketPolicy"]);
+    const built = buildV2CaseFifwm("MBA / EMBA / PhD Decision", "ko", {
+      targetRoleStatus: "known",
+      answers: { case_formal: "2", case_informal: "0", case_framework: "__unknown__", case_workflow: "__na__", case_marketPolicy: "" },
+    })!;
+    expect(built.fifwmSource).toBe("case-adapted");
+    expect(built.fifwm.formal.score).toBe(2);
+    expect(built.fifwm.informal.score).toBe(0);
+    expect(built.fifwm.framework.score).toBeNull();
+    expect(built.fifwm.workflow.score).toBeNull();
+    expect(built.fifwm.marketPolicy.score).toBeNull();
+    expect(built.fifwm.formal.reading).toContain("사례 맞춤 구조 평가");
+    expect(buildV2CaseFifwm("MBA / EMBA / PhD Decision", "ko", { targetRoleStatus: "unsure", answers: { case_formal: "2" } })).toBeNull();
+    expect(v2CaseFifwmSet("Industry Transition")).toBeNull();
+    expect(v2CaseFifwmSet("General Career Reconfiguration")).toBeNull();
+  });
+
+  it("feeds the existing posture formula and is labelled distinctly in analysis and coverage", async () => {
+    const { v2PostureCoverageNote } = await import("../client/src/data/v2PostureCoverage");
+    const { v2CanAskCanonicalFifwm } = await import("../client/src/data/v2CanonicalFifwm");
+    expect(v2CanAskCanonicalFifwm("General Career Reconfiguration")).toBe(true);
+    const state = { ...v2DemoFixture("industry", "ko").state, caseType: "Entrepreneurship" as const };
+    const core = buildProductApplicationV3(buildV2Input(state, undefined, {
+      targetRoleStatus: "known", answers: { case_formal: "2", case_workflow: "1" },
+    }));
+    expect(core.decisionStructure.fifwmSource).toBe("case-adapted");
+    expect(v2PostureCoverageNote(core, "ko").text).toContain("사례 맞춤 구조 평가는 2개 항목");
+    const analysis = buildV2Analysis(state, core, v2DemoFixture("industry", "ko").intelligence, "demo");
+    expect(analysis.factorScopeNote).toContain("사례 맞춤 구조 평가");
+  });
+});

@@ -1,4 +1,5 @@
 import { withKoreanParticle } from "./koreanParticle";
+import { v2CaseFifwmSet } from "./v2CaseFifwm";
 import type {
   ProductApplicationV3,
   ChangingPlay,
@@ -863,7 +864,10 @@ export function buildV2Analysis(
           `Public external context: ${t(b.externalValidation.band)}. The retrieved material informs external conditions. Personal eligibility, purchases and execution capacity need separate validation.`)
       : say("외부 환경을 종합적으로 판단할 근거는 아직 부족합니다. 현재 확보한 자료의 범위에서 조건을 대조하세요.",
           "Evidence for an overall reading of the external environment is still limited. Compare conditions within the scope of the available material."),
-    factorScopeNote: v2CanAskCanonicalFifwm(state.caseType)
+    factorScopeNote: v2CaseFifwmSet(state.caseType)
+      ? say("이 사례는 원래 조직 평가 대신, 같은 다섯 요소를 이 사례에 맞게 묻는 '사례 맞춤 구조 평가'를 사용합니다. 대상이 구체적일 때 응답한 항목만 평가하며, 모름·해당 없음은 미평가입니다.",
+          "This case uses a case-adapted structure assessment: the same five factors asked for this kind of decision instead of the original organization questions. Only answered items are assessed; unsure and not-applicable stay unassessed.")
+      : v2CanAskCanonicalFifwm(state.caseType)
       ? say("조직·직무를 아는 경우에만 원본 다섯 질문으로 평가합니다. 확인하지 않은 항목은 미평가입니다.",
           "The original five questions assess a known organization and role. Unestablished items remain unassessed.")
       : say("이 사례에는 원본 조직·직무 질문을 그대로 적용할 수 없어 다섯 항목을 평가하지 않았습니다. 준비 상태와 안전마진의 입력으로 대신 점수를 만들지 않습니다.",

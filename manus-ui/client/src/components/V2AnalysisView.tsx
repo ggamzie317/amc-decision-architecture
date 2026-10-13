@@ -283,9 +283,13 @@ export function V2FactorMap({
           ? ko
             ? "기존 다섯 항목의 평가 입력이 없어 미확인 상태입니다. 준비 상태나 안전 여유로 대신 평가하지 않습니다."
             : "The existing five-part assessment inputs are unavailable, so these items remain unassessed. Readiness and safety bands do not substitute for them."
-          : ko
-            ? "응답한 항목만 기존 규칙으로 평가했습니다. 미응답·모름·해당 없음은 미평가이며, 공개 근거는 점수를 바꾸지 않습니다."
-            : "Only answered items use the existing rules. Unanswered, unsure and inapplicable items remain unassessed. Public evidence does not change the scores."}
+          : analysis.fifwmSource === "case-adapted"
+            ? ko
+              ? "응답한 항목만 같은 0·1·2 기준으로 평가했습니다. 원래 조직 평가와는 다른 사례 맞춤 질문이며, 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items are scored on the same 0/1/2 scale. These are case-adapted questions, distinct from the original organization assessment. Public evidence does not change the scores."
+            : ko
+              ? "응답한 항목만 기존 규칙으로 평가했습니다. 미응답·모름·해당 없음은 미평가이며, 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items use the existing rules. Unanswered, unsure and inapplicable items remain unassessed. Public evidence does not change the scores."}
       </p>
       {analysis.factors.map((f, i) => (
         <article key={f.id} data-factor={f.id}>

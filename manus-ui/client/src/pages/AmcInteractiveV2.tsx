@@ -65,6 +65,7 @@ import {
 } from "../data/v2CanonicalFifwm";
 import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
 import V2Processing from "../components/V2Processing";
+import { v2CaseFifwmSet } from "../data/v2CaseFifwm";
 import { Compass, FileSearch, Layers, Lock } from "lucide-react";
 import "../styles/v2.css";
 
@@ -124,6 +125,7 @@ export default function AmcInteractiveV2() {
   const [processingSeconds, setProcessingSeconds] = useState(0);
   const [trackingObservation, setTrackingObservation] = useState<JourneyTrackingObservation | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
+  const caseFifwm = v2CaseFifwmSet(state.caseType);
   const selfCards = useMemo(
     () => selfCheckCards(state.caseType, language),
     [state.caseType, language]
@@ -542,6 +544,57 @@ export default function AmcInteractiveV2() {
                   </fieldset>
                 ))}
                 <small>{language === "ko" ? "선택한 내용은 자기보고입니다. 공개 자료로 개인의 조직 경험을 검증한 것은 아닙니다." : "These answers are self-reported. Public sources do not verify your personal experience in the organization."}</small>
+              </section>
+            )}
+            {caseFifwm && (
+              <section className="v2-self-card v2-canonical-fifwm v2-case-fifwm" aria-label={language === "ko" ? "사례 맞춤 구조 평가" : "Case-adapted structure assessment"}>
+                <div className="v2-self-card-head"><h3>{language === "ko" ? "사례 맞춤 구조 평가" : "Case-adapted structure assessment"}</h3></div>
+                <p>{language === "ko"
+                  ? "기회의 조건·연결 가능성·구조 적합성·실행 현실성·버틸 수 있는가, 다섯 요소를 이 결정에 맞게 묻습니다. 대상이 구체적일 때만 답하세요. 답하지 않은 항목은 미평가로 남습니다."
+                  : "The same five factors — opportunity conditions, connection, structural fit, execution reality and staying power — asked for this kind of decision. Answer only when the target is specific. Unanswered items remain unassessed."}</p>
+                <fieldset className="v2-field">
+                  <legend>{caseFifwm.target[language === "ko" ? 1 : 0]}</legend>
+                  <div className="v2-band-choices">
+                    {(["known", "not_applicable", "unsure"] as const).map(status => (
+                      <button key={status} type="button" aria-pressed={fifwmAssessment.targetRoleStatus === status}
+                        onClick={() => setFifwmAssessment(previous => status === "known"
+                          ? { ...previous, targetRoleStatus: status }
+                          : { ...initialCanonicalFifwmAssessment(), targetRoleStatus: status })}>
+                        {status === "known"
+                          ? (language === "ko" ? "있음" : "Yes")
+                          : status === "not_applicable"
+                            ? (language === "ko" ? "해당 없음" : "Not applicable")
+                            : (language === "ko" ? "아직 모름" : "Not sure yet")}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                {fifwmAssessment.targetRoleStatus === "known" && caseFifwm.questions.map(question => (
+                  <fieldset className="v2-field" key={question.field}>
+                    <legend>{question.question[language === "ko" ? 1 : 0]}</legend>
+                    <div className="v2-band-choices">
+                      {question.choices.map((choice, score) => (
+                        <button type="button" key={score} aria-pressed={fifwmAssessment.answers[question.field] === String(score)}
+                          onClick={() => setFifwmAssessment(previous => ({ ...previous,
+                            answers: { ...previous.answers, [question.field]: String(score) },
+                          }))}>
+                          {choice[language === "ko" ? 1 : 0]}
+                        </button>
+                      ))}
+                      {(["__unknown__", "__na__"] as const).map(choice => (
+                        <button type="button" key={choice} aria-pressed={fifwmAssessment.answers[question.field] === choice}
+                          onClick={() => setFifwmAssessment(previous => ({ ...previous,
+                            answers: { ...previous.answers, [question.field]: choice },
+                          }))}>
+                          {choice === "__unknown__"
+                            ? (language === "ko" ? "아직 모름" : "Not sure yet")
+                            : (language === "ko" ? "해당 없음" : "Not applicable")}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                ))}
+                <small>{language === "ko" ? "선택한 내용은 자기보고입니다. 공개 자료로 검증한 것은 아닙니다." : "These answers are self-reported and not verified by public sources."}</small>
               </section>
             )}
           </>

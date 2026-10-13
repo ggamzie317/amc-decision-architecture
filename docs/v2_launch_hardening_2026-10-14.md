@@ -73,6 +73,19 @@ UI changes (no analysis or scoring changes):
 - Waiting screen: a 4-step status where only real states change. Input check is done, search is running or failed, the rest stay waiting until results open. No percentages. Beside it is the Structure First philosophy, a rotating introduction to the five structural lenses (labelled as an introduction, not progress) and the sections the analysis will contain.
 - The evidence-coverage note uses light text on the dark dashboard hero for contrast.
 
+## Ops DB round trip and case-adapted assessment (2026-10-14)
+
+- **Preview has no ops DB** (`backend_unavailable`), so Preview tests never write customer data.
+- **Production DB round trip (owner-approved, 1 test journey):** on `app.allofmycareer.com`, structural-draft path, research consent off, no provider call. All 5 events were acknowledged `stored: true` on one record:
+  - preview_started
+  - full_intake_started
+  - full_intake_completed
+  - dashboard_generated
+  - detailed_report_opened
+
+  **Test record ID: `AMC-20261013-24CA46AE`; exclude it from statistics.** The record was not read back through admin, which needs owner login.
+- Case-adapted structure assessment for Entrepreneurship, Degree, Overseas, Burnout and Family is implemented. General Career Reconfiguration uses the original Q18–22 when the target is known. The source label is `case-adapted`. Posture formula and boundaries are unchanged. The before/after table is in `docs/v2_case_fifwm_question_design.md`: no posture changed in 54 computed rows, because support moves by at most ±1.
+
 ## Verification performed
 
 | Check | Result |

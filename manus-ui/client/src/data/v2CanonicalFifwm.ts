@@ -6,6 +6,7 @@ import {
 } from "./amcProductApplicationV3";
 import type { V2CaseType } from "./amcV2Model";
 import type { V2Language } from "./v2Language";
+import { buildV2CaseFifwm, v2CaseFifwmSet } from "./v2CaseFifwm";
 
 export type CanonicalFifwmAnswers = Record<string, string | null | undefined>;
 export type CanonicalFifwmAssessment = {
@@ -20,7 +21,10 @@ export const initialCanonicalFifwmAssessment = (): CanonicalFifwmAssessment => (
 // These cases can have a target employer/unit and role. The customer must still
 // confirm one exists; a generic industry, startup or degree is not that role.
 export function v2CanAskCanonicalFifwm(caseType: V2CaseType): boolean {
+  // General Career Reconfiguration uses the original questions when a target
+  // organization and role exist (owner approval 2026-10-14).
   return caseType === "Industry Transition" ||
+    caseType === "General Career Reconfiguration" ||
     caseType === "Role Upgrade / Downgrade" ||
     caseType === "Corporate Stay vs Exit";
 }
@@ -72,6 +76,7 @@ export function buildV2CanonicalFifwm(
     fifwm: buildUnavailableFifwm(language),
     fifwmSource: "unavailable" as const,
   };
+  if (v2CaseFifwmSet(caseType)) return buildV2CaseFifwm(caseType, language, assessment) ?? unavailable;
   if (!v2CanAskCanonicalFifwm(caseType) || assessment?.targetRoleStatus !== "known") return unavailable;
   const payload: Record<string, unknown> = {};
   let validCount = 0;

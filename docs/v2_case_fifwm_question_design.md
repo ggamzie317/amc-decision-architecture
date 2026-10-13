@@ -1,6 +1,6 @@
 # 6개 사례용 구조 평가 질문 설계안 (초안 · 승인 전)
 
-작성 2026-10-14 · 상태: **제품 오너 승인 전, 구현하지 않음**
+작성 2026-10-14 · 상태: **제품 오너 승인 (2026-10-14), 구현됨**
 
 ## 1. 목적과 원칙
 
@@ -80,3 +80,34 @@
 2. "사례 맞춤 구조 평가"를 원래 평가와 구분해 표시하는 방식
 3. 구현 전 18개 입력으로 수정 전후 비교 보고 → 확인 후 구현
 4. 원래 Python 엔진은 이번에 바꾸지 않음
+
+## 5. 수정 전후 비교 (구현 후 계산, 2026-10-14)
+
+같은 입력에서 구조 판단(Posture)이 어떻게 달라지는지 계산했습니다. 공식과 경계값은 그대로입니다(support ≥ 8 전환, ≤ 1 재구성, 그 사이 보존하며 검증). 원래 공식에서 조직 평가는 평균값 0~2로 들어가므로, 미평가(1로 계산)였을 때보다 support가 최대 ±1 움직입니다.
+
+중간 수준 입력(준비도·재정·가역성·지원 '형성 중', 손실 위험 '보통', 제약 '무시하기 어려움'):
+
+| Case | Answers | Before: support / posture | After: support / posture | Changed |
+|---|---|---|---|---|
+| Entrepreneurship | all favourable (2) | 5.00 / 보존하며 검증 | 6.00 / 보존하며 검증 (case-adapted) | no |
+| Entrepreneurship | mixed (2,1,1,0,1) | 5.00 / 보존하며 검증 | 5.00 / 보존하며 검증 (case-adapted) | no |
+| Entrepreneurship | all unfavourable (0) | 5.00 / 보존하며 검증 | 4.00 / 보존하며 검증 (case-adapted) | no |
+| MBA / EMBA / PhD Decision | all favourable (2) | 5.00 / 보존하며 검증 | 6.00 / 보존하며 검증 (case-adapted) | no |
+| MBA / EMBA / PhD Decision | mixed (2,1,1,0,1) | 5.00 / 보존하며 검증 | 5.00 / 보존하며 검증 (case-adapted) | no |
+| MBA / EMBA / PhD Decision | all unfavourable (0) | 5.00 / 보존하며 검증 | 4.00 / 보존하며 검증 (case-adapted) | no |
+| Overseas Relocation | all favourable (2) | 5.00 / 보존하며 검증 | 6.00 / 보존하며 검증 (case-adapted) | no |
+| Overseas Relocation | mixed (2,1,1,0,1) | 5.00 / 보존하며 검증 | 5.00 / 보존하며 검증 (case-adapted) | no |
+| Overseas Relocation | all unfavourable (0) | 5.00 / 보존하며 검증 | 4.00 / 보존하며 검증 (case-adapted) | no |
+| Burnout-driven Decision | all favourable (2) | 5.00 / 보존하며 검증 | 6.00 / 보존하며 검증 (case-adapted) | no |
+| Burnout-driven Decision | mixed (2,1,1,0,1) | 5.00 / 보존하며 검증 | 5.00 / 보존하며 검증 (case-adapted) | no |
+| Burnout-driven Decision | all unfavourable (0) | 5.00 / 보존하며 검증 | 4.00 / 보존하며 검증 (case-adapted) | no |
+| Family Constraint-heavy Decision | all favourable (2) | 5.00 / 보존하며 검증 | 6.00 / 보존하며 검증 (case-adapted) | no |
+| Family Constraint-heavy Decision | mixed (2,1,1,0,1) | 5.00 / 보존하며 검증 | 5.00 / 보존하며 검증 (case-adapted) | no |
+| Family Constraint-heavy Decision | all unfavourable (0) | 5.00 / 보존하며 검증 | 4.00 / 보존하며 검증 (case-adapted) | no |
+| General Career Reconfiguration | all favourable (2) | 5.00 / 보존하며 검증 | 6.00 / 보존하며 검증 (canonical-current-case) | no |
+| General Career Reconfiguration | mixed (2,1,1,0,1) | 5.00 / 보존하며 검증 | 5.00 / 보존하며 검증 (canonical-current-case) | no |
+| General Career Reconfiguration | all unfavourable (0) | 5.00 / 보존하며 검증 | 4.00 / 보존하며 검증 (canonical-current-case) | no |
+
+강한 입력(support 12)과 약한 입력(support −2)에서도 18개 모두 판단이 바뀌지 않았습니다(13/11, −1/−3).
+
+결론: 새 질문은 판단을 크게 흔들지 않습니다. 다른 입력이 경계 바로 근처일 때만(support 7~9 또는 1~2) 판단이 바뀔 수 있습니다. 주된 효과는 Decision Map의 다섯 요소가 "미확인" 대신 고객 응답으로 채워지는 것과, 근거 충분도 문구에 반영되는 것입니다.

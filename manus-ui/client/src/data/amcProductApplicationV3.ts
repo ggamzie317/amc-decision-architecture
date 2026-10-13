@@ -75,7 +75,7 @@ export type ProductApplicationV3 = {
   presentation: ProductApplicationPresentation;
   decisionStructure: {
     fifwm: FifwmStructure;
-    fifwmSource: "canonical-current-case" | "unavailable";
+    fifwmSource: "canonical-current-case" | "case-adapted" | "unavailable";
     insideReality: string;
     outsideEvidence: string;
     constraints: string;
@@ -121,7 +121,7 @@ export type ProductApplicationBuildInput = {
   optionB: string;
   answers: Record<number, string>;
   fifwm: FifwmStructure;
-  fifwmSource: "canonical-current-case" | "unavailable";
+  fifwmSource: "canonical-current-case" | "case-adapted" | "unavailable";
   safetyMarginInputs: SafetyMarginInputs;
   structuralSignals: {
     externalValidation: StructuralSignal<StructuralStrength>;
