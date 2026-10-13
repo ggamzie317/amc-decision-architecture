@@ -2203,3 +2203,5 @@
 .v2-case-options button[aria-checked="true"] { border-color: var(--ink); background: #f7f6f1; box-shadow: inset 3px 0 0 var(--ink); }
 .v2-case-options b { font-size: 13px; }
 .v2-case-options span { font-size: 12px; color: var(--muted); word-break: keep-all; }
+.v2-case-recommended .v2-case-geo { color: var(--ink); margin-top: 6px; font-size: 12.5px; }
+.v2-case-recommended .v2-case-geo b { color: var(--teal); }

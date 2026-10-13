@@ -471,6 +471,8 @@ export default function AmcInteractiveV2() {
                     ? "공개 검색 대상: 전환할 산업과 직무"
                     : state.caseType === "MBA / EMBA / PhD Decision"
                       ? "공개 검색 대상: 기관명과 과정명"
+                    : state.caseType === "Overseas Relocation"
+                      ? "공개 검색 대상: 목적지에서 하려는 일과 체류 경로(취업비자·영주권 등)"
                       : "공개 검색 대상: 직무·기관·과정 등 구체적인 목표"
                 : state.caseType === "Entrepreneurship"
                   ? "Public search target: customer group and offer"
@@ -478,6 +480,8 @@ export default function AmcInteractiveV2() {
                     ? "Public search target: target industry and role"
                     : state.caseType === "MBA / EMBA / PhD Decision"
                       ? "Public search target: institution and program name"
+                    : state.caseType === "Overseas Relocation"
+                      ? "Public search target: the work and residence route at the destination (work visa, permanent residence)"
                       : "Public search target: specific role, institution or program"}
               <input
                 value={v2PublicSearchTarget(state)}
@@ -966,6 +970,12 @@ export default function AmcInteractiveV2() {
               <div className="v2-case-recommended" data-case={state.caseType}>
                 <strong>{v2CaseLabel(language, state.caseType)}</strong>
                 <span>{v2CaseDescription(language, state.caseType)}</span>
+                {inferV2Geography(state, language) && (
+                  <span className="v2-case-geo">
+                    {language === "ko" ? "인식한 지역: " : "Detected place: "}<b>{inferV2Geography(state, language)}</b>
+                    {language === "ko" ? " · 공개 근거 검색에 사용합니다" : " · used for the public evidence search"}
+                  </span>
+                )}
                 {caseRanking[0]?.caseType === state.caseType && caseRanking[0].matched.length > 0 && (
                   <small>{language === "ko" ? "판단 근거: " : "Based on: "}{caseRanking[0].matched.map(word => `‘${word}’`).join(" · ")}</small>
                 )}
