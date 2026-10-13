@@ -249,3 +249,24 @@ describe("posture coverage note and case default scopes", () => {
     expect(v2EvidenceAreas({ caseType: "General Career Reconfiguration", externalAreas: [] })).toEqual(["hiringDemand", "roleDemand", "compensation"]);
   });
 });
+
+describe("waiting screen shows only real step states", () => {
+  const render = (running: boolean) => renderToStaticMarkup(React.createElement(V2Processing, {
+    language: "ko", running, seconds: 3, target: "t", geography: "g", areas: [],
+    observation: running ? null : { status: 503, reason: "source_unavailable", diagnostic: "no_evidence" },
+    onRetry: () => {}, onEditTarget: () => {}, onDraft: () => {},
+  }));
+  it("never marks connection or results as done while searching or after failure", () => {
+    for (const running of [true, false]) {
+      const states = [...render(running).matchAll(/data-state="(\w+)"/g)].map(m => m[1]);
+      expect(states).toEqual(["done", running ? "running" : "failed", "pending", "pending"]);
+    }
+  });
+  it("introduces the framework and brand philosophy without progress percentages", () => {
+    const html = render(true);
+    expect(html).toContain("Structure First");
+    expect(html).toContain("기회의 조건");
+    expect(html).toContain("버틸 수 있는가");
+    expect(html).not.toMatch(/\d+\s*%/);
+  });
+});

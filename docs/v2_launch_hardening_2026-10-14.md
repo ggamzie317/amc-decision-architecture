@@ -55,6 +55,24 @@ Additional fixes:
 - All 9 cases in KO, plus degree, role and family in EN, reach the dashboard and an 8-section report with no `undefined` / `NaN` / `[object`, no detected particle errors, 0 evidence calls and no horizontal overflow.
 - Changing card counts per case: 1–3, all rendered with the count-aware grid.
 
+## Launch re-check and research UI (2026-10-14)
+
+Quick audit (local prod build, KO degree and EN industry with the original assessment answered):
+
+| Area | Result |
+|---|---|
+| External evidence | Preview: 4 cards per degree call after the (page, dimension) rule, synthesis kept; the original `no_evidence` was not reproduced in 6 calls |
+| Framework | Industry + known target: all 5 FIFWM factors scored from original choices; coverage note "6 of 8 confirmed, 5 assessment items"; every analysis-sequence section renders. **Gap:** there is no explicit "Sustainability" heading |
+| Analysis frame | Decision Map, Safety Margin, Changing (1–3), switches, next experiment present in all 9 cases (walk-through above) |
+| EN/KO toggle | No untranslated system text in either direction. Only the customer's own free text stays in the language it was typed in (by design) |
+| Line spacing | Screen body text 1.45–2.0. Only 6 simulator labels at 1.35 (11px labels). Every print rule is within 1.4–1.9 |
+
+UI changes (no analysis or scoring changes):
+- Fonts: Noto Sans KR and Noto Serif KR are now loaded. Before, Korean used whatever fallback font each customer's system had.
+- Research masthead ("allofmycareer | Career Decision Research"), a serif headline with word-level Korean line breaks (fixes "결/정" mid-word wrap), an intake method block (Structure First, five lenses, verifiable public evidence, written answers not stored) and a non-advice footer.
+- Waiting screen: a 4-step status where only real states change. Input check is done, search is running or failed, the rest stay waiting until results open. No percentages. Beside it is the Structure First philosophy, a rotating introduction to the five structural lenses (labelled as an introduction, not progress) and the sections the analysis will contain.
+- The evidence-coverage note uses light text on the dark dashboard hero for contrast.
+
 ## Verification performed
 
 | Check | Result |

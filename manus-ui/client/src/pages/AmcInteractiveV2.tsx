@@ -65,6 +65,7 @@ import {
 } from "../data/v2CanonicalFifwm";
 import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
 import V2Processing from "../components/V2Processing";
+import { Compass, FileSearch, Layers, Lock } from "lucide-react";
 import "../styles/v2.css";
 
 // "processing" holds the customer on an honest in-progress screen while the
@@ -767,9 +768,12 @@ export default function AmcInteractiveV2() {
       data-evidence-source-check={evidenceHttpByLanguage[researchLanguage]?.sourceFailure}
       data-evidence-upstream-status={evidenceHttpByLanguage[researchLanguage]?.upstreamStatus}>
       <header className="v2-site-header">
-        <a className="v2-wordmark" href="/amc-interactive-v2">
-          allofmycareer
-        </a>
+        <div className="v2-masthead">
+          <a className="v2-wordmark" href="/amc-interactive-v2">
+            allofmycareer
+          </a>
+          <span className="v2-masthead-tag">Career Decision Research</span>
+        </div>
         <div className="v2-header-right">
           {demoMode && <span className="v2-demo-label">{t("demoBadge")}</span>}
           <div className="v2-language" role="group" aria-label={language === "ko" ? "화면 언어" : "Interface language"}>
@@ -814,12 +818,23 @@ export default function AmcInteractiveV2() {
             <p className="v2-kicker">{t("eyebrow")}</p>
             <h1>{t("startTitle")}</h1>
             <p>{t("startIntro")}</p>
-            <div className="v2-intake-line">
-              <span>01</span>
-              <span>02</span>
-              <span>03</span>
-              <span>04–08</span>
-            </div>
+            <ul className="v2-method-points" aria-label={language === "ko" ? "분석 방법" : "How the analysis works"}>
+              {([
+                [Compass, "Structure First", "정답을 대신 고르지 않고, 무엇을 지키고 얻는지와 위험이 모이는 곳을 구조로 보여 줍니다.", "We do not choose for you. We show what the choice protects, opens and where risk concentrates."],
+                [Layers, language === "ko" ? "다섯 가지 구조 렌즈" : "Five structural lenses", "기회의 조건 · 연결 가능성 · 구조 적합성 · 실행 현실성 · 버틸 수 있는가", "Opportunity conditions · connection · structural fit · execution reality · staying power"],
+                [FileSearch, language === "ko" ? "검증 가능한 공개 근거" : "Verifiable public evidence", "인용 출처가 실제로 열리는지 확인한 공개 자료만 근거로 씁니다.", "Only public sources whose cited pages actually open are used as evidence."],
+                [Lock, language === "ko" ? "원문 비저장" : "Your words stay private", "작성한 답변 원문은 저장하지 않으며, 검색에는 공개 검색 대상만 사용합니다.", "Written answers are not stored; only the public search target is used to search."],
+              ] as const).map(([Icon, title, ko, en]) => (
+                <li key={en}>
+                  <Icon aria-hidden size={18} />
+                  <div>
+                    <strong>{title}</strong>
+                    <span>{language === "ko" ? ko : en}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="v2-intake-steps">{language === "ko" ? "결정 설정 → 8단계 구조 질문 → 공개 근거 검색 → 분석·보고서" : "Decision setup → 8 structural steps → public evidence → analysis and report"}</p>
           </div>
           <section className="v2-intake-panel">
             <p className="v2-kicker">{t("decisionSetup")}</p>
@@ -1137,6 +1152,19 @@ export default function AmcInteractiveV2() {
             }}
           />
         </>
+      )}
+      {phase !== "report" && (
+        <footer className="v2-site-footer">
+          <div>
+            <strong>allofmycareer</strong>
+            <span>{language === "ko" ? "Structure First 커리어 의사결정 리서치" : "Structure First career decision research"}</span>
+          </div>
+          <p>
+            {language === "ko"
+              ? "allofmycareer는 결정을 대신하거나 특정 진로를 권하지 않습니다. 결과는 입력한 조건과 확인된 공개 근거에 따른 구조적 해석이며, 법률·세무·의료·이민·재무 자문이 아닙니다."
+              : "allofmycareer does not decide for you or recommend a path. Results are a structural reading of your inputs and verified public evidence, not legal, tax, medical, immigration or financial advice."}
+          </p>
+        </footer>
       )}
       {phase === "report" && (
         <V2Report
