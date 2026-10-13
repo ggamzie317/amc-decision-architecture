@@ -224,3 +224,28 @@ describe("Role Upgrade / Downgrade is not framed as an exit", () => {
     expect(role.includes("role-scope") || exit.includes("role-scope")).toBe(true);
   });
 });
+
+describe("posture coverage note and case default scopes", () => {
+  it("says when the posture rests on unconfirmed middle values", async () => {
+    const { v2PostureCoverageNote } = await import("../client/src/data/v2PostureCoverage");
+    const base = v2DemoFixture("industry", "ko");
+    const unknownBands = Object.fromEntries(Object.keys(base.state.bands).map(k => [k, "unknown"]));
+    const state = { ...base.state, bands: unknownBands as typeof base.state.bands };
+    const core = buildProductApplicationV3(buildV2Input(state));
+    const note = v2PostureCoverageNote(core, "ko");
+    expect(core.postureEvidenceCoverage).toBe("limited");
+    expect(note.text).toContain("근거 제한적");
+    expect(note.text).toContain("중간값으로 가정");
+    expect(note.known).toBeLessThan(note.total);
+    const full = v2PostureCoverageNote(buildProductApplicationV3(buildV2Input(base.state, base.intelligence)), "en");
+    expect(full.text).toMatch(/rests on \d of \d confirmed structural inputs/);
+  });
+
+  it("uses existing areas as case defaults", async () => {
+    const { v2EvidenceAreas } = await import("../shared/externalIntelligenceV2Request");
+    expect(v2EvidenceAreas({ caseType: "Overseas Relocation", externalAreas: [] })).toEqual(["geography", "visaMobility", "hiringDemand"]);
+    expect(v2EvidenceAreas({ caseType: "Burnout-driven Decision", externalAreas: [] })).toEqual(["roleDemand", "compensation", "geography"]);
+    expect(v2EvidenceAreas({ caseType: "Family Constraint-heavy Decision", externalAreas: [] })).toEqual(["roleDemand", "compensation", "geography"]);
+    expect(v2EvidenceAreas({ caseType: "General Career Reconfiguration", externalAreas: [] })).toEqual(["hiringDemand", "roleDemand", "compensation"]);
+  });
+});

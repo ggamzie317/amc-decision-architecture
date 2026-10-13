@@ -54,6 +54,10 @@ export function v2EvidenceAreas(request: Pick<V2EvidenceRequest, "caseType" | "e
   // (owner decision 2026-10-14); outcome reports are frequently not published.
   if (request.caseType === "MBA / EMBA / PhD Decision") return ["programOutcomes", "employmentRelevance", "funding", "opportunityCost"];
   if (request.caseType === "Industry Transition") return ["hiringDemand", "roleDemand", "requiredSkills", "compensation"];
+  // Owner decision 2026-10-14: existing areas only, chosen per case family.
+  if (request.caseType === "Overseas Relocation") return ["geography", "visaMobility", "hiringDemand"];
+  if (request.caseType === "Burnout-driven Decision" || request.caseType === "Family Constraint-heavy Decision")
+    return ["roleDemand", "compensation", "geography"];
   return allowedV2ExternalAreas(request.caseType).slice(0, 3);
 }
 

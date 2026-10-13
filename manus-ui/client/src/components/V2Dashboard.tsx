@@ -1,3 +1,4 @@
+import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
 import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2State } from "../data/amcV2Model";
@@ -284,6 +285,9 @@ export default function V2Dashboard({
             {draft && ` · ${say("구조 초안", "Structural draft")}`}
           </div>
           <h1>{analysis.posture}</h1>
+          <p className="v2-posture-coverage" data-coverage={core.postureEvidenceCoverage}>
+            {v2PostureCoverageNote(core, state.language).text}
+          </p>
           <p className="v2-hero-sub">{analysis.boundary}</p>
         </div>
         <aside className="v2-hero-side">

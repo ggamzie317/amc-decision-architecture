@@ -1,3 +1,4 @@
+import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
 import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import { useEffect, useRef } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
@@ -280,6 +281,9 @@ export default function V2Report({
               </p>
               <p>{t("baselineReading")}</p>
               <h1>{analysis.posture}</h1>
+              <p className="v2-posture-coverage" data-coverage={core.postureEvidenceCoverage}>
+                {v2PostureCoverageNote(core, state.language).text}
+              </p>
               <p>{v2CaseLabel(state.language, state.caseType)}</p>
             </div>
             <div className="v2-cover-mark">allofmycareer</div>

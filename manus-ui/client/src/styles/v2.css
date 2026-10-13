@@ -1963,3 +1963,17 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* How much confirmed input the posture rests on. */
+.v2-posture-coverage {
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 8px 0 12px;
+  padding-left: 10px;
+  border-left: 3px solid #9fb8bc;
+  color: #4d6468;
+  word-break: keep-all;
+}
+.v2-posture-coverage[data-coverage="limited"] {
+  border-left-color: #b8863b;
+}
