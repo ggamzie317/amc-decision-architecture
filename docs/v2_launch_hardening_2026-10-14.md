@@ -42,7 +42,7 @@ Preserved: FIFWM choices and score tables, posture support formula and 8/1 bound
 | Browser, mocked `live` response (fetch-level, synthetic) | processing → dashboard opens automatically; 1 call |
 | 390px dashboard | no horizontal overflow |
 
-## Real provider calls (owner-approved budget: 4; used: 2)
+## Real provider calls (owner-approved budget: 4; used: 4)
 
 Endpoint: production `app.allofmycareer.com` (recorded SHA `d6a86fc`; alias SHA not re-verified, no Vercel CLI auth).
 De-identified degree requests, KO, default scope. Only the five public fields were sent.
@@ -55,15 +55,25 @@ De-identified degree requests, KO, default scope. Only the five public fields we
 Findings:
 - The 2026-10-13 `no_evidence` failure **did not reproduce** with these inputs. Its cause still depends on the original case's exact target, geography and chosen areas, or on provider variance. Root cause stays unconfirmed. Recording the categorical request shape (case, area keys, target length, whether a geography was given) next to `no_evidence` would make the next occurrence diagnosable without storing the text.
 - Both calls hit `duplicate_citation`: the provider cited one page twice. By existing design (`limitedEvidence`), the extra card is dropped **and** all provider signals and the implication are replaced with a fixed scope note. So the customer receives facts but no synthesis. That design is a deliberate safety choice; changing it is a product decision.
-- After-calls on the Preview (`claude/v2-launch-hardening`) are blocked by Vercel deployment protection (302 to SSO).
+
+After-calls on the Preview (`claude/v2-launch-hardening`, owner signed in to Vercel in the app browser; ops tracking calls were stubbed in-page so no test rows were written):
+
+| Call | Target / geography | Path | HTTP | Reason / diagnostic | Cards | Notes |
+|---|---|---|---|---|---|---|
+| after-A | 서울대학교 경영전문대학원 EMBA / 서울 | direct API | 200 | live / duplicate_citation | 1 (partial) | program structure + "graduate outcome data not shown on this page"; 12.3s |
+| after-B | 주말 EMBA 과정 / 서울 | full customer UI | 200 | live / duplicate_citation | 1 (partial) | processing screen shown, results opened only after `live`; scope showed 4 areas incl. cost |
+
+- The changed service runs on Vercel serverless (no ESM/runtime failure).
+- The new guidance shows up as intended: the card states that outcome data is not published instead of returning nothing.
+- **duplicate_citation now dominates:** in 4 of 4 calls the provider cited one institution page for several areas, and the existing rule keeps only one card per URL. Requesting 4 areas made this worse (2 → 1 card), not better. This is the main remaining evidence-quality limiter and needs an owner decision: keep one card per URL, or allow one bounded card per (URL, area) while still excluding cross-source synthesis.
+- UI on Preview: 1 evidence call across dashboard → report → EN↔KO; report 9 sections with sources; no horizontal overflow at 390px and 430px.
 
 ## Not verified (must not be reported as done)
 
-- Real call through the **new** code (Preview is SSO-protected). Root cause #2 remains a hypothesis; production did not reproduce it.
+- Root cause #2 remains a hypothesis; neither production nor the Preview reproduced `no_evidence` with de-identified inputs.
 - Native browser Save as PDF: file name, cancel/title restore, physical pages and clipping.
 - Real DB round trip of operations events (no `DATABASE_URL` locally).
-- Vercel serverless runtime of the changed service module (ESM; see PR #79). Preview deploy needed.
-- 430px, EN degree case, partial-evidence (source-probe exclusion) path in a browser.
+- EN degree case and the source-probe exclusion path in a browser.
 - Case-by-case framework coverage table for the 9 case types (§10 step 3) — next step.
 
 ## Rollback

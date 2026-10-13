@@ -220,7 +220,7 @@ export default function AmcInteractiveV2() {
     const started = Date.now();
     setProcessingSeconds(0);
     const timer = window.setInterval(
-      () => setProcessingSeconds(Math.floor((Date.now() - started) / 1000)),
+      () => setProcessingSeconds(Math.round((Date.now() - started) / 1000)),
       1000
     );
     return () => window.clearInterval(timer);
