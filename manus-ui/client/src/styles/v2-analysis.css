@@ -1317,3 +1317,12 @@
     margin: 8px 0;
   }
 }
+
+/* Report appendix: original-language source references. */
+.v2-reference-title { font-size: 15px; margin: 18px 0 6px; }
+.v2-source-references { list-style: none; padding: 0; margin: 0 0 16px; border-top: 1px solid var(--line); }
+.v2-source-references li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px; line-height: 1.55; }
+.v2-source-references li > span { color: var(--teal); font-weight: 700; font-variant-numeric: tabular-nums; }
+.v2-source-references strong { display: block; }
+.v2-source-references small { display: block; color: var(--muted); }
+.v2-source-references a { display: block; color: var(--muted); overflow-wrap: anywhere; font-size: 11px; }

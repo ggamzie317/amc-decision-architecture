@@ -132,6 +132,11 @@ describe("V2 provider diagnostics without retaining provider text", () => {
   it.each(["en", "ko"] as const)("retains a distinct citation through the route and browser in %s without counting repeated claims", async language => {
     const input = { ...request, language };
     const value = { ...content(), contextConfidence: "high" };
+    // Cards must be written in the requested language (non-requested-language cards are excluded).
+    if (language === "ko") {
+      value.evidenceBlocks[0] = { ...value.evidenceBlocks[0], headline: "제한된 공개 사실", fact: "출처는 한 프로그램을 설명하며 반복 구매를 보여주지 않습니다.", whyItMatters: "이 서비스의 유료 수요를 입증하지 않습니다." };
+      value.uncertainties = ["반복 구매는 아직 확인되지 않았습니다."];
+    }
     value.evidenceBlocks.push({ ...value.evidenceBlocks[0], headline: "PRIVATE REPEATED CLAIM" });
     value.opportunitySignals = ["PRIVATE COMBINED SIGNAL"];
     value.implication = "PRIVATE COMBINED SUMMARY";
@@ -397,14 +402,19 @@ describe("V2 provider diagnostics without retaining provider text", () => {
     expect(sent.response_format.json_schema.name).toBe("AmcV2ExternalEvidence");
     expect(sent.response_format.json_schema.strict).toBeUndefined();
     expect(sent.tools).toEqual([{ type: "web_search" }]);
-    for (const field of ["headline", "fact", "whyItMatters", "sourceUrl"] as const)
-      expect(block[field].maxLength).toBe(limit[field]);
-    expect(properties.evidenceBlocks.maxItems).toBe(limit.blocks);
-    for (const field of ["opportunitySignals", "frictionSignals", "uncertainties"] as const) {
-      expect(properties[field].maxItems).toBe(limit[field]);
-      expect(properties[field].items.maxLength).toBe(limit.signal);
+    // Bilingual contract: one search, card wording and summaries in en and ko.
+    expect(block.sourceUrl.maxLength).toBe(limit.sourceUrl);
+    for (const language of ["en", "ko"] as const) {
+      for (const field of ["headline", "fact", "whyItMatters"] as const)
+        expect(block[language].properties[field].maxLength).toBe(limit[field]);
+      const summary = properties[language].properties;
+      for (const field of ["opportunitySignals", "frictionSignals", "uncertainties"] as const) {
+        expect(summary[field].maxItems).toBe(limit[field]);
+        expect(summary[field].items.maxLength).toBe(limit.signal);
+      }
+      expect(summary.implication.maxLength).toBe(limit.implication);
     }
-    expect(properties.implication.maxLength).toBe(limit.implication);
+    expect(properties.evidenceBlocks.maxItems).toBe(limit.blocks);
     expect(sent.input[0].content).toContain("Do not truncate a claim");
   });
 });

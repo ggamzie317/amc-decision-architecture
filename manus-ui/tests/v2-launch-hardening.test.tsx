@@ -170,7 +170,7 @@ describe("degree public-evidence request", () => {
     expect(user.publicEvidenceDimensions).toEqual(["Program outcomes", "Employment relevance", "Funding", "Cost / opportunity cost"]);
     expect(Object.keys(user).sort()).toEqual([
       "boundedOptionBTargetLabel", "caseFamilyMissingPoint", "caseType",
-      "publicEvidenceDimensionScope", "publicEvidenceDimensions", "responseLanguage", "targetGeography",
+      "publicEvidenceDimensionScope", "publicEvidenceDimensions", "responseLanguages", "targetGeography",
     ]);
   });
 });
@@ -243,7 +243,7 @@ describe("posture coverage note and case default scopes", () => {
 
   it("uses existing areas as case defaults", async () => {
     const { v2EvidenceAreas } = await import("../shared/externalIntelligenceV2Request");
-    expect(v2EvidenceAreas({ caseType: "Overseas Relocation", externalAreas: [] })).toEqual(["geography", "visaMobility", "hiringDemand"]);
+    expect(v2EvidenceAreas({ caseType: "Overseas Relocation", externalAreas: [] })).toEqual(["visaMobility", "hiringDemand", "compensation", "geography"]);
     expect(v2EvidenceAreas({ caseType: "Burnout-driven Decision", externalAreas: [] })).toEqual(["roleDemand", "compensation", "geography"]);
     expect(v2EvidenceAreas({ caseType: "Family Constraint-heavy Decision", externalAreas: [] })).toEqual(["roleDemand", "compensation", "geography"]);
     expect(v2EvidenceAreas({ caseType: "General Career Reconfiguration", externalAreas: [] })).toEqual(["hiringDemand", "roleDemand", "compensation"]);
@@ -304,5 +304,98 @@ describe("case-adapted structure assessment", () => {
     expect(v2PostureCoverageNote(core, "ko").text).toContain("사례 맞춤 구조 평가는 2개 항목");
     const analysis = buildV2Analysis(state, core, v2DemoFixture("industry", "ko").intelligence, "demo");
     expect(analysis.factorScopeNote).toContain("사례 맞춤 구조 평가");
+  });
+});
+
+describe("decision type and public search are inferred from what the customer wrote", () => {
+  it("recognises the Hong Kong residency test as an overseas relocation, not stay-or-exit", async () => {
+    const { inferV2CaseRanking, inferV2Geography, inferV2SearchTarget } = await import("../client/src/data/v2CaseInference");
+    const text = { decision: "홍콩 영주권 취득", optionA: "현재 한국에서 대기업 근무", optionB: "홍콩 영주권 취득하여 홍콩에서 이직 및 가족과 생활 추진" };
+    const ranking = inferV2CaseRanking(text);
+    expect(ranking[0].caseType).toBe("Overseas Relocation");
+    expect(ranking[0].matched).toEqual(expect.arrayContaining(["홍콩", "영주권"]));
+    expect(inferV2Geography(text, "ko")).toBe("홍콩");
+    expect(inferV2Geography(text, "en")).toBe("Hong Kong");
+    expect(inferV2SearchTarget(text)).toBe(text.optionB);
+  });
+  it.each([
+    [{ decision: "EMBA 진학", optionA: "현 직장", optionB: "서울대 EMBA" }, "MBA / EMBA / PhD Decision"],
+    [{ decision: "창업할지", optionA: "회사 유지", optionB: "재고관리 SaaS 창업" }, "Entrepreneurship"],
+    [{ decision: "팀장 승진 제안", optionA: "실무자 유지", optionB: "팀장 역할 수락" }, "Role Upgrade / Downgrade"],
+    [{ decision: "번아웃으로 휴직 고민", optionA: "계속 근무", optionB: "6개월 휴직" }, "Burnout-driven Decision"],
+    [{ decision: "다음 단계", optionA: "현재", optionB: "변화" }, "General Career Reconfiguration"],
+  ] as const)("%j → %s", async (text, expected) => {
+    const { inferV2CaseType } = await import("../client/src/data/v2CaseInference");
+    expect(inferV2CaseType(text)).toBe(expected);
+  });
+});
+
+describe("one search returns both languages; source-language prose never reaches cards", () => {
+  const request = { caseType: "Overseas Relocation" as const, externalAreas: ["hiringDemand"], targetGeography: "Hong Kong", targetLabel: "Hong Kong job move", language: "ko" as const };
+  const url = "https://www.censtatd.gov.hk/report";
+  const envelope = (content: unknown) => ({
+    object: "response", status: "completed", error: null,
+    output: [
+      { type: "search_results", results: [{ url, title: "職位空缺統計季報" }] },
+      { type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text: JSON.stringify(content) }] },
+    ],
+  });
+  const summary = (lang: "en" | "ko") => lang === "ko"
+    ? { opportunitySignals: [], frictionSignals: [], uncertainties: ["개인 자격은 확인되지 않았습니다."], implication: "홍콩 민간 부문 구인 수요가 줄었다는 공식 통계입니다." }
+    : { opportunitySignals: [], frictionSignals: [], uncertainties: ["Personal eligibility is unverified."], implication: "Official statistics show fewer private-sector vacancies in Hong Kong." };
+
+  it("keeps the same card in Korean and English", async () => {
+    const { inspectV2AgentResponse } = await import("../server/externalIntelligenceV2Service");
+    const content = {
+      contextConfidence: "medium",
+      evidenceBlocks: [{ dimension: "Hiring demand", direction: "caution", sourceUrl: url,
+        en: { headline: "Private-sector vacancies fell 8.4% year on year", fact: "Hong Kong reported 45,380 private-sector vacancies in June 2026, down 8.4% from a year earlier.", whyItMatters: "Covers selected industries; not a single employer's hiring." },
+        ko: { headline: "민간 부문 구인 8.4% 감소", fact: "홍콩 정부 통계처는 2026년 6월 민간 부문 구인 수를 45,380건으로 보고했으며, 1년 전보다 8.4% 줄었습니다.", whyItMatters: "일부 업종을 포괄한 통계이며 특정 기업의 채용을 뜻하지 않습니다." } }],
+      en: summary("en"), ko: summary("ko"),
+    };
+    const result = inspectV2AgentResponse(envelope(content), request).value!;
+    expect(result.status).toBe("live");
+    expect(result.evidenceBlocks[0].fact).toContain("45,380건");
+    expect(result.translation?.evidenceBlocks[0].fact).toContain("45,380 private-sector");
+    expect(result.evidenceBlocks[0].sourceLabel).toBe("職位空缺統計季報"); // original title kept as the reference
+    const { acceptV2Evidence } = await import("../client/src/data/v2ExternalEvidenceClient");
+    // As the route returns it after source checks (coverage set by the server).
+    const { alignTranslation } = await import("../server/externalIntelligenceV2Service");
+    const routed = { ...result, sourceCoverage: "complete" as const };
+    routed.translation = alignTranslation(routed, result.translation!, "en");
+    const accepted = acceptV2Evidence(routed, request)!;
+    expect(accepted.translation?.evidenceBlocks).toHaveLength(1);
+  });
+
+  it("excludes a card written in the source language instead of the requested one", async () => {
+    const { inspectV2AgentResponse } = await import("../server/externalIntelligenceV2Service");
+    const chinese = "香港政府統計處報告，2026年6月受調查私營機構職位空缺為45,380個，較一年前減少8.4%。";
+    const content = {
+      contextConfidence: "medium",
+      evidenceBlocks: [{ dimension: "Hiring demand", direction: "caution", sourceUrl: url,
+        en: { headline: "Vacancies fell", fact: "Vacancies fell 8.4%.", whyItMatters: "Selected industries only." },
+        ko: { headline: "私營機構職位空缺減少", fact: chinese, whyItMatters: "並非特定企業的招聘數據。" } }],
+      en: summary("en"), ko: summary("ko"),
+    };
+    const inspected = inspectV2AgentResponse(envelope(content), request);
+    expect(inspected.value?.status).toBe("unavailable");
+    expect(inspected.diagnostic?.category).toBe("language_mismatch");
+  });
+});
+
+describe("research brief covers what each decision type needs", () => {
+  it.each([
+    ["Overseas Relocation", ["visa or residency routes", "processing times", "pay levels by industry"]],
+    ["Entrepreneurship", ["licences", "public support programmes"]],
+    ["Corporate Stay vs Exit", ["hiring market", "severance"]],
+    ["Family Constraint-heavy Decision", ["childcare", "flexible-work"]],
+  ] as const)("%s", async (caseType, phrases) => {
+    let body: any;
+    await resolveV2ExternalIntelligence(
+      { caseType, externalAreas: [], targetGeography: "Seoul", targetLabel: "target", language: "en" },
+      { apiKey: "k", observe: () => {}, fetchImpl: (async (_u: string, init: RequestInit) => { body = JSON.parse(String(init.body)); return new Response("{}", { status: 500 }); }) as typeof fetch }
+    );
+    for (const phrase of phrases) expect(body.input[0].content).toContain(phrase);
+    expect(body.input[0].content).toContain("at least one card");
   });
 });

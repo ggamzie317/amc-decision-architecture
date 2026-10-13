@@ -90,17 +90,33 @@ function limitedEvidence(
 }
 
 function evidenceSchema(dimensions: string[]) {
+  const cardText = {
+    type: "object",
+    additionalProperties: false,
+    required: ["headline", "fact", "whyItMatters"],
+    properties: {
+      headline: { type: "string", minLength: 1, maxLength: limit.headline },
+      fact: { type: "string", minLength: 1, maxLength: limit.fact },
+      whyItMatters: { type: "string", minLength: 1, maxLength: limit.whyItMatters },
+    },
+  } as const;
+  const summary = {
+    type: "object",
+    additionalProperties: false,
+    required: ["opportunitySignals", "frictionSignals", "uncertainties", "implication"],
+    properties: {
+      opportunitySignals: { type: "array", maxItems: limit.opportunitySignals, items: { type: "string", minLength: 1, maxLength: limit.signal } },
+      frictionSignals: { type: "array", maxItems: limit.frictionSignals, items: { type: "string", minLength: 1, maxLength: limit.signal } },
+      uncertainties: { type: "array", minItems: 1, maxItems: limit.uncertainties, items: { type: "string", minLength: 1, maxLength: limit.signal } },
+      implication: { type: "string", minLength: 1, maxLength: limit.implication },
+    },
+  } as const;
+  // One search, both UI languages: facts and sources are identical; only the
+  // wording differs, so the language toggle never changes the evidence.
   return {
     type: "object",
     additionalProperties: false,
-    required: [
-      "evidenceBlocks",
-      "opportunitySignals",
-      "frictionSignals",
-      "uncertainties",
-      "implication",
-      "contextConfidence",
-    ],
+    required: ["evidenceBlocks", "contextConfidence", "en", "ko"],
     properties: {
       contextConfidence: { type: "string", enum: ["low", "medium", "high"] },
       evidenceBlocks: {
@@ -110,44 +126,18 @@ function evidenceSchema(dimensions: string[]) {
         items: {
           type: "object",
           additionalProperties: false,
-          required: [
-            "dimension",
-            "headline",
-            "direction",
-            "fact",
-            "whyItMatters",
-            "sourceUrl",
-          ],
+          required: ["dimension", "direction", "sourceUrl", "en", "ko"],
           properties: {
             dimension: { type: "string", enum: dimensions, maxLength: limit.dimension },
-            headline: { type: "string", minLength: 1, maxLength: limit.headline },
-            direction: {
-              type: "string",
-              enum: ["supportive", "caution", "mixed"],
-            },
-            fact: { type: "string", minLength: 1, maxLength: limit.fact },
-            whyItMatters: { type: "string", minLength: 1, maxLength: limit.whyItMatters },
+            direction: { type: "string", enum: ["supportive", "caution", "mixed"] },
             sourceUrl: { type: "string", minLength: 1, maxLength: limit.sourceUrl },
+            en: cardText,
+            ko: cardText,
           },
         },
       },
-      opportunitySignals: {
-        type: "array",
-        maxItems: limit.opportunitySignals,
-        items: { type: "string", minLength: 1, maxLength: limit.signal },
-      },
-      frictionSignals: {
-        type: "array",
-        maxItems: limit.frictionSignals,
-        items: { type: "string", minLength: 1, maxLength: limit.signal },
-      },
-      uncertainties: {
-        type: "array",
-        minItems: 1,
-        maxItems: limit.uncertainties,
-        items: { type: "string", minLength: 1, maxLength: limit.signal },
-      },
-      implication: { type: "string", minLength: 1, maxLength: limit.implication },
+      en: summary,
+      ko: summary,
     },
   } as const;
 }
@@ -159,6 +149,20 @@ function evidenceSchema(dimensions: string[]) {
  * not change which dimensions are requested.
  */
 const v2DimensionScope: Record<string, string> = {
+  roleDemand: "Demand for the named role or occupation from official employment statistics or original employer pages, with dates.",
+  requiredSkills: "Published skills, qualifications or certifications required for the target role, from official occupational profiles or original role pages.",
+  industryDirection: "Published direction of the target industry: official outlooks, output or employment trends, with dates.",
+  customerDemand: "Indicators of demand from the named customer group: official statistics, original surveys or public procurement, with dates. Interest is not proven paid demand.",
+  competition: "Publicly documented competitors or substitutes serving the same customer group in the geography.",
+  pricing: "Publicly documented prices or fee ranges for comparable offers, with currency and date.",
+  marketGrowth: "Official or original-research figures on the size or growth of the named market, with dates.",
+  distribution: "Documented channels through which comparable offers reach the customer group.",
+  barriers: "Published entry requirements, capital needs or licensing steps that limit entry.",
+  regulation: "Licences, registrations and rules that apply, with published costs and processing times from the regulator.",
+  visaMobility: "Official visa, work-permit or residency routes for the destination: published eligibility conditions, application steps, processing times, fees, and the published path to permanent residence.",
+  hiringDemand: "Current hiring conditions for the destination or sector from official vacancy or employment statistics, with dates.",
+  compensation: "Published pay levels by industry or occupation (median or average, currency and period) from official wage surveys or statistics.",
+  geography: "Destination-level conditions that affect living and working there, such as official cost-of-living, housing or tax-year indicators.",
   programOutcomes: "What the responsible institution publishes about this program's results and the structure needed to read them: graduate or career outcome reports, completion, format, length and schedule. Absence of a published outcome report is itself a bounded fact.",
   employmentRelevance: "How the program is publicly connected to the target sector or role: stated career paths, career services, employer partnerships or published employer/sector distribution. Not proof of personal employability.",
   researchRelevance: "Published faculty research areas, centres or research requirements of the program that relate to the target.",
@@ -167,17 +171,27 @@ const v2DimensionScope: Record<string, string> = {
   geographyMobility: "Program location and delivery mode and any published residency, visa or relocation implications.",
 };
 
+/**
+ * What a person facing each kind of decision needs to know from public
+ * sources. Applies to every customer input of that type, not to one example.
+ * Each brief names concrete, checkable facts (procedures, requirements,
+ * timelines, market and pay figures, costs) so evidence is useful, not generic.
+ */
+const v2ResearchBrief: Record<V2EvidenceRequest["caseType"], string> = {
+  "Corporate Stay vs Exit": "For a stay-or-leave decision, keep the named role or field and geography together. Cover: the current hiring market for that role (official vacancy or employment statistics, dated); pay levels for that role or industry (official wage statistics); typical notice, severance or unemployment-insurance rules from the labour authority; and the time it typically takes to move, where an official source reports it.",
+  "Industry Transition": "For an industry transition, keep the named target industry, role and geography together. Cover: hiring demand for the target role (official statistics or original employer pages, dated); required skills or qualifications for entry (official occupational profiles or original role pages); pay ranges for the target role versus the current field (official wage statistics); and public retraining or certification routes. A listing is only a dated example unless its current status and requirements are visible.",
+  "Role Upgrade / Downgrade": "For a role upgrade or step back, keep the named role level, field and geography together. Cover: what the target role level typically requires (official occupational profiles or original employer pages); pay difference between levels (official wage statistics); and demand for that level in the market, where officially reported.",
+  Entrepreneurship: "For a startup, keep the named customer group, product or service and geography together. Cover: market size or demand indicators from official or original research sources; competitors or substitutes that are publicly documented; licences, registrations and regulations required to operate and their published costs and timelines; typical pricing where publicly documented; and public support programmes (grants, loans, incubators). Do not call category interest proven paid demand.",
+  "MBA / EMBA / PhD Decision": "For a degree decision, keep the named institution or program and geography together. Prefer the institution's own program, admissions, tuition and career/outcome pages, and official statistics bodies. Cover: format, schedule, length and published tuition; admission and completion requirements; published career or employment outcomes (state when none are published rather than returning nothing); and funding routes. If only a degree type is named, use official program pages in that geography and say the facts are not specific to one program.",
+  "Overseas Relocation": "For an overseas relocation, keep the named destination together with the route the person names (work visa, residency or permanent residence, family move). Cover what a person in this position would need to know: (1) the official visa or residency routes, their published eligibility conditions, required steps, processing times and fees, and how permanent residence is reached, from the immigration authority; (2) the current hiring market, from official vacancy or employment statistics; (3) pay levels by industry or occupation, from official wage surveys or statistics; (4) where available, an official cost-of-living or housing indicator. State categories and conditions as published; never assess this person's eligibility or give immigration advice.",
+  "Burnout-driven Decision": "For a burnout-driven decision, keep the named role or field and geography together. Cover: statutory leave, sick-leave or reduced-hours rights from the labour authority; demand for less intensive roles in the same field (official statistics or original employer pages); and pay implications of reduced hours or a role change (official wage statistics). Do not give medical advice.",
+  "Family Constraint-heavy Decision": "For a family-constrained decision, keep the named role or field and geography together. Cover: statutory parental, care or flexible-work rights from the labour authority; availability and published cost of childcare or care services in that geography; demand for flexible or remote roles in the field (official statistics or original employer pages); and pay implications of part-time or flexible work.",
+  "General Career Reconfiguration": "Keep the named public target and geography together. Cover: hiring demand for the target (official statistics or original employer pages, dated); entry requirements or qualifications; pay levels from official statistics; and the main published procedures or costs involved in moving.",
+};
+
 function messages(request: V2EvidenceRequest, dimensions: string[]) {
   const missing = v2MissingPoint(request.caseType, "en").point;
-  const targetSearch = request.caseType === "Entrepreneurship"
-    ? "For a startup, keep the explicitly named customer group, product or service, and geography together in search queries. Look for original source facts about the specific offer's public conditions; do not call category interest proven paid demand."
-    : request.caseType === "Industry Transition"
-      ? "For an industry transition, keep the explicitly named industry, role, and geography together in search queries. Prefer original employer role pages and official occupational sources; a listing is only a dated example unless its current status and detailed requirements are visible."
-      : request.caseType === "Overseas Relocation"
-        ? "For an overseas relocation, keep the named destination country or city and role together in search queries. Prefer official government immigration and labour sources for visa and work-permit facts and state their category and conditions as published; never assess this person's eligibility or give immigration advice."
-      : request.caseType === "MBA / EMBA / PhD Decision"
-        ? "For a degree decision, keep the explicitly named institution or program and geography together in search queries. Prefer the institution's own program, admissions, tuition and career/outcome pages, and official statistics bodies. Program facts such as published format, schedule, tuition and admission or assessment requirements are valid bounded facts even when the institution publishes no outcome report; state when an outcome report was not found rather than returning nothing. If the target names only a degree type without an institution, use official program pages in that geography and say the facts are not specific to one program."
-        : "Keep the explicitly named public target and geography together in search queries; prefer the responsible institution's original requirements and outcomes.";
+  const targetSearch = v2ResearchBrief[request.caseType];
   return [
     {
       type: "message",
@@ -188,6 +202,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         "Use the web_search tool to research the explicit public target and geography. Prioritize directly accessible original pages from official institutions, employers, universities, regulators, and original research publishers. Avoid SEO blogs, marketplace listings, paywalls, login-gated pages, and pages that block public automated access when a direct original source is available.",
         "Cite the exact public HTTPS result page that supports each bounded claim. If no suitable accessible original source is found, preserve uncertainty; do not substitute a broad unrelated statistic.",
         "For public procurements, cite the issuing institution's original solicitation rather than an aggregator's summary. If that original is login-gated or inaccessible, do not present the aggregator summary as verified original evidence.",
+        "Aim to answer every requested dimension with at least one card when an official or original public source exists. Prefer concrete, checkable facts: procedures and steps, eligibility conditions, processing times, fees and costs, dated market statistics, and pay figures with currency, period and whether they are median or average. A precise figure or step with its scope is more useful than a general statement.",
         "Use at most one evidence block per (cited source URL, dimension). One page may support several requested dimensions; then give each dimension its own block that contains only that page's claims about that dimension. Never repeat the same claim across dimensions, never present one page as independent corroboration of itself, and do not fill a card quota. One suitable original source is preferable to several repeated or weak summaries.",
         "Each evidence block's fact and applicability explanation must stand on its own cited page, without relying on another block or source. Do not place a claim that requires two sources in a one-source block.",
         "If no suitable original page supports a bounded claim, return an empty evidenceBlocks array. Do not fill the response from an inaccessible aggregator or unrelated listing; the server will show unavailable instead of those summaries.",
@@ -201,7 +216,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         "Do not invent URLs, source names, dates, statistics, rankings, or market claims.",
         "Do not claim public market evidence validates this person's employability, this product's paid demand, or private internal conditions.",
         "No final recommendation, prediction, score, or legal, tax, medical, immigration, or financial advice.",
-        "Return only the required JSON schema, in the requested language. Keep claims concise and non-prescriptive.",
+        "Return only the required JSON schema. Write every card and summary twice: `en` in English and `ko` in natural Korean. Translate facts from sources in other languages (for example Chinese or Japanese) faithfully into both; never leave source-language sentences in any field. Original titles are kept separately by the server. Both language versions must state the same facts, numbers, dates and scope. Keep claims concise and non-prescriptive.",
         "Keep each headline within 180 Unicode characters, each fact within 600, each applicability explanation within 500, each signal and uncertainty within 240, and the implication within 600. Do not truncate a claim or omit a qualification to fit a limit; use a narrower fully supported claim or return no evidence.",
       ].join(" "),
     },
@@ -209,7 +224,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
       type: "message",
       role: "user",
       content: JSON.stringify({
-        responseLanguage: request.language === "ko" ? "Korean" : "English",
+        responseLanguages: ["English (en)", "Korean (ko)"],
         caseType: request.caseType,
         caseFamilyMissingPoint: missing,
         publicEvidenceDimensions: dimensions,
@@ -307,7 +322,7 @@ export async function resolveV2ExternalIntelligence(
   const timer = setTimeout(() => {
     timedOut = true;
     controller.abort();
-  }, options.timeoutMs ?? 30_000);
+  }, options.timeoutMs ?? 50_000);
   let result = unavailable();
   let reason: Reason = "provider_failure";
   try {
@@ -326,7 +341,7 @@ export async function resolveV2ExternalIntelligence(
           preset,
           input: messages(request, dimensions),
           tools: [{ type: "web_search" }],
-          max_output_tokens: 3000,
+          max_output_tokens: 10000,
           stream: false,
           response_format: {
             type: "json_schema",
@@ -370,6 +385,8 @@ export async function resolveV2ExternalIntelligence(
             reason = "source_unavailable";
           } else if (checks.every(check => check.available)) {
             result = { ...live, sourceCoverage: live.sourceCoverage ?? "complete" };
+            if (live.translation)
+              result.translation = alignTranslation(result, live.translation, request.language === "ko" ? "en" : "ko");
             reason = "live";
           } else {
             const acceptedUrls = new Set(urls.filter((_, index) => checks[index].available));
@@ -388,6 +405,9 @@ export async function resolveV2ExternalIntelligence(
               // Provider summaries and signals may depend on rejected sources.
               // Keep only independent, singly cited cards and a fixed scope note.
               result = limitedEvidence(live, remaining, request.language);
+              // Drop translated cards for excluded sources in the same way.
+              if (live.translation)
+                result.translation = alignTranslation(result, live.translation, request.language === "ko" ? "en" : "ko");
               reason = "live";
             } else reason = "source_unavailable";
           }
@@ -499,6 +519,90 @@ export function inspectV2AgentResponse(
   } catch {
     return fail({ category: "response_json", field: "content" });
   }
+  if (record(raw) && Array.isArray(raw.evidenceBlocks) && record(raw.en) && record(raw.ko))
+    return inspectBilingual(raw, sources, request, dimensions);
+  return validateV2Evidence(raw, sources, request, dimensions);
+}
+
+/**
+ * One search, two languages. Each language is validated on its own; the
+ * translation is kept only when it covers exactly the same (page, dimension)
+ * cards as the primary language, so the toggle never changes the evidence.
+ */
+function inspectBilingual(
+  raw: Record<string, any>,
+  sources: Map<string, Source>,
+  request: V2EvidenceRequest,
+  dimensions: string[]
+): NormalizedResponse {
+  const mono = (language: "en" | "ko") => ({
+    contextConfidence: raw.contextConfidence,
+    evidenceBlocks: raw.evidenceBlocks.map((block: unknown) =>
+      record(block)
+        ? { dimension: block.dimension, direction: block.direction, sourceUrl: block.sourceUrl, ...(record(block[language]) ? block[language] : {}) }
+        : block
+    ),
+    ...raw[language],
+  });
+  const other = request.language === "ko" ? "en" : "ko";
+  const primary = validateV2Evidence(mono(request.language), sources, request, dimensions);
+  if (primary.value?.status !== "live") return primary;
+  const alternate = validateV2Evidence(mono(other), sources, { ...request, language: other }, dimensions);
+  const translation = alternate.value?.status === "live"
+    ? alignTranslation(primary.value, alternate.value, other)
+    : undefined;
+  return { ...primary, value: translation ? { ...primary.value, translation } : primary.value };
+}
+
+const citationKey = (block: { sourceUrl?: string; dimension: string }) => `${block.sourceUrl}\n${block.dimension}`;
+
+/** Keep the translation only for the primary's exact cards, in the same order and scope. */
+export function alignTranslation(
+  primary: ExternalIntelligenceV2,
+  alternate: ExternalIntelligenceV2,
+  language: "en" | "ko"
+): ExternalIntelligenceV2 | undefined {
+  const byKey = new Map(alternate.evidenceBlocks.map(block => [citationKey(block), block]));
+  const blocks = primary.evidenceBlocks.map(block => byKey.get(citationKey(block)));
+  if (!blocks.length || blocks.some(block => !block)) return undefined;
+  const aligned = {
+    ...alternate,
+    generatedAt: primary.generatedAt,
+    contextConfidence: primary.contextConfidence,
+    evidenceBlocks: blocks as ExternalIntelligenceV2["evidenceBlocks"],
+  };
+  delete (aligned as { translation?: unknown }).translation;
+  return primary.sourceCoverage === "partial"
+    ? limitedEvidence(aligned, aligned.evidenceBlocks, language)
+    : { ...aligned, sourceCoverage: primary.sourceCoverage };
+}
+
+/**
+ * Customer-facing text must be in the requested language. Source-language
+ * prose (for example Chinese from a Hong Kong source) stays out of cards; the
+ * original title remains on the source reference.
+ */
+export function v2TextFitsLanguage(texts: string[], language: "en" | "ko"): boolean {
+  const joined = texts.join(" ");
+  const hangul = (joined.match(/[\uac00-\ud7a3]/g) ?? []).length;
+  const han = (joined.match(/[\u3400-\u9fff]/g) ?? []).length;
+  const latin = (joined.match(/[A-Za-z]/g) ?? []).length;
+  const letters = hangul + han + latin || 1;
+  return language === "ko"
+    ? hangul / letters >= 0.35 && han / letters < 0.2
+    : hangul === 0 && han / letters < 0.1;
+}
+
+function validateV2Evidence(
+  raw: unknown,
+  sources: Map<string, Source>,
+  request: V2EvidenceRequest,
+  dimensions: string[]
+): NormalizedResponse {
+  const fail = (diagnostic: V2ResponseDiagnostic): NormalizedResponse => ({
+    value: null,
+    diagnostic,
+  });
   if (!record(raw) || !Array.isArray(raw.evidenceBlocks))
     return fail({ category: "response_shape", field: "evidenceBlocks" });
   if (raw.evidenceBlocks.length > limit.blocks)
@@ -515,6 +619,7 @@ export function inspectV2AgentResponse(
   // dimensions, but the same page and dimension never counts twice.
   const citedKeys = new Set<string>();
   let repeatedCards = 0;
+  let wrongLanguageCards = 0;
   for (const block of raw.evidenceBlocks) {
     if (!record(block))
       return fail({ category: "invalid_field", field: "evidenceBlocks" });
@@ -548,6 +653,11 @@ export function inspectV2AgentResponse(
       return fail({ category: "invalid_field", field: "direction" });
     if (!source)
       return fail({ category: "citation_mismatch", field: "sourceUrl", actualCount: sources.size });
+    if (!v2TextFitsLanguage([headline, fact, whyItMatters], request.language)) {
+      // Excluded like a repeated card: a source-language card is not shown.
+      wrongLanguageCards++;
+      continue;
+    }
     const citationKey = `${source.url}\n${dimension}`;
     if (citedKeys.has(citationKey)) {
       // Validate every card before excluding a repeated citation. A repeated
@@ -599,6 +709,21 @@ export function inspectV2AgentResponse(
     uncertainties,
     implication,
   };
+  if (!evidenceBlocks.length)
+    return {
+      value: unavailableIntelligence(request.caseType, request.language),
+      diagnostic: { category: "language_mismatch", field: "fact", candidateCount: raw.evidenceBlocks.length, acceptedCount: 0, excludedCount: wrongLanguageCards + repeatedCards },
+    };
+  const summaryFits = v2TextFitsLanguage([implication, ...uncertainties, ...opportunitySignals, ...frictionSignals], request.language);
+  // Repeated citations already replace summaries; report that first unless
+  // a card itself was in the wrong language.
+  if (wrongLanguageCards || (!summaryFits && !repeatedCards))
+    return {
+      value: limitedEvidence(value, evidenceBlocks, request.language),
+      diagnostic: { category: "language_mismatch", field: wrongLanguageCards ? "fact" : "implication",
+        candidateCount: raw.evidenceBlocks.length,
+        acceptedCount: evidenceBlocks.length, excludedCount: wrongLanguageCards + repeatedCards },
+    };
   return repeatedCards ? {
     value: limitedEvidence(value, evidenceBlocks, request.language),
     diagnostic: { category: "duplicate_citation", field: "sourceUrl",

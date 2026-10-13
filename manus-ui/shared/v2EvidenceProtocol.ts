@@ -7,7 +7,7 @@ export const v2EvidenceDiagnostics = [
   "upstream_http", "transport_error", "timeout", "terminal_status",
   "response_json", "response_shape", "assistant_output_missing",
   "citation_mismatch", "duplicate_citation", "invalid_field", "limit_exceeded",
-  "no_evidence", "source_probe_failure",
+  "no_evidence", "source_probe_failure", "language_mismatch",
 ] as const;
 export const v2EvidenceDiagnosticFields = [
   "status", "output", "content", "evidenceBlocks", "dimension", "headline",

@@ -325,7 +325,7 @@ describe("V2 live External Intelligence boundary", () => {
     );
     expect(
       sent.response_format.json_schema.schema.properties.evidenceBlocks.maxItems
-    ).toBe(4);
+    ).toBe(6); // raised 2026-10-14 so procedure, market and pay facts fit together
     expect(sent.response_format.json_schema.schema.properties.evidenceBlocks.minItems).toBe(0);
     expect(
       v2EvidenceFocus({

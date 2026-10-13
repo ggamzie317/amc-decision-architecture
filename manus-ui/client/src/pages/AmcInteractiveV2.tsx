@@ -11,7 +11,6 @@ import {
 import { trackV2Journey, type JourneyEventType, type JourneyTrackingObservation } from "../data/amcFounderOps";
 import {
   initialV2State,
-  suggestV2CaseType,
   v2Choices,
   v2ExternalOptions,
   v2ModuleKeys,
@@ -66,6 +65,13 @@ import {
 import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
 import V2Processing from "../components/V2Processing";
 import { v2CaseFifwmSet } from "../data/v2CaseFifwm";
+import {
+  inferV2CaseRanking,
+  inferV2CaseType,
+  inferV2Geography,
+  inferV2SearchTarget,
+  v2CaseDescription,
+} from "../data/v2CaseInference";
 import { Compass, FileSearch, Layers, Lock } from "lucide-react";
 import "../styles/v2.css";
 
@@ -101,6 +107,7 @@ export default function AmcInteractiveV2() {
   const [phase, setPhase] = useState<Phase>(demoMode ? "dashboard" : "setup");
   const [step, setStep] = useState(0);
   const [casePinned, setCasePinned] = useState(false);
+  const [showAllCases, setShowAllCases] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [showBandError, setShowBandError] = useState(false);
   const [showSelfCheckError, setShowSelfCheckError] = useState(false);
@@ -126,6 +133,16 @@ export default function AmcInteractiveV2() {
   const [trackingObservation, setTrackingObservation] = useState<JourneyTrackingObservation | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
   const caseFifwm = v2CaseFifwmSet(state.caseType);
+  const caseRanking = useMemo(
+    () => inferV2CaseRanking(state),
+    [state.decision, state.optionA, state.optionB]
+  );
+  // Until the customer picks a type, it follows what they wrote in all three sentences.
+  const withInferredCase = (next: V2State): V2State => {
+    if (casePinned) return next;
+    const caseType = inferV2CaseType(next);
+    return caseType === next.caseType ? next : { ...next, caseType, publicSearchTarget: undefined };
+  };
   const selfCards = useMemo(
     () => selfCheckCards(state.caseType, language),
     [state.caseType, language]
@@ -232,10 +249,13 @@ export default function AmcInteractiveV2() {
     () =>
       demoMode
         ? v2DemoFixture(kind, language).intelligence
-        : (evidenceByLanguage[researchLanguage] ??
+        : (evidenceByLanguage[language] ??
+          evidenceByLanguage[researchLanguage] ??
           unavailableIntelligence(state.caseType, language)),
     [demoMode, kind, language, researchLanguage, state.caseType, evidenceByLanguage]
   );
+  // Language the evidence wording is actually in (translation when available).
+  const evidenceTextLanguage: V2Language = demoMode || evidenceByLanguage[language] ? language : researchLanguage;
   const evidencePhase = demoMode
     ? "demo"
     : evidenceLoadingLanguage !== null
@@ -478,8 +498,8 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "외부 근거를 검색하려면 구체적인 공개 검색 대상과 지역을 직접 입력하세요. 입력하지 않아도 구조 분석은 진행되지만 검색은 실행되지 않습니다. 선택지의 자유서술·자가진단 메모·재정 정보는 검색에 복사하지 않습니다."
-                : "Enter a specific public target and geography to search for external evidence. Structural analysis still works without them, but no search runs. Option prose, self-check notes and financial information are never copied into the search."}
+                ? "검색 대상과 지역은 입력하신 선택지 B에서 자동으로 채웠습니다. 분석 마지막 단계에서 이 내용으로 공개 근거를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 들어 있다면 지워 주세요. 자가진단 메모와 재정 정보는 검색에 쓰지 않습니다."
+                : "The search target and geography were filled in from your option B. The final step searches public evidence with them. Edit them if needed, and remove any confidential or personal details. Self-check notes and financial information are never used in the search."}
             </p>
             </>)}
           </>
@@ -778,9 +798,13 @@ export default function AmcInteractiveV2() {
         [request.language]: observation,
       }));
     });
+    // One search may return both languages; store each so the toggle switches
+    // wording without searching again.
+    const { translation, ...primaryResult } = result;
     setEvidenceByLanguage(previous => ({
       ...previous,
-      [request.language]: result,
+      [request.language]: primaryResult,
+      ...(translation ? { [request.language === "ko" ? "en" : "ko"]: translation } : {}),
     }));
     const updatedInput = buildV2Input({ ...state, language: request.language }, result, fifwmAssessment);
     const updatedCore = buildProductApplicationV3(updatedInput);
@@ -908,17 +932,7 @@ export default function AmcInteractiveV2() {
                       /[가-힣]/.test(e.target.value)
                     )
                       setLanguage("ko");
-                    setState(s => {
-                      const nextCase = casePinned
-                        ? s.caseType
-                        : suggestV2CaseType(e.target.value);
-                      return {
-                        ...s,
-                        decision: e.target.value,
-                        caseType: nextCase,
-                        ...(nextCase === s.caseType ? {} : { publicSearchTarget: undefined }),
-                      };
-                    });
+                    setState(s => withInferredCase({ ...s, decision: e.target.value }));
                   }}
                 />
               </label>
@@ -930,7 +944,7 @@ export default function AmcInteractiveV2() {
                   value={state.optionA}
                   placeholder={t("optionAPlaceholder")}
                   maxLength={120}
-                  onChange={e => update({ optionA: e.target.value })}
+                  onChange={e => setState(s => withInferredCase({ ...s, optionA: e.target.value }))}
                 />
               </label>
               <label>
@@ -941,33 +955,42 @@ export default function AmcInteractiveV2() {
                   value={state.optionB}
                   placeholder={t("optionBPlaceholder")}
                   maxLength={120}
-                  onChange={e => update({ optionB: e.target.value })}
+                  onChange={e => setState(s => withInferredCase({ ...s, optionB: e.target.value }))}
                 />
               </label>
             </div>
-            <div className="v2-case-confirm">
-              <span>
-                {t("caseConfirm")}{" "}
-                <b>{v2CaseLabel(language, state.caseType)}</b>
-              </span>
-            </div>
-            <label className="v2-case-selector">
-              <span>{language === "ko" ? "검토할 결정에 맞는 유형을 선택하세요" : "Choose the type that matches your decision"}</span>
-              <select
-                aria-label={t("caseConfirm")}
-                value={state.caseType}
-                onChange={e => {
-                  update({ caseType: e.target.value as V2CaseType, publicSearchTarget: undefined });
-                  setCasePinned(true);
-                }}
-              >
-                {caseTypes.map(c => (
-                  <option key={c} value={c}>
-                    {v2CaseLabel(language, c)}
-                  </option>
+            <section className="v2-case-picker" aria-label={language === "ko" ? "결정 유형" : "Decision type"}>
+              <p className="v2-case-picker-label">
+                {language === "ko" ? "입력하신 내용으로 판단한 결정 유형" : "Decision type inferred from what you wrote"}
+              </p>
+              <div className="v2-case-recommended" data-case={state.caseType}>
+                <strong>{v2CaseLabel(language, state.caseType)}</strong>
+                <span>{v2CaseDescription(language, state.caseType)}</span>
+                {caseRanking[0]?.caseType === state.caseType && caseRanking[0].matched.length > 0 && (
+                  <small>{language === "ko" ? "판단 근거: " : "Based on: "}{caseRanking[0].matched.map(word => `‘${word}’`).join(" · ")}</small>
+                )}
+              </div>
+              <p className="v2-case-picker-hint">
+                {language === "ko" ? "다르다면 가장 가까운 유형을 고르세요." : "If this is not right, choose the closest type."}
+              </p>
+              <div className="v2-case-options" role="radiogroup" aria-label={language === "ko" ? "결정 유형 선택" : "Choose decision type"}>
+                {(showAllCases
+                  ? caseTypes
+                  : Array.from(new Set([state.caseType, ...caseRanking.filter(r => r.score > 0).map(r => r.caseType), "General Career Reconfiguration" as V2CaseType])).slice(0, 3)
+                ).map(c => (
+                  <button key={c} type="button" role="radio" aria-checked={state.caseType === c}
+                    onClick={() => { update({ caseType: c, publicSearchTarget: undefined }); setCasePinned(true); }}>
+                    <b>{v2CaseLabel(language, c)}</b>
+                    <span>{v2CaseDescription(language, c)}</span>
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+              {!showAllCases && (
+                <button type="button" className="v2-link-button" onClick={() => setShowAllCases(true)}>
+                  {language === "ko" ? "모든 유형 보기 (9개)" : "Show all types (9)"}
+                </button>
+              )}
+            </section>
             <p className="v2-privacy">{t("privacy")}</p>
             <label className="v2-consent">
               <input
@@ -996,6 +1019,13 @@ export default function AmcInteractiveV2() {
               }
               onClick={() => {
                 setCasePinned(true);
+                // Prefill the public search from the path being explored; the
+                // customer reviews and can edit it before any search runs.
+                setState(s => ({
+                  ...s,
+                  publicSearchTarget: s.publicSearchTarget?.trim() ? s.publicSearchTarget : inferV2SearchTarget(s),
+                  targetGeography: s.targetGeography.trim() ? s.targetGeography : inferV2Geography(s, language),
+                }));
                 track(
                   "preview_started",
                   {
@@ -1172,7 +1202,7 @@ export default function AmcInteractiveV2() {
             onComparisonChange={(key, answer) => setEvidenceComparisons(current => ({ ...current, [key]: answer }))}
             core={core}
             intelligence={intelligence}
-            evidenceLanguage={demoMode ? language : researchLanguage}
+            evidenceLanguage={evidenceTextLanguage}
             evidencePhase={evidencePhase}
             onCheckEvidence={() => void checkCurrentEvidence()}
             onReport={() => {
@@ -1193,7 +1223,7 @@ export default function AmcInteractiveV2() {
             visibleVariables={visibleVariables}
             overrides={scenarioOverrides}
             intelligence={intelligence}
-            evidenceLanguage={demoMode ? language : researchLanguage}
+            evidenceLanguage={evidenceTextLanguage}
             evidencePhase={evidencePhase}
             onScenarioChange={setScenarioOverrides}
             onEvent={(event, metadata) => {
@@ -1230,7 +1260,7 @@ export default function AmcInteractiveV2() {
           visibleVariables={visibleVariables}
           scenarioOverrides={scenarioOverrides}
           intelligence={intelligence}
-          evidenceLanguage={demoMode ? language : researchLanguage}
+          evidenceLanguage={evidenceTextLanguage}
           evidencePhase={evidencePhase}
           onClose={() => {
             restorePrintTitle.current?.();

@@ -43,7 +43,7 @@ export async function requestV2Evidence(
   const fallback = () =>
     unavailableIntelligence(request.caseType, request.language);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 35_000);
+  const timer = setTimeout(() => controller.abort(), 62_000);
   try {
     const response = await fetchImpl("/api/amc/external-intelligence-v2", {
       method: "POST",
@@ -159,5 +159,16 @@ export function acceptV2Evidence(
     )
   )
     return null;
-  return value as ExternalIntelligenceV2;
+  const { translation: rawTranslation, ...primary } = value;
+  // The other-language version must carry exactly the same cards; otherwise it
+  // is dropped and the toggle shows the research language with a notice.
+  const translation = rawTranslation && typeof rawTranslation === "object" && !("translation" in (rawTranslation as object))
+    ? acceptV2Evidence(rawTranslation, { ...request, language: request.language === "ko" ? "en" : "ko" })
+    : null;
+  const key = (block: { sourceUrl?: string; dimension: string }) => `${block.sourceUrl}\n${block.dimension}`;
+  const sameCards = translation?.status === "live" &&
+    translation.evidenceBlocks.map(key).join("|") === (primary.evidenceBlocks as ExternalIntelligenceV2["evidenceBlocks"]).map(key).join("|");
+  return (sameCards
+    ? { ...primary, translation }
+    : primary) as ExternalIntelligenceV2;
 }

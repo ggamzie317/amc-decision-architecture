@@ -535,7 +535,28 @@ export default function V2Report({
             </p>
             {partialEvidenceNote && <p className="v2-paper-caption">{partialEvidenceNote}</p>}
             {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p className="v2-paper-caption">{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
-            {sources(false)}
+            <h3 className="v2-reference-title">{say("출처 레퍼런스 (원문)", "Source references (original)")}</h3>
+            <p className="v2-paper-caption">
+              {say("본문의 근거 문장은 화면 언어로 옮겨 적었습니다. 정확한 표현과 범위는 아래 원문에서 확인하세요.",
+                "Evidence wording in the report is in the interface language. Check exact wording and scope in the originals below.")}
+            </p>
+            <ol className="v2-source-references">
+              {intelligence.evidenceBlocks.map((b, id) => (
+                <li key={id}>
+                  <span>{String(id + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>{b.sourceLabel}</strong>
+                    <small>
+                      {v2EvidenceDimensionLabel(state.language, b.dimension)}
+                      {b.sourceDate && b.sourceDateKind
+                        ? ` · ${t(b.sourceDateKind === "published" ? "sourcePublished" : "sourceUpdated")}: ${b.sourceDate}`
+                        : ""}
+                    </small>
+                    {b.sourceUrl && <a href={b.sourceUrl} target="_blank" rel="noreferrer">{b.sourceUrl}</a>}
+                  </div>
+                </li>
+              ))}
+            </ol>
             {intelligence.uncertainties.length > 0 && (
               <p className="v2-paper-caption">
                 {t("uncertainty")}:{" "}
