@@ -1,3 +1,4 @@
+import V2JevAdvisory from "./V2JevAdvisory";
 import { useMemo, useState } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
 import type { EvidenceComparisons } from "../data/v2EvidenceComparison";
@@ -97,6 +98,10 @@ export default function V2Simulator({
   );
   const scenario = useMemo(
     () => v2Scenario(input, activeOverrides).result,
+    [input, activeOverrides]
+  );
+  const scenarioInput = useMemo(
+    () => v2Scenario(input, activeOverrides).input,
     [input, activeOverrides]
   );
   const analysis = buildV2Analysis(
@@ -378,6 +383,8 @@ export default function V2Simulator({
           language={state.language}
         />
       </details>
+      <V2JevAdvisory language={state.language} input={input} scenarioInput={scenarioInput}
+        baseline={baseline} scenario={scenario} overrides={activeOverrides} />
       <section className="v2-thresholds">
         <div>
           <p className="v2-kicker">06 / {t("thresholds")}</p>
