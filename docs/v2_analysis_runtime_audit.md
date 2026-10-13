@@ -412,3 +412,38 @@ language after each change. Private comparison notes remain absent from requests
 and stored records, baseline reset holds, and synthetic nine-section reports still
 render. These four fixture journeys make zero actual provider calls and are kept
 separate from the Production read-back.
+
+### Final live-search review and repeated-citation boundary — 2026-10-13
+
+The final-review owner request starts from `afa4f91`. Actual Production requests
+were explicitly submitted once in EN and once in KO. KO returned HTTP 200/live and
+the Samsung DS semiconductor-process role card. Its bounded responsibilities,
+requirements and preferred project/statistical-tool experience match the original
+role page; they do not establish an open vacancy or personal eligibility. EN's
+actual response was HTTP 503/invalid_provider_response with upstream 200 and the
+safe normalization diagnostic `duplicate_citation` / `sourceUrl`. The actual
+provider body is neither retained nor exposed; no conclusion is inferred about
+unseen fields or the claims in the discarded EN response.
+
+Every provider card is still fully checked for bounded fields, allowed dimensions,
+directions and exact retrieved citations. Repeated citations now retain the first
+validated card per source URL and exclude later cards from that page. This cannot
+increase the source count or merge claims. A malformed repeated card or malformed
+required summary still fails normalization. Exclusion forces partial coverage,
+removes context confidence and dependent provider signals/summary, and displays a
+fixed scope note. Accessible-source processing must preserve that partial state;
+all-inaccessible sources still return unavailable. Destination, DNS, redirect,
+content-gate and response-field safeguards are unchanged, as are provider model,
+tokens, API credentials, request fields and all original framework/scoring rules.
+
+New EN/KO route-to-browser fixtures verify a single provider request and single
+source probe for a repeated citation, preserving the original first fact while
+rejecting dependent text. Separate regressions cover malformed excluded cards,
+overlong required summaries and unavailable sources. Final deployment identity,
+post-fix live results, source comparisons and the owner's public test links are
+recorded in PR #92; earlier-SHA results are not relabelled as final-SHA validation.
+
+The candidate passes all 393 web regressions (24 files), TypeScript and the
+web/server build. The additional five cases exercise the actual resolver, API
+route and browser response contract, including both languages; the original
+structural-equivalence and canonical FIFWM tests remain unchanged and pass.

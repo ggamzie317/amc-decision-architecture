@@ -129,6 +129,67 @@ describe("V2 stage diagnostics through the actual resolver, route and browser cl
 });
 
 describe("V2 provider diagnostics without retaining provider text", () => {
+  it.each(["en", "ko"] as const)("retains a distinct citation through the route and browser in %s without counting repeated claims", async language => {
+    const input = { ...request, language };
+    const value = { ...content(), contextConfidence: "high" };
+    value.evidenceBlocks.push({ ...value.evidenceBlocks[0], headline: "PRIVATE REPEATED CLAIM" });
+    value.opportunitySignals = ["PRIVATE COMBINED SIGNAL"];
+    value.implication = "PRIVATE COMBINED SUMMARY";
+    const provider = vi.fn(async () => Response.json(envelope(value)));
+    const sourceAvailable = vi.fn(async () => true);
+    const observe = vi.fn();
+    let body: unknown, status = 0;
+    const headers: Record<string, string> = {};
+    const response = {
+      setHeader: (name: string, value: string) => { headers[name] = value; },
+      status: (code: number) => { status = code; return response; },
+      json: (value: unknown) => { body = value; }, end: () => {},
+    };
+    const client = await requestV2Evidence(input, (async () => {
+      await handleV2ExternalIntelligence({ method: "POST", body: input }, response, async () => ({
+        parser: parserModule,
+        service: { ...serviceModule, resolveV2ExternalIntelligence: (request, options) =>
+          resolveV2ExternalIntelligence(request, { ...options, apiKey: "synthetic-key",
+            fetchImpl: provider as typeof fetch, sourceAvailable, observe }) },
+      }));
+      return Response.json(body, { status, headers });
+    }) as typeof fetch);
+    expect(status).toBe(200);
+    expect(headers["X-AMC-Evidence-Reason"]).toBe("live");
+    expect(headers["X-AMC-Evidence-Stage"]).toBe("ready");
+    expect(headers["X-AMC-Evidence-Diagnostic"]).toBe("duplicate_citation");
+    expect(client).toMatchObject({ status: "live", sourceCoverage: "partial",
+      opportunitySignals: [], frictionSignals: [] });
+    expect(client).not.toHaveProperty("contextConfidence");
+    expect(client.evidenceBlocks).toHaveLength(1);
+    expect(client.evidenceBlocks[0].fact).toBe(value.evidenceBlocks[0].fact);
+    expect(provider).toHaveBeenCalledTimes(1);
+    expect(sourceAvailable).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify({ client, headers, observations: observe.mock.calls })).not.toContain("PRIVATE");
+  });
+
+  it.each(["card", "summary"])("does not let a repeated citation conceal an invalid %s", kind => {
+    const value = content();
+    value.evidenceBlocks.push({ ...value.evidenceBlocks[0] });
+    if (kind === "card") delete (value.evidenceBlocks[1] as any).fact;
+    else value.implication = "x".repeat(limit.implication + 1);
+    const result = inspectV2AgentResponse(envelope(value), request);
+    expect(result.value).toBeNull();
+    expect(result.diagnostic).toMatchObject(kind === "card"
+      ? { category: "invalid_field", field: "fact" }
+      : { category: "limit_exceeded", field: "implication" });
+  });
+
+  it("still rejects inaccessible sources after excluding repeated cards", async () => {
+    const value = content();
+    value.evidenceBlocks.push({ ...value.evidenceBlocks[0] });
+    const result = await resolveV2ExternalIntelligence(request, {
+      apiKey: "synthetic-key", fetchImpl: (async () => Response.json(envelope(value))) as typeof fetch,
+      sourceAvailable: async () => false, observe: () => {},
+    });
+    expect(result).toMatchObject({ status: "unavailable", evidenceBlocks: [], opportunitySignals: [] });
+  });
+
   it("preserves explicit context confidence on fully accessible sources and removes it on partial coverage", async () => {
     const value = { ...content(), contextConfidence: "high" };
     const result = await resolveV2ExternalIntelligence(request, {

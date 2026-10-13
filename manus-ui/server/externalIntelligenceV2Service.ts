@@ -67,6 +67,28 @@ export function v2EvidenceFocus(request: V2EvidenceRequest) {
   return v2EvidenceAreas(request).map(area => v2t("en", area as V2CopyKey));
 }
 
+function limitedEvidence(
+  live: ExternalIntelligenceV2,
+  evidenceBlocks: ExternalIntelligenceV2["evidenceBlocks"],
+  language: "en" | "ko"
+): ExternalIntelligenceV2 {
+  return {
+    ...live,
+    sourceCoverage: "partial",
+    contextConfidence: undefined,
+    evidenceBlocks,
+    metrics: [],
+    opportunitySignals: [],
+    frictionSignals: [],
+    uncertainties: [language === "ko"
+      ? "출처가 반복되거나 확인되지 않은 일부 카드를 제외했습니다. 남은 카드의 주장과 적용 범위도 원문에서 확인해야 합니다."
+      : "Some cards repeated a source or could not be checked and were excluded. Compare each remaining claim and its scope with the source text."],
+    implication: language === "ko"
+      ? "서로 다른 출처의 일부 사실만 표시합니다. 제외된 카드에 의존할 수 있는 종합 해석은 표시하지 않습니다."
+      : "Only facts from distinct remaining sources are shown. Provider summaries that may depend on excluded cards are omitted.",
+  };
+}
+
 function evidenceSchema(dimensions: string[]) {
   return {
     type: "object",
@@ -315,7 +337,7 @@ export async function resolveV2ExternalIntelligence(
           if (controller.signal.aborted) {
             reason = "source_unavailable";
           } else if (checks.every(check => check.available)) {
-            result = { ...live, sourceCoverage: "complete" };
+            result = { ...live, sourceCoverage: live.sourceCoverage ?? "complete" };
             reason = "live";
           } else {
             const acceptedUrls = new Set(urls.filter((_, index) => checks[index].available));
@@ -333,20 +355,7 @@ export async function resolveV2ExternalIntelligence(
             if (remaining.length) {
               // Provider summaries and signals may depend on rejected sources.
               // Keep only independent, singly cited cards and a fixed scope note.
-              result = {
-                ...live,
-                sourceCoverage: "partial",
-                contextConfidence: undefined,
-                evidenceBlocks: remaining,
-                opportunitySignals: [],
-                frictionSignals: [],
-                uncertainties: [request.language === "ko"
-                  ? "일부 출처는 확인되지 않아 제외했습니다. 남은 카드의 주장과 적용 범위도 원문에서 확인해야 합니다."
-                  : "Some sources could not be checked and were excluded. Compare each remaining claim and its scope with the source text."],
-                implication: request.language === "ko"
-                  ? "확인 가능한 출처의 일부 사실만 표시합니다. 제외된 출처에 의존할 수 있는 종합 해석은 표시하지 않습니다."
-                  : "Only facts from the remaining accessible sources are shown. Provider summaries that may depend on excluded sources are omitted.",
-              };
+              result = limitedEvidence(live, remaining, request.language);
               reason = "live";
             } else reason = "source_unavailable";
           }
@@ -471,6 +480,7 @@ export function inspectV2AgentResponse(
     };
   const evidenceBlocks: ExternalIntelligenceV2["evidenceBlocks"] = [];
   const citedUrls = new Set<string>();
+  let repeatedCards = 0;
   for (const block of raw.evidenceBlocks) {
     if (!record(block))
       return fail({ category: "invalid_field", field: "evidenceBlocks" });
@@ -504,8 +514,12 @@ export function inspectV2AgentResponse(
       return fail({ category: "invalid_field", field: "direction" });
     if (!source)
       return fail({ category: "citation_mismatch", field: "sourceUrl", actualCount: sources.size });
-    if (citedUrls.has(source.url))
-      return fail({ category: "duplicate_citation", field: "sourceUrl" });
+    if (citedUrls.has(source.url)) {
+      // Validate every card before excluding a repeated citation. A repeated
+      // page must not masquerade as independent evidence or hide bad fields.
+      repeatedCards++;
+      continue;
+    }
     citedUrls.add(source.url);
     evidenceBlocks.push({
       area: v2EvidenceAreas(request).find(area => v2t("en", area as V2CopyKey) === dimension),
@@ -538,7 +552,7 @@ export function inspectV2AgentResponse(
   const frictionSignals = textArray(raw.frictionSignals, limit.frictionSignals)!;
   const uncertainties = textArray(raw.uncertainties, limit.uncertainties, 1)!;
   const implication = bounded(raw.implication, limit.implication)!;
-  return { value: {
+  const value: ExternalIntelligenceV2 = {
     status: "live",
     generatedAt: new Date().toISOString(),
     caseType: request.caseType,
@@ -549,7 +563,13 @@ export function inspectV2AgentResponse(
     frictionSignals,
     uncertainties,
     implication,
-  } };
+  };
+  return repeatedCards ? {
+    value: limitedEvidence(value, evidenceBlocks, request.language),
+    diagnostic: { category: "duplicate_citation", field: "sourceUrl",
+      candidateCount: raw.evidenceBlocks.length,
+      acceptedCount: evidenceBlocks.length, excludedCount: repeatedCards },
+  } : { value };
 }
 
 function textProblem(

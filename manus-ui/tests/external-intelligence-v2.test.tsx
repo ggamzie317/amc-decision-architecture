@@ -404,7 +404,11 @@ describe("V2 live External Intelligence boundary", () => {
 
     const repeated = providerContent();
     repeated.evidenceBlocks[1].sourceUrl = repeated.evidenceBlocks[0].sourceUrl;
-    expect(normalizeV2AgentResponse(envelope(repeated), request)).toBeNull();
+    const limited = normalizeV2AgentResponse(envelope(repeated), request)!;
+    expect(limited.evidenceBlocks).toEqual(accepted!.evidenceBlocks);
+    expect(limited.sourceCoverage).toBe("partial");
+    expect(limited.frictionSignals).toEqual([]);
+    expect(acceptV2Evidence(limited, request)?.evidenceBlocks).toHaveLength(1);
   });
 
   it("treats no suitable source as unavailable and drops dependent provider summaries", async () => {
