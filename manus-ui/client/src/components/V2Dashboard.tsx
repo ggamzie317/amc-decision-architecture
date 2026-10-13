@@ -1,3 +1,4 @@
+import V2InsightBoard from "./V2InsightBoard";
 import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
 import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
@@ -307,6 +308,7 @@ export default function V2Dashboard({
         <summary>{say("판단 근거와 공개 자료의 한계 자세히 보기", "Read the reasoning and public-evidence limits")}</summary>
         <p>{analysis.summary}</p>
       </details>
+      <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} />
       <nav
         className="v2-analysis-nav"
         aria-label={say("분석 바로가기", "Analysis navigation")}

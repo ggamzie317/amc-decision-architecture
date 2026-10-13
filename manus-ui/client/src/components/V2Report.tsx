@@ -1,3 +1,4 @@
+import V2InsightBoard from "./V2InsightBoard";
 import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
 import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import { useEffect, useRef } from "react";
@@ -292,6 +293,7 @@ export default function V2Report({
             {t("context")}: {state.decision}
           </p>
           <p className="v2-paper-lead">{analysis.executiveSummary}</p>
+          <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="tiles" />
           <div className="v2-paper-priorities">
             <article>
               <span>01 / {say("핵심 질문", "Key question")}</span>
@@ -355,22 +357,16 @@ export default function V2Report({
             <span>{evidenceLabel}</span>
             <p>{evidenceNote}</p>
             {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p>{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
-            {evidencePhase === "live" && (
-              <p>
-                {say(
-                  "출처 링크 접근을 확인했습니다. 주장과 적용 범위는 원문에서 대조하세요.",
-                  "Source links were reachable. Compare claims and applicability with the source text."
-                )}
-              </p>
-            )}
             <p>{analysis.externalReading}</p>
-            {hasSources && <p>{say(
-              "개인의 자격·구매 반응·실행 여력은 이 자료만으로 확인되지 않습니다. 실행 경로 조정과 실험은 6번 섹션, 전환 조건은 8번 섹션에서 확인하세요.",
-              "These sources alone do not establish personal eligibility, purchases or execution capacity. Changing and the experiment appear in section 6; switching conditions appear in section 8."
-            )}</p>}
           </div>
           {hasSources ? (
-            <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} compact />
+            <>
+              <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="evidence" />
+              {/* The customer's own comparisons and notes stay in the report. */}
+              {analysis.evidenceLinks.some(link => link.comparisonStatus !== "unreviewed" || link.comparisonDetail) && (
+                <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} compact />
+              )}
+            </>
           ) : (
             <div className="v2-paper-note">
               <strong>
