@@ -402,13 +402,33 @@ describe("V2 live External Intelligence boundary", () => {
     const accepted = normalizeV2AgentResponse(envelope(one), request);
     expect(accepted?.evidenceBlocks).toHaveLength(1);
 
+    // Same page and same dimension: the repeat is excluded and dependent
+    // provider summaries are dropped.
     const repeated = providerContent();
     repeated.evidenceBlocks[1].sourceUrl = repeated.evidenceBlocks[0].sourceUrl;
+    repeated.evidenceBlocks[1].dimension = repeated.evidenceBlocks[0].dimension;
     const limited = normalizeV2AgentResponse(envelope(repeated), request)!;
     expect(limited.evidenceBlocks).toEqual(accepted!.evidenceBlocks);
     expect(limited.sourceCoverage).toBe("partial");
     expect(limited.frictionSignals).toEqual([]);
     expect(acceptV2Evidence(limited, request)?.evidenceBlocks).toHaveLength(1);
+    expect(acceptV2Evidence({ ...limited, evidenceBlocks: [limited.evidenceBlocks[0], limited.evidenceBlocks[0]] }, request)).toBeNull();
+
+    // Same page, different dimensions (owner decision 2026-10-14): both cards
+    // stay, and the later card is labelled as the same source, not corroboration.
+    const shared = providerContent();
+    expect(shared.evidenceBlocks[1].dimension).not.toBe(shared.evidenceBlocks[0].dimension);
+    shared.evidenceBlocks[1].sourceUrl = shared.evidenceBlocks[0].sourceUrl;
+    const both = normalizeV2AgentResponse(envelope(shared), request)!;
+    expect(both.evidenceBlocks).toHaveLength(2);
+    expect(both.sourceCoverage).toBeUndefined();
+    expect(acceptV2Evidence(both, request)?.evidenceBlocks).toHaveLength(2);
+    const f = v2DemoFixture("entrepreneurship", "ko");
+    const html = renderToStaticMarkup(React.createElement(V2Dashboard, {
+      state: f.state, core: f.baseline, intelligence: both, evidencePhase: "live", onReport: () => {},
+    }));
+    expect(html).toContain("근거 1과 같은 출처");
+    expect(html).toContain("공개 근거 2건(출처 1곳)을");
   });
 
   it("treats no suitable source as unavailable and drops dependent provider summaries", async () => {

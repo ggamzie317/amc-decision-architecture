@@ -186,7 +186,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         "Use the web_search tool to research the explicit public target and geography. Prioritize directly accessible original pages from official institutions, employers, universities, regulators, and original research publishers. Avoid SEO blogs, marketplace listings, paywalls, login-gated pages, and pages that block public automated access when a direct original source is available.",
         "Cite the exact public HTTPS result page that supports each bounded claim. If no suitable accessible original source is found, preserve uncertainty; do not substitute a broad unrelated statistic.",
         "For public procurements, cite the issuing institution's original solicitation rather than an aggregator's summary. If that original is login-gated or inaccessible, do not present the aggregator summary as verified original evidence.",
-        "Use one evidence block per distinct cited source URL. Combine claims from the same page into one bounded block; do not split one page into multiple apparently independent sources or fill a card quota. One suitable original source is preferable to several repeated or weak summaries.",
+        "Use at most one evidence block per (cited source URL, dimension). One page may support several requested dimensions; then give each dimension its own block that contains only that page's claims about that dimension. Never repeat the same claim across dimensions, never present one page as independent corroboration of itself, and do not fill a card quota. One suitable original source is preferable to several repeated or weak summaries.",
         "Each evidence block's fact and applicability explanation must stand on its own cited page, without relying on another block or source. Do not place a claim that requires two sources in a one-source block.",
         "If no suitable original page supports a bounded claim, return an empty evidenceBlocks array. Do not fill the response from an inaccessible aggregator or unrelated listing; the server will show unavailable instead of those summaries.",
         "If a listing only shows example roles, do not infer that vacancies remain open, that detailed qualifications are met, or that its range represents the whole market. Describe policy targets as plans, not completed hiring demand.",
@@ -501,7 +501,9 @@ export function inspectV2AgentResponse(
       diagnostic: { category: "no_evidence", field: "evidenceBlocks", actualCount: 0, eligibleSearchUrlCount: sources.size },
     };
   const evidenceBlocks: ExternalIntelligenceV2["evidenceBlocks"] = [];
-  const citedUrls = new Set<string>();
+  // One card per (page, dimension): a page may ground several requested
+  // dimensions, but the same page and dimension never counts twice.
+  const citedKeys = new Set<string>();
   let repeatedCards = 0;
   for (const block of raw.evidenceBlocks) {
     if (!record(block))
@@ -536,13 +538,14 @@ export function inspectV2AgentResponse(
       return fail({ category: "invalid_field", field: "direction" });
     if (!source)
       return fail({ category: "citation_mismatch", field: "sourceUrl", actualCount: sources.size });
-    if (citedUrls.has(source.url)) {
+    const citationKey = `${source.url}\n${dimension}`;
+    if (citedKeys.has(citationKey)) {
       // Validate every card before excluding a repeated citation. A repeated
       // page must not masquerade as independent evidence or hide bad fields.
       repeatedCards++;
       continue;
     }
-    citedUrls.add(source.url);
+    citedKeys.add(citationKey);
     evidenceBlocks.push({
       area: v2EvidenceAreas(request).find(area => v2t("en", area as V2CopyKey) === dimension),
       dimension,

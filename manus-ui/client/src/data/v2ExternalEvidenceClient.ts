@@ -117,8 +117,9 @@ export function acceptV2Evidence(
       if (!block || typeof block !== "object" || Array.isArray(block))
         return false;
       const item = block as Record<string, unknown>;
-      if (typeof item.sourceUrl !== "string" || citedUrls.has(item.sourceUrl)) return false;
-      citedUrls.add(item.sourceUrl);
+      const citationKey = `${String(item.sourceUrl)}\n${String(item.dimension)}`;
+      if (typeof item.sourceUrl !== "string" || citedUrls.has(citationKey)) return false;
+      citedUrls.add(citationKey);
       return (
         item.provenance === "EXTERNAL_EVIDENCE" &&
         (item.area === undefined || (v2EvidenceAreas(request).includes(String(item.area)) &&

@@ -1,3 +1,4 @@
+import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import { useEffect, useRef } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
 import type { SelfChecks } from "../data/v2SelfDiagnostic";
@@ -212,6 +213,9 @@ export default function V2Report({
           )}
           <small>
             {t("source")}:{" "}
+            {v2SharedSourceNote(intelligence.evidenceBlocks, id, state.language) && (
+              <b className="v2-shared-source">{v2SharedSourceNote(intelligence.evidenceBlocks, id, state.language)} · </b>
+            )}
             {b.sourceUrl ? (
               <a href={b.sourceUrl} target="_blank" rel="noreferrer">
                 {b.sourceLabel}

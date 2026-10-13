@@ -817,10 +817,11 @@ export function buildV2Analysis(
     state.optionA,
     state.optionB
   ).label;
+  const sourceCount = new Set(blocks.map(block => block.sourceUrl ?? block.sourceLabel)).size;
   const evidenceSummary = live
     ? say(
-        ` 공개 근거 ${blocks.length}건을 현재 조건 옆에 표시했습니다. 적용 여부는 각 출처와 대상 범위를 대조해 확인해야 합니다.`,
-        ` ${blocks.length} public evidence ${blocks.length === 1 ? "item is" : "items are"} shown beside current conditions. Check each source and target scope before treating it as applicable.`
+        ` 공개 근거 ${blocks.length}건${sourceCount < blocks.length ? `(출처 ${sourceCount}곳)` : ""}을 현재 조건 옆에 표시했습니다. 적용 여부는 각 출처와 대상 범위를 대조해 확인해야 합니다.`,
+        ` ${blocks.length} public evidence ${blocks.length === 1 ? "item is" : "items are"}${sourceCount < blocks.length ? ` (from ${sourceCount} ${sourceCount === 1 ? "source" : "sources"})` : ""} shown beside current conditions. Check each source and target scope before treating it as applicable.`
       )
     : demo
       ? say(

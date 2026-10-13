@@ -1,3 +1,4 @@
+import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2State } from "../data/amcV2Model";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
@@ -159,6 +160,9 @@ export function V2ExternalBoard({
                 )}
                 <div className="v2-source">
                   {t("source")}:{" "}
+                  {v2SharedSourceNote(intelligence.evidenceBlocks, index, state.language) && (
+                    <b className="v2-shared-source">{v2SharedSourceNote(intelligence.evidenceBlocks, index, state.language)} · </b>
+                  )}
                   {block.sourceUrl ? (
                     <a href={block.sourceUrl} target="_blank" rel="noreferrer">
                       {block.sourceLabel}

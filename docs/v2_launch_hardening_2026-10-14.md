@@ -29,6 +29,13 @@ Not pushed, not deployed. Release status from PR #92 (STOP-SHIP) still applies.
 
 Preserved: FIFWM choices and score tables, posture support formula and 8/1 boundaries, guardrails, Safety Margin bands, the 7 simulator variables, the five-field public request contract, source probe strictness, privacy projection, research consent default false.
 
+## Follow-up change: one card per (page, dimension) — owner decision 2026-10-14
+
+- Server `inspectV2AgentResponse` and client `acceptV2Evidence` now dedupe on (source URL, dimension) instead of URL alone. A repeat of the same page **and** dimension is still excluded, and the existing `limitedEvidence` rule (drop provider summaries) still applies to it.
+- Provider instruction: at most one block per (URL, dimension). Each block holds only that page's claims for that dimension, with no repeated claims and no self-corroboration.
+- Dashboard and report label later cards from the same page "근거 N과 같은 출처 / same source as evidence N". The summary states the distinct source count, e.g. "공개 근거 2건(출처 1곳)".
+- Source probe strictness is unchanged; each URL is still probed once.
+
 ## Verification performed
 
 | Check | Result |

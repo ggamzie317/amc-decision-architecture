@@ -162,6 +162,8 @@ describe("degree public-evidence request", () => {
     const user = JSON.parse(body.input[1].content);
     expect(system).toContain("For a degree decision");
     expect(system).toContain("tuition");
+    expect(system).toContain("at most one evidence block per (cited source URL, dimension)");
+    expect(system).not.toContain("one evidence block per distinct cited source URL");
     expect(Object.keys(user.publicEvidenceDimensionScope)).toEqual([
       "Program outcomes", "Employment relevance", "Funding", "Cost / opportunity cost",
     ]);
