@@ -163,9 +163,9 @@ describe("degree public-evidence request", () => {
     expect(system).toContain("For a degree decision");
     expect(system).toContain("tuition");
     expect(Object.keys(user.publicEvidenceDimensionScope)).toEqual([
-      "Program outcomes", "Employment relevance", "Funding",
+      "Program outcomes", "Employment relevance", "Funding", "Cost / opportunity cost",
     ]);
-    expect(user.publicEvidenceDimensions).toEqual(["Program outcomes", "Employment relevance", "Funding"]);
+    expect(user.publicEvidenceDimensions).toEqual(["Program outcomes", "Employment relevance", "Funding", "Cost / opportunity cost"]);
     expect(Object.keys(user).sort()).toEqual([
       "boundedOptionBTargetLabel", "caseFamilyMissingPoint", "caseType",
       "publicEvidenceDimensionScope", "publicEvidenceDimensions", "responseLanguage", "targetGeography",

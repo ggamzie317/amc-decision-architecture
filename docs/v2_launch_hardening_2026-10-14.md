@@ -9,7 +9,7 @@ Not pushed, not deployed. Release status from PR #92 (STOP-SHIP) still applies.
 | # | Sev | Symptom (handoff §) | Failure stage | Finding | Evidence | Status |
 |---|---|---|---|---|---|---|
 | 1 | Blocker | Results open before external analysis (§7.2) | Client flow | `finish()` called `setPhase("dashboard")` and recorded `dashboard_generated` before `checkCurrentEvidence()` resolved; no processing phase existed | Code; browser run | **Fixed** |
-| 2 | Blocker | Degree case: provider 200, 0 evidence blocks, 10 eligible URLs (§7.1) | Provider output (before source probe) | Not confirmed — no request/provider text was recorded. Hypotheses from code: (a) degree had no case-specific search guidance, unlike startup/industry; (b) the provider saw only bare labels "Program outcomes / Employment relevance / Funding" with no scope, while the instructions say to return an empty array when no source fits a bounded claim; (c) default degree scope omits `opportunityCost` (tuition/time/format), the facts most reliably published for EMBA programs; (d) a target like "EMBA" with no institution name | Code; PR #92 log | **Mitigated** (a, b, d); (c) needs decision; needs a real call to confirm |
+| 2 | Blocker | Degree case: provider 200, 0 evidence blocks, 10 eligible URLs (§7.1) | Provider output (before source probe) | Not confirmed — no request/provider text was recorded. Hypotheses from code: (a) degree had no case-specific search guidance, unlike startup/industry; (b) the provider saw only bare labels "Program outcomes / Employment relevance / Funding" with no scope, while the instructions say to return an empty array when no source fits a bounded claim; (c) default degree scope omits `opportunityCost` (tuition/time/format), the facts most reliably published for EMBA programs; (d) a target like "EMBA" with no institution name | Code; PR #92 log | **Mitigated** (a, b, c, d); needs a real call to confirm |
 | 3 | High | `fifwmScore()` turned null / "" / false into 0 (§8.4) | Scoring input | `Number(null) === 0` gave a missing FIFWM factor a weak score | Unit test | **Fixed** |
 | 4 | High | "현재 직무와 생활 기반는" (§7.6) | Dynamic Korean sentence assembly | Fixed particles after customer labels in V3 engine and V2 analysis | Unit + browser | **Fixed** |
 | 5 | Medium | Single Changing card in a 3-column print grid; large blank space (§7.5) | Print CSS | `.v2-changing-analysis` and `.v2-reasoning` always used `repeat(3, …)` in print | CSS + unit | **Fixed** (native PDF not yet checked) |
@@ -25,6 +25,7 @@ Not pushed, not deployed. Release status from PR #92 (STOP-SHIP) still applies.
 - `amcProductApplicationV3.ts`: `fifwmScore()` accepts only the numbers 0/1/2 or the strings "0"/"1"/"2". Weights, boundaries and guardrails are unchanged.
 - Print CSS: `data-count` on Changing and reasoning sets 1 / 2 / 3 columns. Index numbers use `nowrap`.
 - Degree target placeholder: "기관명과 과정명".
+- Degree default public scope adds the existing `opportunityCost` area (owner decision 2026-10-14). No new area, question or score.
 
 Preserved: FIFWM choices and score tables, posture support formula and 8/1 boundaries, guardrails, Safety Margin bands, the 7 simulator variables, the five-field public request contract, source probe strictness, privacy projection, research consent default false.
 
