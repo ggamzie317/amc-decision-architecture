@@ -127,3 +127,27 @@ export function parseOfflineGatewayAdvisory(raw: unknown): JevAdvisory | null {
       "The supplied assumptions support a conditional reading only. If those conditions do not hold, this assessment may change.",
   };
 }
+
+/**
+ * Field names and provider routing ids of a gateway reply that failed the
+ * contract — never answer values or input — so a shape change can be fixed
+ * from the runtime log.
+ */
+export function describeGatewayShape(raw: unknown) {
+  const keys = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v as object).slice(0, 20) : typeof v);
+  const data = (raw && typeof raw === "object" ? raw : {}) as Record<string, any>;
+  const routing = data.provider_metadata?.gateway?.routing;
+  const short = (v: unknown) => (typeof v === "string" ? v.slice(0, 40) : typeof v);
+  const firstAnswer = data.answers && typeof data.answers === "object" ? Object.values(data.answers)[0] : undefined;
+  return {
+    top: keys(raw),
+    model: short(data.model),
+    providerMetadata: keys(data.provider_metadata),
+    gateway: keys(data.provider_metadata?.gateway),
+    routing: routing && typeof routing === "object"
+      ? Object.fromEntries(Object.entries(routing).slice(0, 12).map(([k, v]) => [k, short(v)]))
+      : typeof routing,
+    answers: keys(data.answers),
+    answerFields: keys(firstAnswer),
+  };
+}
