@@ -88,7 +88,7 @@ function limitedEvidence(
   };
 }
 
-function evidenceSchema(dimensions: string[]) {
+function evidenceSchema(dimensions: string[], maxBlocks: number = limit.blocks) {
   const cardText = {
     type: "object",
     additionalProperties: false,
@@ -121,7 +121,7 @@ function evidenceSchema(dimensions: string[]) {
       evidenceBlocks: {
         type: "array",
         minItems: 0,
-        maxItems: limit.blocks,
+        maxItems: maxBlocks,
         items: {
           type: "object",
           additionalProperties: false,
@@ -188,7 +188,7 @@ const v2ResearchBrief: Record<V2EvidenceRequest["caseType"], string> = {
   "General Career Reconfiguration": "Keep the named public target and geography together. Cover: hiring demand for the target (official statistics or original employer pages, dated); entry requirements or qualifications; pay levels from official statistics; and the main published procedures or costs involved in moving.",
 };
 
-function messages(request: V2EvidenceRequest, dimensions: string[]) {
+function messages(request: V2EvidenceRequest, dimensions: string[], split = false) {
   const missing = v2MissingPoint(request.caseType, "en").point;
   const targetSearch = v2ResearchBrief[request.caseType];
   return [
@@ -208,6 +208,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
         "If a listing only shows example roles, do not infer that vacancies remain open, that detailed qualifications are met, or that its range represents the whole market. Describe policy targets as plans, not completed hiring demand.",
         "Keep research specific to the bounded target label and geography. A general statistic about a case family must not substitute for the target role, institution, product or qualification requirements.",
         targetSearch,
+        ...(split ? [`This search covers only these dimensions: ${dimensions.join(", ")}. Other dimensions of the same decision are researched in separate searches; do not cover them here.`] : []),
         "Explain what each fact establishes for this public target and what it does not establish. If qualifications or appointment requirements are relevant, separate formal eligibility from evidence of research, teaching or job performance.",
         "Distinguish source facts from inference and preserve uncertainty.",
         "contextConfidence describes confidence in the bounded public external context, as in AMC's existing external snapshot. It is not confidence in personal eligibility, purchase demand, a prediction or a recommendation. Preserve uncertainty when evidence is narrow; do not rate confidence from link accessibility or manufacture stronger evidence.",
@@ -247,6 +248,88 @@ function messages(request: V2EvidenceRequest, dimensions: string[]) {
 export function configuredV2AgentPreset() {
   const value = process.env.PERPLEXITY_V2_AGENT_PRESET?.trim();
   return value && ["fast", "low", "medium", "high", "xhigh"].includes(value) ? value : "medium";
+}
+
+/**
+ * Topic groups for parallel searches (owner decision 2026-10-14). Narrow
+ * searches reach the right official pages faster than one broad search.
+ * Overseas relocation always researches visa/residency on its own.
+ */
+export function v2EvidenceGroups(request: V2EvidenceRequest): string[][] {
+  const areas = [...v2EvidenceAreas(request)];
+  if (areas.length <= 1) return [areas];
+  if (request.caseType === "Overseas Relocation" && areas.includes("visaMobility")) {
+    const rest = areas.filter(area => area !== "visaMobility");
+    return [["visaMobility"], ...chunk(rest, 2)].slice(0, 3);
+  }
+  return chunk(areas, 2).slice(0, 3);
+}
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+const confidenceRank = { low: 0, medium: 1, high: 2 } as const;
+/** Fit joined sentences within a limit without cutting a sentence. */
+function fitSentences(parts: string[], max: number): string {
+  let out = "";
+  for (const part of parts) {
+    const next = out ? `${out} ${part}` : part;
+    if (v2TextLength(next) > max) break;
+    out = next;
+  }
+  return out || parts[0];
+}
+
+function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", base: ExternalIntelligenceV2): ExternalIntelligenceV2 {
+  const pick = (key: "opportunitySignals" | "frictionSignals" | "uncertainties", max: number) => {
+    const rows: string[] = [];
+    for (let i = 0; rows.length < max && lives.some(live => live[key][i]); i++)
+      for (const live of lives) if (live[key][i] && rows.length < max && !rows.includes(live[key][i])) rows.push(live[key][i]);
+    return rows;
+  };
+  const merged: ExternalIntelligenceV2 = {
+    ...base,
+    evidenceBlocks: [],
+    opportunitySignals: pick("opportunitySignals", limit.opportunitySignals),
+    frictionSignals: pick("frictionSignals", limit.frictionSignals),
+    uncertainties: pick("uncertainties", limit.uncertainties),
+    implication: fitSentences(lives.map(live => live.implication), limit.implication),
+  };
+  const seen = new Set<string>();
+  for (const live of lives)
+    for (const block of live.evidenceBlocks) {
+      const key = citationKey(block);
+      if (seen.has(key) || merged.evidenceBlocks.length >= limit.blocks) continue;
+      seen.add(key);
+      merged.evidenceBlocks.push(block);
+    }
+  return lives.some(live => live.sourceCoverage === "partial")
+    ? limitedEvidence(merged, merged.evidenceBlocks, language)
+    : merged;
+}
+
+/** Combine topic results into one snapshot; the translation is merged the same way. */
+export function mergeV2Evidence(lives: ExternalIntelligenceV2[], request: V2EvidenceRequest): ExternalIntelligenceV2 {
+  if (lives.length === 1) return lives[0];
+  const confidences = lives.map(live => live.contextConfidence);
+  const contextConfidence = confidences.every(Boolean)
+    ? confidences.reduce((a, b) => (confidenceRank[a!] <= confidenceRank[b!] ? a : b))
+    : undefined;
+  const base = { ...lives[0], contextConfidence, sourceCoverage: undefined, translation: undefined };
+  const primary = mergeSummaries(lives, request.language, base);
+  if (!contextConfidence) delete primary.contextConfidence;
+  const other = request.language === "ko" ? "en" : "ko";
+  if (lives.every(live => live.translation)) {
+    const translations = lives.map(live => live.translation!);
+    const translated = mergeSummaries(translations, other, { ...translations[0], contextConfidence, sourceCoverage: undefined, translation: undefined });
+    const aligned = alignTranslation(primary, translated, other);
+    if (aligned) primary.translation = aligned;
+  }
+  if (!primary.translation) delete primary.translation;
+  if (primary.sourceCoverage === undefined) delete primary.sourceCoverage;
+  return primary;
 }
 
 export async function resolveV2ExternalIntelligence(
@@ -335,47 +418,71 @@ export async function resolveV2ExternalIntelligence(
   let result = unavailable();
   let reason: Reason = "provider_failure";
   try {
-    const dimensions = v2EvidenceFocus(request);
     stage = "provider";
-    const response = await (options.fetchImpl ?? fetch)(
-      "https://api.perplexity.ai/v1/agent",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          preset,
-          input: messages(request, dimensions),
-          tools: [{ type: "web_search" }],
-          max_output_tokens: 10000,
-          stream: false,
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "AmcV2ExternalEvidence",
-              schema: evidenceSchema(dimensions),
+    // Topic fan-out: each group is one narrower search, run in parallel.
+    const groups = v2EvidenceGroups(request);
+    const cap = Math.max(2, Math.ceil(limit.blocks / groups.length));
+    const outcomes = await Promise.all(groups.map(async areas => {
+      const groupRequest = { ...request, externalAreas: areas };
+      const dimensions = v2EvidenceFocus(groupRequest);
+      try {
+        const response = await (options.fetchImpl ?? fetch)(
+          "https://api.perplexity.ai/v1/agent",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
             },
-          },
-        }),
+            signal: controller.signal,
+            body: JSON.stringify({
+              preset,
+              input: messages(groupRequest, dimensions, groups.length > 1),
+              tools: [{ type: "web_search" }],
+              max_output_tokens: 8000,
+              stream: false,
+              response_format: {
+                type: "json_schema",
+                json_schema: {
+                  name: "AmcV2ExternalEvidence",
+                  schema: evidenceSchema(dimensions, cap),
+                },
+              },
+            }),
+          }
+        );
+        if (!response.ok) return { status: response.status, diagnostic: { category: "upstream_http" } as V2ResponseDiagnostic };
+        const parsed = await response.json().then(
+          (value: unknown) => ({ ok: true as const, value }),
+          () => ({ ok: false as const })
+        );
+        if (!parsed.ok) return { status: response.status, diagnostic: { category: "response_json" } as V2ResponseDiagnostic };
+        // The request is the full request so dimension checks accept every group label.
+        const normalized = inspectV2AgentResponse(parsed.value, groupRequest, dimensions);
+        return { status: response.status, normalized };
+      } catch {
+        return { status: undefined, diagnostic: { category: "transport_error" } as V2ResponseDiagnostic };
       }
-    );
-    upstreamHttpStatus = response.status;
-    if (response.ok) {
-      stage = "normalization";
-      const parsed = await response.json().then(
-        (value: unknown) => ({ ok: true as const, value }),
-        () => ({ ok: false as const })
-      );
-      if (!parsed.ok) {
-        responseDiagnostic = { category: "response_json" };
-        reason = "invalid_provider_response";
-      } else {
-        const normalized = inspectV2AgentResponse(parsed.value, request, dimensions);
-        const live = normalized.value;
-        responseDiagnostic = normalized.diagnostic;
+    }));
+    upstreamHttpStatus = outcomes.find(outcome => outcome.status)?.status;
+    // Normalization starts only if at least one provider response arrived.
+    const anyResponse = outcomes.some(outcome => outcome.normalized || outcome.diagnostic?.category === "response_json");
+    if (anyResponse) stage = "normalization";
+    const lives = outcomes
+      .map(outcome => outcome.normalized?.value)
+      .filter((value): value is ExternalIntelligenceV2 => value?.status === "live");
+    const firstFailure = outcomes.find(outcome => !outcome.normalized?.value || outcome.normalized.value.status !== "live");
+    responseDiagnostic = lives.length
+      ? outcomes.find(outcome => outcome.normalized?.value?.status === "live" && outcome.normalized.diagnostic)?.normalized?.diagnostic
+      : firstFailure?.normalized?.diagnostic ?? firstFailure?.diagnostic;
+    const anyNoEvidence = outcomes.some(outcome => outcome.normalized?.value?.status === "unavailable");
+    {
+      {
+        const live = lives.length
+          ? mergeV2Evidence(lives, request)
+          : anyNoEvidence ? unavailable() : null;
+        if (!lives.length && !anyResponse)
+          responseDiagnostic = outcomes.find(outcome => outcome.diagnostic)?.diagnostic;
         if (live?.status === "unavailable") {
           reason = "source_unavailable";
         } else if (live) {
@@ -420,9 +527,9 @@ export async function resolveV2ExternalIntelligence(
               reason = "live";
             } else reason = "source_unavailable";
           }
-        } else reason = "invalid_provider_response";
+        } else reason = anyResponse ? "invalid_provider_response" : "provider_failure";
       }
-    } else responseDiagnostic = { category: "upstream_http" };
+    }
   } catch {
     /* Fail closed without exposing provider details. */
     responseDiagnostic = { category: "transport_error" };

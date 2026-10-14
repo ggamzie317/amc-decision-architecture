@@ -140,7 +140,7 @@ describe("results do not open before the explicit evidence analysis settles", ()
 
 describe("degree public-evidence request", () => {
   it("sends degree-specific guidance and dimension scope without customer prose", async () => {
-    let body: any;
+    const bodies: any[] = [];
     await resolveV2ExternalIntelligence(
       {
         caseType: "MBA / EMBA / PhD Decision",
@@ -153,26 +153,33 @@ describe("degree public-evidence request", () => {
         apiKey: "test-key",
         observe: () => {},
         fetchImpl: (async (_url: string, init: RequestInit) => {
-          body = JSON.parse(String(init.body));
+          bodies.push(JSON.parse(String(init.body)));
           return new Response("{}", { status: 500 });
         }) as typeof fetch,
       }
     );
-    const system = body.input[0].content as string;
-    const user = JSON.parse(body.input[1].content);
-    expect(system).toContain("For a degree decision");
-    expect(system).toContain("tuition");
-    expect(system).toContain("at most one evidence block per (cited source URL, dimension)");
-    expect(system).not.toContain("one evidence block per distinct cited source URL");
-    expect(Object.keys(user.publicEvidenceDimensionScope)).toEqual([
+    // Topic fan-out: two parallel searches of two dimensions each.
+    expect(bodies).toHaveLength(2);
+    const users = bodies.map(body => JSON.parse(body.input[1].content));
+    expect(users.flatMap(user => user.publicEvidenceDimensions)).toEqual([
       "Program outcomes", "Employment relevance", "Funding", "Cost / opportunity cost",
     ]);
-    expect(user.publicEvidenceDimensions).toEqual(["Program outcomes", "Employment relevance", "Funding", "Cost / opportunity cost"]);
-    expect(Object.keys(user).sort()).toEqual([
-      "boundedOptionBTargetLabel", "caseFamilyMissingPoint", "caseType",
-      "publicEvidenceDimensionScope", "publicEvidenceDimensions", "responseLanguages", "targetGeography",
-    ]);
+    for (const [i, body] of bodies.entries()) {
+      const system = body.input[0].content as string;
+      expect(system).toContain("For a degree decision");
+      expect(system).toContain("tuition");
+      expect(system).toContain("at most one evidence block per (cited source URL, dimension)");
+      expect(system).not.toContain("one evidence block per distinct cited source URL");
+      expect(system).toContain("This search covers only these dimensions");
+      expect(Object.keys(users[i].publicEvidenceDimensionScope)).toEqual(users[i].publicEvidenceDimensions);
+      expect(Object.keys(users[i]).sort()).toEqual([
+        "boundedOptionBTargetLabel", "caseFamilyMissingPoint", "caseType",
+        "publicEvidenceDimensionScope", "publicEvidenceDimensions", "responseLanguages", "targetGeography",
+      ]);
+      expect(body.response_format.json_schema.schema.properties.evidenceBlocks.maxItems).toBe(3);
+    }
   });
+
 });
 
 describe("printed Changing section adapts to the number of plays", () => {
@@ -399,3 +406,31 @@ describe("research brief covers what each decision type needs", () => {
     expect(body.input[0].content).toContain("at least one card");
   });
 });
+
+describe("topic fan-out", () => {
+  it("researches overseas visa/residency in its own search and caps groups at three", async () => {
+    const { v2EvidenceGroups } = await import("../server/externalIntelligenceV2Service");
+    const base = { externalAreas: [] as string[], targetGeography: "Hong Kong", targetLabel: "t", language: "ko" as const };
+    expect(v2EvidenceGroups({ ...base, caseType: "Overseas Relocation" })).toEqual([["visaMobility"], ["hiringDemand", "compensation"], ["geography"]]);
+    expect(v2EvidenceGroups({ ...base, caseType: "Entrepreneurship" })).toEqual([["customerDemand", "competition"], ["pricing", "distribution"]]);
+    expect(v2EvidenceGroups({ ...base, caseType: "Entrepreneurship", externalAreas: ["pricing"] })).toEqual([["pricing"]]);
+  });
+
+  it("merges topic results within limits and keeps a failed topic from hiding the others", async () => {
+    const { mergeV2Evidence } = await import("../server/externalIntelligenceV2Service");
+    const card = (n: number, dimension: string) => ({ dimension, headline: `근거 ${n}`, direction: "mixed" as const, fact: `사실 ${n}입니다.`, whyItMatters: `범위 ${n}입니다.`, sourceLabel: `출처 ${n}`, sourceUrl: `https://example.org/${n}`, provenance: "EXTERNAL_EVIDENCE" as const });
+    const live = (cards: ReturnType<typeof card>[], implication: string) => ({
+      status: "live" as const, generatedAt: "2026-10-14T00:00:00.000Z", caseType: "Overseas Relocation", contextConfidence: "medium" as const,
+      evidenceBlocks: cards, metrics: [], opportunitySignals: ["기회 신호입니다."], frictionSignals: [], uncertainties: ["불확실성입니다."], implication,
+    });
+    const merged = mergeV2Evidence([
+      live([card(1, "Visa / mobility")], "비자 경로가 공개되어 있습니다."),
+      live([card(2, "Hiring demand"), card(3, "Compensation")], "구인과 임금 통계가 있습니다."),
+    ], { caseType: "Overseas Relocation", externalAreas: [], targetGeography: "홍콩", targetLabel: "t", language: "ko" });
+    expect(merged.evidenceBlocks.map(b => b.headline)).toEqual(["근거 1", "근거 2", "근거 3"]);
+    expect(merged.implication).toBe("비자 경로가 공개되어 있습니다. 구인과 임금 통계가 있습니다.");
+    expect(merged.opportunitySignals).toEqual(["기회 신호입니다."]);
+    expect(merged.contextConfidence).toBe("medium");
+  });
+});
+
