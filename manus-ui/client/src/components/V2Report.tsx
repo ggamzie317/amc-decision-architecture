@@ -1,3 +1,4 @@
+import V2ExecutiveBrief from "./V2ExecutiveBrief";
 import V2FrameworkPlan from "./V2FrameworkPlan";
 import V2InsightBoard from "./V2InsightBoard";
 import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
@@ -294,7 +295,7 @@ export default function V2Report({
             {t("context")}: {state.decision}
           </p>
           <p className="v2-paper-lead">{analysis.executiveSummary}</p>
-          <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="tiles" />
+          <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} printed cardsOnly />
           <div className="v2-paper-priorities">
             <article>
               <span>01 / {say("핵심 질문", "Key question")}</span>

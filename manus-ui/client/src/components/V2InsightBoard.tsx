@@ -165,9 +165,10 @@ export default function V2InsightBoard({
   analysis: V2Analysis;
   intelligence: ExternalIntelligenceV2;
   /** Report pages print the tiles (page 1) or the profile and comparison (page 3) with every row expanded. */
-  mode?: "full" | "tiles" | "evidence";
+  /** "board" = dashboard without tiles (the executive brief replaces them). */
+  mode?: "full" | "board" | "tiles" | "evidence";
 }) {
-  const printed = mode !== "full";
+  const printed = mode === "tiles" || mode === "evidence";
   const ko = language === "ko";
   const say = (k: string, e: string) => (ko ? k : e);
   const [focus, setFocus] = useState<number | null>(null);
@@ -219,7 +220,7 @@ export default function V2InsightBoard({
 
   return (
     <section className={`v2-insight-board${printed ? " printed" : ""}`} aria-label={say("구조 인사이트", "Structural insights")} data-testid="v2-insight-board" data-mode={mode}>
-      {mode !== "evidence" && <div className="v2-insight-tiles">
+      {(mode === "full" || mode === "tiles") && <div className="v2-insight-tiles">
         {tiles.map(({ icon: Icon, label, value, detail, href }) => (
           <a key={label[0]} href={href} className="v2-insight-tile">
             <span className="v2-insight-tile-head"><Icon aria-hidden size={16} />{label[ko ? 1 : 0]}</span>

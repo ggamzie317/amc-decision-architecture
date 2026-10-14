@@ -649,3 +649,20 @@ describe("simulator explains a scenario in customer terms", () => {
     expect(none).toBe("");
   });
 });
+
+describe("executive brief shows the analysis in keywords", () => {
+  it("lists figures, biggest gap, missing point, a switch and the next step", async () => {
+    const { default: V2ExecutiveBrief, v2AmountKeywords } = await import("../client/src/components/V2ExecutiveBrief");
+    const fixture = v2DemoFixture("industry", "ko");
+    const input = buildV2Input(fixture.state, fixture.intelligence);
+    const core = buildProductApplicationV3(input);
+    const analysis = buildV2Analysis(fixture.state, core, fixture.intelligence, "demo");
+    const intelligence = { ...fixture.intelligence, evidenceBlocks: [{ ...fixture.intelligence.evidenceBlocks[0], headline: "박사 대출 최대 £31,122", fact: "총 최대 £31,122입니다.", action: "총 대출액을 학비와 비교하세요." }] };
+    expect(v2AmountKeywords(intelligence.evidenceBlocks, "ko")[0].amount).toBe("£31,122");
+    const html = renderToStaticMarkup(React.createElement(V2ExecutiveBrief, { language: "ko", core, analysis, intelligence, input }));
+    for (const label of ["핵심 숫자", "가장 큰 부족", "놓치기 쉬운 조건", "판단을 바꿀 조건", "다음 30일 할 일"]) expect(html).toContain(label);
+    expect(html).toContain("£31,122");
+    expect(html).toContain("총 대출액을 학비와 비교하세요.");
+    expect(html).toContain(analysis.posture);
+  });
+});
