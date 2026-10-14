@@ -644,6 +644,9 @@ describe("simulator explains a scenario in customer terms", () => {
     expect(html).toContain("판단 위치");
     expect(html).toContain("무엇인가요");
     expect(html).toContain("현실에서 이렇게 되려면");
+    // Korean screen shows Korean explanations, not the English pair.
+    expect(html).toMatch(/무엇인가요: <\/b>[^<]*[가-힣]/);
+    expect(html).not.toContain("Money and income to absorb");
     expect(html).toContain("연간 학비 £24,000");
     const none = renderToStaticMarkup(React.createElement(V2ScenarioExplain, { language: "ko", input, scenarioInput: input, overrides: {}, intelligence: fixture.intelligence }));
     expect(none).toBe("");
