@@ -691,3 +691,26 @@ describe("current role keywords do not decide the type", () => {
     expect(inferV2CaseType(text)).toBe(expected);
   });
 });
+
+describe("benchmark round: path map and indicator profile", () => {
+  it("indicator profile shows definition, baseline state, reading and check question for all seven", async () => {
+    const { default: V2IndicatorProfile } = await import("../client/src/components/V2IndicatorProfile");
+    const fixture = v2DemoFixture("industry", "ko");
+    const html = renderToStaticMarkup(React.createElement(V2IndicatorProfile, { language: "ko", core: fixture.baseline, intelligence: fixture.intelligence }));
+    expect((html.match(/<article/g) || []).length).toBe(7);
+    expect(html).toContain("확인 질문");
+    expect(html).toContain("기준선");
+    expect(html).toContain('data-baseline="true"');
+    expect(html).not.toMatch(/\d+\s*%/);
+  });
+
+  it("path map shows where you are, the next step, the goal with gaps, and alternatives", async () => {
+    const { default: V2PathMap } = await import("../client/src/components/V2PathMap");
+    const fixture = v2DemoFixture("industry", "ko");
+    const analysis = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo");
+    const html = renderToStaticMarkup(React.createElement(V2PathMap, { language: "ko", state: fixture.state, core: fixture.baseline, analysis, intelligence: fixture.intelligence }));
+    for (const label of ["현재 위치", "다음 단계", "고민하는 커리어 · 목표"]) expect(html).toContain(label);
+    expect(html).toContain(fixture.state.optionB);
+    if (analysis.plays.length > 1) expect(html).toContain("대안 경로");
+  });
+});

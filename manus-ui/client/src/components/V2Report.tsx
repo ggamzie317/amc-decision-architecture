@@ -1,3 +1,5 @@
+import V2IndicatorProfile from "./V2IndicatorProfile";
+import V2PathMap from "./V2PathMap";
 import V2ExecutiveBrief from "./V2ExecutiveBrief";
 import V2FrameworkPlan from "./V2FrameworkPlan";
 import V2InsightBoard from "./V2InsightBoard";
@@ -325,6 +327,7 @@ export default function V2Report({
         "Structural Reading",
         say("현재 구조 판단의 이유", "Why the current structure leads here"),
         <>
+          <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} printed />
           <V2Reasoning
             analysis={analysis}
             intelligence={intelligence}
@@ -394,6 +397,7 @@ export default function V2Report({
         "Decision Map / Decision Structure",
         say("경로의 관계와 환경–준비 적합도", "Path relationships and environment–readiness fit"),
         <>
+          <V2PathMap language={state.language} state={state} core={core} analysis={analysis} intelligence={intelligence} />
           <V2DecisionMap
             state={state}
             analysis={analysis}

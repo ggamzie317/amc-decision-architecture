@@ -1,3 +1,5 @@
+import V2IndicatorProfile from "./V2IndicatorProfile";
+import V2PathMap from "./V2PathMap";
 import V2ExecutiveBrief from "./V2ExecutiveBrief";
 import V2FrameworkPlan from "./V2FrameworkPlan";
 import V2InsightBoard from "./V2InsightBoard";
@@ -292,6 +294,14 @@ export default function V2Dashboard({
         <summary>{say("판단 근거와 공개 자료의 한계 자세히 보기", "Read the reasoning and public-evidence limits")}</summary>
         <p>{analysis.summary}</p>
       </details>
+      <section className="v2-analysis-section" id="v2-path">
+        {head("A", "Career Path", say("지금 위치에서 고민하는 커리어까지의 경로", "From where you are to the career you are considering"))}
+        <V2PathMap language={state.language} state={state} core={core} analysis={analysis} intelligence={intelligence} />
+      </section>
+      <section className="v2-analysis-section" id="v2-indicators">
+        {head("B", "Structural Indicators", say("일곱 가지 구조 지표", "Seven structural indicators"))}
+        <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} />
+      </section>
       <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="board" />
       <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
       <nav

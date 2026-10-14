@@ -1540,3 +1540,85 @@
   .v2-analysis-report .v2-changing-analysis dl > div { grid-template-columns: 84px minmax(0, 1fr); gap: 8px; padding: 3px 0; }
   .v2-analysis-report .v2-changing-analysis dd, .v2-analysis-report .v2-changing-analysis dt { font-size: 10px; }
 }
+
+/* ===== Consistent framework colour system (used across dashboard and report) ===== */
+.v2-app {
+  --c-figures: #8a6d1f;   /* key figures / evidence amounts */
+  --c-gap: #a5642a;       /* gaps, watch */
+  --c-missing: #9a5b8a;   /* missing point */
+  --c-switch: #4f5fa6;    /* decision switches */
+  --c-next: #237f84;      /* next step / safety */
+}
+.v2-brief-cards article:nth-child(1) { border-top-color: var(--c-figures); }
+.v2-brief-cards article:nth-child(1) .v2-brief-label { color: var(--c-figures); }
+.v2-brief-cards article:nth-child(3) { border-top-color: var(--c-missing); }
+.v2-brief-cards article:nth-child(3) .v2-brief-label { color: var(--c-missing); }
+.v2-brief-cards article:nth-child(4) { border-top-color: var(--c-switch); }
+.v2-brief-cards article:nth-child(4) .v2-brief-label { color: var(--c-switch); }
+.v2-plan-grid article:nth-child(1) { border-top: 3px solid var(--c-missing); }
+.v2-plan-grid article:nth-child(1) h3 { color: var(--c-missing); }
+.v2-plan-grid article:nth-child(2) { border-top: 3px solid var(--c-next); }
+.v2-plan-grid article:nth-child(3) { border-top: 3px solid var(--c-next); }
+.v2-plan-grid article:nth-child(4) { border-top: 3px solid var(--c-switch); }
+.v2-plan-grid article:nth-child(4) h3 { color: var(--c-switch); }
+
+/* ===== Structural indicator profile (definition → state → reading → check) ===== */
+.v2-indicators { background: #fff; border: 1px solid var(--line); }
+.v2-indicators-head, .v2-indicators article {
+  display: grid; grid-template-columns: minmax(0, 1.15fr) 190px minmax(0, 1.6fr); gap: 18px; padding: 12px 16px;
+}
+.v2-indicators-head { background: #f4f7f6; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
+.v2-indicators article { border-top: 1px solid var(--line); align-items: start; }
+.v2-indicators article[data-state="gap"] { box-shadow: inset 3px 0 0 var(--c-gap); }
+.v2-indicators article[data-state="unknown"] { box-shadow: inset 3px 0 0 #b9c4c6; }
+.v2-ind-name { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; }
+.v2-ind-name > span { color: var(--teal); font-weight: 800; font-size: 12px; font-variant-numeric: tabular-nums; flex: none; }
+.v2-ind-name strong { display: block; font-size: 14px; }
+.v2-ind-name small { display: block; font-size: 12px; color: var(--muted); line-height: 1.5; word-break: keep-all; }
+.v2-ind-meter { display: grid; gap: 4px; }
+.v2-ind-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; height: 10px; }
+.v2-ind-bar i { background: #e6ecea; position: relative; }
+.v2-ind-bar i[data-on="true"] { background: var(--teal); }
+.v2-indicators article[data-state="gap"] .v2-ind-bar i[data-on="true"] { background: var(--c-gap); }
+.v2-ind-bar i[data-baseline="true"]::after { content: ""; position: absolute; inset: -4px 0 -4px auto; width: 2px; background: var(--ink); }
+.v2-ind-meter b { font-size: 13px; }
+.v2-ind-meter small { font-size: 11px; color: var(--muted); }
+.v2-indicators article[data-state="gap"] .v2-ind-meter small { color: var(--c-gap); font-weight: 700; }
+.v2-ind-reading p { margin: 0 0 4px; font-size: 13px; line-height: 1.6; word-break: keep-all; }
+.v2-ind-reading b { display: inline-block; min-width: 64px; margin-right: 6px; font-size: 11px; color: var(--teal); }
+.v2-ind-question, .v2-ind-how, .v2-ind-evidence { color: var(--muted); font-size: 12.5px !important; }
+.v2-ind-note { margin: 0; padding: 10px 16px; font-size: 11.5px; color: var(--muted); border-top: 1px solid var(--line); }
+@media (max-width: 860px) {
+  .v2-indicators-head { display: none; }
+  .v2-indicators article { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ===== Career path map (current → next step → goal, plus alternatives) ===== */
+.v2-pathmap { background: #fff; border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; }
+.v2-path-lane { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1.2fr) 28px minmax(0, 1.2fr); align-items: stretch; gap: 6px; }
+.v2-path-arrow { align-self: center; color: #9fb3b6; }
+.v2-path-node { border: 1px solid var(--line); padding: 12px 14px; display: grid; gap: 5px; align-content: start; background: #fbfcfc; }
+.v2-path-node.now { border-top: 3px solid #7d8b8f; }
+.v2-path-node.next { border-top: 3px solid var(--c-next); background: #f2f8f7; }
+.v2-path-node.goal { border-top: 3px solid var(--c-switch); }
+.v2-path-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; color: var(--muted); }
+.v2-path-node strong { font-size: 15px; line-height: 1.4; word-break: keep-all; }
+.v2-path-node small { font-size: 12.5px; line-height: 1.55; color: var(--muted); word-break: keep-all; }
+.v2-path-node em { font-style: normal; font-size: 12px; line-height: 1.5; padding: 4px 7px; background: #f4f7f6; word-break: keep-all; }
+.v2-path-node em.gap { background: #fbf1e6; color: #7a4a1c; }
+.v2-path-alt { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 6px; }
+.v2-path-alt ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.v2-path-alt li { font-size: 12.5px; line-height: 1.55; border-left: 3px solid #c6d3d1; padding: 4px 10px; word-break: keep-all; }
+.v2-path-alt li b { display: block; font-size: 13px; }
+.v2-path-note { margin: 0; font-size: 11.5px; color: var(--muted); }
+@media (max-width: 860px) {
+  .v2-path-lane { grid-template-columns: 1fr; }
+  .v2-path-arrow { transform: rotate(90deg); justify-self: center; }
+}
+@media print {
+  .v2-indicators-head, .v2-indicators article { grid-template-columns: minmax(0, 1.1fr) 120px minmax(0, 1.6fr); gap: 8px; padding: 5px 8px; }
+  .v2-ind-name strong { font-size: 11px; } .v2-ind-name small, .v2-ind-reading p { font-size: 9.5px !important; line-height: 1.45; }
+  .v2-indicators article { break-inside: avoid; }
+  .v2-pathmap { padding: 8px; gap: 6px; break-inside: avoid; }
+  .v2-path-node { padding: 6px 8px; } .v2-path-node strong { font-size: 11.5px; } .v2-path-node small, .v2-path-node em, .v2-path-alt li { font-size: 9.5px; }
+}
