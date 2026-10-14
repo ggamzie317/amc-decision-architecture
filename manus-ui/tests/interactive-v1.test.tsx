@@ -579,6 +579,18 @@ describe("canonical AMU offline advisory contract", () => {
     malformed.answers.scenarioPlausibility.probabilities.medium = 2;
     expect(parseOfflineGatewayAdvisory(malformed)).toBeNull();
   });
+  it("accepts the current Gateway metadata (cost, attempts, provider block) but keeps identity and answers strict", () => {
+    const current = rawResponse() as any;
+    current.provider_metadata.typesafe = { requestId: "x" };
+    Object.assign(current.provider_metadata.gateway, { cost: "0.00004", generationId: "gen_1" });
+    Object.assign(current.provider_metadata.gateway.routing, { fallbacksAvailable: [], planningReasoning: "System credentials planned for: typesafe", modelAttemptCount: 1, modelAttempts: [], totalProviderAttemptCount: 1 });
+    expect(parseOfflineGatewayAdvisory(current)?.scenarioPlausibility).toBe("medium");
+    current.provider_metadata.gateway.routing.resolvedProvider = "digitalocean";
+    expect(parseOfflineGatewayAdvisory(current)).toBeNull();
+    const extraAnswer = rawResponse() as any;
+    extraAnswer.answers.extra = extraAnswer.answers.scenarioPlausibility;
+    expect(parseOfflineGatewayAdvisory(extraAnswer)).toBeNull();
+  });
 });
 it("keeps legacy and experiment session submission identities separate", async () => {
   const store = new Map<string, string>();
