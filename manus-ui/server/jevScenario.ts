@@ -135,18 +135,17 @@ export function createJevScenarioHandler(options: Options = {}) {
             const credential = enabled
               ? (options.credential ?? gatewayCredential)()
               : undefined;
-            if (
-              !credential ||
-              Buffer.byteLength(body) > 48 * 1024 ||
-              !store.reserveJevScenario
-            )
-              throw new Error("unavailable");
+            if (!enabled) throw new Error("disabled");
+            if (!credential) throw new Error("no_credential");
+            if (Buffer.byteLength(body) > 48 * 1024) throw new Error("too_large");
+            if (!store.reserveJevScenario) throw new Error("no_store");
             reserved = await store.reserveJevScenario(id, fingerprint);
             if (!reserved) throw new Error("guard");
             const controller = new AbortController();
             const timeout = setTimeout(
               () => controller.abort(),
-              options.timeoutMs ?? 3000
+              // A model call needs more than 3s; the route still answers in bounded time.
+              options.timeoutMs ?? 20_000
             );
             try {
               const response = await (options.fetcher ?? fetch)(
@@ -169,7 +168,7 @@ export function createJevScenarioHandler(options: Options = {}) {
                   "x-ai-gateway-decision-fallback-triggered",
                 ].some(h => response.headers.get(h) === "true")
               )
-                throw new Error("routing");
+                throw new Error(response.ok ? "fallback" : `http_${response.status}`);
               if (!response.body) throw new Error("body");
               const reader = response.body.getReader();
               let size = 0;
@@ -201,7 +200,13 @@ export function createJevScenarioHandler(options: Options = {}) {
             } finally {
               clearTimeout(timeout);
             }
-          } catch {
+          } catch (error) {
+            // Stage label only (no input, advisory or provider text) so an
+            // unavailable result can be diagnosed from the runtime log.
+            const stage = error instanceof Error
+              ? (error.name === "AbortError" ? "timeout" : /^[a-z_0-9]{2,24}$/.test(error.message) ? error.message : "error")
+              : "error";
+            console.info(JSON.stringify({ event: "amc_jev_unavailable", stage }));
             if (!reserved) await store.addEvent(id, "jev_assessment_requested");
             await store.addEvent(id, "jev_assessment_unavailable");
             return unavailable;
