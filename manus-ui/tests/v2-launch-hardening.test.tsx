@@ -676,3 +676,15 @@ describe("brief agrees with the map and extracts clean amounts", () => {
     expect(v2AmountKeywords([block("월세", "월 120만 원 수준입니다.")], "ko")[0].amount).toBe("120만 원");
   });
 });
+
+describe("current role keywords do not decide the type", () => {
+  it.each([
+    [{ decision: "현재: 한국 대기업 마케팅 팀장 → 고민: 싱가포르 이직", optionA: "한국 대기업 마케팅 팀장", optionB: "싱가포르 이직" }, "Overseas Relocation"],
+    [{ decision: "현재: 대기업 팀장 → 고민: 창업", optionA: "대기업 팀장", optionB: "AI 교육 스타트업 창업" }, "Entrepreneurship"],
+    [{ decision: "현재: 실무자 → 고민: 팀장 승진", optionA: "마케팅 실무자", optionB: "팀장 승진 제안 수락" }, "Role Upgrade / Downgrade"],
+    [{ decision: "현재: 데이터사이언스 석사 → 고민: 영국 철학 박사 도전", optionA: "데이터사이언스 석사", optionB: "영국 철학 박사 도전" }, "MBA / EMBA / PhD Decision"],
+  ] as const)("%j → %s", async (text, expected) => {
+    const { inferV2CaseType } = await import("../client/src/data/v2CaseInference");
+    expect(inferV2CaseType(text)).toBe(expected);
+  });
+});
