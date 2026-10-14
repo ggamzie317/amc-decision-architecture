@@ -41,15 +41,23 @@ const cues: Record<V2CaseType, Cue[]> = {
 export type V2CaseRanking = { caseType: V2CaseType; score: number; matched: string[] }[];
 
 export function inferV2CaseRanking(text: { decision: string; optionA: string; optionB: string }): V2CaseRanking {
-  // Option B usually names the path being considered, so it counts double.
-  const sources = [text.decision, text.optionA, text.optionB, text.optionB].join(" \n ");
+  // The considered career names the decision (×2). The current role only
+  // describes the starting point (×0.5): "팀장" there is not a role change.
+  // The derived decision sentence repeats both fields, so it is skipped.
+  const derived = /^(?:현재:|Current:)/.test(text.decision.trim());
+  const sources: [string, number][] = [
+    [text.optionB, 2],
+    [text.optionA, 0.5],
+    ...(derived ? [] : [[text.decision, 1] as [string, number]]),
+  ];
   const ranking = (Object.keys(cues) as V2CaseType[]).map(caseType => {
     let score = 0;
     const matched: string[] = [];
     for (const cue of cues[caseType]) {
-      const hits = sources.match(new RegExp(cue.pattern.source, `${cue.pattern.flags.replace("g", "")}g`)) ?? [];
-      if (hits.length) {
-        score += cue.weight * Math.min(hits.length, 3);
+      for (const [source, weight] of sources) {
+        const hits = source.match(new RegExp(cue.pattern.source, `${cue.pattern.flags.replace("g", "")}g`)) ?? [];
+        if (!hits.length) continue;
+        score += cue.weight * Math.min(hits.length, 3) * weight;
         for (const hit of hits) if (!matched.includes(hit.trim())) matched.push(hit.trim());
       }
     }

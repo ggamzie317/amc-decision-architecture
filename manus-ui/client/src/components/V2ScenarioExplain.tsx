@@ -11,7 +11,8 @@ import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
  * existing thresholds, and what would make it true in reality (linked to
  * evidence where available). Uses the existing formula only.
  */
-const meaning: Record<string, { label: V2CopyKey; what: [string, string]; how: [string, string]; evidence?: RegExp }> = {
+// Copy pairs are stored [Korean, English].
+const meaning: Record<string, { label: V2CopyKey; what: [ko: string, en: string]; how: [ko: string, en: string]; evidence?: RegExp }> = {
   financialRoom: { label: "financial", what: ["계획이 틀려도 버틸 수 있는 돈과 소득의 여유", "Money and income to absorb a plan that goes wrong"],
     how: ["시험 기간의 생활비·비용을 계산하고 그만큼을 따로 확보합니다.", "Calculate living costs and expenses for the test period and set that amount aside."],
     evidence: /(?:HK\$|US\$|£|€|\$|₩)\s?\d|\d[\d,.]*\s?(?:원|만 ?원|파운드|달러|유로)/ },
@@ -84,8 +85,8 @@ export default function V2ScenarioExplain({
           return (
             <li key={key}>
               <strong>{v2t(language, m.label)}: {v2t(language, base[key] as V2CopyKey)} → {v2t(language, band as V2CopyKey)}</strong>
-              <span><b>{say("무엇인가요: ", "What it is: ")}</b>{m.what[ko ? 1 : 0]}</span>
-              <span><b>{say("현실에서 이렇게 되려면: ", "To make it real: ")}</b>{m.how[ko ? 1 : 0]}</span>
+              <span><b>{say("무엇인가요: ", "What it is: ")}</b>{m.what[ko ? 0 : 1]}</span>
+              <span><b>{say("현실에서 이렇게 되려면: ", "To make it real: ")}</b>{m.how[ko ? 0 : 1]}</span>
               {card && <span className="v2-scenario-evidence"><b>{say("관련 근거: ", "Related evidence: ")}</b>{v2CustomerEvidenceText(language, card.headline)}{card.action ? ` — ${v2CustomerEvidenceText(language, card.action)}` : ""}</span>}
             </li>
           );
