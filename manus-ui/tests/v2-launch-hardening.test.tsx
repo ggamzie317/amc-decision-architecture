@@ -524,3 +524,34 @@ describe("round 3: framework plan, auto comparison, citation markers", () => {
     expect(stripCitations("Fees rose [1][2] in 2026 [web:3, web:4].")).toBe("Fees rose in 2026.");
   });
 });
+
+describe("issue A1: merged evidence reaches the structural analysis", () => {
+  const card = (n: number, dimension: string) => ({ dimension, headline: `근거 ${n}`, direction: "mixed" as const, fact: `사실 ${n}입니다.`, whyItMatters: `범위 ${n}입니다.`, sourceLabel: `출처 ${n}`, sourceUrl: `https://example.org/${n}`, provenance: "EXTERNAL_EVIDENCE" as const });
+  const live = (cards: ReturnType<typeof card>[], coverage?: "complete" | "partial") => ({
+    status: "live" as const, generatedAt: "2026-10-14T00:00:00.000Z", caseType: "MBA / EMBA / PhD Decision",
+    contextConfidence: "medium" as const, ...(coverage ? { sourceCoverage: coverage } : {}),
+    evidenceBlocks: cards, metrics: [], opportunitySignals: [], frictionSignals: [], uncertainties: ["불확실성입니다."], implication: "함의입니다.",
+  });
+  const request = { caseType: "MBA / EMBA / PhD Decision" as const, externalAreas: [], targetGeography: "영국", targetLabel: "t", language: "ko" as const };
+
+  it("keeps complete coverage so the engine reads market evidence", async () => {
+    const { mergeV2Evidence } = await import("../shared/v2EvidenceMerge");
+    const { v2ExternalContext } = await import("../client/src/data/v2ExternalContext");
+    const merged = mergeV2Evidence([live([card(1, "Funding")], "complete"), live([card(2, "Program outcomes")], "complete")], request);
+    expect(merged.sourceCoverage).toBe("complete");
+    expect(merged.contextConfidence).toBe("medium");
+    expect(v2ExternalContext(merged).status).toBe("live");
+    // The structural engine now sees a known market-evidence band.
+    const fixture = v2DemoFixture("industry", "ko");
+    const state = { ...fixture.state, caseType: "MBA / EMBA / PhD Decision" as const };
+    const core = buildProductApplicationV3(buildV2Input(state, merged));
+    expect(core.postureBasis.externalValidation.band).not.toBe("unknown");
+    expect(core.postureBasis.externalValidation.source).toBe("live-external-evidence");
+  });
+
+  it("stays partial when any topic had an excluded source, and unset before source checks", async () => {
+    const { mergeV2Evidence } = await import("../shared/v2EvidenceMerge");
+    expect(mergeV2Evidence([live([card(1, "Funding")], "complete"), live([card(2, "Program outcomes")], "partial")], request).sourceCoverage).toBe("partial");
+    expect(mergeV2Evidence([live([card(1, "Funding")]), live([card(2, "Program outcomes")])], request).sourceCoverage).toBeUndefined();
+  });
+});

@@ -130,6 +130,13 @@ export function mergeV2Evidence(lives: ExternalIntelligenceV2[], request: V2Evid
     const aligned = alignTranslation(primary, translated, other);
     if (aligned) primary.translation = aligned;
   }
+  // Coverage carries over only when every topic's sources were checked
+  // complete. Without it the engine reads the evidence as unverified and the
+  // market-evidence signal never reaches the structural analysis (issue A1).
+  if (primary.sourceCoverage !== "partial" && lives.every(live => live.sourceCoverage === "complete")) {
+    primary.sourceCoverage = "complete";
+    if (primary.translation) primary.translation.sourceCoverage = "complete";
+  }
   if (!primary.translation) delete primary.translation;
   if (primary.sourceCoverage === undefined) delete primary.sourceCoverage;
   return primary;
