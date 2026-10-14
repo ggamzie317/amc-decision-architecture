@@ -145,6 +145,19 @@ Real checks on the Preview (2 analyses, owner-approved), full customer UI:
 
 Finding: with medium depth and the richer per-card content, most topics take more than 95s. The function-wide deadline (one serverless call for all topics) is now the binding limit.
 
+## Progressive per-topic evidence (2026-10-14, owner: "allow more time, gather as much as possible")
+
+- The browser sends one request per topic, so each topic has its own serverless budget (maxDuration 300s, search 240s, browser 270s). Topics are merged with the same shared rules (`shared/v2EvidenceMerge.ts`) as they arrive.
+- Results open after the first usable topic. A banner lists topics still collecting, and arriving cards are added to the dashboard and report without a new search. The waiting screen shows each topic's real state.
+- Up to 10 merged cards (each search still ≤ 6). Any card stating an amount (HK$, £, $, 원 …) is listed under Safety Margin.
+
+Real checks on the Preview (2 analyses, owner-approved), full customer UI:
+
+| Case | Result |
+|---|---|
+| UK PhD in philosophy | **6 cards**: Oxford DPhil career cases (no published employment rate), career support, faculty scholarships, UKRI studentships, doctoral loan up to £31,122 for courses from Aug 2026, loan eligibility. Checklist of 6 concrete steps. No Chinese, no citation markers. |
+| HK relocation | **Visa evidence now delivered**: GEP needs a qualifying offer (about 4 weeks' processing), dependants (spouse/partner, unmarried children under 18), fees HK$600 application / HK$600 or HK$1,300 issue, permanent residence after 7 continuous years with a declaration; vacancies −8.4% YoY; HK$32,700 median for managers/professionals. The checklist covers documents, dependants' proof and per-person fee budgeting. The living-cost topic was cut by the old 6-card cap; the cap is now 10 for merged topics. |
+
 ## Verification performed
 
 | Check | Result |

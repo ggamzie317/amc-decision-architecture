@@ -104,7 +104,7 @@ function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", 
   for (const live of lives)
     for (const block of live.evidenceBlocks) {
       const key = citationKey(block);
-      if (seen.has(key) || merged.evidenceBlocks.length >= limit.blocks) continue;
+      if (seen.has(key) || merged.evidenceBlocks.length >= limit.mergedBlocks) continue;
       seen.add(key);
       merged.evidenceBlocks.push(block);
     }

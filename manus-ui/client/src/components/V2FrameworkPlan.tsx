@@ -35,7 +35,9 @@ export default function V2FrameworkPlan({
   const say = (k: string, e: string) => (ko ? k : e);
   const text = (value: string) => v2CustomerEvidenceText(language, value);
   const cards = intelligence.status === "live" || intelligence.status === "demo" ? intelligence.evidenceBlocks : [];
-  const money = cards.filter(card => card.area && moneyAreas.has(card.area));
+  // Any card stating an amount informs Safety Margin (fees, loans, wages, costs).
+  const hasAmount = (value: string) => /(?:HK\$|US\$|A\$|S\$|£|€|\$|₩|¥)\s?\d|\d[\d,.]*\s?(?:원|만 ?원|억 ?원|파운드|달러|유로|엔)/.test(value);
+  const money = cards.filter(card => (card.area && moneyAreas.has(card.area)) || hasAmount(`${card.headline} ${card.fact}`));
   const skills = cards.filter(card => card.area && skillAreas.has(card.area));
   const actions = Array.from(new Set(cards.map(card => card.action).filter((a): a is string => !!a)));
   const switches = analysis.switching.length
