@@ -452,3 +452,34 @@ describe("rate-limited topic searches are retried", () => {
   });
 });
 
+
+describe("a slow topic does not discard finished topics", () => {
+  it("keeps the visa card when another topic times out", async () => {
+    const url = "https://www.immd.gov.hk/visa";
+    const content = {
+      contextConfidence: "medium",
+      evidenceBlocks: [{ dimension: "Visa / mobility", direction: "mixed", sourceUrl: url,
+        en: { headline: "Work visa route is published", fact: "The immigration department publishes an employment visa route with stated conditions.", whyItMatters: "Personal eligibility is not assessed." },
+        ko: { headline: "취업비자 경로가 공개되어 있음", fact: "이민국은 조건이 명시된 취업비자 경로를 공개합니다.", whyItMatters: "개인 자격은 평가하지 않습니다." } }],
+      en: { opportunitySignals: [], frictionSignals: [], uncertainties: ["Eligibility is unverified."], implication: "A visa route is published." },
+      ko: { opportunitySignals: [], frictionSignals: [], uncertainties: ["자격은 확인되지 않았습니다."], implication: "비자 경로가 공개되어 있습니다." },
+    };
+    const envelope = { object: "response", status: "completed", error: null, output: [
+      { type: "search_results", results: [{ url, title: "Employment visa" }] },
+      { type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text: JSON.stringify(content) }] },
+    ] };
+    const result = await resolveV2ExternalIntelligence(
+      { caseType: "Overseas Relocation", externalAreas: [], targetGeography: "홍콩", targetLabel: "홍콩 이주", language: "ko" },
+      { apiKey: "k", observe: () => {}, retryDelayMs: 0, timeoutMs: 150, sourceAvailable: async () => true,
+        fetchImpl: (async (_u: string, init: RequestInit) => {
+          const body = JSON.parse(String(init.body));
+          const dims = JSON.parse(body.input[1].content).publicEvidenceDimensions;
+          if (dims.includes("Visa / mobility")) return Response.json(envelope);
+          // Other topics hang until the search deadline aborts them.
+          return new Promise((_, reject) => init.signal!.addEventListener("abort", () => reject(new Error("aborted"))));
+        }) as typeof fetch }
+    );
+    expect(result.status).toBe("live");
+    expect(result.evidenceBlocks.map(b => b.headline)).toEqual(["취업비자 경로가 공개되어 있음"]);
+  });
+});

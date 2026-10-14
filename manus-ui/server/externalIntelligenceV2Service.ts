@@ -24,6 +24,8 @@ import type {
 type ResolveOptions = {
   /** Base delay for staggering and 429 retries; tests set it to 0. */
   retryDelayMs?: number;
+  /** Budget for checking that cited pages open; tests may shorten it. */
+  probeTimeoutMs?: number;
   apiKey?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
@@ -424,7 +426,9 @@ export async function resolveV2ExternalIntelligence(
   const timer = setTimeout(() => {
     timedOut = true;
     controller.abort();
-  }, options.timeoutMs ?? 110_000);
+    // Searches stop at 95s; topics that finished are kept. Source checks get
+    // their own short budget, so a slow search no longer discards evidence.
+  }, options.timeoutMs ?? 95_000);
   let result = unavailable();
   let reason: Reason = "provider_failure";
   try {
@@ -513,16 +517,15 @@ export async function resolveV2ExternalIntelligence(
           const urls = Array.from(
             new Set(live.evidenceBlocks.map(block => block.sourceUrl!))
           );
+          const probeSignal = AbortSignal.timeout(options.probeTimeoutMs ?? 12_000);
           const checks = await Promise.all(urls.map(async url => {
             if (options.sourceAvailable) {
-              try { return { available: await options.sourceAvailable(url, controller.signal) }; }
+              try { return { available: await options.sourceAvailable(url, probeSignal) }; }
               catch { return { available: false, category: "network" as const }; }
             }
-            return probePublicSource(url, controller.signal);
+            return probePublicSource(url, probeSignal);
           }));
-          if (controller.signal.aborted) {
-            reason = "source_unavailable";
-          } else if (checks.every(check => check.available)) {
+          if (checks.every(check => check.available)) {
             result = { ...live, sourceCoverage: live.sourceCoverage ?? "complete" };
             if (live.translation)
               result.translation = alignTranslation(result, live.translation, request.language === "ko" ? "en" : "ko");
@@ -559,7 +562,8 @@ export async function resolveV2ExternalIntelligence(
   } finally {
     clearTimeout(timer);
   }
-  if (timedOut) {
+  // A timeout fails the request only when no topic produced usable evidence.
+  if (timedOut && result.status !== "live") {
     result = unavailable();
     reason = "provider_failure";
     responseDiagnostic = { category: "timeout" };
