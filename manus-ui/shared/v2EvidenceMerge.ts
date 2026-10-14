@@ -63,9 +63,9 @@ export function v2EvidenceGroups(request: V2EvidenceRequest): string[][] {
   if (areas.length <= 1) return [areas];
   if (request.caseType === "Overseas Relocation" && areas.includes("visaMobility")) {
     const rest = areas.filter(area => area !== "visaMobility");
-    return [["visaMobility"], ...chunk(rest, 2)].slice(0, 3);
+    return [["visaMobility"], ...chunk(rest, 2)].slice(0, 4);
   }
-  return chunk(areas, 2).slice(0, 3);
+  return chunk(areas, 2).slice(0, 4);
 }
 function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -100,14 +100,20 @@ function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", 
     uncertainties: pick("uncertainties", limit.uncertainties),
     implication: fitSentences(lives.map(live => live.implication), limit.implication),
   };
+  // Every topic keeps at least its first card before any topic adds more,
+  // so a later topic is never pushed out by the cap (issue B4).
   const seen = new Set<string>();
-  for (const live of lives)
-    for (const block of live.evidenceBlocks) {
-      const key = citationKey(block);
-      if (seen.has(key) || merged.evidenceBlocks.length >= limit.mergedBlocks) continue;
-      seen.add(key);
-      merged.evidenceBlocks.push(block);
-    }
+  const add = (block: ExternalIntelligenceV2["evidenceBlocks"][number]) => {
+    const key = citationKey(block);
+    if (seen.has(key) || merged.evidenceBlocks.length >= limit.mergedBlocks) return;
+    seen.add(key);
+    merged.evidenceBlocks.push(block);
+  };
+  for (const live of lives) if (live.evidenceBlocks[0]) add(live.evidenceBlocks[0]);
+  for (const live of lives) for (const block of live.evidenceBlocks.slice(1)) add(block);
+  // Keep topic order for reading: group cards by their source topic.
+  const order = new Map(lives.flatMap((live, t) => live.evidenceBlocks.map((b, i) => [citationKey(b), t * 100 + i] as const)));
+  merged.evidenceBlocks.sort((a, b) => (order.get(citationKey(a)) ?? 0) - (order.get(citationKey(b)) ?? 0));
   return lives.some(live => live.sourceCoverage === "partial")
     ? limitedEvidence(merged, merged.evidenceBlocks, language)
     : merged;

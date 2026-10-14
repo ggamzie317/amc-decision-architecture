@@ -326,7 +326,8 @@ describe("decision type and public search are inferred from what the customer wr
     expect(ranking[0].matched).toEqual(expect.arrayContaining(["홍콩", "영주권"]));
     expect(inferV2Geography(text, "ko")).toBe("홍콩");
     expect(inferV2Geography(text, "en")).toBe("Hong Kong");
-    expect(inferV2SearchTarget(text)).toBe(text.optionB);
+    // Intent words and private-life phrasing are dropped from the public target (B3).
+    expect(inferV2SearchTarget(text)).toBe("홍콩 영주권 취득 홍콩에서 이직");
   });
   it.each([
     [{ decision: "EMBA 진학", optionA: "현 직장", optionB: "서울대 EMBA" }, "MBA / EMBA / PhD Decision"],
@@ -555,3 +556,31 @@ describe("issue A1: merged evidence reaches the structural analysis", () => {
     expect(mergeV2Evidence([live([card(1, "Funding")]), live([card(2, "Program outcomes")])], request).sourceCoverage).toBeUndefined();
   });
 });
+
+describe("issues B2-B4: situational topics, target cleanup, a card per topic", () => {
+  it("adds living/mobility facts for a degree abroad but not at home (B2)", async () => {
+    const { v2SituationalAreas } = await import("../client/src/data/v2ExternalEvidenceClient");
+    const degree = { caseType: "MBA / EMBA / PhD Decision" as const, externalAreas: [] as never[] };
+    expect(v2SituationalAreas({ ...degree, targetGeography: "영국" })).toContain("geographyMobility");
+    expect(v2SituationalAreas({ ...degree, targetGeography: "서울" })).not.toContain("geographyMobility");
+    expect(v2SituationalAreas({ ...degree, targetGeography: "영국", externalAreas: ["funding"] as never[] })).toEqual(["funding"]);
+  });
+
+  it("cleans intent words from the search target (B3)", async () => {
+    const { inferV2SearchTarget } = await import("../client/src/data/v2CaseInference");
+    expect(inferV2SearchTarget({ decision: "", optionB: "영국 철학 박사 도전" })).toBe("영국 철학 박사");
+    expect(inferV2SearchTarget({ decision: "", optionB: "서울 식당 재고관리 SaaS 창업" })).toBe("서울 식당 재고관리 SaaS 창업");
+  });
+
+  it("keeps at least one card from every topic under the cap (B4)", async () => {
+    const { mergeV2Evidence } = await import("../shared/v2EvidenceMerge");
+    const card = (t: number, n: number) => ({ dimension: `D${t}`, headline: `주제${t} 근거${n}`, direction: "mixed" as const, fact: "사실입니다.", whyItMatters: "범위입니다.", sourceLabel: "s", sourceUrl: `https://example.org/${t}/${n}`, provenance: "EXTERNAL_EVIDENCE" as const });
+    const live = (t: number, count: number) => ({ status: "live" as const, generatedAt: "2026-10-14T00:00:00.000Z", caseType: "Overseas Relocation", sourceCoverage: "complete" as const, contextConfidence: "medium" as const,
+      evidenceBlocks: Array.from({ length: count }, (_, n) => card(t, n)), metrics: [], opportunitySignals: [], frictionSignals: [], uncertainties: ["u입니다."], implication: "함의입니다." });
+    const merged = mergeV2Evidence([live(1, 6), live(2, 6), live(3, 1)], { caseType: "Overseas Relocation", externalAreas: [], targetGeography: "홍콩", targetLabel: "t", language: "ko" });
+    expect(merged.evidenceBlocks).toHaveLength(10);
+    expect(merged.evidenceBlocks.map(b => b.dimension)).toContain("D3");
+    expect(merged.evidenceBlocks[0].dimension).toBe("D1");
+  });
+});
+

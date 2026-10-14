@@ -28,7 +28,7 @@ export function buildV2EvidenceRequest(
   if (!v2PublicSearchTarget(state) || !state.targetGeography.trim()) return null;
   return parseV2EvidenceRequest({
     caseType: state.caseType,
-    externalAreas: state.externalAreas,
+    externalAreas: v2SituationalAreas(state),
     targetGeography: state.targetGeography,
     targetLabel: v2PublicSearchTarget(state),
     language: state.language,
@@ -172,4 +172,19 @@ export function acceptV2Evidence(
   return (sameCards
     ? { ...primary, translation }
     : primary) as ExternalIntelligenceV2;
+}
+
+const domestic = /^(?:한국|대한민국|서울|부산|판교|인천|대구|대전|광주|south korea|korea|seoul|busan|pangyo)$/i;
+/**
+ * Default topics plus the ones the customer's situation implies (issue B2):
+ * a degree abroad also needs living, family and mobility facts. Explicit
+ * customer choices are kept as chosen.
+ */
+export function v2SituationalAreas(state: Pick<V2State, "caseType" | "externalAreas" | "targetGeography">): V2State["externalAreas"] {
+  if (state.externalAreas.length) return state.externalAreas;
+  const areas = [...v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] })];
+  const geography = state.targetGeography.trim();
+  if (state.caseType === "MBA / EMBA / PhD Decision" && geography && !domestic.test(geography) && !areas.includes("geographyMobility"))
+    areas.push("geographyMobility");
+  return areas as V2State["externalAreas"];
 }

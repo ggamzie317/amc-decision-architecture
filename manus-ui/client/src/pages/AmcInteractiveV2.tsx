@@ -835,9 +835,17 @@ export default function AmcInteractiveV2() {
     await Promise.all(groups.map(async (areas, index) => {
       // Stagger starts so parallel topics do not hit the provider at once.
       if (index) await new Promise(resolve => setTimeout(resolve, index * 700));
-      const result = await requestV2Evidence({ ...request, externalAreas: areas }, fetch, observation => {
+      const ask = (topicAreas: string[]) => requestV2Evidence({ ...request, externalAreas: topicAreas }, fetch, observation => {
         setEvidenceHttpByLanguage(previous => ({ ...previous, [request.language]: observation }));
       });
+      let result = await ask(areas);
+      // A topic with no usable evidence is retried once, narrower: each item
+      // on its own (issue B1). Two items become two focused searches.
+      if (result.status !== "live") {
+        const retries = await Promise.all((areas.length > 1 ? areas.map(area => [area]) : [areas]).map(ask));
+        const found = retries.filter(retry => retry.status === "live");
+        if (found.length) result = mergeV2Evidence(found, { ...request, externalAreas: areas });
+      }
       lastResult = result;
       setTopicStates(previous => previous.map((topic, i) => i === index
         ? { ...topic, state: result.status === "live" ? "done" : "empty" }

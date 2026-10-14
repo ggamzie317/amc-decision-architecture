@@ -115,5 +115,14 @@ export function inferV2Geography(text: { decision: string; optionA: string; opti
 /** The path being explored is the public target; customer can edit before search. */
 export function inferV2SearchTarget(text: { decision: string; optionB: string }): string {
   const source = text.optionB.trim() || text.decision.trim();
-  return source.replace(/[\r\n]+/g, " ").slice(0, 120);
+  // Keep the searchable nouns; drop intent words and private-life phrasing
+  // that do not help a public search (issue B3). The customer can edit it.
+  const cleaned = source
+    .replace(/[\r\n]+/g, " ")
+    .replace(/(?:하여|해서)\s/g, " ")
+    .replace(/\s*(?:및\s*)?가족과\s*(?:함께\s*)?생활(?:\s*추진)?/g, " ")
+    .replace(/\s*(?:도전|추진|고민|희망|계획|검토|하고\s*싶[다음음]?|하려고\s*함)(?=\s|$)/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return (cleaned || source).slice(0, 120);
 }
