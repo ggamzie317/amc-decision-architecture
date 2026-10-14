@@ -27,7 +27,7 @@ const labelKey: Record<string, V2CopyKey> = {
   constraintLoad: "constraint",
 };
 
-export type V2EngineSwitch = { variable: string; signal: string; direction: string; improves: boolean };
+export type V2EngineSwitch = { variable: string; signal: string; direction: string; improves: boolean; labels: string[] };
 
 export function v2EngineSwitches(
   input: ProductApplicationBuildInput,
@@ -56,6 +56,7 @@ export function v2EngineSwitches(
       const label = v2t(language, labelKey[variable]);
       found.push({
         variable,
+        labels: [label],
         improves: move.improves,
         signal: ko
           ? `${label}: ${v2t(language, current as V2CopyKey)} → ${v2t(language, move.band as V2CopyKey)}`
@@ -102,6 +103,7 @@ function pairSwitches(
         const part = (v: string, band: string) => `${v2t(language, labelKey[v])} ${v2t(language, bands[v] as V2CopyKey)} → ${v2t(language, band as V2CopyKey)}`;
         out.push({
           variable: `${a}+${b}`,
+          labels: [v2t(language, labelKey[a]), v2t(language, labelKey[b])],
           improves,
           signal: `${part(a, bandA)} + ${part(b, bandB)}`,
           direction: ko

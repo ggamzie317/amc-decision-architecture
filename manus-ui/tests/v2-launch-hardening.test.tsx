@@ -666,3 +666,13 @@ describe("executive brief shows the analysis in keywords", () => {
     expect(html).toContain(analysis.posture);
   });
 });
+
+describe("brief agrees with the map and extracts clean amounts", () => {
+  it("drops trailing punctuation from amounts", async () => {
+    const { v2AmountKeywords } = await import("../client/src/components/V2ExecutiveBrief");
+    const block = (headline: string, fact: string) => ({ dimension: "Funding", headline, fact, whyItMatters: "w", direction: "mixed" as const, sourceLabel: "s", provenance: "EXTERNAL_EVIDENCE" as const });
+    expect(v2AmountKeywords([block("등록금", "연간 등록금은 £5,238, 기간은 3년입니다.")], "ko")[0].amount).toBe("£5,238");
+    expect(v2AmountKeywords([block("임금", "월 HK$32,700입니다.")], "ko")[0].amount).toBe("HK$32,700");
+    expect(v2AmountKeywords([block("월세", "월 120만 원 수준입니다.")], "ko")[0].amount).toBe("120만 원");
+  });
+});

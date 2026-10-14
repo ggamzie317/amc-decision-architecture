@@ -13,7 +13,9 @@ import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
  * structural signal, the missing point, a decision switch and the first
  * preparation step. Nothing new is scored.
  */
-const amountPattern = /(?:HK\$|US\$|A\$|S\$|£|€|\$|₩)\s?\d[\d,.]*(?:\s?(?:만|억|천))?|\d[\d,.]*\s?(?:만 ?원|억 ?원|원|파운드|달러|유로)/;
+// Numbers keep thousands separators but never a trailing comma or period.
+const number = String.raw`\d{1,3}(?:[,.]\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?`;
+const amountPattern = new RegExp(String.raw`(?:HK\$|US\$|A\$|S\$|£|€|\$|₩)\s?(?:${number})(?:\s?(?:만|억|천))?|(?:${number})\s?(?:만 ?원|억 ?원|원|파운드|달러|유로)`);
 
 export function v2AmountKeywords(blocks: ExternalIntelligenceV2["evidenceBlocks"], language: V2Language, max = 3) {
   const out: { amount: string; label: string }[] = [];
@@ -28,11 +30,12 @@ export function v2AmountKeywords(blocks: ExternalIntelligenceV2["evidenceBlocks"
   return out;
 }
 
-const signalOrder: [keyof ProductApplicationV3["postureBasis"], V2CopyKey][] = [
-  ["safetyMargin", "safety"], ["internalReadiness", "readinessBand"], ["externalValidation", "externalValidation"],
-  ["reversibility", "reversibility"], ["optionBSupport", "supportBand"], ["structuralRisk", "downside"], ["constraintLoad", "constraint"],
+// Same transition baseline as the structure map, so the brief and the map agree.
+const signalOrder: [keyof ProductApplicationV3["postureBasis"], V2CopyKey, number][] = [
+  ["externalValidation", "externalValidation", 2], ["internalReadiness", "readinessBand", 2], ["safetyMargin", "safety", 1],
+  ["reversibility", "reversibility", 1], ["optionBSupport", "supportBand", 1], ["structuralRisk", "downside", 1], ["constraintLoad", "constraint", 1],
 ];
-const weak = new Set(["weak", "high", "heavy"]);
+const level: Record<string, number> = { strong: 2, developing: 1, weak: 0, low: 2, moderate: 1, high: 0, light: 2, material: 1, heavy: 0 };
 
 export default function V2ExecutiveBrief({
   language,
@@ -57,10 +60,15 @@ export default function V2ExecutiveBrief({
   const text = (value: string) => v2CustomerEvidenceText(language, value);
   const blocks = intelligence.status === "live" || intelligence.status === "demo" ? intelligence.evidenceBlocks : [];
   const amounts = v2AmountKeywords(blocks, language);
-  const weakest = signalOrder.find(([key]) => weak.has(core.postureBasis[key].band))
-    ?? signalOrder.find(([key]) => core.postureBasis[key].band === "unknown");
+  const gaps = signalOrder
+    .map(([key, label, reference]) => ({ key, label, gap: reference - (level[core.postureBasis[key].band] ?? -1) }))
+    .filter(row => row.gap > 0)
+    .sort((a, b) => b.gap - a.gap);
+  const weakest = gaps.length ? signalOrder.find(([key]) => key === gaps[0].key) : undefined;
   const weakestBand = weakest ? core.postureBasis[weakest[0]].band : null;
-  const switchItem = analysis.switching[0] ?? (input ? v2EngineSwitches(input, core, language, 1)[0] : undefined);
+  const customerSwitch = analysis.switching[0];
+  const engineSwitch = !customerSwitch && input ? v2EngineSwitches(input, core, language, 1)[0] : undefined;
+  const switchItem = customerSwitch ?? engineSwitch;
   const firstAction = blocks.find(block => block.action)?.action;
   const coverage = v2PostureCoverageNote(core, language);
   const cards: { icon: LucideIcon; label: string; keyword: string; detail: string; tone?: "warn" }[] = [
@@ -75,11 +83,11 @@ export default function V2ExecutiveBrief({
     {
       icon: TriangleAlert,
       label: say("가장 큰 부족", "Biggest gap"),
-      keyword: weakest ? v2t(language, weakest[1]) : say("뚜렷한 부족 없음", "No clear gap"),
+      keyword: weakest ? v2t(language, weakest[1]) : say("기준선 충족", "Baseline met"),
       detail: weakest && weakestBand
-        ? say(`현재 ${v2t(language, weakestBand as V2CopyKey)} — 이 조건이 판단을 가장 크게 제한합니다.`,
-          `Now ${v2t(language, weakestBand as V2CopyKey)} — this condition limits the reading most.`)
-        : say("입력한 조건 중 약한 항목이 없습니다.", "None of your conditions is weak."),
+        ? say(`현재 ${v2t(language, weakestBand as V2CopyKey)}${gaps.length > 1 ? ` · 함께 부족: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — 전환 기준선에 가장 못 미치는 조건입니다.`,
+          `Now ${v2t(language, weakestBand as V2CopyKey)}${gaps.length > 1 ? ` · also short: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — furthest below the transition baseline.`)
+        : say("모든 조건이 전환 기준선을 충족합니다.", "Every condition meets the transition baseline."),
       tone: weakest ? "warn" : undefined,
     },
     {
@@ -91,7 +99,11 @@ export default function V2ExecutiveBrief({
     {
       icon: GitBranch,
       label: say("판단을 바꿀 조건", "What would change it"),
-      keyword: switchItem ? text(switchItem.signal).split(/ \+ |: /)[0] : say("아직 없음", "None yet"),
+      keyword: switchItem
+        ? engineSwitch
+          ? `${engineSwitch.labels.join(" + ")} ${engineSwitch.improves ? say("강화 시", "improve") : say("약화 시", "weaken")}`
+          : text(switchItem.signal)
+        : say("아직 없음", "None yet"),
       detail: switchItem ? `${text(switchItem.signal)} → ${text(switchItem.direction)}` : say("조건이 정해지면 표시됩니다.", "Appears once a condition is set."),
     },
     {
