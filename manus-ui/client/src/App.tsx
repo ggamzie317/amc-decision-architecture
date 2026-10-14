@@ -5,8 +5,8 @@ import { Redirect, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AmcWebMvp from "./pages/AmcWebMvp";
+import AmcInteractiveV2 from "./pages/AmcInteractiveV2";
 import AmcAdmin from "./pages/AmcAdmin";
-import Home from "./pages/Home";
 
 function LegacyProductRedirect() {
   return <Redirect to="/amc-web-mvp" replace />;
@@ -15,8 +15,11 @@ function LegacyProductRedirect() {
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      {/* The customer entry point is V2 (owner decision 2026-10-14); keep ?lang. */}
+      <Route path={"/"}>{() => <Redirect to={`/amc-interactive-v2${typeof window === "undefined" ? "" : window.location.search}`} />}</Route>
       <Route path={"/amc-web-mvp"} component={AmcWebMvp} />
+      <Route path="/amc-interactive-v2" component={AmcInteractiveV2} />
+      <Route path="/amc-interactive-v1">{() => <AmcWebMvp key="interactive-v1" interactive />}</Route>
       <Route path={"/amc-admin"} component={AmcAdmin} />
       <Route path={"/intake"} component={LegacyProductRedirect} />
       <Route path={"/format-handoff"} component={LegacyProductRedirect} />

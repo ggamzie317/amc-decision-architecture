@@ -1,0 +1,995 @@
+import { withKoreanParticle } from "./koreanParticle";
+import { v2CaseFifwmSet } from "./v2CaseFifwm";
+import type {
+  ProductApplicationV3,
+  ChangingPlay,
+} from "./amcProductApplicationV3";
+import type { V2State } from "./amcV2Model";
+import type {
+  ExternalIntelligenceV2,
+  V2Provenance,
+} from "./externalIntelligenceV2";
+import { v2CustomerEvidenceText, v2MissingPoint } from "./amcV2Presentation";
+import { v2CustomerPlayText, v2CustomerPosture } from "./v2ReportPresentation";
+import { v2t, type V2CopyKey } from "./v2Language";
+import { selfCheckCards, type SelfCheckId, type SelfChecks } from "./v2SelfDiagnostic";
+import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
+import { v2CanAskCanonicalFifwm } from "./v2CanonicalFifwm";
+import {
+  v2ComparisonKey, v2ComparisonLabel, v2ConditionGroup, v2EvidenceArea,
+  type EvidenceComparisons, type EvidenceComparisonStatus,
+} from "./v2EvidenceComparison";
+
+export type V2EvidencePhase =
+  | "not_checked"
+  | "loading"
+  | "live"
+  | "unavailable"
+  | "demo";
+type Pair = readonly [string, string];
+type Profile = {
+  topic: Pair;
+  question: Pair;
+  action: Pair;
+  output: Pair;
+  advance: Pair;
+};
+const profiles: Record<string, Profile> = {
+  Entrepreneurship: {
+    topic: ["사업 검증", "Business validation"],
+    question: [
+      "관심을 보인 고객이 실제로 비용을 지불하고 다시 구매할까요?",
+      "Will interested customers pay and return?",
+    ],
+    action: [
+      "하나의 고객군과 유료 제안으로 작은 판매 실험을 진행하세요. 기존 해결 방식과 비교하고 거절 이유를 기록하세요.",
+      "Test one paid offer with one customer segment. Compare it with the current workaround and record refusals.",
+    ],
+    output: [
+      "유료 반응, 반복 구매 여부, 제공 비용을 정리한 실험 기록",
+      "A record of paid responses, repeat purchases and delivery costs",
+    ],
+    advance: [
+      "실제 결제와 반복 이용 근거가 확보되고 제공 비용을 감당할 수 있을 때",
+      "When paid demand, repeat use and manageable delivery costs are demonstrated",
+    ],
+  },
+  "MBA / EMBA / PhD Decision": {
+    topic: ["진학 검토", "Study review"],
+    question: [
+      "이 학위가 목표 경로에 꼭 필요하며, 재직 중 준비나 더 작은 학습 경로로 대체하기 어려울까요?",
+      "Is this degree necessary for the target path, rather than a smaller learning route while working?",
+    ],
+    action: [
+      "목표 경로의 실제 요건과 과정별 비용·재원·결과 자료를 비교하세요. 졸업생에게 학위가 도움이 된 조건과 도움이 되지 않은 조건을 함께 확인하세요.",
+      "Compare target-path requirements with program costs, funding and outcomes. Ask alumni when the degree helped and when it did not.",
+    ],
+    output: [
+      "목표 요건과 학위의 연결, 총비용, 대체 경로를 비교한 표",
+      "A comparison of target requirements, degree relevance, total cost and alternatives",
+    ],
+    advance: [
+      "학위가 목표에 필요한 이유와 재원·시간 계획을 확인했을 때",
+      "When degree relevance, funding and time capacity are established",
+    ],
+  },
+  "Industry Transition": {
+    topic: ["산업 전환", "Industry transition"],
+    question: [
+      "기존 성과가 새 산업의 직무 요건을 실제로 충족한다는 근거가 있을까요?",
+      "What demonstrates that existing achievements meet the target industry's role requirements?",
+    ],
+    action: [
+      "목표 직무의 공고와 기존 성과를 항목별로 대조하고, 부족한 요건을 보여줄 작은 결과물을 만드세요. 현업 담당자에게 구체적인 피드백을 받으세요.",
+      "Map target-role requirements to existing achievements. Build a small work sample for the gaps and obtain specific practitioner feedback.",
+    ],
+    output: [
+      "직무 요건 대비 성과표, 결과물, 현업 피드백 기록",
+      "A requirements-to-achievements map, work sample and practitioner feedback",
+    ],
+    advance: [
+      "관련 성과에 대한 현업의 긍정적인 평가와 실제 지원 경로를 확보했을 때",
+      "When practitioners validate relevant work and an actual application route is available",
+    ],
+  },
+  "Overseas Relocation": {
+    topic: ["해외 이동", "Overseas relocation"],
+    question: [
+      "이동 자격, 현지 생활 기반, 복귀 경로가 함께 성립할까요?",
+      "Do eligibility, local living capacity and a return path work together?",
+    ],
+    action: [
+      "공식 이동 요건과 현지 비용을 확인하고, 소득·주거·가족 일정과 맞춰 보세요. 현재 기반을 해지하기 전 복귀 가능 조건을 정리하세요.",
+      "Check official mobility requirements and local costs against income, housing and family schedules. Establish return conditions before giving up the current base.",
+    ],
+    output: [
+      "공식 요건, 생활 비용, 복귀 조건을 연결한 준비표",
+      "A preparation map linking official requirements, living costs and return conditions",
+    ],
+    advance: [
+      "자격과 생활 기반을 확인하고 복귀에 필요한 자원을 남겨 두었을 때",
+      "When eligibility and living capacity are established and return resources are protected",
+    ],
+  },
+  "Role Upgrade / Downgrade": {
+    topic: ["역할 조정", "Role change"],
+    question: [
+      "직함의 변화가 권한·책임·보상·지원의 변화와 일치할까요?",
+      "Does the title change align with authority, responsibility, compensation and support?",
+    ],
+    action: [
+      "역할 범위와 성공 기준을 문서로 확인하고, 제한된 업무에서 필요한 지원과 실제 부담을 시험하세요.",
+      "Confirm scope and success criteria in writing. Test support and workload through a bounded responsibility.",
+    ],
+    output: [
+      "역할·권한·지원 합의와 시범 업무 결과",
+      "An agreement on role, authority and support plus trial-work results",
+    ],
+    advance: [
+      "책임에 맞는 권한과 지원, 감당 가능한 업무 범위를 확인했을 때",
+      "When authority, support and manageable scope match the responsibility",
+    ],
+  },
+  "Corporate Stay vs Exit": {
+    topic: ["잔류와 이탈", "Stay or exit"],
+    question: [
+      "현재 역할을 바꾸는 것과 조직을 떠나는 것 중 어느 쪽이 실제 문제를 줄일까요?",
+      "Would changing the current role or leaving the organization address the actual problem?",
+    ],
+    action: [
+      "현재 역할의 조정 가능성을 확인하면서 외부 경로의 요건과 구체적인 제안을 비교하세요. 퇴사 전 소득 공백과 재진입 조건을 정리하세요.",
+      "Check internal role changes alongside external requirements and concrete offers. Establish income-gap and re-entry conditions before leaving.",
+    ],
+    output: [
+      "내부 조정 가능성과 외부 제안·복귀 조건의 비교표",
+      "A comparison of internal changes, external offers and re-entry conditions",
+    ],
+    advance: [
+      "외부 경로의 구체적인 조건이 확인되고 소득 공백을 감당할 수 있을 때",
+      "When concrete external terms and capacity for an income gap are established",
+    ],
+  },
+  "Burnout-driven Decision": {
+    topic: ["회복과 경력", "Recovery and career"],
+    question: [
+      "회복에 필요한 업무 조정과 경로 변경을 구분할 수 있을까요?",
+      "Can recovery needs be separated from the need to change career paths?",
+    ],
+    action: [
+      "회복을 위한 업무량·일정·지원 조정을 먼저 시험하고 부담 변화를 기록하세요. 회복 자원을 소모하지 않는 범위에서 대안을 비교하세요.",
+      "Test workload, schedule and support changes and record their effects. Compare alternatives within recovery capacity.",
+    ],
+    output: [
+      "업무 조정 전후 부담과 회복 시간의 기록",
+      "A record of workload and recovery time before and after the adjustment",
+    ],
+    advance: [
+      "회복에 필요한 시간과 지원이 확보되고 대안의 실제 부담을 확인했을 때",
+      "When recovery time, support and the alternative's actual workload are established",
+    ],
+  },
+  "Family Constraint-heavy Decision": {
+    topic: ["가족과 경력", "Family and career"],
+    question: [
+      "경로 변경이 가족 일정과 자원에 미치는 영향을 실제로 감당할 수 있을까요?",
+      "Can family schedules and resources accommodate the actual effects of the change?",
+    ],
+    action: [
+      "가족과 시간·위치·돌봄·지출의 최소 유지 조건을 합의하세요. 그 조건을 지키는 작은 실행으로 실제 부담을 확인하세요.",
+      "Agree minimum conditions for time, location, care and spending. Test the change through a small step that preserves those conditions.",
+    ],
+    output: [
+      "가족의 유지 조건, 지원 분담, 시범 실행 기록",
+      "Agreed family conditions, support responsibilities and trial results",
+    ],
+    advance: [
+      "가족의 유지 조건과 실제 지원 분담이 성립했을 때",
+      "When minimum family conditions and actual support commitments are workable",
+    ],
+  },
+  "General Career Reconfiguration": {
+    topic: ["경력 재설계", "Career reconfiguration"],
+    question: [
+      "새 경로의 요건을 현재 기반을 유지하면서 시험할 수 있을까요?",
+      "Can the new path's requirements be tested while preserving the current base?",
+    ],
+    action: [
+      "새 경로에 필요한 요건과 현재 성과를 비교하고, 가장 중요한 부족 조건 하나를 작은 결과물과 현업 피드백으로 확인하세요.",
+      "Compare new-path requirements with current achievements. Test the most important gap with a small work sample and practitioner feedback.",
+    ],
+    output: [
+      "목표 요건, 부족 조건, 결과물과 피드백의 연결표",
+      "A map linking target requirements, gaps, work samples and feedback",
+    ],
+    advance: [
+      "핵심 요건을 충족하는 근거와 감당 가능한 실행 계획을 확보했을 때",
+      "When evidence of meeting key requirements and a manageable plan are available",
+    ],
+  },
+};
+const academic: Profile = {
+  topic: ["학술 경력 검토", "Academic career review"],
+  question: [
+    "학회 참여와 연구 활동이 목표 대학의 실제 임용 요건을 충족하는 성과로 이어질까요?",
+    "Will conferences and research produce evidence that meets the target institution's actual appointment requirements?",
+  ],
+  action: [
+    "목표 대학의 임용 공고에서 학위·경력·연구·강의 요건을 구분하고 기존 성과와 대조하세요. 학회 참가비를 지출하기 전 연구 결과물이나 강의안을 담당자에게 검토받으세요.",
+    "Separate degree, experience, research and teaching requirements in target appointment notices and map existing achievements to them. Obtain feedback on research or a teaching plan before spending on conferences.",
+  ],
+  output: [
+    "임용 요건 대비 성과표, 연구 또는 강의 결과물, 담당자 피드백",
+    "An appointment-requirements map, research or teaching sample and institutional feedback",
+  ],
+  advance: [
+    "목표 기관이 인정하는 성과와 지원 자격을 확인하고 본업·연구 시간과 비용을 감당할 수 있을 때",
+    "When the institution recognizes the evidence, eligibility is confirmed and work, research time and costs remain manageable",
+  ],
+};
+export function isV2AcademicCase(
+  state: Pick<V2State, "caseType" | "decision" | "optionB">
+): boolean {
+  return (
+    state.caseType === "General Career Reconfiguration" &&
+    /교수|강사|강의|학회|임용|학술|adjunct|faculty|lecturer|professor|academic appointment/i.test(
+      `${state.decision} ${state.optionB}`
+    )
+  );
+}
+/** A visible, editable public search target. Customer prose and notes are not inferred into new request fields. */
+export function v2PublicSearchTarget(state: V2State): string {
+  // Search only an explicitly entered public target. Neither option prose nor
+  // a generic case-family label identifies a customer's actual research target.
+  return state.publicSearchTarget?.trim() ?? "";
+}
+export type V2Finding = {
+  id: string;
+  title: string;
+  basis: string;
+  implication: string;
+  coreReading: string;
+  evidenceIds: number[];
+  provenance: V2Provenance[];
+  selfReports: string[];
+};
+export type V2EvidenceLink = {
+  id: number;
+  conditionGroup: "finance" | "capacity" | "readiness" | "public";
+  sourceFact: string;
+  sourceScope: string;
+  sourceUrl?: string;
+  sourceDate?: string;
+  conditionProvenance: readonly V2Provenance[];
+  condition: string;
+  selfReport?: string;
+  interpretation: string;
+  unresolved: string;
+  test: string;
+  comparisonKey: string;
+  comparisonStatus: EvidenceComparisonStatus;
+  comparisonLabel: string;
+  comparisonDetail: string;
+  customerEvidence: string;
+  comparisonReading: string;
+  testReference: string;
+};
+export type V2Analysis = {
+  language: V2State["language"];
+  evidenceLanguage: V2State["language"];
+  fifwmSource: ProductApplicationV3["decisionStructure"]["fifwmSource"];
+  topic: string;
+  posture: string;
+  summary: string;
+  executiveSummary: string;
+  question: string;
+  missingConcept: string;
+  tradeoff: string;
+  boundary: string;
+  externalReading: string;
+  findings: V2Finding[];
+  evidenceLinks: V2EvidenceLink[];
+  target: string;
+  researchCoverage: Array<{ area: string; title: string; evidenceIds: number[] }>;
+  externalContextReading: string;
+  factorScopeNote: string;
+  switching: Array<{ signal: string; direction: string }>;
+  priorityEvidence: {
+    headline: string;
+    condition: string;
+    check: string;
+    nextCheck: string;
+  } | null;
+  factors: Array<{
+    id: keyof ProductApplicationV3["decisionStructure"]["fifwm"];
+    title: string;
+    questionTopic: string;
+    reading: string;
+    evidenceIds: number[];
+    status: string;
+    assessed: boolean;
+  }>;
+  safety: Array<{
+    id: string;
+    title: string;
+    band: string;
+    level: number | null;
+    reading: string;
+  }>;
+  plays: Array<{
+    family: ChangingPlay["family"];
+    title: string;
+    move: string;
+    changes: string;
+    protects: string;
+    needs: string;
+    evidence: string;
+    exposure: string;
+    timeExposure: string;
+  }>;
+  experiment: {
+    action: string;
+    briefAction: string;
+    output: string;
+    continue: string;
+    pause: string;
+    stages: Array<{
+      day: string;
+      title: string;
+      action: string;
+      briefAction?: string;
+      output: string;
+    }>;
+  };
+};
+
+/** Non-scored interpretation of actual engine bands plus the immutable public-evidence snapshot.
+ * It does not manufacture canonical FIFWM scores or upgrade personal fit from a public source. */
+export function buildV2Analysis(
+  state: V2State,
+  core: ProductApplicationV3,
+  intelligence: ExternalIntelligenceV2,
+  phase: V2EvidencePhase = intelligence.status,
+  selfChecks?: SelfChecks,
+  comparisons: EvidenceComparisons = {},
+  evidenceLanguage: V2State["language"] = state.language,
+): V2Analysis {
+  const ko = state.language === "ko",
+    say = (koText: string, enText: string) => (ko ? koText : enText);
+  const text = (p: Pair) => p[ko ? 0 : 1],
+    t = (k: V2CopyKey) => v2t(state.language, k);
+  const profile = isV2AcademicCase(state)
+    ? academic
+    : (profiles[state.caseType] ?? profiles["General Career Reconfiguration"]);
+  const targetScope = state.caseType === "Entrepreneurship"
+    ? say("목표 고객군·제안·지역", "target customer segment, offer and geography")
+    : state.caseType === "MBA / EMBA / PhD Decision" || isV2AcademicCase(state)
+      ? say("목표 과정·기관·지역", "target program, institution and geography")
+      : state.caseType === "Industry Transition"
+        ? say("목표 산업·직무·지역", "target industry, role and geography")
+        : say("목표 경로·지역", "target path and geography");
+  const personalUnknown = state.caseType === "Entrepreneurship"
+    ? say("실제 구매와 실행 여력", "actual purchases and execution capacity")
+    : say("본인의 자격·성과와 실행 여력", "personal eligibility, work evidence and execution capacity");
+  const b = core.postureBasis,
+    s = core.safetyMargin.inputs;
+  const cards = selfCheckCards(state.caseType, state.language);
+  const selfReport = (id: SelfCheckId): string | null => {
+    if (!selfChecks) return null;
+    const answer = selfChecks[id];
+    if (answer.status === null) return null;
+    const title = cards.find(card => card.id === id)?.title ?? id;
+    const status = answer.status === "checked"
+      ? say("직접 확인했다고 작성한 내용", "What you reported checking directly")
+      : answer.status === "unsure"
+        ? say("잘 모르겠음", "Unsure")
+        : say("아직 확인하지 않음", "Not checked yet");
+    const detail = answer.status === "checked" && answer.detail.trim()
+      ? `: ${answer.detail.trim()}`
+      : "";
+    return `${title} · ${status}${detail}. ${say("고객 자기보고 · 독립 검증 전", "Customer self-report · not independently verified")}`;
+  };
+  const reports = (...ids: SelfCheckId[]) => ids.flatMap(id => {
+    const report = selfReport(id);
+    return report ? [report] : [];
+  });
+  const money = s.financialRoom.band,
+    reverse = s.reversibility.band,
+    risk = s.downsideExposure.band;
+  const ready = b.internalReadiness.band,
+    support = b.optionBSupport.band,
+    load = b.constraintLoad.band;
+  const live = phase === "live" && intelligence.status === "live",
+    demo = phase === "demo" && intelligence.status === "demo";
+  const blocks = live || demo ? intelligence.evidenceBlocks : [];
+  const constrained = core.safetyMargin.band === "weak";
+  const protectedBase = state.protects.length
+    ? state.protects.map(t).join(" · ")
+    : say("현재의 소득과 생활 기반", "current income and living capacity");
+  const opening = state.opens.length
+    ? state.opens.map(t).join(" · ")
+    : text(profile.topic);
+  const boundary = constrained
+    ? say(
+        `유지할 기반은 ${protectedBase}입니다. 지출·투입 시간·중단 시점을 먼저 정하고, 회복 자원을 남기는 범위에서 시험하세요.`,
+        `Protect ${protectedBase}. Set spending, time and stop limits before testing, and retain resources for recovery.`
+      )
+    : reverse === "unknown"
+      ? say(
+          `유지할 기반은 ${protectedBase}입니다. 원래 경로로 돌아오는 데 필요한 비용·시간을 확인하기 전에는 되돌리기 어려운 약속을 늘리지 마세요.`,
+          `Protect ${protectedBase}. Establish the cost and time of returning before increasing irreversible commitments.`
+        )
+      : say(
+          `유지할 기반은 ${protectedBase}입니다. 확인된 회복 여력 안에서 시험 범위를 정하고, 다음 단계 전에 비용과 복귀 조건을 다시 확인하세요.`,
+          `Protect ${protectedBase}. Bound the test by demonstrated recovery capacity, and recheck costs and return conditions before the next step.`
+        );
+  const safetyReading = constrained
+    ? say(
+        "현재 자원으로는 계획이 틀렸을 때 회복할 여유가 부족합니다. 새 경로의 가능성과 별개로, 먼저 시험 범위를 줄여야 합니다.",
+        "Current resources leave limited room to recover if the plan fails. The test needs a smaller scope even if the new path looks promising."
+      )
+    : core.safetyMargin.band === "unknown"
+      ? say(
+          "회복 가능성을 판단할 정보가 부족합니다. 가능성이 높아 보이는 것과 실패를 감당할 수 있는 것은 별도 조건입니다.",
+          "Recovery capacity is unresolved. A promising opportunity and the ability to absorb failure are separate conditions."
+        )
+      : say(
+          "일부 회복 여력은 있지만, 그 여력이 실제 실행 비용과 복귀 조건까지 감당하는지 확인해야 합니다.",
+          "Some recovery capacity is present; verify that it covers actual execution costs and return conditions."
+        );
+  const readinessReading =
+    ready === "weak"
+      ? say(
+          "희망 경로와 준비 상태 사이에 간격이 있습니다. 활동량을 늘리기보다 목표 요건을 충족하는 결과물 하나를 먼저 만드는 편이 검증에 도움이 됩니다.",
+          "There is a gap between the target path and current readiness. A work sample addressing a target requirement tests more than simply increasing activity."
+        )
+      : ready === "unknown"
+        ? say(
+            "준비 상태가 확인되지 않았습니다. 목표 요건과 기존 성과를 비교해 충족 조건과 부족 조건을 구분해야 합니다.",
+            "Readiness is unresolved. Compare target requirements with achievements to separate demonstrated fit from gaps."
+          )
+        : say(
+            "기존 준비를 목표 경로에서 인정받는 근거로 연결해야 합니다. 자기 평가만으로 실제 접근 가능성을 확정할 수는 없습니다.",
+            "Connect existing preparation to evidence recognized by the target path. Self-assessment alone does not establish actual access."
+          );
+  const capacityReading =
+    load === "heavy"
+      ? say(
+          "현재 제약이 커서 추가 활동이 본업·가족·회복 시간을 밀어낼 수 있습니다. 일정과 역할을 재배치하지 않으면 준비가 진행돼도 실행 부담이 남습니다.",
+          "Heavy constraints mean added activity may displace work, family or recovery time. Readiness improvements alone do not resolve execution pressure without changes to schedule or scope."
+        )
+      : support === "weak" || support === "unknown"
+        ? say(
+            "도움을 줄 사람이 있다는 것과 필요한 시간·자원을 실제로 지원받는 것은 다릅니다. 구체적인 지원 역할과 가능한 일정을 확인해야 합니다.",
+            "Having potential supporters differs from receiving the time and resources needed. Confirm specific responsibilities and availability."
+          )
+        : say(
+            "실행을 뒷받침할 조건이 일부 갖춰져 있습니다. 실제로 확보한 일정과 지원을 작은 시험에서 확인하고 추가 약속을 결정하세요.",
+            "Some execution support is present. Test actual schedule and support commitments before adding further obligations."
+          );
+  const target = v2PublicSearchTarget(state) || state.optionB.trim() || text(profile.topic);
+  const evidenceLinks: V2EvidenceLink[] = blocks.map((block, id) => {
+    const conditionGroup = v2ConditionGroup(v2EvidenceArea(block, state));
+    const comparisonKey = v2ComparisonKey(block, evidenceLanguage);
+    const comparison = comparisons[comparisonKey];
+    const comparisonStatus = comparison?.status ?? "unreviewed";
+    const comparisonLabel = v2ComparisonLabel(comparisonStatus, ko);
+    const condition =
+      conditionGroup === "finance"
+        ? say(
+            `재정 여력: ${t(money)} / 손실 위험: ${t(risk)}`,
+            `Financial room: ${t(money)} / downside: ${t(risk)}`
+          )
+        : conditionGroup === "capacity"
+          ? say(
+              `제약 부담: ${t(load)} / 복귀 가능성: ${t(reverse)}`,
+              `Constraints: ${t(load)} / reversibility: ${t(reverse)}`
+            )
+          : conditionGroup === "readiness" ? say(
+              `준비 상태: ${t(ready)} / 지원 기반: ${t(support)}`,
+              `Readiness: ${t(ready)} / support: ${t(support)}`
+            ) : `${t((v2EvidenceArea(block, state) ?? "externalPressure") as V2CopyKey)} / ${target}`;
+    const linkedSelfReport = selfReport(
+      conditionGroup === "finance" ? "financial"
+        : conditionGroup === "capacity" ? "capacity"
+          : conditionGroup === "readiness" ? "readiness" : "public"
+    );
+    const implication = demo
+      ? say(
+          `합성 자료는 실제 요건을 입증하지 않습니다. ${targetScope}의 공개 자료에서 같은 조건을 확인해야 합니다.`,
+          `Synthetic material does not establish actual requirements. Check the same condition in public sources for the ${targetScope}.`
+        )
+      : block.direction === "caution"
+        ? say(
+            "이 출처에서 지적한 제한을 목표 경로의 요건·비용표에 반영해야 합니다.",
+            "Carry this source's limitation into the target requirements and cost comparison."
+          )
+        : block.direction === "supportive"
+          ? say(
+              `경로를 탐색할 근거는 있으나, ${withKoreanParticle(personalUnknown, "이/가")} 성립하는지 별도 확인이 필요합니다.`,
+              `This supports exploring the path, while ${personalUnknown} still require separate validation.`
+            )
+          : say(
+              `근거의 적용 범위가 제한적입니다. ${targetScope}에 같은 조건이 적용되는지 확인해야 합니다.`,
+              `The evidence has a limited scope. Check whether it applies to the ${targetScope}.`
+            );
+    const personal =
+      conditionGroup === "finance"
+        ? safetyReading
+        : conditionGroup === "capacity"
+          ? capacityReading
+          : conditionGroup === "readiness"
+            ? readinessReading
+            : say("공개 자료만으로 이 개인의 조건이나 수요 충족을 확정할 수 없습니다.", "Public material alone does not establish this person's conditions or demand fit.");
+    const headline = v2CustomerEvidenceText(state.language, block.headline);
+    const criterion = v2CustomerEvidenceText(state.language, block.fact);
+    const customerEvidence = comparison?.detail.trim() || linkedSelfReport || say(
+      "이 조건에 대응하는 개인의 결과물·비용·실제 반응은 아직 제시되지 않았습니다.",
+      "Personal work, costs or actual responses addressing this condition have not been supplied."
+    );
+    const comparisonReading = comparisonStatus === "gap"
+      ? say(
+          `고객은 이 조건에 부족한 점이 있다고 응답했습니다. ‘${criterion}’과 현재 근거(${customerEvidence}) 사이의 간격을 먼저 확인해야 합니다.`,
+          `You report a gap between “${criterion}” and your current evidence (${customerEvidence}). Establish what is missing before increasing commitment.`
+        )
+      : comparisonStatus === "matches"
+        ? say(
+            `고객은 현재 근거(${customerEvidence})가 ‘${criterion}’에 부합한다고 응답했습니다. 원문의 적용 범위와 실제 상대방이 이 근거를 인정하는지는 별도 확인이 필요합니다.`,
+            `You report that your evidence (${customerEvidence}) matches “${criterion}”. Source applicability and recognition by the actual counterpart still need independent confirmation.`
+          )
+        : comparisonStatus === "not_applicable"
+          ? say(
+              `고객은 이 공개 조건이 목표(${target})에 적용되지 않는다고 응답했습니다. 이 자료로 개인의 적합성을 판단하지 않으며, 목표에 맞는 요건을 다시 확인해야 합니다.`,
+              `You report that “${criterion}” does not apply to ${target}. It cannot establish personal fit; obtain requirements specific to your target.`
+            )
+          : say(
+              `공개 조건 ‘${criterion}’과 현재 근거(${customerEvidence})는 아직 직접 대조되지 않았습니다. 같은 목표·지역·시점에 해당하는 조건인지 먼저 확인해야 합니다.`,
+              `The public condition “${criterion}” has not been compared directly with your evidence (${customerEvidence}). First establish whether the target, location and timing match.`
+            );
+    const makeCheck = (reference: string) => comparisonStatus === "gap"
+      ? say(`‘${reference}’에서 부족하다고 작성한 조건(${customerEvidence})을 작은 결과물·비용표·실제 상대방의 피드백으로 확인하세요.`,
+          `Test the reported gap (${customerEvidence}) against “${reference}” with a bounded work sample, cost comparison or counterpart feedback.`)
+      : comparisonStatus === "matches"
+        ? say(`현재 근거(${customerEvidence})를 ‘${reference}’의 실제 담당자·고객·기관에 대조해 인정되는 범위와 예외를 확인하세요.`,
+            `Check your evidence (${customerEvidence}) against “${reference}” with the actual employer, buyer or institution; record recognition and exceptions.`)
+        : comparisonStatus === "not_applicable"
+          ? say(`목표(${target})와 같은 지역·직무·고객군의 원문을 찾으세요. 제외한 조건 ‘${reference}’을 목표 요건으로 사용하지 마세요.`,
+              `Find original requirements for ${target} in the same region, role or customer segment. Do not use the excluded condition “${reference}” as a target requirement.`)
+          : say(`자료 ‘${reference}’의 조건이 목표(${target})에 적용되는지 원문에서 확인한 뒤, 현재 성과·비용·실제 반응과 항목별로 대조하세요.`,
+              `Check whether “${reference}” applies to ${target}, then compare it item by item with your achievements, costs and actual responses.`);
+    const scopedCheck = makeCheck(criterion);
+    const testReference = makeCheck(say(`대조표 근거 ${id + 1}: ${headline}`, `comparison-table evidence ${id + 1}: ${headline}`));
+    const check = demo
+      ? say(
+          `‘${headline}’에 해당하는 실제 공개 자료를 찾아 ${withKoreanParticle(targetScope, "과/와")} 현재 조건(${condition})에 적용되는지 확인하세요.`,
+          `Find actual public evidence for “${headline}” and check its applicability to the ${targetScope} and current conditions (${condition}).`
+        )
+      : scopedCheck;
+    return {
+      id,
+      conditionGroup,
+      sourceFact: block.fact,
+      sourceScope: block.whyItMatters,
+      sourceUrl: block.sourceUrl,
+      sourceDate: block.sourceDate,
+      conditionProvenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
+      condition,
+      comparisonKey,
+      comparisonStatus,
+      comparisonLabel,
+      comparisonDetail: comparison?.detail ?? "",
+      customerEvidence,
+      comparisonReading,
+      testReference: demo ? say(`${withKoreanParticle(`대조표 근거 ${id + 1}`, "은/는")} 합성 예시입니다. 같은 조건의 실제 원문부터 확인하세요.`,
+        `Comparison-table evidence ${id + 1} is synthetic. Find an actual original source for the same condition first.`) : testReference,
+      ...(linkedSelfReport ? { selfReport: linkedSelfReport } : {}),
+      interpretation: `${comparisonReading} ${v2CustomerEvidenceText(state.language, block.whyItMatters)} ${implication} ${personal}`,
+      unresolved: say(
+        `이 공개 자료가 ${targetScope}에 적용되는지, ${withKoreanParticle(personalUnknown, "이/가")} 성립하는지는 아직 확인되지 않았습니다.`,
+        `Applicability to the ${targetScope} and ${personalUnknown} remain unverified.`
+      ),
+      test: check,
+    };
+  });
+  // Link only dimensions that directly inform a named comparison. A market
+  // statistic is never treated as proof of personal readiness or recovery.
+  const relatedEvidence = (finding: "recovery" | "fit" | "capacity") =>
+    evidenceLinks.filter(link => link.comparisonStatus !== "not_applicable" &&
+      link.conditionGroup === ({ recovery: "finance", fit: "readiness", capacity: "capacity" } as const)[finding])
+      .map(link => link.id);
+  const applicableLinks = evidenceLinks.filter(link => link.comparisonStatus !== "not_applicable");
+  const priorityLink = applicableLinks.find(link => link.comparisonStatus === "gap") ??
+    applicableLinks.find(link => blocks[link.id].direction === "caution") ?? applicableLinks[0];
+  const priorityEvidence = priorityLink
+    ? {
+        headline: v2CustomerEvidenceText(
+          state.language,
+          blocks[priorityLink.id].headline
+        ),
+        condition: priorityLink.condition,
+        check: priorityLink.test,
+        nextCheck: priorityLink.test,
+      }
+    : null;
+  const externalReading =
+    live || demo
+      ? v2CustomerEvidenceText(state.language, intelligence.implication)
+      : phase === "loading"
+        ? say(
+            "공개 자료를 확인하고 있습니다. 완료되면 아래 판단 근거와 실험 계획에 같은 근거를 연결합니다.",
+            "Public research is in progress. The same snapshot will inform the reasoning and experiment plan when it finishes."
+          )
+        : say(
+            "공개 근거가 아직 확보되지 않아 목표 경로의 요건과 외부 환경은 미확인 상태입니다. 아래 내용은 현재 조건에 따른 구조 분석이며, 외부 근거를 확인한 분석으로 볼 수 없습니다.",
+            "Without public evidence, target requirements and external conditions remain unresolved. This is a structural reading of current conditions, not an externally informed analysis."
+          );
+  const findings: V2Finding[] = [
+    {
+      id: "recovery",
+      title: say(
+        "가능성보다 먼저 확인할 회복 여력",
+        "Recovery capacity before commitment"
+      ),
+      basis: `${t("financial")}: ${t(money)} · ${t("reversibility")}: ${t(reverse)} · ${t("downside")}: ${t(risk)}`,
+      implication: safetyReading,
+      coreReading: safetyReading,
+      evidenceIds: relatedEvidence("recovery"),
+      provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
+      selfReports: reports("financial", "recovery"),
+    },
+    {
+      id: "fit",
+      title: say(
+        "활동을 성과로 연결하는 조건",
+        "Turning activity into recognized evidence"
+      ),
+      basis: `${t("readinessBand")}: ${t(ready)} · ${t("supportBand")}: ${t(support)}`,
+      implication: `${readinessReading} ${text(profile.question)}`,
+      coreReading: `${readinessReading} ${text(profile.question)}`,
+      evidenceIds: relatedEvidence("fit"),
+      provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
+      selfReports: reports("public", "readiness"),
+    },
+    {
+      id: "capacity",
+      title: say(
+        "준비가 좋아져도 남는 실행 부담",
+        "Execution pressure beyond readiness"
+      ),
+      basis: `${t("constraint")}: ${t(load)} · ${t("supportBand")}: ${t(support)}`,
+      implication: capacityReading,
+      coreReading: capacityReading,
+      evidenceIds: relatedEvidence("capacity"),
+      provenance: ["USER_STRUCTURED", "DERIVED_CORE_RULE"],
+      selfReports: reports("capacity"),
+    },
+  ];
+  // Fact-specific comparisons alter narrative reasoning, never the core bands.
+  for (const finding of findings) {
+    const links = finding.evidenceIds.map(id => evidenceLinks[id]);
+    if (links.length) {
+      finding.implication += " " + links.map(link => link.interpretation).join(" ");
+      finding.provenance.push("EXTERNAL_EVIDENCE");
+    }
+  }
+  const researchCoverage = v2EvidenceAreas(state).map(area => ({
+    area,
+    title: t(area as V2CopyKey),
+    evidenceIds: blocks.flatMap((block, id) => v2EvidenceArea(block, state) === area ? [id] : []),
+  }));
+  const uncovered = researchCoverage.filter(item => !item.evidenceIds.length).map(item => item.title);
+  const coverageReading = uncovered.length ? say(
+    `검색 대상 중 ${uncovered.join(" · ")}에 대응하는 공개 근거는 없습니다. 확보한 자료로 이 조건까지 확인됐다고 볼 수 없습니다.`,
+    `No public evidence addresses these research topics: ${uncovered.join(", ")}. The retrieved material does not establish them.`
+  ) : say("선택한 검색 항목에 공개 자료가 연결됐습니다. 주장·목표 적용·개인 조건은 별도로 대조해야 합니다.",
+    "Public material is linked to the selected research topics. Claims, target applicability and personal conditions still need separate comparison.");
+  const factorNames: Record<keyof ProductApplicationV3["decisionStructure"]["fifwm"], Pair> = {
+    formal: ["기회의 조건", "Opportunity conditions"],
+    informal: ["연결 가능성", "Connection potential"],
+    framework: ["구조 적합성", "Structural fit"],
+    workflow: ["실행 현실성", "Execution reality"],
+    marketPolicy: ["버틸 수 있는가", "Can this endure?"],
+  };
+  // Canonical Q18–Q22 topics are assessment inputs, not dimension names.
+  const factorQuestionTopics: Record<keyof typeof factorNames, Pair> = {
+    formal: ["이번 평가 질문: 의사결정·보고 체계", "Question used: decision and reporting lines"],
+    informal: ["이번 평가 질문: 목표 팀의 적극적 지원", "Question used: active support in the target team"],
+    framework: ["이번 평가 질문: 조직 개편·리더십 변화", "Question used: restructuring and leadership change"],
+    workflow: ["이번 평가 질문: 목표 직무의 업무 흐름", "Question used: target-role workflow"],
+    marketPolicy: ["이번 평가 질문: 정책·규제·시장 변화 노출", "Question used: policy, regulatory and market exposure"],
+  };
+  const factors = (Object.keys(factorNames) as (keyof typeof factorNames)[]).map(
+    id => ({
+      id,
+      title: text(factorNames[id]),
+      questionTopic: v2CanAskCanonicalFifwm(state.caseType) ? text(factorQuestionTopics[id]) : "",
+      assessed: core.decisionStructure.fifwm[id].score !== null,
+      evidenceIds: [],
+      status: core.decisionStructure.fifwm[id].score === null
+        ? say("미확인", "Not established")
+        : (["■□□", "■■□", "■■■"] as const)[core.decisionStructure.fifwm[id].score],
+      reading: core.decisionStructure.fifwm[id].score === null
+        ? say(
+            "기존 평가에 필요한 입력이 없어 이 항목은 아직 평가되지 않았습니다.",
+            "This item has not been assessed because the required inputs are unavailable."
+          )
+        : core.decisionStructure.fifwm[id].reading,
+    })
+  );
+  const strength = (band: string) =>
+    band === "strong"
+      ? 3
+      : band === "developing"
+        ? 2
+        : band === "weak"
+          ? 1
+          : null;
+  const safety = [
+    {
+      id: "financialRoom",
+      title: t("financial"),
+      band: money,
+      level: strength(money),
+      reading:
+        money === "weak"
+          ? say(
+              "실험비와 소득 공백이 생활 기반을 압박할 수 있습니다. 감당 가능한 지출 한도를 먼저 정하세요.",
+              "Test costs and income gaps may pressure the living base. Establish an affordable spending limit first."
+            )
+          : money === "unknown"
+            ? say(
+                "소득 공백과 실험비를 감당할 범위가 아직 확인되지 않았습니다.",
+                "Capacity to cover an income gap and test costs is unresolved."
+              )
+            : say(
+                "현재 여력이 실제 총비용과 회복 비용까지 포함하는지 대조하세요.",
+                "Check whether current room covers total execution and recovery costs."
+              ),
+    },
+    {
+      id: "reversibility",
+      title: t("reversibility"),
+      band: reverse,
+      level: strength(reverse),
+      reading:
+        reverse === "weak"
+          ? say(
+              "약속을 늘리면 되돌아오기 어려울 수 있습니다. 해지·재진입 조건을 먼저 확인하세요.",
+              "Further commitments may be hard to reverse. Establish exit and re-entry terms first."
+            )
+          : reverse === "unknown"
+            ? say(
+                "복귀에 필요한 시간·비용·경로가 확인되지 않았습니다.",
+                "The time, cost and route for returning are unresolved."
+              )
+            : say(
+                "가능하다고 보는 복귀 경로가 실제로 열려 있는지 확인하세요.",
+                "Verify that the assumed return route is actually available."
+              ),
+    },
+    {
+      id: "downsideExposure",
+      title: t("downside"),
+      band: risk,
+      level:
+        risk === "low"
+          ? 3
+          : risk === "moderate"
+            ? 2
+            : risk === "high"
+              ? 1
+              : null,
+      reading:
+        risk === "high"
+          ? say(
+              "계획이 틀렸을 때 감당할 손실이 큽니다. 결과가 확인되기 전에는 노출을 줄이세요.",
+              "Potential loss is elevated if the plan fails. Reduce exposure before results are established."
+            )
+          : risk === "unknown"
+            ? say(
+                "실패 시 잃는 소득·시간·복귀 선택지를 아직 구분하지 못했습니다.",
+                "Income, time and return options at risk have not been established."
+              )
+            : say(
+                "위험 수준은 현재 가정입니다. 실제 계약·비용·일정으로 다시 확인하세요.",
+                "The risk band reflects current assumptions. Check it against actual contracts, costs and schedules."
+              ),
+    },
+  ];
+  // Customer-language Changing (owner feedback round 4): every field is a
+  // sentence built from this customer's inputs and evidence, not a label.
+  // The engine still decides which plays apply; only the wording changes.
+  const current = state.optionA.trim() || say("현재 직무", "the current role");
+  const considered = state.optionB.trim() || say("고민하는 커리어", "the considered career");
+  const missingPoint = v2MissingPoint(state.caseType, state.language);
+  const firstAction = blocks.find(block => block.action)?.action;
+  const amountCard = blocks.find(block => /(?:HK\$|US\$|£|€|\$|₩)\s?\d|\d[\d,.]*\s?(?:원|만 ?원|파운드|달러|유로)/.test(`${block.headline} ${block.fact}`));
+  const routeCards = blocks.filter(block => /원격|시간제|파트타임|병행|주말|온라인|단계적|remote|part-time|online|weekend|phased/i.test(`${block.headline} ${block.fact}`));
+  const bandText = (key: keyof typeof b) => t(b[key].band as V2CopyKey);
+  const review = say(
+    "30일에 첫 결과를 확인하고, 60일에 계속·축소·중단을 정한 뒤, 90일에 전체 판단을 다시 봅니다.",
+    "Check first results at 30 days, decide continue / narrow / stop at 60, and review the whole reading at 90."
+  );
+  const protectLine = say(
+    `지금 지키려는 것: ${protectedBase}. 시험 중에도 이것이 흔들리지 않게 합니다.`,
+    `What you are protecting: ${protectedBase}. The test must not weaken it.`
+  );
+  const playCopy: Record<string, { changes: string; needs: string; evidence: string; exposure: string }> = {
+    "parallel-validation": {
+      changes: say(`${withKoreanParticle(current, "을/를")} 그만두지 않고, ${considered}에 필요한 조건을 작은 시험으로 하나씩 확인합니다.`,
+        `Keep ${current} and check what ${considered} requires through small tests, one at a time.`),
+      needs: say(`‘${missingPoint.point}’를 보여줄 실제 근거 1개 이상${firstAction ? ` — 예: ${v2CustomerEvidenceText(state.language, firstAction)}` : ""}`,
+        `At least one real piece of evidence for “${missingPoint.point}”${firstAction ? ` — e.g. ${firstAction}` : ""}`),
+      evidence: say(`${considered}에서 ‘${missingPoint.point}’가 실제로 성립하는지 보여주는 결과(자료·응답·제안 등). ${missingPoint.why}`,
+        `A result showing whether “${missingPoint.point}” holds for ${considered} (documents, responses, offers). ${missingPoint.why}`),
+      exposure: say("시험 기간 동안 쓸 주당 시간과 총비용의 상한을 먼저 정하고, 그 안에서만 진행합니다.",
+        "Set a weekly time and total cost ceiling for the test first, and stay inside it."),
+    },
+    resource: {
+      changes: say(`재정 여유(현재 ${bandText("safetyMargin")})와 회복 여력을 먼저 보강한 뒤 ${considered} 쪽 투입을 늘립니다.`,
+        `Strengthen financial room (now ${bandText("safetyMargin")}) and recovery capacity before increasing commitment to ${considered}.`),
+      needs: say(`시험 기간 동안 버틸 생활비와 비용의 실제 금액${amountCard ? ` — 근거 기준: ${v2CustomerEvidenceText(state.language, amountCard.headline)}` : ""}`,
+        `The actual living costs and expenses for the test period${amountCard ? ` — evidence reference: ${amountCard.headline}` : ""}`),
+      evidence: say("보강한 여력으로 몇 개월을 버틸 수 있는지 계산한 결과", "A calculation of how many months the strengthened room covers"),
+      exposure: say("되돌릴 수 없는 지출이나 퇴사 같은 확정 결정은 아직 하지 않습니다.", "No irreversible spending or resignation yet."),
+    },
+    timing: {
+      changes: say(`확정 날짜를 먼저 정하지 않고, 되돌아올 경로(현재 ${bandText("reversibility")})가 확인된 뒤 시점을 정합니다.`,
+        `Do not fix a date first; set the timing once a way back (now ${bandText("reversibility")}) is confirmed.`),
+      needs: say("되돌아올 수 있는 경로 — 예: 휴직·복직 제도, 재지원 가능 여부, 계약 조건", "A confirmed way back — e.g. leave and return policy, re-application, contract terms"),
+      evidence: say("복귀 조건과 기한을 확인한 기록", "A record of return conditions and deadlines"),
+      exposure: say("확정 전까지는 되돌릴 수 있는 범위에서만 움직입니다.", "Until then, move only within what can be undone."),
+    },
+    pathway: {
+      changes: say(`${considered}에 바로 옮기지 않고, 중간 경로${routeCards.length ? `(${routeCards.slice(0, 2).map(card => v2CustomerEvidenceText(state.language, card.headline)).join(" · ")})` : "(시간제·병행·단계적 과정)"}로 먼저 근거를 만듭니다.`,
+        `Do not move straight to ${considered}; build evidence through an intermediate route${routeCards.length ? ` (${routeCards.slice(0, 2).map(card => card.headline).join(" · ")})` : " (part-time, combined or phased)"} first.`),
+      needs: say("중간 경로의 참여 요건, 일정, 비용", "The intermediate route's requirements, schedule and cost"),
+      evidence: say(`중간 경로에서 얻은 결과가 ${considered}의 요건을 채우는지`, `Whether results from the intermediate route meet ${considered}'s requirements`),
+      exposure: say("중간 경로 한 번에 드는 시간·비용 범위 안에서만 진행합니다.", "Only within the time and cost of one intermediate step."),
+    },
+    "role-scope": {
+      changes: say(`${withKoreanParticle(current, "을/를")} 떠나기 전에, 지금 조직 안에서 역할과 범위를 바꿀 수 있는지 먼저 확인합니다.`,
+        `Before leaving ${current}, check whether the role and scope can change inside the current organization.`),
+      needs: say("구체적인 역할·범위 조정 제안서 1개", "One concrete proposal for a role or scope change"),
+      evidence: say("조직의 답변(수용·거절·조건부)과 그 조건", "The organization's answer (yes, no, conditional) and its terms"),
+      exposure: say("한 번의 내부 협의 기간 안에서만 진행합니다.", "Within one internal decision cycle."),
+    },
+  };
+  const plays = core.changingPlays.map(play => {
+    const copy = playCopy[play.family];
+    return {
+      family: play.family,
+      title: v2CustomerPlayText(state.language, play.title),
+      move: v2CustomerPlayText(state.language, play.move),
+      changes: copy?.changes ?? v2CustomerPlayText(state.language, play.changes),
+      protects: protectLine,
+      needs: copy?.needs ?? v2CustomerPlayText(state.language, play.needs),
+      evidence: copy?.evidence ?? v2CustomerPlayText(state.language, play.evidence),
+      exposure: copy?.exposure ?? v2CustomerPlayText(state.language, play.exposure),
+      timeExposure: review,
+    };
+  });
+  const continueCondition = `${text(profile.advance)}${priorityEvidence ? say(`, ‘${priorityEvidence.headline}’의 적용 여부와 현재 조건(${priorityEvidence.condition})을 확인한 뒤`, `, after confirming whether “${priorityEvidence.headline}” applies and checking current conditions (${priorityEvidence.condition})`) : ""}${ko ? ", 다음 범위를 검토하세요." : ", review the next scope."}`;
+  const pause = say(
+    "시험 때문에 보호할 소득·시간·생활 기반이 흔들리거나, 목표 요건과 결과물의 연결이 확인되지 않으면 범위를 줄이고 다시 설계하세요.",
+    "Reduce scope and redesign if the test weakens protected income, time or living capacity, or fails to connect the work sample to target requirements."
+  );
+  const posture = v2CustomerPosture(
+    state.language,
+    core.currentStructuralPosture.label,
+    core.currentStructuralPosture.sentence,
+    state.optionA,
+    state.optionB
+  ).label;
+  const sourceCount = new Set(blocks.map(block => block.sourceUrl ?? block.sourceLabel)).size;
+  const evidenceSummary = live
+    ? say(
+        ` 공개 근거 ${blocks.length}건${sourceCount < blocks.length ? `(출처 ${sourceCount}곳)` : ""}을 현재 조건 옆에 표시했습니다. 적용 여부는 각 출처와 대상 범위를 대조해 확인해야 합니다.`,
+        ` ${blocks.length} public evidence ${blocks.length === 1 ? "item is" : "items are"}${sourceCount < blocks.length ? ` (from ${sourceCount} ${sourceCount === 1 ? "source" : "sources"})` : ""} shown beside current conditions. Check each source and target scope before treating it as applicable.`
+      )
+    : demo
+      ? say(
+          ` 합성 근거 ${blocks.length}건으로 분석 흐름을 보여 주는 예시입니다. 실제 외부 검색을 수행한 결과가 아닙니다.`,
+          ` ${blocks.length} synthetic evidence items illustrate the analysis flow. They are not results of live public research.`
+        )
+      : say(
+          " 외부 요건을 확인하기 전까지는 이 판단을 구조 초안으로 사용하세요.",
+          " Treat this as a structural draft until external requirements are checked."
+        );
+  const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary} ${coverageReading}${priorityLink ? ` ${priorityLink.interpretation}` : ""}`;
+  const executiveSummary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading} ${coverageReading}${priorityLink ? say(
+    ` 우선 대조할 자료는 ‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’이며, 현재 상태는 ‘${priorityLink.comparisonLabel}’입니다. 세부 조건과 내 근거의 차이는 대조표에서 확인하세요.`,
+    ` The first comparison is “${blocks[priorityLink.id].headline}”: ${priorityLink.comparisonLabel}. The comparison table details the condition and your evidence.`
+  ) : ""}`;
+  const briefAction = `${priorityLink?.testReference ? `${priorityLink.testReference} ` : ""}${text(profile.action)}`;
+  return {
+    language: state.language,
+    evidenceLanguage,
+    fifwmSource: core.decisionStructure.fifwmSource,
+    topic: text(profile.topic),
+    target,
+    posture,
+    summary,
+    executiveSummary,
+    question: text(profile.question),
+    missingConcept: v2MissingPoint(state.caseType, state.language).point,
+    tradeoff: say(
+      `${opening}의 가능성을 넓히려면 시간과 자원이 필요합니다. 핵심은 새 경로에 투입할 자원과 현재 유지할 기반(${protectedBase}) 사이의 균형입니다.`,
+      `Opening ${opening} requires time and resources. The key tension is how much to invest while protecting ${protectedBase}.`
+    ),
+    boundary,
+    externalReading,
+    findings,
+    evidenceLinks,
+    researchCoverage,
+    externalContextReading: b.externalValidation.source === "live-external-evidence"
+      ? say(`공개 외부 맥락: ${t(b.externalValidation.band)}. 확보한 자료로 외부 환경의 조건을 살펴봤습니다. 개인의 자격·구매 반응·실행 여력은 별도로 확인해야 합니다.`,
+          `Public external context: ${t(b.externalValidation.band)}. The retrieved material informs external conditions. Personal eligibility, purchases and execution capacity need separate validation.`)
+      : say("외부 환경을 종합적으로 판단할 근거는 아직 부족합니다. 현재 확보한 자료의 범위에서 조건을 대조하세요.",
+          "Evidence for an overall reading of the external environment is still limited. Compare conditions within the scope of the available material."),
+    factorScopeNote: v2CaseFifwmSet(state.caseType)
+      ? say("이 사례는 원래 조직 평가 대신, 같은 다섯 요소를 이 사례에 맞게 묻는 '사례 맞춤 구조 평가'를 사용합니다. 대상이 구체적일 때 응답한 항목만 평가하며, 모름·해당 없음은 미평가입니다.",
+          "This case uses a case-adapted structure assessment: the same five factors asked for this kind of decision instead of the original organization questions. Only answered items are assessed; unsure and not-applicable stay unassessed.")
+      : v2CanAskCanonicalFifwm(state.caseType)
+      ? say("조직·직무를 아는 경우에만 원본 다섯 질문으로 평가합니다. 확인하지 않은 항목은 미평가입니다.",
+          "The original five questions assess a known organization and role. Unestablished items remain unassessed.")
+      : say("이 사례에는 원본 조직·직무 질문을 그대로 적용할 수 없어 다섯 항목을 평가하지 않았습니다. 준비 상태와 안전마진의 입력으로 대신 점수를 만들지 않습니다.",
+          "The original organization and role questions do not apply directly to this case, so the five factors are unassessed. Readiness and Safety Margin inputs do not create substitute scores."),
+    switching: core.decisionSwitches.map(item => ({
+      signal: v2CustomerPlayText(state.language, item.signal),
+      direction: v2CustomerPlayText(state.language, item.direction),
+    })),
+    priorityEvidence,
+    factors,
+    safety,
+    plays,
+    experiment: {
+      action: `${priorityEvidence ? `${priorityEvidence.nextCheck} ` : ""}${uncovered.length ? `${coverageReading} ` : ""}${text(profile.action)}`,
+      briefAction,
+      output: priorityLink ? say(
+        `‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’의 적용 여부, 내 근거, 남은 조건을 대조한 기록`,
+        `A comparison of applicability, your evidence and remaining gaps for “${blocks[priorityLink.id].headline}”`
+      ) : text(profile.output),
+      continue: continueCondition,
+      pause,
+      stages: [
+        {
+          day: "30",
+          title: say(
+            "목표 요건과 현재 성과 대조",
+            "Compare requirements with current evidence"
+          ),
+          action: `${priorityEvidence?.nextCheck ?? text(profile.action)} ${coverageReading}`,
+          briefAction: `${priorityLink?.testReference ?? text(profile.action)} ${coverageReading}`,
+          output: text(profile.output),
+        },
+        {
+          day: "60",
+          title: say(
+            "작은 실행으로 실제 부담 확인",
+            "Test actual workload at a small scope"
+          ),
+          action: say(
+            "확인된 핵심 요건 하나를 시험하고 시간·비용·피드백을 기록하세요. 공개 자료와 실제 반응이 다르면 그 차이를 남기세요.",
+            "Test one verified requirement and record time, cost and feedback. Document differences between public evidence and actual responses."
+          ),
+          output: say(
+            "투입 자원, 결과물, 외부 피드백을 연결한 실행 기록",
+            "A record linking resources, deliverables and external feedback"
+          ),
+        },
+        {
+          day: "90",
+          title: say(
+            "전환 조건과 회복 여력 재검토",
+            "Review switching conditions and recovery room"
+          ),
+          action: `${continueCondition} ${pause}`,
+          output: say(
+            "확인한 조건, 남은 제약, 다음 단계의 범위와 중단 기준",
+            "Established conditions, remaining constraints, next-step scope and stop criteria"
+          ),
+        },
+      ],
+    },
+  };
+}

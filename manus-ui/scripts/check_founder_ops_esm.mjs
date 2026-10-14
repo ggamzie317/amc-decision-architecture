@@ -14,6 +14,9 @@ const entryPoints = [
   "founderNotification.ts",
   "founderOpsAnalytics.ts",
   "launchOpsAnalytics.ts",
+  "simulatorAnalytics.ts",
+  "jevScenario.ts",
+  "jevScenarioContract.ts",
   "externalSnapshotService.ts",
   "providerObservation.ts",
   "founderOpsApi.ts",
@@ -25,8 +28,8 @@ const entryPoints = [
 
 try {
   await build({
-    entryPoints,
-    outbase: serverRoot,
+    entryPoints: [...entryPoints, path.join(appRoot, "shared/interactivePrivacy.ts")],
+    outbase: appRoot,
     outdir: outputRoot,
     bundle: false,
     format: "esm",
@@ -36,7 +39,7 @@ try {
   });
 
   const runtimeModule = await import(
-    pathToFileURL(path.join(outputRoot, "vercelFounderOps.js")).href
+    pathToFileURL(path.join(outputRoot, "server/vercelFounderOps.js")).href
   );
   if (
     typeof runtimeModule.handleAdminHealth !== "function" ||
@@ -46,6 +49,7 @@ try {
       "Founder Ops runtime module did not load expected exports."
     );
   }
+  await import(pathToFileURL(path.join(outputRoot, "server/jevScenario.js")).href);
   console.log("Founder Ops Vercel ESM import smoke passed.");
 } finally {
   await rm(outputRoot, { recursive: true, force: true });

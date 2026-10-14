@@ -2,6 +2,14 @@ export const AMC_PRODUCT_VERSION = "AMC-LAUNCH-V3";
 export const AMC_FRAMEWORK_VERSION = "FIFWM-SM-V2";
 
 export const usageEventTypes = [
+  "simulator_opened",
+  "scenario_variable_changed",
+  "scenario_evaluated",
+  "scenario_reset",
+  "jev_assessment_requested",
+  "jev_assessment_completed",
+  "jev_assessment_unavailable",
+
   "preview_started",
   "preview_completed",
   "full_intake_started",
@@ -21,7 +29,7 @@ export type EvidenceMode = "live" | "fallback" | "mock" | null;
 
 export type SubmissionPatch = {
   language?: AmcLanguage;
-  caseType?: string;
+  caseType?: string | null;
   currentStage?: string;
   previewStartedAt?: string;
   previewCompletedAt?: string;
@@ -36,7 +44,7 @@ export type SubmissionPatch = {
   answersJson?: Record<string, string>;
   structuralOutputJson?: Record<string, unknown>;
   externalEvidenceJson?: Record<string, unknown>;
-  missingPoint?: string;
+  missingPoint?: string | null;
   alternativePath?: string | null;
   decisionConditionsJson?: string[];
   safetyMarginStructuredData?: Record<string, unknown>;
@@ -92,12 +100,15 @@ export type SubmissionFilters = {
 };
 
 export type OperationsSummary = {
+  simulator?: import("./simulatorAnalytics.js").SimulatorAnalytics;
   backendAvailable: boolean;
   totals: Record<string, number>;
   rates: Record<string, number>;
   languageDistribution: Record<string, number>;
   caseTypeDistribution: Record<string, number>;
   evidenceDistribution: Record<string, number>;
+  experienceDistribution: Record<string, number>;
+  experienceFunnels: Record<string, Record<string, number>>;
 };
 
 export type ResearchSummary = OperationsSummary & {
@@ -108,6 +119,7 @@ export type ResearchSummary = OperationsSummary & {
 
 export type FounderOpsStore = {
   readonly available: boolean;
+  reserveJevScenario?(submissionId: string, fingerprint: string): Promise<boolean>;
   readLaunchData?(): Promise<{
     submissions: SubmissionRecord[];
     events: UsageEventRecord[];

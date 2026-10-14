@@ -203,6 +203,17 @@ export class PostgresFounderOpsStore implements FounderOpsStore {
     return rows.length === 1;
   }
 
+  // Atomic, durable pilot allowance. Reservation survives provider timeout or restart.
+  async reserveJevScenario(submissionId: string, fingerprint: string) {
+    return this.sql.begin(async tx => {
+      await tx`SELECT pg_advisory_xact_lock(590059)`;
+      const rows = await tx`SELECT metadata_json FROM usage_events WHERE event_type = 'jev_assessment_requested' AND metadata_json ? 'packetFingerprint'`;
+      if (rows.length >= 6 || rows.some(row => row.metadata_json.packetFingerprint === fingerprint)) return false;
+      await tx`INSERT INTO usage_events (event_id, submission_id, event_type, metadata_json) VALUES (${randomUUID()}, ${submissionId}, 'jev_assessment_requested', ${tx.json({packetFingerprint:fingerprint})})`;
+      return true;
+    }) as Promise<boolean>;
+  }
+
   async addEvent(
     submissionId: string,
     eventType: UsageEventType,
@@ -335,6 +346,13 @@ export class MemoryFounderOpsStore implements FounderOpsStore {
       ...patch,
       updatedAt: new Date().toISOString(),
     });
+    return true;
+  }
+
+  async reserveJevScenario(submissionId: string, fingerprint: string) {
+    const reserved = this.events.filter(e => e.eventType === "jev_assessment_requested" && e.metadataJson.packetFingerprint);
+    if (reserved.length >= 6 || reserved.some(e => e.metadataJson.packetFingerprint === fingerprint)) return false;
+    await this.addEvent(submissionId, "jev_assessment_requested", {packetFingerprint:fingerprint});
     return true;
   }
 

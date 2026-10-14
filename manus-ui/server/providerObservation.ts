@@ -1,4 +1,5 @@
 import { getFounderOpsStore } from "./founderOpsStore.js";
+import type { V2ResponseDiagnostic } from "./externalIntelligenceV2Service.js";
 
 export type ProviderObservation = {
   provider: "perplexity";
@@ -9,6 +10,23 @@ export type ProviderObservation = {
   latencyMs: number;
   timedOut: boolean;
   completedAt: string;
+  sourceFailureCategory?: import("./publicSourceAvailability.js").SourceProbeFailure;
+  /** Static failure taxonomy and numeric metadata only; no response text or URLs. */
+  responseDiagnostic?: V2ResponseDiagnostic;
+  upstreamHttpStatus?: number;
+  /**
+   * Shape of the public request only: enumerated case/area keys and lengths.
+   * Never the target or geography text. Lets a no_evidence result be traced
+   * to its request scope without storing what the customer typed.
+   */
+  requestShape?: {
+    caseType: string;
+    language: "en" | "ko";
+    areas: string[];
+    defaultAreas: boolean;
+    targetLength: number;
+    geographyLength: number;
+  };
 };
 
 export async function recordProviderObservation(

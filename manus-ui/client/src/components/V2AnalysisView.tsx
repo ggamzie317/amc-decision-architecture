@@ -1,0 +1,473 @@
+import { useId } from "react";
+import type { V2Analysis, V2EvidencePhase } from "../data/amcV2Analysis";
+import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
+import type { V2State } from "../data/amcV2Model";
+import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
+import { v2t, type V2CopyKey } from "../data/v2Language";
+
+const cut = (s: string, max: number) =>
+  s.length > max ? `${s.slice(0, max - 1)}…` : s;
+/** Diagram labels can wrap; complete evidence prose remains outside the diagram. */
+function diagramLines(value: string, ko: boolean): string[] {
+  const width = ko ? 16 : 26;
+  if (value.length <= width) return [value];
+  const breakAt = value.lastIndexOf(" ", width);
+  const split = breakAt >= width / 2 ? breakAt : width;
+  return [value.slice(0, split).trim(), cut(value.slice(split).trim(), width)];
+}
+export function V2DecisionMap({
+  state,
+  analysis,
+  phase,
+  safetyBand,
+}: {
+  state: V2State;
+  analysis: V2Analysis;
+  phase: V2EvidencePhase;
+  safetyBand: string;
+}) {
+  const id = useId().replace(/:/g, ""),
+    ko = state.language === "ko";
+  const say = (a: string, b: string) => (ko ? a : b);
+  const protectedLabel = state.protects.length
+    ? state.protects.map(k => v2t(state.language, k)).join(" · ")
+    : say("현재 소득과 생활 기반", "Current income and living base");
+  const play =
+    analysis.plays[0]?.title ??
+    say("조건 미확인 · 조정안 미도출", "Conditions unresolved · no play derived");
+  const evidence =
+    phase === "live"
+      ? say("인용 링크 접근 가능 · 주장 미검증", "Cited links accessible · claims unverified")
+      : phase === "demo"
+        ? say("합성 예시 근거", "Synthetic example evidence")
+        : phase === "loading"
+          ? say("공개 근거 확인 중", "Public research in progress")
+          : say("외부 요건 미확인", "External requirements unresolved");
+  const nodes = [
+    {
+      x: 320,
+      y: 14,
+      title: say("공개 근거", "External Evidence"),
+      value: analysis.priorityEvidence?.headline ?? evidence,
+      tone: "evidence",
+    },
+    {
+      x: 18,
+      y: 145,
+      title: say("현재 직무", "Current role"),
+      value: cut(state.optionA.trim() || protectedLabel, ko ? 26 : 37),
+      tone: "base",
+    },
+    {
+      x: 320,
+      y: 145,
+      title: "Changing",
+      value: cut(play, ko ? 24 : 35),
+      tone: "changing",
+    },
+    {
+      x: 622,
+      y: 145,
+      title: say("고민하는 커리어", "Considered career"),
+      value: state.optionB.trim() || analysis.target,
+      tone: "target",
+    },
+    {
+      x: 320,
+      y: 276,
+      title: "Safety Margin → Switching",
+      value: say(
+        `안전마진: ${v2t(state.language, safetyBand as V2CopyKey)}`,
+        `Safety: ${v2t(state.language, safetyBand as V2CopyKey)}`
+      ),
+      tone: "review",
+    },
+  ];
+  return (
+    <figure className="v2-relationship-map" data-testid="v2-relationship-map">
+      <svg
+        className="v2-map-svg"
+        viewBox="0 0 880 374"
+        role="img"
+        aria-labelledby={`${id}-title ${id}-desc`}
+      >
+        <title id={`${id}-title`}>
+          {say(
+            "현재 기반, 공개 근거, 병행 시험과 전환 조건의 관계",
+            "Relationships between current capacity, public evidence, testing and switching conditions"
+          )}
+        </title>
+        <desc id={`${id}-desc`}>
+          {analysis.tradeoff} {analysis.question} {analysis.boundary}
+        </desc>
+        <defs>
+          <marker
+            id={`${id}-arrow`}
+            markerWidth="8"
+            markerHeight="8"
+            refX="7"
+            refY="4"
+            orient="auto"
+          >
+            <path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
+          </marker>
+        </defs>
+        <g
+          className="v2-map-edges"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          markerEnd={`url(#${id}-arrow)`}
+        >
+          <path d="M440 98 V145" />
+          <path d="M258 188 H320" />
+          <path d="M622 188 H560" strokeDasharray={analysis.plays.length ? undefined : "5 5"} />
+          <path d="M440 229 V276" strokeDasharray={analysis.plays.length ? undefined : "5 5"} />
+          <path d="M138 229 V318 H320" strokeDasharray="5 5" />
+          <path d="M560 318 H742 V229" strokeDasharray="5 5" />
+        </g>
+        <g className="v2-map-edge-labels">
+          <text x="448" y="126">
+            {say("요건 대조", "Requirements")}
+          </text>
+          <text x="270" y="177">
+            {say("유지", "Protect")}
+          </text>
+          <text x="568" y="177">
+            {analysis.plays.length ? say("검증", "Test") : say("미확인", "Unresolved")}
+          </text>
+          <text x="448" y="257">
+            {analysis.plays.length ? say("결과 확인", "Review results") : say("조건 확인", "Establish conditions")}
+          </text>
+        </g>
+        {nodes.map(n => (
+          <g key={n.tone} className={`v2-map-node ${n.tone}`}>
+            <rect x={n.x} y={n.y} width="240" height="84" rx="10" />
+            <text x={n.x + 18} y={n.y + 28} className="v2-map-node-title">
+              {n.title}
+            </text>
+            <text x={n.x + 18} y={n.y + 56} className="v2-map-node-value">
+              {diagramLines(n.value, ko).map((line, index) => (
+                <tspan key={index} x={n.x + 18} dy={index ? 16 : 0}>
+                  {line}
+                </tspan>
+              ))}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div className="v2-map-mobile-flow">
+        {nodes.map(n => (
+          <div key={n.tone} className={`v2-map-mobile-node ${n.tone}`}>
+            <span>{n.title}</span>
+            <strong>{n.value}</strong>
+          </div>
+        ))}
+      </div>
+      <figcaption>
+        <p>{evidence}{analysis.priorityEvidence && ` / ${analysis.priorityEvidence.condition}`}</p>
+        <div className="v2-map-tradeoff">
+          <span>{v2t(state.language, "tradeoff")}</span>
+          <strong>
+            {`${
+              state.protects
+                .slice(0, 2)
+                .map(k => v2t(state.language, k))
+                .join(" · ") || protectedLabel
+            } ↔ ${
+              state.opens
+                .slice(0, 2)
+                .map(k => v2t(state.language, k))
+                .join(" · ") || analysis.topic
+            }`}
+          </strong>
+        </div>
+        <strong>{analysis.question}</strong>
+        <p>{analysis.tradeoff}</p>
+        {analysis.switching[0] && <p><b>Switching / </b>{analysis.switching[0].signal}</p>}
+        <dl className="v2-map-context">
+          <div>
+            <dt>{v2t(state.language, "missing")}</dt>
+            <dd>{analysis.missingConcept}</dd>
+          </div>
+          <div>
+            <dt>{v2t(state.language, "exposureRisk")}</dt>
+            <dd>
+              {state.exposes.length
+                ? state.exposes.map(k => v2t(state.language, k)).join(" · ")
+                : v2t(state.language, "noneYet")}
+            </dd>
+          </div>
+        </dl>
+      </figcaption>
+    </figure>
+  );
+}
+
+export function V2Reasoning({
+  analysis,
+  intelligence,
+  compact = false,
+}: {
+  analysis: V2Analysis;
+  intelligence: ExternalIntelligenceV2;
+  compact?: boolean;
+}) {
+  const ko = analysis.language === "ko";
+  return (
+    <div className="v2-reasoning" data-testid="v2-integrated-reasoning" data-count={analysis.findings.length}>
+      {analysis.findings.map((f, i) => (
+        <article key={f.id} data-provenance={f.provenance.join(" ")}>
+          <div className="v2-reasoning-heading">
+            <span>{String(i + 1).padStart(2, "0")}</span>
+            <h3>{f.title}</h3>
+          </div>
+          <p className="v2-reasoning-basis">{f.basis}</p>
+          <p>{f.coreReading}</p>
+          {f.selfReports.map((report, index) => (
+            <p className="v2-self-report" key={index}>{report}</p>
+          ))}
+          {f.evidenceIds.map(id => {
+            const block = intelligence.evidenceBlocks[id],
+              link = analysis.evidenceLinks[id];
+            if (!block || !link) return null;
+            return (
+              <div className="v2-reasoning-source" key={id}>
+                <strong>
+                  {ko ? `근거 ${id + 1}` : `Evidence ${id + 1}`} /{" "}
+                  {v2CustomerEvidenceText(analysis.language, block.headline)}
+                </strong>
+                <p className="v2-comparison-reading">{link.comparisonLabel}</p>
+                {link.comparisonDetail && <p className="v2-self-report">{ko ? "고객 자기보고: " : "Customer self-report: "}{link.comparisonDetail}</p>}
+                {!compact && (
+                  <>
+                    {/* Headline and status stay visible; the long fact sits behind one toggle. */}
+                    <details className="v2-evidence-trace-detail">
+                      <summary>{ko ? "근거 내용·적용 범위·다음 확인 보기" : "Show the fact, scope and next check"}</summary>
+                      <p className="v2-source-condition">{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
+                      {block.action && <p className="v2-source-condition"><b>{ko ? "할 일: " : "To do: "}</b>{v2CustomerEvidenceText(analysis.language, block.action)}</p>}
+                      <dl className="v2-evidence-trace">
+                    <div><dt>{ko ? "검색 요약의 적용 설명" : "Search-summary applicability"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
+                    <div><dt>{ko ? "현재 조건 · 입력 기반 구조 판단" : "Current condition · user input and core rules"}</dt><dd>{link.condition}</dd></div>
+                    {link.selfReport && !f.selfReports.includes(link.selfReport) && <div><dt>{ko ? "고객 자기보고" : "Customer self-report"}</dt><dd>{link.selfReport}</dd></div>}
+                    <div><dt>{ko ? "아직 확인되지 않은 점" : "Still unverified"}</dt><dd>{link.unresolved}</dd></div>
+                    <div><dt>{ko ? "다음 확인" : "Next check"}</dt><dd>{link.test}</dd></div>
+                      </dl>
+                    </details>
+                  </>
+                )}
+                {block.sourceUrl && (
+                  <a href={block.sourceUrl} target="_blank" rel="noreferrer">
+                    {block.sourceLabel} ↗
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </article>
+      ))}
+    </div>
+  );
+}
+export function V2FactorMap({
+  analysis,
+  compact = false,
+}: {
+  analysis: V2Analysis;
+  compact?: boolean;
+}) {
+  const ko = analysis.language === "ko";
+  return (
+    <div className="v2-factor-map" data-testid="v2-framework-readings">
+      <p className="v2-analysis-note">
+        {analysis.factorScopeNote}{" "}
+        {analysis.fifwmSource === "unavailable"
+          ? ko
+            ? "기존 다섯 항목의 평가 입력이 없어 미확인 상태입니다. 준비 상태나 안전 여유로 대신 평가하지 않습니다."
+            : "The existing five-part assessment inputs are unavailable, so these items remain unassessed. Readiness and safety bands do not substitute for them."
+          : analysis.fifwmSource === "case-adapted"
+            ? ko
+              ? "응답한 항목만 같은 0·1·2 기준으로 평가했습니다. 원래 조직 평가와는 다른 사례 맞춤 질문이며, 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items are scored on the same 0/1/2 scale. These are case-adapted questions, distinct from the original organization assessment. Public evidence does not change the scores."
+            : ko
+              ? "응답한 항목만 기존 규칙으로 평가했습니다. 미응답·모름·해당 없음은 미평가이며, 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items use the existing rules. Unanswered, unsure and inapplicable items remain unassessed. Public evidence does not change the scores."}
+      </p>
+      {analysis.factors.map((f, i) => (
+        <article key={f.id} data-factor={f.id}>
+          <span className="v2-factor-number">0{i + 1}</span>
+          <div>
+            <h3>{f.title}</h3>
+            {f.questionTopic && <p className="v2-factor-question">{f.questionTopic}</p>}
+            {(!compact || f.assessed) && <p>
+              {compact
+                ? f.reading.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() || f.reading
+                : f.reading}
+            </p>}
+          </div>
+          <div className="v2-factor-state">
+            <strong>{f.status}</strong>
+            <small>
+              {f.evidenceIds.length
+                ? `${ko ? "관련 공개 근거" : "Related public evidence"} ${f.evidenceIds.map(id => id + 1).join(", ")}`
+                : ko
+                  ? "이 평가에 연결된 공개 근거 없음"
+                  : "No public evidence mapped to this assessment"}
+            </small>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+export function V2SafetyView({
+  analysis,
+  band,
+}: {
+  analysis: V2Analysis;
+  band: string;
+}) {
+  const ko = analysis.language === "ko";
+  return (
+    <div className="v2-safety-analysis" data-testid="v2-safety-analysis">
+      <div className="v2-safety-reading">
+        <strong>
+          Safety Margin / {v2t(analysis.language, band as V2CopyKey)}
+        </strong>
+        <p>{analysis.boundary}</p>
+      </div>
+      <div className="v2-safety-dimensions">
+        {analysis.safety.map(s => (
+          <article key={s.id}>
+            <div>
+              <h3>{s.title}</h3>
+              <strong>{v2t(analysis.language, s.band as V2CopyKey)}</strong>
+            </div>
+            <div
+              className={`v2-ordinal ${s.level === null ? "unknown" : ""}`}
+              role="img"
+              aria-label={`${s.title}: ${v2t(analysis.language, s.band as V2CopyKey)}`}
+            >
+              {[1, 2, 3].map(n => (
+                <i
+                  key={n}
+                  className={s.level !== null && n <= s.level ? "filled" : ""}
+                />
+              ))}
+              {s.level === null && <span>?</span>}
+            </div>
+            <p>{s.reading}</p>
+          </article>
+        ))}
+      </div>
+      <small>
+        {ko
+          ? "막대는 입력한 조건의 단계 표시입니다. 확률이나 새로운 점수가 아닙니다. 손실 위험은 낮을수록 회복 여력이 커지는 방향으로 표시합니다."
+          : "Bars represent qualitative input bands, not probabilities or new scores. Lower downside is shown as more room for recovery."}
+      </small>
+    </div>
+  );
+}
+export function V2ChangingView({ analysis }: { analysis: V2Analysis }) {
+  const ko = analysis.language === "ko";
+  return (
+    <div className="v2-changing-analysis" data-testid="v2-changing-analysis" data-count={analysis.plays.length}>
+      {analysis.plays.length ? (
+        analysis.plays.map((p, i) => (
+          <article key={p.family} data-family={p.family}>
+            <div className="v2-changing-title">
+              <span>0{i + 1}</span>
+              <h3>{p.title}</h3>
+            </div>
+            <p>{p.move}</p>
+            <dl>
+              <div>
+                <dt>{ko ? "달라지는 점" : "What changes"}</dt>
+                <dd>{p.changes}</dd>
+              </div>
+              <div>
+                <dt>{ko ? "유지할 기반" : "Protect"}</dt>
+                <dd>{p.protects}</dd>
+              </div>
+              <div>
+                <dt>{ko ? "먼저 확보할 조건" : "Prerequisites"}</dt>
+                <dd>{p.needs}</dd>
+              </div>
+              <div>
+                <dt>{ko ? "확인할 결과" : "Evidence to collect"}</dt>
+                <dd>{p.evidence}</dd>
+              </div>
+              <div>
+                <dt>{ko ? "노출 범위" : "Exposure"}</dt>
+                <dd>{p.exposure}</dd>
+              </div>
+              <div>
+                <dt>{ko ? "재검토 시점" : "Review timing"}</dt>
+                <dd>{p.timeExposure}</dd>
+              </div>
+            </dl>
+          </article>
+        ))
+      ) : (
+        <p>
+          {ko
+            ? "현재 엔진에서 도출된 경로 조정안이 없습니다. 확인되지 않은 요건을 먼저 검증하세요."
+            : "The current engine derives no reconfiguration play. Validate unresolved requirements first."}
+        </p>
+      )}
+    </div>
+  );
+}
+export function V2ExperimentView({
+  analysis,
+  compact = false,
+}: {
+  analysis: V2Analysis;
+  compact?: boolean;
+}) {
+  const ko = analysis.language === "ko";
+  return (
+    <div className="v2-experiment-analysis" data-testid="v2-next-experiment">
+      <div className="v2-experiment-now">
+        <span>{ko ? "다음에 확인할 질문" : "Next question to test"}</span>
+        <h3>{analysis.question}</h3>
+        <p>{compact ? analysis.experiment.briefAction : analysis.experiment.action}</p>
+        <strong>{ko ? "남길 결과물" : "Deliverable"}</strong>
+        <p>{analysis.experiment.output}</p>
+      </div>
+      {!compact && (
+        <ol className="v2-experiment-timeline">
+          {analysis.experiment.stages.map(s => (
+            <li key={s.day}>
+              <span>
+                {s.day}
+                <small>{ko ? "일" : "days"}</small>
+              </span>
+              <div>
+                <h3>{s.title}</h3>
+                <p>{s.action}</p>
+                <strong>{s.output}</strong>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+      <div className="v2-experiment-conditions">
+        <article>
+          <strong>
+            {ko
+              ? "다음 단계 검토 조건"
+              : "Condition for reviewing the next step"}
+          </strong>
+          <p>{analysis.experiment.continue}</p>
+        </article>
+        <article>
+          <strong>
+            {ko ? "범위를 줄일 조건" : "Condition for reducing scope"}
+          </strong>
+          <p>{analysis.experiment.pause}</p>
+        </article>
+      </div>
+    </div>
+  );
+}

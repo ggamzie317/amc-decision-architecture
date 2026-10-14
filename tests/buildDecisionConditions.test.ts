@@ -198,7 +198,9 @@ test("weak or missing signal case returns safe fallback text", () => {
     } as any,
   });
 
-  assert.ok(result.validationCondition.includes("Clearer validation"));
+  assert.equal(result.nativeMetadata?.weakEvidence, true);
+  assert.equal(result.nativeMetadata?.validationBucket, "fallback");
+  assert.match(result.validationCondition, /improve proof quality before.*commitment-ready/);
   assert.ok(result.readinessCondition.length > 0);
   assert.ok(result.supportCondition.length > 0);
   assert.ok(result.commitmentCondition.length > 0);

@@ -1,4 +1,13 @@
 import {
+  isInteractive,
+  projectInteractivePatch,
+  projectInteractiveMetadata,
+} from "../shared/interactivePrivacy.js";
+import {
+  simulatorEvents,
+  sanitizeSimulatorMetadata,
+} from "./simulatorAnalytics.js";
+import {
   buildOperationsSummary,
   buildResearchSummary,
 } from "./founderOpsAnalytics.js";
@@ -130,16 +139,52 @@ export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
   } else if (submissionId && !(await store.getSubmission(submissionId))) {
     submissionId = "";
   }
+  if (simulatorEvents.includes(eventType) && !submissionId)
+    return { ok: false, stored: false, reason: "baseline_required" };
   if (!startsNewJourney && !submissionId) {
     const submission = await store.createSubmission(language, true);
     submissionId = submission.submissionId;
   }
-  const patch = sanitizePatch(body.patch);
+  const stored = (await store.getSubmission(submissionId))?.submission;
+  const incoming = isRecord(body.patch) ? body.patch : {};
+  const interactive =
+    isInteractive(stored?.structuralOutputJson) ||
+    isInteractive(incoming.structuralOutputJson) ||
+    isInteractive(body.metadata);
+  const candidate = simulatorEvents.includes(eventType)
+    ? {}
+    : sanitizePatch(body.patch);
+  const projected = interactive
+    ? projectInteractivePatch({
+        ...stored,
+        ...candidate,
+        structuralOutputJson: {
+          ...stored?.structuralOutputJson,
+          ...candidate.structuralOutputJson,
+        },
+      })
+    : candidate;
+  const patch = interactive
+    ? (Object.fromEntries(
+        Object.entries(projected).filter(
+          ([key, value]) =>
+            JSON.stringify(value) !== JSON.stringify((stored as any)?.[key])
+        )
+      ) as SubmissionPatch)
+    : candidate;
   if (Object.keys(patch).length > 0)
     await store.updateSubmission(submissionId, patch);
   const metadata = { ...(boundedObject(body.metadata, 4000) || {}) };
   delete metadata.providerObservation; // Reserved for server-authored provider telemetry.
-  await store.addEvent(submissionId, eventType, metadata);
+  await store.addEvent(
+    submissionId,
+    eventType,
+    simulatorEvents.includes(eventType)
+      ? sanitizeSimulatorMetadata(metadata)
+      : interactive
+        ? projectInteractiveMetadata(metadata)
+        : metadata
+  );
   return { ok: true, stored: true, submissionId };
 }
 
@@ -220,8 +265,11 @@ export function buildSubmissionsCsv(
     "framework_structured_data",
     ...(full ? ["answers", "structural_output", "external_evidence"] : []),
   ];
-  const lines = rows.map(item =>
-    [
+  const lines = rows.map(raw => {
+    const item = isInteractive(raw.structuralOutputJson)
+      ? { ...raw, ...projectInteractivePatch(raw) }
+      : raw;
+    return [
       item.submissionId,
       item.createdAt,
       item.productVersion,
@@ -250,7 +298,7 @@ export function buildSubmissionsCsv(
         : []),
     ]
       .map(csvCell)
-      .join(",")
-  );
+      .join(",");
+  });
   return `\uFEFF${headers.map(csvCell).join(",")}\r\n${lines.join("\r\n")}\r\n`;
 }
