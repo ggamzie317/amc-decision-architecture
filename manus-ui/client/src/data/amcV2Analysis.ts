@@ -795,17 +795,79 @@ export function buildV2Analysis(
               ),
     },
   ];
-  const plays = core.changingPlays.map(play => ({
-    family: play.family,
-    title: v2CustomerPlayText(state.language, play.title),
-    move: v2CustomerPlayText(state.language, play.move),
-    changes: v2CustomerPlayText(state.language, play.changes),
-    protects: v2CustomerPlayText(state.language, play.protects),
-    needs: v2CustomerPlayText(state.language, play.needs),
-    evidence: v2CustomerPlayText(state.language, play.evidence),
-    exposure: v2CustomerPlayText(state.language, play.exposure),
-    timeExposure: v2CustomerPlayText(state.language, play.timeExposure),
-  }));
+  // Customer-language Changing (owner feedback round 4): every field is a
+  // sentence built from this customer's inputs and evidence, not a label.
+  // The engine still decides which plays apply; only the wording changes.
+  const current = state.optionA.trim() || say("현재 직무", "the current role");
+  const considered = state.optionB.trim() || say("고민하는 커리어", "the considered career");
+  const missingPoint = v2MissingPoint(state.caseType, state.language);
+  const firstAction = blocks.find(block => block.action)?.action;
+  const amountCard = blocks.find(block => /(?:HK\$|US\$|£|€|\$|₩)\s?\d|\d[\d,.]*\s?(?:원|만 ?원|파운드|달러|유로)/.test(`${block.headline} ${block.fact}`));
+  const routeCards = blocks.filter(block => /원격|시간제|파트타임|병행|주말|온라인|단계적|remote|part-time|online|weekend|phased/i.test(`${block.headline} ${block.fact}`));
+  const bandText = (key: keyof typeof b) => t(b[key].band as V2CopyKey);
+  const review = say(
+    "30일에 첫 결과를 확인하고, 60일에 계속·축소·중단을 정한 뒤, 90일에 전체 판단을 다시 봅니다.",
+    "Check first results at 30 days, decide continue / narrow / stop at 60, and review the whole reading at 90."
+  );
+  const protectLine = say(
+    `지금 지키려는 것: ${protectedBase}. 시험 중에도 이것이 흔들리지 않게 합니다.`,
+    `What you are protecting: ${protectedBase}. The test must not weaken it.`
+  );
+  const playCopy: Record<string, { changes: string; needs: string; evidence: string; exposure: string }> = {
+    "parallel-validation": {
+      changes: say(`${withKoreanParticle(current, "을/를")} 그만두지 않고, ${considered}에 필요한 조건을 작은 시험으로 하나씩 확인합니다.`,
+        `Keep ${current} and check what ${considered} requires through small tests, one at a time.`),
+      needs: say(`‘${missingPoint.point}’를 보여줄 실제 근거 1개 이상${firstAction ? ` — 예: ${v2CustomerEvidenceText(state.language, firstAction)}` : ""}`,
+        `At least one real piece of evidence for “${missingPoint.point}”${firstAction ? ` — e.g. ${firstAction}` : ""}`),
+      evidence: say(`${considered}에서 ‘${missingPoint.point}’가 실제로 성립하는지 보여주는 결과(자료·응답·제안 등). ${missingPoint.why}`,
+        `A result showing whether “${missingPoint.point}” holds for ${considered} (documents, responses, offers). ${missingPoint.why}`),
+      exposure: say("시험 기간 동안 쓸 주당 시간과 총비용의 상한을 먼저 정하고, 그 안에서만 진행합니다.",
+        "Set a weekly time and total cost ceiling for the test first, and stay inside it."),
+    },
+    resource: {
+      changes: say(`재정 여유(현재 ${bandText("safetyMargin")})와 회복 여력을 먼저 보강한 뒤 ${considered} 쪽 투입을 늘립니다.`,
+        `Strengthen financial room (now ${bandText("safetyMargin")}) and recovery capacity before increasing commitment to ${considered}.`),
+      needs: say(`시험 기간 동안 버틸 생활비와 비용의 실제 금액${amountCard ? ` — 근거 기준: ${v2CustomerEvidenceText(state.language, amountCard.headline)}` : ""}`,
+        `The actual living costs and expenses for the test period${amountCard ? ` — evidence reference: ${amountCard.headline}` : ""}`),
+      evidence: say("보강한 여력으로 몇 개월을 버틸 수 있는지 계산한 결과", "A calculation of how many months the strengthened room covers"),
+      exposure: say("되돌릴 수 없는 지출이나 퇴사 같은 확정 결정은 아직 하지 않습니다.", "No irreversible spending or resignation yet."),
+    },
+    timing: {
+      changes: say(`확정 날짜를 먼저 정하지 않고, 되돌아올 경로(현재 ${bandText("reversibility")})가 확인된 뒤 시점을 정합니다.`,
+        `Do not fix a date first; set the timing once a way back (now ${bandText("reversibility")}) is confirmed.`),
+      needs: say("되돌아올 수 있는 경로 — 예: 휴직·복직 제도, 재지원 가능 여부, 계약 조건", "A confirmed way back — e.g. leave and return policy, re-application, contract terms"),
+      evidence: say("복귀 조건과 기한을 확인한 기록", "A record of return conditions and deadlines"),
+      exposure: say("확정 전까지는 되돌릴 수 있는 범위에서만 움직입니다.", "Until then, move only within what can be undone."),
+    },
+    pathway: {
+      changes: say(`${considered}에 바로 옮기지 않고, 중간 경로${routeCards.length ? `(${routeCards.slice(0, 2).map(card => v2CustomerEvidenceText(state.language, card.headline)).join(" · ")})` : "(시간제·병행·단계적 과정)"}로 먼저 근거를 만듭니다.`,
+        `Do not move straight to ${considered}; build evidence through an intermediate route${routeCards.length ? ` (${routeCards.slice(0, 2).map(card => card.headline).join(" · ")})` : " (part-time, combined or phased)"} first.`),
+      needs: say("중간 경로의 참여 요건, 일정, 비용", "The intermediate route's requirements, schedule and cost"),
+      evidence: say(`중간 경로에서 얻은 결과가 ${considered}의 요건을 채우는지`, `Whether results from the intermediate route meet ${considered}'s requirements`),
+      exposure: say("중간 경로 한 번에 드는 시간·비용 범위 안에서만 진행합니다.", "Only within the time and cost of one intermediate step."),
+    },
+    "role-scope": {
+      changes: say(`${withKoreanParticle(current, "을/를")} 떠나기 전에, 지금 조직 안에서 역할과 범위를 바꿀 수 있는지 먼저 확인합니다.`,
+        `Before leaving ${current}, check whether the role and scope can change inside the current organization.`),
+      needs: say("구체적인 역할·범위 조정 제안서 1개", "One concrete proposal for a role or scope change"),
+      evidence: say("조직의 답변(수용·거절·조건부)과 그 조건", "The organization's answer (yes, no, conditional) and its terms"),
+      exposure: say("한 번의 내부 협의 기간 안에서만 진행합니다.", "Within one internal decision cycle."),
+    },
+  };
+  const plays = core.changingPlays.map(play => {
+    const copy = playCopy[play.family];
+    return {
+      family: play.family,
+      title: v2CustomerPlayText(state.language, play.title),
+      move: v2CustomerPlayText(state.language, play.move),
+      changes: copy?.changes ?? v2CustomerPlayText(state.language, play.changes),
+      protects: protectLine,
+      needs: copy?.needs ?? v2CustomerPlayText(state.language, play.needs),
+      evidence: copy?.evidence ?? v2CustomerPlayText(state.language, play.evidence),
+      exposure: copy?.exposure ?? v2CustomerPlayText(state.language, play.exposure),
+      timeExposure: review,
+    };
+  });
   const continueCondition = `${text(profile.advance)}${priorityEvidence ? say(`, ‘${priorityEvidence.headline}’의 적용 여부와 현재 조건(${priorityEvidence.condition})을 확인한 뒤`, `, after confirming whether “${priorityEvidence.headline}” applies and checking current conditions (${priorityEvidence.condition})`) : ""}${ko ? ", 다음 범위를 검토하세요." : ", review the next scope."}`;
   const pause = say(
     "시험 때문에 보호할 소득·시간·생활 기반이 흔들리거나, 목표 요건과 결과물의 연결이 확인되지 않으면 범위를 줄이고 다시 설계하세요.",

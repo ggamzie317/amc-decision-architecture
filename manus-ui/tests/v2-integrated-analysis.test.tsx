@@ -236,11 +236,13 @@ describe("V2 integrated customer analysis", () => {
     const visible = analysis.plays.find(play => play.family === "timing");
     expect(visible?.move).toBe(timing?.move);
     expect(visible?.move).toContain("회복 경로가 명확해질 때까지");
-    expect(visible?.changes).toBe(timing?.changes);
-    expect(visible?.needs).toBe(timing?.needs);
-    expect(visible?.evidence).toBe(timing?.evidence);
-    expect(visible?.exposure).toBe(timing?.exposure);
-    expect(visible?.timeExposure).toBe(timing?.timeExposure);
+    // Owner round 4: the engine still selects the play and its move; the
+    // remaining fields are customer sentences built from this case.
+    expect(visible?.changes).toContain("되돌아올 경로(현재 제약됨)");
+    expect(visible?.needs).toContain("휴직·복직");
+    expect(visible?.protects).toContain("지금 지키려는 것");
+    expect(visible?.timeExposure).toContain("30일");
+    expect(visible?.timeExposure).not.toBe(visible?.exposure);
   });
   it("assembles the Korean pathway particle in the engine and keeps it unchanged in presentation", () => {
     const f = v2DemoFixture("industry", "ko");
