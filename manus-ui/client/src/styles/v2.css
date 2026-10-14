@@ -2205,3 +2205,16 @@
 .v2-case-options span { font-size: 12px; color: var(--muted); word-break: keep-all; }
 .v2-case-recommended .v2-case-geo { color: var(--ink); margin-top: 6px; font-size: 12.5px; }
 .v2-case-recommended .v2-case-geo b { color: var(--teal); }
+
+/* Per-topic search status and progressive collection banner. */
+.v2-topic-list { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 4px; }
+.v2-topic-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; padding: 6px 10px; background: #f6f9f8; }
+.v2-topic-list b { font-size: 12px; color: var(--muted); }
+.v2-topic-list li[data-state="done"] b { color: var(--teal); }
+.v2-collecting {
+  max-width: 1240px; margin: 14px auto 0; padding: 10px 16px;
+  display: grid; gap: 2px; background: #fbf8ec; border: 1px solid #e3d9b4; font-size: 13px;
+}
+.v2-collecting strong { color: #7a6320; }
+.v2-collecting small { color: var(--muted); font-size: 12px; }
+@media print { .v2-collecting { display: none; } }

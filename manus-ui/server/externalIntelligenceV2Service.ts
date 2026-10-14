@@ -9,6 +9,14 @@ import {
   type V2EvidenceRequest,
 } from "../shared/externalIntelligenceV2Request.js";
 import {
+  alignTranslation,
+  citationKey,
+  limitedEvidence,
+  mergeV2Evidence,
+  v2EvidenceGroups,
+} from "../shared/v2EvidenceMerge.js";
+export { alignTranslation, mergeV2Evidence, v2EvidenceGroups };
+import {
   v2EvidenceLimits as limit,
   v2TextLength,
 } from "../shared/externalIntelligenceV2Contract.js";
@@ -68,28 +76,6 @@ type NormalizedResponse = {
 /** Selective public research questions, never personal/internal conditions. */
 export function v2EvidenceFocus(request: V2EvidenceRequest) {
   return v2EvidenceAreas(request).map(area => v2t("en", area as V2CopyKey));
-}
-
-function limitedEvidence(
-  live: ExternalIntelligenceV2,
-  evidenceBlocks: ExternalIntelligenceV2["evidenceBlocks"],
-  language: "en" | "ko"
-): ExternalIntelligenceV2 {
-  return {
-    ...live,
-    sourceCoverage: "partial",
-    contextConfidence: undefined,
-    evidenceBlocks,
-    metrics: [],
-    opportunitySignals: [],
-    frictionSignals: [],
-    uncertainties: [language === "ko"
-      ? "출처가 반복되거나 확인되지 않은 일부 카드를 제외했습니다. 남은 카드의 주장과 적용 범위도 원문에서 확인해야 합니다."
-      : "Some cards repeated a source or could not be checked and were excluded. Compare each remaining claim and its scope with the source text."],
-    implication: language === "ko"
-      ? "서로 다른 출처의 일부 사실만 표시합니다. 제외된 카드에 의존할 수 있는 종합 해석은 표시하지 않습니다."
-      : "Only facts from distinct remaining sources are shown. Provider summaries that may depend on excluded cards are omitted.",
-  };
 }
 
 function evidenceSchema(dimensions: string[], maxBlocks: number = limit.blocks) {
@@ -257,88 +243,6 @@ export function configuredV2AgentPreset() {
   return value && ["fast", "low", "medium", "high", "xhigh"].includes(value) ? value : "medium";
 }
 
-/**
- * Topic groups for parallel searches (owner decision 2026-10-14). Narrow
- * searches reach the right official pages faster than one broad search.
- * Overseas relocation always researches visa/residency on its own.
- */
-export function v2EvidenceGroups(request: V2EvidenceRequest): string[][] {
-  const areas = [...v2EvidenceAreas(request)];
-  if (areas.length <= 1) return [areas];
-  if (request.caseType === "Overseas Relocation" && areas.includes("visaMobility")) {
-    const rest = areas.filter(area => area !== "visaMobility");
-    return [["visaMobility"], ...chunk(rest, 2)].slice(0, 3);
-  }
-  return chunk(areas, 2).slice(0, 3);
-}
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
-  return out;
-}
-
-const confidenceRank = { low: 0, medium: 1, high: 2 } as const;
-/** Fit joined sentences within a limit without cutting a sentence. */
-function fitSentences(parts: string[], max: number): string {
-  let out = "";
-  for (const part of parts) {
-    const next = out ? `${out} ${part}` : part;
-    if (v2TextLength(next) > max) break;
-    out = next;
-  }
-  return out || parts[0];
-}
-
-function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", base: ExternalIntelligenceV2): ExternalIntelligenceV2 {
-  const pick = (key: "opportunitySignals" | "frictionSignals" | "uncertainties", max: number) => {
-    const rows: string[] = [];
-    for (let i = 0; rows.length < max && lives.some(live => live[key][i]); i++)
-      for (const live of lives) if (live[key][i] && rows.length < max && !rows.includes(live[key][i])) rows.push(live[key][i]);
-    return rows;
-  };
-  const merged: ExternalIntelligenceV2 = {
-    ...base,
-    evidenceBlocks: [],
-    opportunitySignals: pick("opportunitySignals", limit.opportunitySignals),
-    frictionSignals: pick("frictionSignals", limit.frictionSignals),
-    uncertainties: pick("uncertainties", limit.uncertainties),
-    implication: fitSentences(lives.map(live => live.implication), limit.implication),
-  };
-  const seen = new Set<string>();
-  for (const live of lives)
-    for (const block of live.evidenceBlocks) {
-      const key = citationKey(block);
-      if (seen.has(key) || merged.evidenceBlocks.length >= limit.blocks) continue;
-      seen.add(key);
-      merged.evidenceBlocks.push(block);
-    }
-  return lives.some(live => live.sourceCoverage === "partial")
-    ? limitedEvidence(merged, merged.evidenceBlocks, language)
-    : merged;
-}
-
-/** Combine topic results into one snapshot; the translation is merged the same way. */
-export function mergeV2Evidence(lives: ExternalIntelligenceV2[], request: V2EvidenceRequest): ExternalIntelligenceV2 {
-  if (lives.length === 1) return lives[0];
-  const confidences = lives.map(live => live.contextConfidence);
-  const contextConfidence = confidences.every(Boolean)
-    ? confidences.reduce((a, b) => (confidenceRank[a!] <= confidenceRank[b!] ? a : b))
-    : undefined;
-  const base = { ...lives[0], contextConfidence, sourceCoverage: undefined, translation: undefined };
-  const primary = mergeSummaries(lives, request.language, base);
-  if (!contextConfidence) delete primary.contextConfidence;
-  const other = request.language === "ko" ? "en" : "ko";
-  if (lives.every(live => live.translation)) {
-    const translations = lives.map(live => live.translation!);
-    const translated = mergeSummaries(translations, other, { ...translations[0], contextConfidence, sourceCoverage: undefined, translation: undefined });
-    const aligned = alignTranslation(primary, translated, other);
-    if (aligned) primary.translation = aligned;
-  }
-  if (!primary.translation) delete primary.translation;
-  if (primary.sourceCoverage === undefined) delete primary.sourceCoverage;
-  return primary;
-}
-
 function pause(ms: number, signal: AbortSignal) {
   return new Promise<void>(resolve => {
     if (!ms || signal.aborted) return resolve();
@@ -429,9 +333,9 @@ export async function resolveV2ExternalIntelligence(
   const timer = setTimeout(() => {
     timedOut = true;
     controller.abort();
-    // Searches stop at 95s; topics that finished are kept. Source checks get
+    // Searches stop at 240s; topics that finished are kept. Source checks get
     // their own short budget, so a slow search no longer discards evidence.
-  }, options.timeoutMs ?? 95_000);
+  }, options.timeoutMs ?? 240_000);
   let result = unavailable();
   let reason: Reason = "provider_failure";
   try {
@@ -698,29 +602,6 @@ function inspectBilingual(
     ? alignTranslation(primary.value, alternate.value, other)
     : undefined;
   return { ...primary, value: translation ? { ...primary.value, translation } : primary.value };
-}
-
-const citationKey = (block: { sourceUrl?: string; dimension: string }) => `${block.sourceUrl}\n${block.dimension}`;
-
-/** Keep the translation only for the primary's exact cards, in the same order and scope. */
-export function alignTranslation(
-  primary: ExternalIntelligenceV2,
-  alternate: ExternalIntelligenceV2,
-  language: "en" | "ko"
-): ExternalIntelligenceV2 | undefined {
-  const byKey = new Map(alternate.evidenceBlocks.map(block => [citationKey(block), block]));
-  const blocks = primary.evidenceBlocks.map(block => byKey.get(citationKey(block)));
-  if (!blocks.length || blocks.some(block => !block)) return undefined;
-  const aligned = {
-    ...alternate,
-    generatedAt: primary.generatedAt,
-    contextConfidence: primary.contextConfidence,
-    evidenceBlocks: blocks as ExternalIntelligenceV2["evidenceBlocks"],
-  };
-  delete (aligned as { translation?: unknown }).translation;
-  return primary.sourceCoverage === "partial"
-    ? limitedEvidence(aligned, aligned.evidenceBlocks, language)
-    : { ...aligned, sourceCoverage: primary.sourceCoverage };
 }
 
 /**

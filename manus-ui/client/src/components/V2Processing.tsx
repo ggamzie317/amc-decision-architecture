@@ -89,7 +89,10 @@ export default function V2Processing({
   onRetry,
   onEditTarget,
   onDraft,
+  topics = [],
 }: {
+  /** Real per-topic state of the parallel searches. */
+  topics?: { label: string; state: "running" | "done" | "empty" }[];
   language: V2Language;
   running: boolean;
   seconds: number;
@@ -152,6 +155,17 @@ export default function V2Processing({
             </li>
           ))}
         </ol>
+        {topics.length > 1 && (
+          <ul className="v2-topic-list" aria-label={say("주제별 검색", "Searches by topic")}>
+            {topics.map(topic => (
+              <li key={topic.label} data-state={topic.state}>
+                <StateIcon state={topic.state === "running" ? "running" : topic.state === "done" ? "done" : "failed"} />
+                <span>{topic.label}</span>
+                <b>{topic.state === "running" ? say("수집 중", "Collecting") : topic.state === "done" ? say("근거 확보", "Evidence found") : say("근거 없음", "No evidence")}</b>
+              </li>
+            ))}
+          </ul>
+        )}
         <dl className="v2-processing-request">
           <div>
             <dt>{say("검색 대상", "Target")}</dt>

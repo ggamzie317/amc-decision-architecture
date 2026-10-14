@@ -63,6 +63,7 @@ import {
   v2CanAskCanonicalFifwm,
 } from "../data/v2CanonicalFifwm";
 import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
+import { mergeV2Evidence, v2EvidenceGroups } from "../../../shared/v2EvidenceMerge";
 import V2Processing from "../components/V2Processing";
 import { v2CaseFifwmSet } from "../data/v2CaseFifwm";
 import {
@@ -130,9 +131,14 @@ export default function AmcInteractiveV2() {
   const simOpened = useRef(false);
   const restorePrintTitle = useRef<(() => void) | null>(null);
   const [processingSeconds, setProcessingSeconds] = useState(0);
+  const [topicStates, setTopicStates] = useState<{ areas: string[]; state: "running" | "done" | "empty" }[]>([]);
   const [trackingObservation, setTrackingObservation] = useState<JourneyTrackingObservation | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
   const caseFifwm = v2CaseFifwmSet(state.caseType);
+  const topicLabels = topicStates.map(topic => ({
+    label: topic.areas.map(area => v2t(language, area as V2CopyKey)).join("·"),
+    state: topic.state,
+  }));
   const caseRanking = useMemo(
     () => inferV2CaseRanking(state),
     [state.decision, state.optionA, state.optionB]
@@ -270,7 +276,7 @@ export default function AmcInteractiveV2() {
   const evidenceTextLanguage: V2Language = demoMode || evidenceByLanguage[language] ? language : researchLanguage;
   const evidencePhase = demoMode
     ? "demo"
-    : evidenceLoadingLanguage !== null
+    : evidenceLoadingLanguage !== null && evidenceByLanguage[researchLanguage]?.status !== "live"
       ? "loading"
       : (evidenceByLanguage[researchLanguage]?.status ?? "not_checked");
   const input = useMemo(
@@ -752,8 +758,12 @@ export default function AmcInteractiveV2() {
   const runEvidenceAnalysis = async () => {
     setPhase("processing");
     window.scrollTo(0, 0);
-    const outcome = await checkCurrentEvidence();
-    if (outcome?.result.status === "live")
+    let opened = false;
+    const outcome = await checkCurrentEvidence(firstLive => {
+      opened = true;
+      openDashboard(firstLive.input, firstLive.core, "live");
+    });
+    if (!opened && outcome?.result.status === "live")
       openDashboard(outcome.input, outcome.core, "live");
   };
   const finish = (withEvidence = true) => {
@@ -788,7 +798,10 @@ export default function AmcInteractiveV2() {
     restorePrintTitle.current = null;
     setLanguage(next);
   };
-  const checkCurrentEvidence = async () => {
+  type EvidenceOutcome = { result: ExternalIntelligenceV2; input: typeof input; core: typeof core };
+  // Each topic is its own request (its own serverless time budget). Results
+  // fill in as topics arrive; results open after the first usable topic.
+  const checkCurrentEvidence = async (onFirstLive?: (outcome: EvidenceOutcome) => void): Promise<EvidenceOutcome | null> => {
     if (demoMode || evidencePending.current) return null;
     const existing = evidenceByLanguage[language];
     if (existing?.status === "live")
@@ -803,40 +816,66 @@ export default function AmcInteractiveV2() {
     evidencePending.current = true;
     setResearchLanguage(request.language);
     setEvidenceLoadingLanguage(language);
+    const groups = v2EvidenceGroups(request);
+    setTopicStates(groups.map(areas => ({ areas, state: "running" })));
     track(
       "external_evidence_requested",
       {},
       { externalEvidenceMode: "checking" }
     );
-    const result = await requestV2Evidence(request, fetch, observation => {
-      setEvidenceHttpByLanguage(previous => ({
+    const other: V2Language = request.language === "ko" ? "en" : "ko";
+    const lives: (ExternalIntelligenceV2 | undefined)[] = groups.map(() => undefined);
+    let lastResult: ExternalIntelligenceV2 | null = null;
+    let first = true;
+    const merged = () => mergeV2Evidence(lives.filter((l): l is ExternalIntelligenceV2 => !!l), request);
+    const outcomeFor = (result: ExternalIntelligenceV2): EvidenceOutcome => {
+      const updatedInput = buildV2Input({ ...state, language: request.language }, result, fifwmAssessment);
+      return { result, input: updatedInput, core: buildProductApplicationV3(updatedInput) };
+    };
+    await Promise.all(groups.map(async (areas, index) => {
+      // Stagger starts so parallel topics do not hit the provider at once.
+      if (index) await new Promise(resolve => setTimeout(resolve, index * 700));
+      const result = await requestV2Evidence({ ...request, externalAreas: areas }, fetch, observation => {
+        setEvidenceHttpByLanguage(previous => ({ ...previous, [request.language]: observation }));
+      });
+      lastResult = result;
+      setTopicStates(previous => previous.map((topic, i) => i === index
+        ? { ...topic, state: result.status === "live" ? "done" : "empty" }
+        : topic));
+      if (result.status !== "live") return;
+      lives[index] = result;
+      // One search may return both languages; store each so the toggle
+      // switches wording without searching again.
+      const { translation, ...primary } = merged();
+      setEvidenceByLanguage(previous => ({
         ...previous,
-        [request.language]: observation,
+        [request.language]: primary,
+        ...(translation ? { [other]: translation } : {}),
       }));
-    });
-    // One search may return both languages; store each so the toggle switches
-    // wording without searching again.
-    const { translation, ...primaryResult } = result;
-    setEvidenceByLanguage(previous => ({
-      ...previous,
-      [request.language]: primaryResult,
-      ...(translation ? { [request.language === "ko" ? "en" : "ko"]: translation } : {}),
+      if (first) {
+        first = false;
+        onFirstLive?.(outcomeFor(merged()));
+      }
     }));
-    const updatedInput = buildV2Input({ ...state, language: request.language }, result, fifwmAssessment);
-    const updatedCore = buildProductApplicationV3(updatedInput);
+    const final = lives.some(Boolean)
+      ? merged()
+      : (lastResult ?? unavailableIntelligence(request.caseType, request.language));
+    if (!lives.some(Boolean))
+      setEvidenceByLanguage(previous => ({ ...previous, [request.language]: final }));
+    const outcome = outcomeFor(final);
     track(
-      result.status === "live"
+      final.status === "live"
         ? "external_evidence_live"
         : "external_evidence_fallback",
       {
-        externalEvidenceMode: result.status === "live" ? "live" : "fallback",
-        structuralOutputJson: structuralSummary(updatedInput, updatedCore, result.status),
+        externalEvidenceMode: final.status === "live" ? "live" : "fallback",
+        structuralOutputJson: structuralSummary(outcome.input, outcome.core, final.status),
       },
-      { externalEvidenceMode: result.status === "live" ? "live" : "unverified" }
+      { externalEvidenceMode: final.status === "live" ? "live" : "unverified" }
     );
     evidencePending.current = false;
     setEvidenceLoadingLanguage(null);
-    return { result, input: updatedInput, core: updatedCore };
+    return outcome;
   };
   const switchDemo = (next: V2DemoKind) => {
     if (next === kind) return;
@@ -1194,7 +1233,17 @@ export default function AmcInteractiveV2() {
             window.scrollTo(0, 0);
           }}
           onDraft={() => openDashboard(input, core, intelligence.status)}
+          topics={topicLabels}
         />
+      )}
+      {phase === "dashboard" && topicLabels.some(topic => topic.state === "running") && (
+        <div className="v2-collecting" role="status" aria-live="polite">
+          <strong>{language === "ko" ? "근거 추가 수집 중" : "Still collecting evidence"}</strong>
+          <span>
+            {topicLabels.map(topic => `${topic.label} ${topic.state === "running" ? (language === "ko" ? "· 수집 중" : "· collecting") : topic.state === "done" ? "✓" : (language === "ko" ? "· 근거 없음" : "· none")}`).join("   ")}
+          </span>
+          <small>{language === "ko" ? "도착하는 근거는 이 화면과 보고서에 자동으로 반영됩니다. 검색을 다시 실행하지 않습니다." : "Arriving evidence is added to this view and the report automatically, without a new search."}</small>
+        </div>
       )}
       {phase === "dashboard" && (
         <>

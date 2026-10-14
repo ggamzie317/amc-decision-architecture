@@ -91,7 +91,10 @@ describe("results do not open before the explicit evidence analysis settles", ()
     const emitters = source.split('"dashboard_generated"').length - 1;
     expect(emitters).toBe(2); // openDashboard() and the currentStage value inside it
     const runBody = source.slice(source.indexOf("const runEvidenceAnalysis"), source.indexOf("const finish = "));
-    expect(runBody.indexOf('setPhase("processing")')).toBeLessThan(runBody.indexOf("await checkCurrentEvidence()"));
+    expect(runBody.indexOf('setPhase("processing")')).toBeGreaterThan(-1);
+    expect(runBody.indexOf('setPhase("processing")')).toBeLessThan(runBody.indexOf("await checkCurrentEvidence("));
+    // Results open when the first topic with usable evidence arrives (or at the end if live).
+    expect(runBody).toContain('openDashboard(firstLive.input, firstLive.core, "live")');
     expect(runBody).toContain('outcome?.result.status === "live"');
   });
 
