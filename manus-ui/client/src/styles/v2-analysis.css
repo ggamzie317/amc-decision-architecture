@@ -1460,3 +1460,20 @@
 .v2-plan-open b { color: var(--teal); font-size: 11.5px; }
 .v2-plan-engine { font-style: normal; font-size: 10.5px; margin-left: 6px; padding: 1px 5px; border: 1px solid var(--line); color: var(--muted); }
 .v2-plan-mine { font-size: 12px; margin: 0 0 6px; }
+
+/* Simulator: scenario explanation and JEV meters. */
+.v2-scenario-explain, .v2-lab-grid > .v2-jev { grid-column: 1 / -1; }
+.v2-scenario-explain { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--teal); padding: 14px 16px; margin: 12px 0; }
+.v2-scenario-explain h3 { display: flex; align-items: center; gap: 6px; font-size: 14px; margin: 0 0 8px; }
+.v2-scenario-distance { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13.5px; margin: 0 0 10px; }
+.v2-scenario-distance small { flex-basis: 100%; color: var(--muted); font-size: 12px; }
+.v2-scenario-explain ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.v2-scenario-explain li { display: grid; gap: 4px; background: #f6f9f8; padding: 10px 12px; font-size: 12.5px; line-height: 1.6; word-break: keep-all; }
+.v2-scenario-explain li strong { font-size: 13px; color: var(--ink); }
+.v2-scenario-explain li b { color: var(--teal); font-size: 11.5px; }
+.v2-scenario-evidence { border-top: 1px dashed var(--line); padding-top: 4px; }
+.v2-scenario-note { display: block; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+.v2-jev li { align-items: center; gap: 8px; }
+.v2-jev-meter { display: inline-flex; gap: 2px; margin-left: auto; }
+.v2-jev-meter em { width: 16px; height: 6px; background: #e8e2c9; }
+.v2-jev-meter em[data-on="true"] { background: #b8863b; }

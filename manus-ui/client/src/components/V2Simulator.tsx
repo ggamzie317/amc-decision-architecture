@@ -1,3 +1,4 @@
+import V2ScenarioExplain from "./V2ScenarioExplain";
 import V2JevAdvisory from "./V2JevAdvisory";
 import { useMemo, useState } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
@@ -261,6 +262,10 @@ export default function V2Simulator({
             )}
           </ul>
         </aside>
+        <V2ScenarioExplain language={state.language} input={input} scenarioInput={scenarioInput}
+          overrides={activeOverrides} intelligence={intelligence} />
+        <V2JevAdvisory language={state.language} input={input} scenarioInput={scenarioInput}
+        baseline={baseline} scenario={scenario} overrides={activeOverrides} />
         <section className="v2-lab-comparison">
           <h3>
             {t("baseline")} <span aria-hidden="true">↔</span> {t("scenario")}
@@ -383,8 +388,7 @@ export default function V2Simulator({
           language={state.language}
         />
       </details>
-      <V2JevAdvisory language={state.language} input={input} scenarioInput={scenarioInput}
-        baseline={baseline} scenario={scenario} overrides={activeOverrides} />
+
       <section className="v2-thresholds">
         <div>
           <p className="v2-kicker">06 / {t("thresholds")}</p>

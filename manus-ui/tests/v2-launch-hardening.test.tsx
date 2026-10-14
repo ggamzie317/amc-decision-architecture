@@ -625,3 +625,25 @@ describe("issues A3-A5: framework elements filled from engine and evidence", () 
     if (v2EngineSwitches(input, core, "ko").length) expect(html).toContain("엔진 계산");
   });
 });
+
+describe("simulator explains a scenario in customer terms", () => {
+  it("states meaning, threshold position and how to make the change real", async () => {
+    const { default: V2ScenarioExplain } = await import("../client/src/components/V2ScenarioExplain");
+    const { v2Scenario } = await import("../client/src/data/amcV2Model");
+    const fixture = v2DemoFixture("industry", "ko");
+    const input = buildV2Input(fixture.state, fixture.intelligence);
+    const overrides = { financialRoom: "strong" as const };
+    const scenarioInput = v2Scenario(input, overrides).input;
+    const html = renderToStaticMarkup(React.createElement(V2ScenarioExplain, {
+      language: "ko", input, scenarioInput, overrides,
+      intelligence: { ...fixture.intelligence, evidenceBlocks: [{ ...fixture.intelligence.evidenceBlocks[0], headline: "연간 학비 £24,000", fact: "학비는 £24,000입니다." }] },
+    }));
+    expect(html).toContain("이 시나리오 해석");
+    expect(html).toContain("판단 위치");
+    expect(html).toContain("무엇인가요");
+    expect(html).toContain("현실에서 이렇게 되려면");
+    expect(html).toContain("연간 학비 £24,000");
+    const none = renderToStaticMarkup(React.createElement(V2ScenarioExplain, { language: "ko", input, scenarioInput: input, overrides: {}, intelligence: fixture.intelligence }));
+    expect(none).toBe("");
+  });
+});

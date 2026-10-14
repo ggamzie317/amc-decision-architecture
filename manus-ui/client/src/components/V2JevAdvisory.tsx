@@ -65,6 +65,7 @@ export default function V2JevAdvisory({
     ["Scenario sensitivity (switching)", "판단 민감도 (전환 가능성)", a.scenarioSensitivity],
     ["Changing feasibility", "경로 조정 실현성", a.changingFeasibility],
     ["Scenario plausibility", "시나리오 개연성", a.scenarioPlausibility],
+    ["Evidence support", "근거 뒷받침", a.evidenceSupport],
   ];
   return (
     <aside className="v2-jev" aria-label={say("JEV 보조 판단", "JEV advisory")} data-testid="v2-jev-advisory">
@@ -73,6 +74,11 @@ export default function V2JevAdvisory({
         {rows.map(([en, k, value]) => (
           <li key={en} data-level={value}>
             <span>{ko ? k : en}</span>
+            <i className="v2-jev-meter" aria-hidden>
+              {(["low", "medium", "high"] as const).map(step => (
+                <em key={step} data-on={["low", "medium", "high"].indexOf(step) <= ["low", "medium", "high"].indexOf(value)} />
+              ))}
+            </i>
             <b>{levelLabel[value][ko ? 1 : 0]}</b>
           </li>
         ))}
