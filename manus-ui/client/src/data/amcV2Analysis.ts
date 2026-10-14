@@ -1,6 +1,7 @@
 import { withKoreanParticle } from "./koreanParticle";
 import { v2CustomerInput } from "./v2InputGlossary";
 import { v2KeyFactReadings } from "../../../shared/v2KeyFacts";
+import { v2SituationalAreas } from "./v2ExternalEvidenceClient";
 import { v2CaseFifwmSet } from "./v2CaseFifwm";
 import type {
   ProductApplicationV3,
@@ -702,7 +703,8 @@ export function buildV2Analysis(
       finding.provenance.push("EXTERNAL_EVIDENCE");
     }
   }
-  const researchCoverage = v2EvidenceAreas(state).map(area => ({
+  // Every topic actually researched: the customer's picks plus the case's standard topics.
+  const researchCoverage = v2SituationalAreas(state).map(area => ({
     area,
     title: t(area as V2CopyKey),
     evidenceIds: blocks.flatMap((block, id) => v2EvidenceArea(block, state) === area ? [id] : []),
@@ -829,8 +831,8 @@ export function buildV2Analysis(
   // Customer-language Changing (owner feedback round 4): every field is a
   // sentence built from this customer's inputs and evidence, not a label.
   // The engine still decides which plays apply; only the wording changes.
-  const current = state.optionA.trim() || say("현재 직무", "the current role");
-  const considered = state.optionB.trim() || say("고민하는 커리어", "the considered career");
+  const current = v2CustomerInput(state.language, state.optionA, say("현재 직무", "the current role")).text;
+  const considered = v2CustomerInput(state.language, state.optionB, say("고민하는 커리어", "the considered career")).text;
   const missingPoint = v2MissingPoint(state.caseType, state.language);
   const firstAction = blocks.find(block => block.action)?.action;
   const amountCard = blocks.find(block => /(?:HK\$|US\$|£|€|\$|₩)\s?\d|\d[\d,.]*\s?(?:원|만 ?원|파운드|달러|유로)/.test(`${block.headline} ${block.fact}`));
@@ -908,8 +910,8 @@ export function buildV2Analysis(
     state.language,
     core.currentStructuralPosture.label,
     core.currentStructuralPosture.sentence,
-    state.optionA,
-    state.optionB
+    v2CustomerInput(state.language, state.optionA, "your current role").text,
+    v2CustomerInput(state.language, state.optionB, "the career you are considering").text
   ).label;
   const sourceCount = new Set(blocks.map(block => block.sourceUrl ?? block.sourceLabel)).size;
   const evidenceSummary = live

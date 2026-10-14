@@ -35,6 +35,7 @@ import {
 import {
   buildV2EvidenceRequest,
   requestV2Evidence,
+  v2SituationalAreas,
 } from "../data/v2ExternalEvidenceClient";
 import type { V2EvidenceHttpObservation } from "../../../shared/v2EvidenceProtocol";
 import {
@@ -66,7 +67,6 @@ import {
   initialCanonicalFifwmAssessment,
   v2CanAskCanonicalFifwm,
 } from "../data/v2CanonicalFifwm";
-import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
 import { mergeV2Evidence, v2EvidenceGroups } from "../../../shared/v2EvidenceMerge";
 import V2Processing from "../components/V2Processing";
 import { v2CaseFifwmSet } from "../data/v2CaseFifwm";
@@ -1290,7 +1290,7 @@ export default function AmcInteractiveV2() {
           seconds={processingSeconds}
           target={v2PublicSearchTarget(state)}
           geography={state.targetGeography}
-          areas={(state.externalAreas.length ? state.externalAreas : v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] }) as V2CopyKey[]).map(t)}
+          areas={(v2SituationalAreas(state) as V2CopyKey[]).map(t)}
           observation={evidenceHttpByLanguage[researchLanguage]}
           onRetry={() => void runEvidenceAnalysis()}
           onEditTarget={() => {

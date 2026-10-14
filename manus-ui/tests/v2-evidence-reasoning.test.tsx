@@ -210,7 +210,9 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
     evidence.evidenceBlocks[0].area = "regulation";
     evidence.evidenceBlocks[0].dimension = "Regulation";
     const a = buildV2Analysis(state, buildProductApplicationV3(buildV2Input(state, evidence)), evidence);
-    expect(a.researchCoverage.map(item => [item.area, item.evidenceIds])).toEqual([["customerDemand", []], ["regulation", [0]]]);
+    // Customer picks first, then the case's standard topics that were also researched.
+    expect(a.researchCoverage.slice(0, 2).map(item => [item.area, item.evidenceIds])).toEqual([["customerDemand", []], ["regulation", [0]]]);
+    expect(a.researchCoverage.map(item => item.area)).toEqual(expect.arrayContaining(["competition", "pricing"]));
     expect(a.summary).toContain("대응하는 공개 근거는 없습니다");
     expect(a.missingConcept).toContain("반복 구매");
   });

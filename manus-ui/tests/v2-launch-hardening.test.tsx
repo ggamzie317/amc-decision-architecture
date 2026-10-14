@@ -759,6 +759,17 @@ describe("round 6: EN toggle, automatic comparison wording", () => {
     expect(input.answers[1]).not.toMatch(/[가-힣]/);
   });
 
+  it("never quotes the Korean role fields in English analysis text", () => {
+    const fixture = v2DemoFixture("industry", "ko");
+    const state = { ...fixture.state, language: "en" as const, optionA: "한국 대기업 차장", optionB: "싱가포르 부동산 기업 이직", publicSearchTarget: "싱가포르 부동산 기업 이직" };
+    const core = buildProductApplicationV3(buildV2Input(state, fixture.intelligence));
+    const analysis = buildV2Analysis(state, core, fixture.intelligence, "demo");
+    const { evidenceLinks, ...prose } = analysis;
+    expect(JSON.stringify(prose)).not.toContain("싱가포르 부동산");
+    expect(JSON.stringify(prose)).not.toContain("대기업 차장");
+    expect(evidenceLinks.length).toBeGreaterThan(0);
+  });
+
   it("shows an automatic reading instead of 'not compared yet'", () => {
     const fixture = v2DemoFixture("industry", "ko");
     const analysis = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo");
