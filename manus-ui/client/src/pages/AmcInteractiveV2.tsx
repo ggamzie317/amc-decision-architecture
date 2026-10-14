@@ -138,6 +138,18 @@ export default function AmcInteractiveV2() {
     [state.decision, state.optionA, state.optionB]
   );
   // Until the customer picks a type, it follows what they wrote in all three sentences.
+  // The decision sentence is derived from the two fields the customer writes.
+  const withDecision = (next: V2State): V2State => ({
+    ...next,
+    decision: next.optionA.trim() || next.optionB.trim()
+      ? language === "ko"
+        ? `현재: ${next.optionA.trim()} → 고민: ${next.optionB.trim()}`
+        : `Current: ${next.optionA.trim()} → Considering: ${next.optionB.trim()}`
+      : "",
+  });
+  const pinKoreanFromText = (value: string) => {
+    if (!languagePinned.current && /[가-힣]/.test(value)) setLanguage("ko");
+  };
   const withInferredCase = (next: V2State): V2State => {
     if (casePinned) return next;
     const caseType = inferV2CaseType(next);
@@ -502,8 +514,8 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "검색 대상과 지역은 입력하신 선택지 B에서 자동으로 채웠습니다. 분석 마지막 단계에서 이 내용으로 공개 근거를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 들어 있다면 지워 주세요. 자가진단 메모와 재정 정보는 검색에 쓰지 않습니다."
-                : "The search target and geography were filled in from your option B. The final step searches public evidence with them. Edit them if needed, and remove any confidential or personal details. Self-check notes and financial information are never used in the search."}
+                ? "검색 대상과 지역은 입력하신 '고민하는 커리어'에서 자동으로 채웠습니다. 분석 마지막 단계에서 이 내용으로 공개 근거를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 들어 있다면 지워 주세요. 자가진단 메모와 재정 정보는 검색에 쓰지 않습니다."
+                : "The search target and geography were filled in from the career you are considering. The final step searches public evidence with them. Edit them if needed, and remove any confidential or personal details. Self-check notes and financial information are never used in the search."}
             </p>
             </>)}
           </>
@@ -923,24 +935,6 @@ export default function AmcInteractiveV2() {
             <p>{t("inputHint")}</p>
             <div className="v2-setup-fields">
               <label>
-                {t("decision")}
-                <input
-                  required
-                  autoComplete="off"
-                  value={state.decision}
-                  placeholder={t("decisionPlaceholder")}
-                  maxLength={240}
-                  onChange={e => {
-                    if (
-                      !languagePinned.current &&
-                      /[가-힣]/.test(e.target.value)
-                    )
-                      setLanguage("ko");
-                    setState(s => withInferredCase({ ...s, decision: e.target.value }));
-                  }}
-                />
-              </label>
-              <label>
                 {t("optionA")}
                 <input
                   required
@@ -948,7 +942,7 @@ export default function AmcInteractiveV2() {
                   value={state.optionA}
                   placeholder={t("optionAPlaceholder")}
                   maxLength={120}
-                  onChange={e => setState(s => withInferredCase({ ...s, optionA: e.target.value }))}
+                  onChange={e => { pinKoreanFromText(e.target.value); setState(s => withInferredCase(withDecision({ ...s, optionA: e.target.value }))); }}
                 />
               </label>
               <label>
@@ -959,7 +953,7 @@ export default function AmcInteractiveV2() {
                   value={state.optionB}
                   placeholder={t("optionBPlaceholder")}
                   maxLength={120}
-                  onChange={e => setState(s => withInferredCase({ ...s, optionB: e.target.value }))}
+                  onChange={e => { pinKoreanFromText(e.target.value); setState(s => withInferredCase(withDecision({ ...s, optionB: e.target.value }))); }}
                 />
               </label>
             </div>
@@ -1022,7 +1016,6 @@ export default function AmcInteractiveV2() {
               className="v2-primary"
               type="button"
               disabled={
-                !state.decision.trim() ||
                 !state.optionA.trim() ||
                 !state.optionB.trim() ||
                 !state.serviceConsent

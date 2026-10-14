@@ -81,8 +81,8 @@ export default function V2JevAdvisory({
       {fits(a.conditionalReading) && <p>{a.conditionalReading}</p>}
       {a.uncertainties.filter(fits).length > 0 && <small>{say("불확실성: ", "Uncertain: ")}{a.uncertainties.filter(fits).join(" · ")}</small>}
       <small className="v2-jev-note">
-        {say("JEV는 바꾼 조건에 대한 정성적 보조 의견입니다. AMC 구조 판단과 점수를 바꾸지 않습니다.",
-          "JEV gives a qualitative second opinion on the changed conditions. It does not change the AMC reading or scores.")}
+        {say("JEV는 바꾼 조건에 대한 정성적 보조 의견입니다. allofmycareer 구조 판단과 점수를 바꾸지 않습니다.",
+          "JEV gives a qualitative second opinion on the changed conditions. It does not change the allofmycareer reading or scores.")}
       </small>
     </aside>
   );

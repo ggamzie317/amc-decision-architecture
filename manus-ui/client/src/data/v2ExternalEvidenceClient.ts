@@ -129,6 +129,7 @@ export function acceptV2Evidence(
         v2BoundedText(item.headline, limit.headline) &&
         v2BoundedText(item.fact, limit.fact) &&
         v2BoundedText(item.whyItMatters, limit.whyItMatters) &&
+        (item.action === undefined || v2BoundedText(item.action, limit.signal)) &&
         v2BoundedText(item.sourceLabel, limit.headline) &&
         v2BoundedText(item.sourceUrl, limit.sourceUrl) &&
         /^https:\/\//.test(item.sourceUrl) &&

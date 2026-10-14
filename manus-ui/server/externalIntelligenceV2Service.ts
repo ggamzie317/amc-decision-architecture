@@ -96,11 +96,12 @@ function evidenceSchema(dimensions: string[], maxBlocks: number = limit.blocks) 
   const cardText = {
     type: "object",
     additionalProperties: false,
-    required: ["headline", "fact", "whyItMatters"],
+    required: ["headline", "fact", "whyItMatters", "action"],
     properties: {
       headline: { type: "string", minLength: 1, maxLength: limit.headline },
       fact: { type: "string", minLength: 1, maxLength: limit.fact },
       whyItMatters: { type: "string", minLength: 1, maxLength: limit.whyItMatters },
+      action: { type: "string", minLength: 1, maxLength: limit.signal },
     },
   } as const;
   const summary = {
@@ -185,8 +186,8 @@ const v2ResearchBrief: Record<V2EvidenceRequest["caseType"], string> = {
   "Industry Transition": "For an industry transition, keep the named target industry, role and geography together. Cover: hiring demand for the target role (official statistics or original employer pages, dated); required skills or qualifications for entry (official occupational profiles or original role pages); pay ranges for the target role versus the current field (official wage statistics); and public retraining or certification routes. A listing is only a dated example unless its current status and requirements are visible.",
   "Role Upgrade / Downgrade": "For a role upgrade or step back, keep the named role level, field and geography together. Cover: what the target role level typically requires (official occupational profiles or original employer pages); pay difference between levels (official wage statistics); and demand for that level in the market, where officially reported.",
   Entrepreneurship: "For a startup, keep the named customer group, product or service and geography together. Cover: market size or demand indicators from official or original research sources; competitors or substitutes that are publicly documented; licences, registrations and regulations required to operate and their published costs and timelines; typical pricing where publicly documented; and public support programmes (grants, loans, incubators). Do not call category interest proven paid demand.",
-  "MBA / EMBA / PhD Decision": "For a degree decision, keep the named institution or program and geography together. Prefer the institution's own program, admissions, tuition and career/outcome pages, and official statistics bodies. Cover: format, schedule, length and published tuition; admission and completion requirements; published career or employment outcomes (state when none are published rather than returning nothing); and funding routes. If only a degree type is named, use official program pages in that geography and say the facts are not specific to one program.",
-  "Overseas Relocation": "For an overseas relocation, keep the named destination together with the route the person names (work visa, residency or permanent residence, family move). Cover what a person in this position would need to know: (1) the official visa or residency routes, their published eligibility conditions, required steps, processing times and fees, and how permanent residence is reached, from the immigration authority; (2) the current hiring market, from official vacancy or employment statistics; (3) pay levels by industry or occupation, from official wage surveys or statistics; (4) where available, an official cost-of-living or housing indicator. State categories and conditions as published; never assess this person's eligibility or give immigration advice.",
+  "MBA / EMBA / PhD Decision": "For a degree decision, keep the named institution or program and geography together. Prefer the institution's own program, admissions, tuition and career/outcome pages, and official statistics bodies. Cover: format, schedule, length and published tuition (amount, currency, per year or term); admission and completion requirements and the skills or prior study they assume; published career or employment outcomes (state when none are published rather than returning nothing); and funding routes. If the program is abroad or requires residence, also cover the official living-cost figure the institution or visa authority publishes, the student-visa conditions, and dependants' visa conditions and costs. If only a degree type is named, use official program pages in that geography and say the facts are not specific to one program.",
+  "Overseas Relocation": "For an overseas relocation, keep the named destination together with the route the person names (work visa, residency or permanent residence, family move). Cover what a person in this position would need to know: (1) the official visa or residency routes, their published eligibility conditions, required steps, processing times and fees, and how permanent residence is reached, from the immigration authority; (2) the current hiring market, from official vacancy or employment statistics; (3) pay levels by industry or occupation, from official wage surveys or statistics; (4) official cost-of-living or housing figures; (5) whether family members can accompany (dependant visa conditions and published costs) and preparation steps commonly required before moving (document attestation, qualification recognition, tax or pension registration). State categories and conditions as published; never assess this person's eligibility or give immigration advice.",
   "Burnout-driven Decision": "For a burnout-driven decision, keep the named role or field and geography together. Cover: statutory leave, sick-leave or reduced-hours rights from the labour authority; demand for less intensive roles in the same field (official statistics or original employer pages); and pay implications of reduced hours or a role change (official wage statistics). Do not give medical advice.",
   "Family Constraint-heavy Decision": "For a family-constrained decision, keep the named role or field and geography together. Cover: statutory parental, care or flexible-work rights from the labour authority; availability and published cost of childcare or care services in that geography; demand for flexible or remote roles in the field (official statistics or original employer pages); and pay implications of part-time or flexible work.",
   "General Career Reconfiguration": "Keep the named public target and geography together. Cover: hiring demand for the target (official statistics or original employer pages, dated); entry requirements or qualifications; pay levels from official statistics; and the main published procedures or costs involved in moving.",
@@ -205,6 +206,8 @@ function messages(request: V2EvidenceRequest, dimensions: string[], split = fals
         "Use the web_search tool to research the explicit public target and geography. Prioritize directly accessible original pages from official institutions, employers, universities, regulators, and original research publishers. Avoid SEO blogs, marketplace listings, paywalls, login-gated pages, and pages that block public automated access when a direct original source is available.",
         "Cite the exact public HTTPS result page that supports each bounded claim. If no suitable accessible original source is found, preserve uncertainty; do not substitute a broad unrelated statistic.",
         "For public procurements, cite the issuing institution's original solicitation rather than an aggregator's summary. If that original is login-gated or inaccessible, do not present the aggregator summary as verified original evidence.",
+        "When a dimension concerns money (tuition, fees, living costs, rent, dependants' costs, salaries), state amounts with currency and period so the person can compare them with their own budget. When it concerns skills or qualifications, name the specific skills and where they can be prepared (official courses, certifications, programmes) as published. For each card, `action` gives one concrete thing the person should prepare or check because of this fact (for example: compare this yearly cost with your savings; check whether your degree meets this requirement). It is a preparation step, not a recommendation of a path.",
+        "Do not include citation markers such as [1] or [web:1] in any text field.",
         "Aim to answer every requested dimension with at least one card when an official or original public source exists. Prefer concrete, checkable facts: procedures and steps, eligibility conditions, processing times, fees and costs, dated market statistics, and pay figures with currency, period and whether they are median or average. A precise figure or step with its scope is more useful than a general statement.",
         "Use at most one evidence block per (cited source URL, dimension). One page may support several requested dimensions; then give each dimension its own block that contains only that page's claims about that dimension. Never repeat the same claim across dimensions, never present one page as independent corroboration of itself, and do not fill a card quota. One suitable original source is preferable to several repeated or weak summaries.",
         "Each evidence block's fact and applicability explanation must stand on its own cited page, without relying on another block or source. Do not place a claim that requires two sources in a one-source block.",
@@ -736,12 +739,33 @@ export function v2TextFitsLanguage(texts: string[], language: "en" | "ko"): bool
     : hangul === 0 && han / letters < 0.1;
 }
 
+/** Remove provider citation markers ([1], [web:1], [web:1, web:3]) from prose. */
+export function stripCitations(text: string): string {
+  return text.replace(/\s*\[(?:web:)?\d+(?:\s*,\s*(?:web:)?\d+)*\]/g, "").trim();
+}
+function cleanCitations(raw: unknown): unknown {
+  if (!record(raw)) return raw;
+  const clean = (v: unknown) => (typeof v === "string" ? stripCitations(v) : v);
+  return {
+    ...raw,
+    evidenceBlocks: Array.isArray(raw.evidenceBlocks)
+      ? raw.evidenceBlocks.map((b: unknown) => record(b)
+        ? { ...b, headline: clean(b.headline), fact: clean(b.fact), whyItMatters: clean(b.whyItMatters) }
+        : b)
+      : raw.evidenceBlocks,
+    implication: clean(raw.implication),
+    ...Object.fromEntries((["opportunitySignals", "frictionSignals", "uncertainties"] as const)
+      .map(key => [key, Array.isArray(raw[key]) ? raw[key].map(clean) : raw[key]])),
+  };
+}
+
 function validateV2Evidence(
-  raw: unknown,
+  rawInput: unknown,
   sources: Map<string, Source>,
   request: V2EvidenceRequest,
   dimensions: string[]
 ): NormalizedResponse {
+  const raw = cleanCitations(rawInput);
   const fail = (diagnostic: V2ResponseDiagnostic): NormalizedResponse => ({
     value: null,
     diagnostic,
@@ -785,6 +809,8 @@ function validateV2Evidence(
       : null;
     const fact = bounded(block.fact, limit.fact)!;
     const whyItMatters = bounded(block.whyItMatters, limit.whyItMatters)!;
+    // Optional preparation tip; an over-long tip is dropped, never truncated.
+    const action = bounded(typeof block.action === "string" ? stripCitations(block.action) : undefined, limit.signal) ?? undefined;
     const url =
       typeof block.sourceUrl === "string"
         ? safeSourceUrl(block.sourceUrl)
@@ -796,7 +822,7 @@ function validateV2Evidence(
       return fail({ category: "invalid_field", field: "direction" });
     if (!source)
       return fail({ category: "citation_mismatch", field: "sourceUrl", actualCount: sources.size });
-    if (!v2TextFitsLanguage([headline, fact, whyItMatters], request.language)) {
+    if (!v2TextFitsLanguage([headline, fact, whyItMatters, ...(action ? [action] : [])], request.language)) {
       // Excluded like a repeated card: a source-language card is not shown.
       wrongLanguageCards++;
       continue;
@@ -816,6 +842,7 @@ function validateV2Evidence(
       direction,
       fact,
       whyItMatters,
+      ...(action ? { action } : {}),
       sourceLabel: source.label,
       sourceUrl: source.url,
       ...(source.date && source.dateKind

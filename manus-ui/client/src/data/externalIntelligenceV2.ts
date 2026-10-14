@@ -23,6 +23,8 @@ export type ExternalIntelligenceV2 = {
     direction: "supportive" | "caution" | "mixed";
     fact: string;
     whyItMatters: string;
+    /** One preparation step this fact implies for the customer; optional. */
+    action?: string;
     sourceLabel: string;
     sourceUrl?: string;
     sourceDate?: string;

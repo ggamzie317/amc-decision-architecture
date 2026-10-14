@@ -1,3 +1,4 @@
+import V2FrameworkPlan from "./V2FrameworkPlan";
 import V2InsightBoard from "./V2InsightBoard";
 import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
 import { v2SharedSourceNote } from "../data/v2SourceSharing";
@@ -309,6 +310,7 @@ export default function V2Dashboard({
         <p>{analysis.summary}</p>
       </details>
       <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} />
+      <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} />
       <nav
         className="v2-analysis-nav"
         aria-label={say("분석 바로가기", "Analysis navigation")}

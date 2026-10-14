@@ -483,3 +483,41 @@ describe("a slow topic does not discard finished topics", () => {
     expect(result.evidenceBlocks.map(b => b.headline)).toEqual(["취업비자 경로가 공개되어 있음"]);
   });
 });
+
+describe("round 3: framework plan, auto comparison, citation markers", () => {
+  it("routes cost cards to Safety Margin and collects preparation tips", async () => {
+    const { default: V2FrameworkPlan } = await import("../client/src/components/V2FrameworkPlan");
+    const fixture = v2DemoFixture("industry", "ko");
+    const analysis = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo");
+    const intelligence = {
+      ...fixture.intelligence,
+      evidenceBlocks: [
+        { ...fixture.intelligence.evidenceBlocks[0], area: "opportunityCost", headline: "연간 학비 £24,000", fact: "공식 안내는 연간 학비를 £24,000로 밝힙니다. 생활비는 별도입니다.", action: "이 금액을 내 저축으로 몇 년 감당할 수 있는지 계산해 보세요." },
+        { ...fixture.intelligence.evidenceBlocks[1], area: "requiredSkills", headline: "통계 역량 요구", fact: "과정은 기초 통계 이수를 전제합니다.", action: "통계 기초 과목 이수 여부를 확인하세요." },
+      ],
+    };
+    const html = renderToStaticMarkup(React.createElement(V2FrameworkPlan, { language: "ko", core: fixture.baseline, analysis, intelligence }));
+    expect(html).toContain("연간 학비 £24,000");
+    expect(html).toContain("몇 개월 감당할 수 있는지");
+    expect(html).toContain("준비할 역량과 준비 경로");
+    expect(html).toContain("통계 역량 요구");
+    expect(html).toContain("통계 기초 과목 이수 여부를 확인하세요.");
+    expect(html).toContain("놓치기 쉬운 조건");
+    expect(html).toContain("판단 전환 조건");
+  });
+
+  it("labels a first-pass comparison as automatic", async () => {
+    const { v2AutoComparison } = await import("../client/src/components/V2InsightBoard");
+    expect(v2AutoComparison("caution", "weak")).toBe("watch");
+    expect(v2AutoComparison("caution", "heavy")).toBe("watch");
+    expect(v2AutoComparison("supportive", "strong")).toBe("fits");
+    expect(v2AutoComparison("supportive", "unknown")).toBe("check");
+    expect(v2AutoComparison("mixed", "developing")).toBe("check");
+  });
+
+  it("removes provider citation markers", async () => {
+    const { stripCitations } = await import("../server/externalIntelligenceV2Service");
+    expect(stripCitations("거부될 수 있습니다. [web:1]")).toBe("거부될 수 있습니다.");
+    expect(stripCitations("Fees rose [1][2] in 2026 [web:3, web:4].")).toBe("Fees rose in 2026.");
+  });
+});

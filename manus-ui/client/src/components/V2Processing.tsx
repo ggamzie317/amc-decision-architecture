@@ -117,7 +117,7 @@ export default function V2Processing({
   const steps: { icon: LucideIcon; label: [string, string]; detail: [string, string]; state: StepState }[] = [
     { icon: ShieldCheck, label: ["Inputs validated", "입력 확인"], detail: ["Required answers and consent checked", "필수 응답과 동의 확인 완료"], state: "done" },
     { icon: FileSearch, label: ["Public search and source check", "공개 검색·출처 확인"], detail: ["Server searches the target only, then opens each cited page", "서버가 검색 대상만으로 검색하고, 인용된 페이지가 실제로 열리는지 확인"], state: running ? "running" : "failed" },
-    { icon: Network, label: ["Connect to AMC structure", "AMC 구조에 연결"], detail: ["Evidence is placed beside your conditions; scores are unchanged by sources", "근거를 고객 조건 옆에 배치하며, 출처가 점수를 바꾸지 않음"], state: "pending" },
+    { icon: Network, label: ["Connect to the allofmycareer structure", "allofmycareer 구조에 연결"], detail: ["Evidence is placed beside your conditions; scores are unchanged by sources", "근거를 고객 조건 옆에 배치하며, 출처가 점수를 바꾸지 않음"], state: "pending" },
     { icon: GitBranch, label: ["Open your analysis", "분석 결과 열기"], detail: ["Dashboard, simulator and report share one snapshot", "대시보드·시뮬레이터·보고서가 같은 결과를 사용"], state: "pending" },
   ];
   const StateIcon = ({ state }: { state: StepState }) =>
@@ -194,7 +194,7 @@ export default function V2Processing({
         )}
       </section>
 
-      <aside className="v2-processing-method" aria-label={say("AMC 분석 방법", "How AMC analyzes")}>
+      <aside className="v2-processing-method" aria-label={say("allofmycareer 분석 방법", "How allofmycareer analyzes")}>
         <p className="v2-kicker">Structure First</p>
         <h2>{say("정답을 대신 고르지 않습니다. 선택의 구조를 드러냅니다.", "We do not choose for you. We make the structure of the choice visible.")}</h2>
         <p>

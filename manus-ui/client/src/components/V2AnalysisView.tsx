@@ -54,7 +54,7 @@ export function V2DecisionMap({
     {
       x: 18,
       y: 145,
-      title: say("A / 현재 기반", "A / Current base"),
+      title: say("현재 직무", "Current role"),
       value: cut(state.optionA.trim() || protectedLabel, ko ? 26 : 37),
       tone: "base",
     },
@@ -68,7 +68,7 @@ export function V2DecisionMap({
     {
       x: 622,
       y: 145,
-      title: say("B / 탐색할 경로", "B / Path to explore"),
+      title: say("고민하는 커리어", "Considered career"),
       value: state.optionB.trim() || analysis.target,
       tone: "target",
     },
@@ -241,9 +241,11 @@ export function V2Reasoning({
                 {link.comparisonDetail && <p className="v2-self-report">{ko ? "고객 자기보고: " : "Customer self-report: "}{link.comparisonDetail}</p>}
                 {!compact && (
                   <>
-                    <p className="v2-source-condition">{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
+                    {/* Headline and status stay visible; the long fact sits behind one toggle. */}
                     <details className="v2-evidence-trace-detail">
-                      <summary>{ko ? "자료의 범위·현재 조건·다음 확인" : "Source scope, current conditions and next check"}</summary>
+                      <summary>{ko ? "근거 내용·적용 범위·다음 확인 보기" : "Show the fact, scope and next check"}</summary>
+                      <p className="v2-source-condition">{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
+                      {block.action && <p className="v2-source-condition"><b>{ko ? "할 일: " : "To do: "}</b>{v2CustomerEvidenceText(analysis.language, block.action)}</p>}
                       <dl className="v2-evidence-trace">
                     <div><dt>{ko ? "검색 요약의 적용 설명" : "Search-summary applicability"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
                     <div><dt>{ko ? "현재 조건 · 입력 기반 구조 판단" : "Current condition · user input and core rules"}</dt><dd>{link.condition}</dd></div>
