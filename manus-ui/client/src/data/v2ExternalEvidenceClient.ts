@@ -1,4 +1,5 @@
 import type { V2State } from "./amcV2Model";
+import { v2KeyFactIds } from "../../../shared/v2KeyFacts";
 import { v2t, type V2CopyKey } from "./v2Language";
 import { v2PublicSearchTarget } from "./amcV2Analysis";
 import {
@@ -32,6 +33,7 @@ export function buildV2EvidenceRequest(
     targetGeography: state.targetGeography,
     targetLabel: v2PublicSearchTarget(state),
     language: state.language,
+    ...(v2KeyFactIds(state.caseType, state.keyFacts ?? {}).length ? { keyFacts: v2KeyFactIds(state.caseType, state.keyFacts ?? {}) } : {}),
   });
 }
 

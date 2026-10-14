@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import V2Processing, { v2ProcessingFailureKind } from "../client/src/components/V2Processing";
 import { buildProductApplicationV3, buildFifwmFromReportPayload, fifwmScore } from "../client/src/data/amcProductApplicationV3";
 import { buildV2Input } from "../client/src/data/amcV2Model";
+import { buildV2EvidenceRequest } from "../client/src/data/v2ExternalEvidenceClient";
 import { v2DemoFixture } from "../client/src/data/amcV2Demos";
 import { withKoreanParticle } from "../client/src/data/koreanParticle";
 import { V2ChangingView } from "../client/src/components/V2AnalysisView";
@@ -209,7 +210,7 @@ describe("evidence observation records request shape without customer text", () 
     expect(observed[0].requestShape).toEqual({
       caseType: "MBA / EMBA / PhD Decision", language: "ko",
       areas: ["programOutcomes", "employmentRelevance", "funding", "opportunityCost"],
-      defaultAreas: true, targetLength: 26, geographyLength: 2,
+      defaultAreas: true, targetLength: 26, keyFactCount: 0, geographyLength: 2,
     });
     const text = JSON.stringify(observed);
     expect(text).not.toContain("PRIVATE-LOOKING");
@@ -765,5 +766,42 @@ describe("round 6: EN toggle, automatic comparison wording", () => {
     expect(all).not.toContain("아직 대조하지 않음");
     expect(all).not.toContain("아직 직접 대조되지 않았습니다");
     expect(analysis.evidenceLinks[0].comparisonLabel).toMatch(/^자동 대조 · /);
+  });
+});
+
+describe("round 7: key facts (A) and level examples (B)", () => {
+  it("sends only catalogue ids and rejects free text", async () => {
+    const { parseV2EvidenceRequest } = await import("../shared/externalIntelligenceV2Request");
+    const base = { caseType: "Overseas Relocation", externalAreas: ["visaMobility"], targetGeography: "Singapore", targetLabel: "real estate", language: "ko" };
+    expect(parseV2EvidenceRequest({ ...base, keyFacts: ["family:children", "offer:offer"] })?.keyFacts).toEqual(["family:children", "offer:offer"]);
+    expect(parseV2EvidenceRequest({ ...base, keyFacts: ["family:가족 다섯 명"] })).toBeNull();
+    expect(parseV2EvidenceRequest({ ...base, keyFacts: ["admission:admitted"] })).toBeNull();
+    expect(parseV2EvidenceRequest(base)).not.toHaveProperty("keyFacts");
+  });
+
+  it("turns ids into fixed English research hints", async () => {
+    const { v2KeyFactHints } = await import("../shared/v2KeyFacts");
+    const hints = v2KeyFactHints("Overseas Relocation", ["family:children", "language:fluent"]);
+    expect(hints).toHaveLength(1);
+    expect(hints[0]).toMatch(/school fees/);
+  });
+
+  it("builds the request with key facts and reads them into the analysis without changing the posture", () => {
+    const fixture = v2DemoFixture("industry", "ko");
+    const plain = { ...fixture.state, caseType: "Overseas Relocation" as const, keyFacts: {} };
+    const withFacts = { ...plain, keyFacts: { family: "children", offer: "exploring" } };
+    expect(buildV2EvidenceRequest({ ...withFacts, publicSearchTarget: "부동산", targetGeography: "싱가포르" })?.keyFacts).toEqual(["offer:exploring", "family:children"]);
+    const a = buildProductApplicationV3(buildV2Input(plain, fixture.intelligence));
+    const b = buildProductApplicationV3(buildV2Input(withFacts, fixture.intelligence));
+    expect(b.currentStructuralPosture).toEqual(a.currentStructuralPosture);
+    const analysis = buildV2Analysis(withFacts, b, fixture.intelligence, "demo");
+    expect(analysis.situation.map(s => s.id)).toEqual(["offer", "family"]);
+    expect(analysis.situation[1].check).toContain("학비");
+  });
+
+  it("explains each chosen level with a concrete example", async () => {
+    const { v2BandAnchor } = await import("../client/src/data/v2BandAnchors");
+    expect(v2BandAnchor("financialRoom", "developing", true)).toBe("소득 없이 3~6개월 생활할 수 있음");
+    expect(v2BandAnchor("constraintLoad", "heavy", false)).toMatch(/Under 3 hours/);
   });
 });

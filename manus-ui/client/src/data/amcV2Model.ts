@@ -59,6 +59,8 @@ export type V2State = {
   timingEffect: V2CopyKey | null;
   switchIds: string[];
   customCondition: string;
+  /** Key facts: questionId → optionId from the fixed catalogue (never scored). */
+  keyFacts: Record<string, string>;
   optionalNote: string;
   serviceConsent: boolean;
   researchConsent: boolean;
@@ -239,6 +241,7 @@ export function initialV2State(language: V2Language = "en"): V2State {
     timingEffect: null,
     switchIds: [],
     customCondition: "",
+    keyFacts: {},
     optionalNote: "",
     serviceConsent: false,
     researchConsent: false,

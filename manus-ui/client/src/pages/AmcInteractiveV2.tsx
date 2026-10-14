@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { v2BandAnchor } from "../data/v2BandAnchors";
+import { v2KeyFactQuestions } from "../../../shared/v2KeyFacts";
 import { v2SurveyGroups, v2SurveyGroupsFor, type V2SurveyField } from "../data/v2SurveyGroups";
 import { v2RoleFields } from "../data/v2InputGlossary";
 import { buildProductApplicationV3 } from "../data/amcProductApplicationV3";
@@ -366,6 +368,9 @@ export default function AmcInteractiveV2() {
             onClick={() => setBand(field, choice as never)}
           >
             {t(choice as V2CopyKey)}
+            {v2BandAnchor(field, choice, language === "ko") && (
+              <small className="v2-band-choice-note">{v2BandAnchor(field, choice, language === "ko")}</small>
+            )}
           </button>
         ))}
       </div>
@@ -464,6 +469,33 @@ export default function AmcInteractiveV2() {
         return (
           <>
             {chipGroup("whyNow", "whyNow", v2Choices.whyNow, 2)}
+            <section className="v2-key-facts" aria-label={language === "ko" ? "내 상황의 핵심 사실" : "Key facts about your situation"}>
+              <h3>{language === "ko" ? "내 상황의 핵심 사실" : "Key facts about your situation"}</h3>
+              <p className="v2-guidance">{language === "ko"
+                ? "고른 답에 맞춰 조사할 제도·비용을 좁히고, 분석에 내 상황 기준의 확인 사항을 넣습니다. 점수에는 쓰지 않습니다. 모르면 비워 두세요."
+                : "Your answers narrow which rules and costs are researched and add checks for your situation to the analysis. They are not scored. Leave blank if unsure."}</p>
+              {v2KeyFactQuestions(state.caseType).map(question => (
+                <fieldset className="v2-field" key={question.id}>
+                  <legend>{question.question[language === "ko" ? 0 : 1]}</legend>
+                  <div className="v2-band-choices">
+                    {question.options.map(option => {
+                      const on = (state.keyFacts ?? {})[question.id] === option.id;
+                      return (
+                        <button type="button" key={option.id} aria-pressed={on}
+                          onClick={() => setState(s => {
+                            const keyFacts = { ...(s.keyFacts ?? {}) };
+                            if (on) delete keyFacts[question.id];
+                            else keyFacts[question.id] = option.id;
+                            return { ...s, keyFacts };
+                          })}>
+                          {option.label[language === "ko" ? 0 : 1]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ))}
+            </section>
             {radioGroup("wait", "waitEffect", [
               "improves",
               "little",

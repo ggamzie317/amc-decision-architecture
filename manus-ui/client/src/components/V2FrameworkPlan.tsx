@@ -1,4 +1,4 @@
-import { CheckSquare, GitBranch, GraduationCap, Search, ShieldCheck, Shuffle, Wallet } from "lucide-react";
+import { CheckSquare, GitBranch, ListChecks, GraduationCap, Search, ShieldCheck, Shuffle, Wallet } from "lucide-react";
 import type { ProductApplicationBuildInput, ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import { v2EngineSwitches } from "../data/v2EngineSwitches";
 import type { V2Analysis } from "../data/amcV2Analysis";
@@ -66,6 +66,19 @@ export default function V2FrameworkPlan({
   return (
     <section className={`v2-framework-plan${printed ? " printed" : ""}`} data-testid="v2-framework-plan"
       aria-label={say("allofmycareer 프레임워크 실행 계획", "allofmycareer framework action plan")}>
+      {analysis.situation.length > 0 && (
+        <div className="v2-plan-situation">
+          <h3><ListChecks aria-hidden size={16} />{say("내 상황 기준 확인 사항", "Checks for your situation")}</h3>
+          <ul>
+            {analysis.situation.map(item => (
+              <li key={item.id}>
+                <span className="v2-plan-fact">{item.question} <b>{item.answer}</b></span>
+                {item.check && <span>{item.check}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="v2-plan-grid">
         <article>
           <h3><Search aria-hidden size={16} />{say("놓치기 쉬운 조건", "Missing point")}</h3>

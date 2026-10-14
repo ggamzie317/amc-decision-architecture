@@ -1,4 +1,5 @@
 import { caseTypes } from "./interactivePrivacy.js";
+import { v2ValidKeyFactId } from "./v2KeyFacts.js";
 
 export type V2EvidenceLanguage = "en" | "ko";
 export type V2EvidenceRequest = {
@@ -7,6 +8,8 @@ export type V2EvidenceRequest = {
   targetGeography: string;
   targetLabel: string;
   language: V2EvidenceLanguage;
+  /** Controlled key-fact ids ("question:option"); never free text. */
+  keyFacts?: string[];
 };
 
 const careerAreas = [
@@ -75,6 +78,7 @@ export function parseV2EvidenceRequest(raw: unknown): V2EvidenceRequest | null {
           "targetGeography",
           "targetLabel",
           "language",
+          "keyFacts",
         ].includes(key)
     )
   )
@@ -96,12 +100,20 @@ export function parseV2EvidenceRequest(raw: unknown): V2EvidenceRequest | null {
   const targetGeography = bounded(value.targetGeography, 80, false);
   const targetLabel = bounded(value.targetLabel, 120, false);
   if (!targetGeography || !targetLabel) return null;
+  let keyFacts: string[] | undefined;
+  if (value.keyFacts !== undefined) {
+    if (!Array.isArray(value.keyFacts) || value.keyFacts.length > 8) return null;
+    if (!value.keyFacts.every(id => v2ValidKeyFactId(caseType, id))) return null;
+    if (new Set(value.keyFacts).size !== value.keyFacts.length) return null;
+    keyFacts = value.keyFacts as string[];
+  }
   return {
     caseType,
     externalAreas: value.externalAreas,
     targetGeography,
     targetLabel,
     language: value.language,
+    ...(keyFacts?.length ? { keyFacts } : {}),
   };
 }
 

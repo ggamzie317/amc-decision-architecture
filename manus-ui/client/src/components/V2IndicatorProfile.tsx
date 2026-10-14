@@ -1,5 +1,6 @@
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
+import { v2BandAnchor } from "../data/v2BandAnchors";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2BandLevel, v2IndicatorReading, v2Indicators } from "../data/v2Indicators";
 import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
@@ -14,11 +15,14 @@ export default function V2IndicatorProfile({
   core,
   intelligence,
   printed = false,
+  bands,
 }: {
   language: V2Language;
   core: ProductApplicationV3;
   intelligence: ExternalIntelligenceV2;
   printed?: boolean;
+  /** The customer's chosen levels, to show what the chosen level means. */
+  bands?: Record<string, string>;
 }) {
   const ko = language === "ko";
   const say = (k: string, e: string) => (ko ? k : e);
@@ -54,6 +58,9 @@ export default function V2IndicatorProfile({
                 ))}
               </div>
               <b>{v2t(language, band as V2CopyKey)}</b>
+              {indicator.variable && bands?.[indicator.variable] && v2BandAnchor(indicator.variable, bands[indicator.variable], ko) && (
+                <small className="v2-ind-anchor">{v2BandAnchor(indicator.variable, bands[indicator.variable], ko)}</small>
+              )}
               <small>{state === "gap" ? say("기준선 미달", "Below baseline") : state === "met" ? say("기준선 충족", "Meets baseline") : say("미확인", "Unconfirmed")}</small>
             </div>
             <div className="v2-ind-reading">

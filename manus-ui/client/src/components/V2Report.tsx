@@ -329,7 +329,7 @@ export default function V2Report({
         "Structural Reading",
         say("현재 구조 판단의 이유", "Why the current structure leads here"),
         <>
-          <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} printed />
+          <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={Object.fromEntries(Object.entries(state.bands).filter(([k]) => state.bandSelections[k as keyof typeof state.bands]))} printed />
           <V2Reasoning
             analysis={analysis}
             intelligence={intelligence}

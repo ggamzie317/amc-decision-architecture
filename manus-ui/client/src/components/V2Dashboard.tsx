@@ -302,7 +302,7 @@ export default function V2Dashboard({
       </section>
       <section className="v2-analysis-section" id="v2-indicators">
         {head("B", "Structural Indicators", say("일곱 가지 구조 지표", "Seven structural indicators"))}
-        <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} />
+        <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={Object.fromEntries(Object.entries(state.bands).filter(([k]) => state.bandSelections[k as keyof typeof state.bands]))} />
       </section>
       <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="board" />
       <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />

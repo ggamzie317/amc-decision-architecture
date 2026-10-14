@@ -25,6 +25,7 @@ import {
   type ProviderObservation,
 } from "./providerObservation.js";
 import { probePublicSource, type SourceProbeFailure } from "./publicSourceAvailability.js";
+import { v2KeyFactHints } from "../shared/v2KeyFacts.js";
 import type {
   V2EvidenceExecution, v2EvidenceDiagnostics, v2EvidenceDiagnosticFields,
 } from "../shared/v2EvidenceProtocol.js";
@@ -201,6 +202,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[], split = fals
         "If a listing only shows example roles, do not infer that vacancies remain open, that detailed qualifications are met, or that its range represents the whole market. Describe policy targets as plans, not completed hiring demand.",
         "Keep research specific to the bounded target label and geography. A general statistic about a case family must not substitute for the target role, institution, product or qualification requirements.",
         targetSearch,
+        ...(request.keyFacts?.length ? ["The person's situation is given as fixed-choice facts in `personSituation`. Use them only to choose which official procedures, conditions and costs are relevant (for example dependant passes when family moves). Do not assess the person's eligibility from them."] : []),
         ...(split ? [`This search covers only these dimensions: ${dimensions.join(", ")}. Other dimensions of the same decision are researched in separate searches; do not cover them here.`] : []),
         "Explain what each fact establishes for this public target and what it does not establish. If qualifications or appointment requirements are relevant, separate formal eligibility from evidence of research, teaching or job performance.",
         "Distinguish source facts from inference and preserve uncertainty.",
@@ -228,6 +230,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[], split = fals
         ),
         targetGeography: request.targetGeography || undefined,
         boundedOptionBTargetLabel: request.targetLabel || undefined,
+        personSituation: request.keyFacts?.length ? v2KeyFactHints(request.caseType, request.keyFacts) : undefined,
       }),
     },
   ];
@@ -294,6 +297,7 @@ export async function resolveV2ExternalIntelligence(
         areas: [...v2EvidenceAreas(request)],
         defaultAreas: request.externalAreas.length === 0,
         targetLength: request.targetLabel.length,
+        keyFactCount: request.keyFacts?.length ?? 0,
         geographyLength: request.targetGeography.length,
       },
     };

@@ -2224,3 +2224,6 @@
 .v2-chip-group { display: grid; gap: 6px; }
 .v2-chip-group-title { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
 .v2-chip-limit { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
+.v2-key-facts { margin: 18px 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.v2-key-facts h3 { margin: 0 0 4px; font-size: 15px; }
+.v2-band-choice-note { display: block; font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }

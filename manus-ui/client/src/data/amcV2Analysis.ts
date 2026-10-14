@@ -1,5 +1,6 @@
 import { withKoreanParticle } from "./koreanParticle";
 import { v2CustomerInput } from "./v2InputGlossary";
+import { v2KeyFactReadings } from "../../../shared/v2KeyFacts";
 import { v2CaseFifwmSet } from "./v2CaseFifwm";
 import type {
   ProductApplicationV3,
@@ -296,6 +297,8 @@ export type V2Analysis = {
   externalContextReading: string;
   factorScopeNote: string;
   switching: Array<{ signal: string; direction: string }>;
+  /** Key facts the customer gave, each with what it means to check (never scored). */
+  situation: Array<{ id: string; question: string; answer: string; check?: string }>;
   priorityEvidence: {
     headline: string;
     condition: string;
@@ -962,6 +965,7 @@ export function buildV2Analysis(
           "The original five questions assess a known organization and role. Unestablished items remain unassessed.")
       : say("이 사례에는 원본 조직·직무 질문을 그대로 적용할 수 없어 다섯 항목을 평가하지 않았습니다. 준비 상태와 안전마진의 입력으로 대신 점수를 만들지 않습니다.",
           "The original organization and role questions do not apply directly to this case, so the five factors are unassessed. Readiness and Safety Margin inputs do not create substitute scores."),
+    situation: v2KeyFactReadings(state.caseType, state.keyFacts ?? {}, ko),
     switching: core.decisionSwitches.map(item => ({
       signal: v2CustomerPlayText(state.language, item.signal),
       direction: v2CustomerPlayText(state.language, item.direction),
