@@ -125,6 +125,26 @@ Real calls on the Preview (owner-approved), in order:
 
 Open risk: **visa/residency evidence for HK is still not delivered.** That topic's medium search is slower than the budget. Options are a `low` preset for that topic only, or an asynchronous "evidence still arriving" mode. Either needs more real calls.
 
+## Owner test round 3 (2026-10-14)
+
+Changes:
+- Two-field setup: current role/work and career considered. The decision sentence is derived; A/B wording is gone.
+- "AMC" is renamed to "allofmycareer" in customer copy.
+- Maps compare against a transition baseline derived from the posture formula (support 8–10), with a strengths / gaps / unconfirmed summary.
+- Evidence rows show a labelled automatic first-pass comparison.
+- Each card carries one preparation step (`action`). Briefs ask for amounts, named skills and where to prepare them, and living and dependants' costs. Citation markers are stripped.
+- New framework action plan (Missing point, Safety Margin with cost figures, Changing, Switching, skills, checklist) on the dashboard and in report section 9.
+- Long evidence text is collapsed in the reasoning cards.
+
+Real checks on the Preview (2 analyses, owner-approved), full customer UI:
+
+| Case | Result |
+|---|---|
+| UK PhD in philosophy | type and place (영국) inferred correctly; **all topic searches exceeded 95s → failure screen** |
+| HK relocation | live. Hiring and pay cards with HK$ median wages (all employees HK$21,200; managers/professionals HK$32,700) shown under Safety Margin; checklist built from card actions; automatic comparison labels; no Chinese, no citation markers. **Visa and living-cost topics exceeded 95s.** |
+
+Finding: with medium depth and the richer per-card content, most topics take more than 95s. The function-wide deadline (one serverless call for all topics) is now the binding limit.
+
 ## Verification performed
 
 | Check | Result |
