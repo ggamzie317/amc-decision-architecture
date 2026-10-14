@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { v2RoleFields } from "../data/v2InputGlossary";
 import type { V2Analysis, V2EvidencePhase } from "../data/amcV2Analysis";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import type { V2State } from "../data/amcV2Model";
@@ -55,7 +56,7 @@ export function V2DecisionMap({
       x: 18,
       y: 145,
       title: say("현재 직무", "Current role"),
-      value: cut(state.optionA.trim() || protectedLabel, ko ? 26 : 37),
+      value: cut(state.optionA.trim() ? v2RoleFields(state.language, state).current.text : protectedLabel, ko ? 26 : 37),
       tone: "base",
     },
     {
@@ -69,7 +70,7 @@ export function V2DecisionMap({
       x: 622,
       y: 145,
       title: say("고민하는 커리어", "Considered career"),
-      value: state.optionB.trim() || analysis.target,
+      value: state.optionB.trim() ? v2RoleFields(state.language, state).target.text : analysis.target,
       tone: "target",
     },
     {

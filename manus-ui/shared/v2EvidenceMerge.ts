@@ -109,8 +109,9 @@ function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", 
     seen.add(key);
     merged.evidenceBlocks.push(block);
   };
-  for (const live of lives) if (live.evidenceBlocks[0]) add(live.evidenceBlocks[0]);
-  for (const live of lives) for (const block of live.evidenceBlocks.slice(1)) add(block);
+  // Then fill round-robin so no single topic takes most of the remaining slots.
+  const depth = Math.max(0, ...lives.map(live => live.evidenceBlocks.length));
+  for (let i = 0; i < depth; i++) for (const live of lives) if (live.evidenceBlocks[i]) add(live.evidenceBlocks[i]);
   // Keep topic order for reading: group cards by their source topic.
   const order = new Map(lives.flatMap((live, t) => live.evidenceBlocks.map((b, i) => [citationKey(b), t * 100 + i] as const)));
   merged.evidenceBlocks.sort((a, b) => (order.get(citationKey(a)) ?? 0) - (order.get(citationKey(b)) ?? 0));

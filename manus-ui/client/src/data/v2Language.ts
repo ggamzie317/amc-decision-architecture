@@ -126,7 +126,7 @@ export const v2Copy = {
   strong: ["Strong", "강함"],
   developing: ["Developing", "형성 중"],
   weak: ["Constrained", "제약됨"],
-  unknown: ["Not Yet Established", "아직 확인되지 않음"],
+  unknown: ["Not sure", "잘 모름"],
   low: ["Contained", "통제 가능"],
   moderate: ["Moderate", "보통"],
   high: ["Elevated", "높음"],

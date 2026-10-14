@@ -158,6 +158,18 @@ Real checks on the Preview (2 analyses, owner-approved), full customer UI:
 | UK PhD in philosophy | **6 cards**: Oxford DPhil career cases (no published employment rate), career support, faculty scholarships, UKRI studentships, doctoral loan up to £31,122 for courses from Aug 2026, loan eligibility. Checklist of 6 concrete steps. No Chinese, no citation markers. |
 | HK relocation | **Visa evidence now delivered**: GEP needs a qualifying offer (about 4 weeks' processing), dependants (spouse/partner, unmarried children under 18), fees HK$600 application / HK$600 or HK$1,300 issue, permanent residence after 7 continuous years with a declaration; vacancies −8.4% YoY; HK$32,700 median for managers/professionals. The checklist covers documents, dependants' proof and per-person fee budgeting. The living-cost topic was cut by the old 6-card cap; the cap is now 10 for merged topics. |
 
+## Production deployment (2026-10-14)
+
+- Merged #93 and #94 into `experiment/allofmycareer-v2-rebuild`, then #92 into `main` (971e1f6). Production branch is `main` and the domain auto-assigns.
+- `app.allofmycareer.com` serves the new build (new bundle, fonts; the API answers).
+- Production check: QA journey "[QA TEST] 한국 대기업 마케팅 팀장 → 싱가포르 이직".
+  - Typed as 해외 이동 / 싱가포르.
+  - 3 topics, 10 cards (6 visa incl. the S$5,600 minimum salary, hiring, pay, region).
+  - Brief consistent with the map; report 9 sections, 10 references; no Chinese or citation markers.
+  - Ops events all `stored: true`. **Test record `AMC-20261014-3E9E5E56`; exclude it from statistics.**
+- **JEV:** the call reached `/api/amc/jev-scenario` but returned `unavailable`. The cause was not logged; the next release logs a stage label and allows 20s instead of 3s (a46d012).
+- Rollback: Vercel Instant Rollback to the d6a86fc production deployment.
+
 ## Verification performed
 
 | Check | Result |

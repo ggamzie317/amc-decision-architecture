@@ -1,3 +1,6 @@
+import V2IndicatorProfile from "./V2IndicatorProfile";
+import { v2AsEntered, v2DecisionText, v2RoleFields } from "../data/v2InputGlossary";
+import V2PathMap from "./V2PathMap";
 import V2ExecutiveBrief from "./V2ExecutiveBrief";
 import V2FrameworkPlan from "./V2FrameworkPlan";
 import V2InsightBoard from "./V2InsightBoard";
@@ -82,6 +85,7 @@ export default function V2Report({
   const say = (a: string, b: string) => (ko ? a : b);
   const evidenceText = (s: string) => v2CustomerEvidenceText(state.language, s);
   const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage);
+  const roles = v2RoleFields(state.language, state);
   const activeOverrides = limitV2Overrides(
     input,
     visibleVariables,
@@ -292,7 +296,7 @@ export default function V2Report({
             <div className="v2-cover-mark">allofmycareer</div>
           </div>
           <p className="v2-paper-caption">
-            {t("context")}: {state.decision}
+            {t("context")}: {v2DecisionText(state.language, state)}
           </p>
           <p className="v2-paper-lead">{analysis.executiveSummary}</p>
           <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} printed cardsOnly />
@@ -325,6 +329,7 @@ export default function V2Report({
         "Structural Reading",
         say("현재 구조 판단의 이유", "Why the current structure leads here"),
         <>
+          <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={Object.fromEntries(Object.entries(state.bands).filter(([k]) => state.bandSelections[k as keyof typeof state.bands]))} printed />
           <V2Reasoning
             analysis={analysis}
             intelligence={intelligence}
@@ -394,6 +399,7 @@ export default function V2Report({
         "Decision Map / Decision Structure",
         say("경로의 관계와 환경–준비 적합도", "Path relationships and environment–readiness fit"),
         <>
+          <V2PathMap language={state.language} state={state} core={core} analysis={analysis} intelligence={intelligence} />
           <V2DecisionMap
             state={state}
             analysis={analysis}
@@ -567,9 +573,9 @@ export default function V2Report({
               <strong>
                 {say("고객 입력 맥락", "Customer decision context")}
               </strong>
-              <p>{state.decision}</p>
-              <p>A: {state.optionA}</p>
-              <p>B: {state.optionB}</p>
+              <p>{v2DecisionText(state.language, state)}</p>
+              <p>{t("optionA")}: {roles.current.text}{v2AsEntered(state.language, roles.current.original)}</p>
+              <p>{t("optionB")}: {roles.target.text}{v2AsEntered(state.language, roles.target.original)}</p>
             </div>
           </>
         )}

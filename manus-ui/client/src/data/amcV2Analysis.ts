@@ -1,4 +1,6 @@
 import { withKoreanParticle } from "./koreanParticle";
+import { v2CustomerInput } from "./v2InputGlossary";
+import { v2KeyFactReadings } from "../../../shared/v2KeyFacts";
 import { v2CaseFifwmSet } from "./v2CaseFifwm";
 import type {
   ProductApplicationV3,
@@ -16,8 +18,8 @@ import { selfCheckCards, type SelfCheckId, type SelfChecks } from "./v2SelfDiagn
 import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
 import { v2CanAskCanonicalFifwm } from "./v2CanonicalFifwm";
 import {
-  v2ComparisonKey, v2ComparisonLabel, v2ConditionGroup, v2EvidenceArea,
-  type EvidenceComparisons, type EvidenceComparisonStatus,
+  v2AutoComparison, v2AutoComparisonLabel, v2AutoComparisonWord, v2ComparisonKey, v2ComparisonLabel,
+  v2ConditionGroup, v2EvidenceArea, v2GroupAxis, type V2AutoComparison, type EvidenceComparisons, type EvidenceComparisonStatus,
 } from "./v2EvidenceComparison";
 
 export type V2EvidencePhase =
@@ -268,6 +270,8 @@ export type V2EvidenceLink = {
   comparisonKey: string;
   comparisonStatus: EvidenceComparisonStatus;
   comparisonLabel: string;
+  /** Automatic first-pass reading used while the customer has not compared the card. */
+  autoComparison: V2AutoComparison;
   comparisonDetail: string;
   customerEvidence: string;
   comparisonReading: string;
@@ -293,6 +297,8 @@ export type V2Analysis = {
   externalContextReading: string;
   factorScopeNote: string;
   switching: Array<{ signal: string; direction: string }>;
+  /** Key facts the customer gave, each with what it means to check (never scored). */
+  situation: Array<{ id: string; question: string; answer: string; check?: string }>;
   priorityEvidence: {
     headline: string;
     condition: string;
@@ -373,10 +379,12 @@ export function buildV2Analysis(
   const b = core.postureBasis,
     s = core.safetyMargin.inputs;
   const cards = selfCheckCards(state.caseType, state.language);
-  const selfReport = (id: SelfCheckId): string | null => {
+  const selfReport = (id: SelfCheckId, checkedOnly = false): string | null => {
     if (!selfChecks) return null;
     const answer = selfChecks[id];
     if (answer.status === null) return null;
+    // Evidence rows cite only what the customer actually checked; "not checked" is said once, elsewhere.
+    if (checkedOnly && answer.status !== "checked") return null;
     const title = cards.find(card => card.id === id)?.title ?? id;
     const status = answer.status === "checked"
       ? say("직접 확인했다고 작성한 내용", "What you reported checking directly")
@@ -466,13 +474,20 @@ export function buildV2Analysis(
             "실행을 뒷받침할 조건이 일부 갖춰져 있습니다. 실제로 확보한 일정과 지원을 작은 시험에서 확인하고 추가 약속을 결정하세요.",
             "Some execution support is present. Test actual schedule and support commitments before adding further obligations."
           );
-  const target = v2PublicSearchTarget(state) || state.optionB.trim() || text(profile.topic);
+  const target = v2CustomerInput(state.language, v2PublicSearchTarget(state) || state.optionB, text(profile.topic)).text;
   const evidenceLinks: V2EvidenceLink[] = blocks.map((block, id) => {
     const conditionGroup = v2ConditionGroup(v2EvidenceArea(block, state));
     const comparisonKey = v2ComparisonKey(block, evidenceLanguage);
     const comparison = comparisons[comparisonKey];
     const comparisonStatus = comparison?.status ?? "unreviewed";
-    const comparisonLabel = v2ComparisonLabel(comparisonStatus, ko);
+    const axisKey = v2GroupAxis[conditionGroup];
+    const axisBand = b[axisKey].band;
+    const autoComparison = v2AutoComparison(block.direction, axisBand);
+    const axisLabel = t(({ safetyMargin: "safety", constraintLoad: "constraint", internalReadiness: "readinessBand" } as const)[axisKey]);
+    const comparisonLabel = comparisonStatus === "unreviewed"
+      ? v2AutoComparisonLabel(autoComparison, axisLabel, t(axisBand as V2CopyKey), ko)
+      : v2ComparisonLabel(comparisonStatus, ko);
+    const autoWord = v2AutoComparisonWord(autoComparison, ko);
     const condition =
       conditionGroup === "finance"
         ? say(
@@ -491,7 +506,8 @@ export function buildV2Analysis(
     const linkedSelfReport = selfReport(
       conditionGroup === "finance" ? "financial"
         : conditionGroup === "capacity" ? "capacity"
-          : conditionGroup === "readiness" ? "readiness" : "public"
+          : conditionGroup === "readiness" ? "readiness" : "public",
+      true
     );
     const implication = demo
       ? say(
@@ -523,8 +539,8 @@ export function buildV2Analysis(
     const headline = v2CustomerEvidenceText(state.language, block.headline);
     const criterion = v2CustomerEvidenceText(state.language, block.fact);
     const customerEvidence = comparison?.detail.trim() || linkedSelfReport || say(
-      "이 조건에 대응하는 개인의 결과물·비용·실제 반응은 아직 제시되지 않았습니다.",
-      "Personal work, costs or actual responses addressing this condition have not been supplied."
+      `입력한 단계 기준 — ${condition}`,
+      `From your answers — ${condition}`
     );
     const comparisonReading = comparisonStatus === "gap"
       ? say(
@@ -541,10 +557,23 @@ export function buildV2Analysis(
               `고객은 이 공개 조건이 목표(${target})에 적용되지 않는다고 응답했습니다. 이 자료로 개인의 적합성을 판단하지 않으며, 목표에 맞는 요건을 다시 확인해야 합니다.`,
               `You report that “${criterion}” does not apply to ${target}. It cannot establish personal fit; obtain requirements specific to your target.`
             )
-          : say(
-              `공개 조건 ‘${criterion}’과 현재 근거(${customerEvidence})는 아직 직접 대조되지 않았습니다. 같은 목표·지역·시점에 해당하는 조건인지 먼저 확인해야 합니다.`,
-              `The public condition “${criterion}” has not been compared directly with your evidence (${customerEvidence}). First establish whether the target, location and timing match.`
-            );
+          : autoComparison === "open"
+            ? say(
+                `자동 대조: ‘${criterion}’에 대응하는 내 ${axisLabel} 단계가 입력되지 않아 방향만 표시합니다. 이 조건이 목표와 같은 지역·시점에 해당하는지 먼저 확인하세요.`,
+                `Auto reading: your ${axisLabel} level is not set, so only the direction is shown for “${criterion}”. First confirm it applies to your target, location and timing.`
+              )
+            : say(
+                `자동 대조: ‘${criterion}’ 조건을 내 ${axisLabel}(${t(axisBand as V2CopyKey)}) 기준으로 보면 ‘${autoWord}’입니다. ${autoComparison === "watch"
+                  ? "이 조건이 현재 상태에 부담이 될 수 있어 먼저 확인할 항목입니다."
+                  : autoComparison === "fits"
+                    ? "현재 상태가 이 조건을 뒷받침할 가능성이 있으나, 실제 상대방의 인정은 따로 확인합니다."
+                    : "충족 여부는 세부 조건(금액·자격·시점)에 따라 달라집니다."}`,
+                `Auto reading: “${criterion}” against your ${axisLabel} (${t(axisBand as V2CopyKey)}) reads as “${autoWord}”. ${autoComparison === "watch"
+                  ? "It may strain your current position, so check it first."
+                  : autoComparison === "fits"
+                    ? "Your position may support it; recognition by the actual counterpart still needs checking."
+                    : "Whether it is met depends on the detailed terms (amount, eligibility, timing)."}`
+              );
     const makeCheck = (reference: string) => comparisonStatus === "gap"
       ? say(`‘${reference}’에서 부족하다고 작성한 조건(${customerEvidence})을 작은 결과물·비용표·실제 상대방의 피드백으로 확인하세요.`,
           `Test the reported gap (${customerEvidence}) against “${reference}” with a bounded work sample, cost comparison or counterpart feedback.`)
@@ -576,6 +605,7 @@ export function buildV2Analysis(
       comparisonKey,
       comparisonStatus,
       comparisonLabel,
+      autoComparison,
       comparisonDetail: comparison?.detail ?? "",
       customerEvidence,
       comparisonReading,
@@ -598,6 +628,7 @@ export function buildV2Analysis(
       .map(link => link.id);
   const applicableLinks = evidenceLinks.filter(link => link.comparisonStatus !== "not_applicable");
   const priorityLink = applicableLinks.find(link => link.comparisonStatus === "gap") ??
+    applicableLinks.find(link => link.comparisonStatus === "unreviewed" && link.autoComparison === "watch") ??
     applicableLinks.find(link => blocks[link.id].direction === "caution") ?? applicableLinks[0];
   const priorityEvidence = priorityLink
     ? {
@@ -897,8 +928,8 @@ export function buildV2Analysis(
         );
   const summary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading}${evidenceSummary} ${coverageReading}${priorityLink ? ` ${priorityLink.interpretation}` : ""}`;
   const executiveSummary = `${safetyReading} ${load === "heavy" ? capacityReading : readinessReading} ${coverageReading}${priorityLink ? say(
-    ` 우선 대조할 자료는 ‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’이며, 현재 상태는 ‘${priorityLink.comparisonLabel}’입니다. 세부 조건과 내 근거의 차이는 대조표에서 확인하세요.`,
-    ` The first comparison is “${blocks[priorityLink.id].headline}”: ${priorityLink.comparisonLabel}. The comparison table details the condition and your evidence.`
+    ` 가장 먼저 볼 자료는 ‘${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}’입니다(${priorityLink.comparisonLabel}). 세부 조건과 내 근거의 차이는 대조표에서 확인하세요.`,
+    ` The first item to check is “${v2CustomerEvidenceText(state.language, blocks[priorityLink.id].headline)}” (${priorityLink.comparisonLabel}). The comparison table details the condition and your evidence.`
   ) : ""}`;
   const briefAction = `${priorityLink?.testReference ? `${priorityLink.testReference} ` : ""}${text(profile.action)}`;
   return {
@@ -934,6 +965,7 @@ export function buildV2Analysis(
           "The original five questions assess a known organization and role. Unestablished items remain unassessed.")
       : say("이 사례에는 원본 조직·직무 질문을 그대로 적용할 수 없어 다섯 항목을 평가하지 않았습니다. 준비 상태와 안전마진의 입력으로 대신 점수를 만들지 않습니다.",
           "The original organization and role questions do not apply directly to this case, so the five factors are unassessed. Readiness and Safety Margin inputs do not create substitute scores."),
+    situation: v2KeyFactReadings(state.caseType, state.keyFacts ?? {}, ko),
     switching: core.decisionSwitches.map(item => ({
       signal: v2CustomerPlayText(state.language, item.signal),
       direction: v2CustomerPlayText(state.language, item.direction),

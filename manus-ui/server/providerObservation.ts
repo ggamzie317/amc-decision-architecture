@@ -25,6 +25,7 @@ export type ProviderObservation = {
     areas: string[];
     defaultAreas: boolean;
     targetLength: number;
+    keyFactCount?: number;
     geographyLength: number;
   };
 };

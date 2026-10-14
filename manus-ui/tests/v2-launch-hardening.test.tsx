@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import V2Processing, { v2ProcessingFailureKind } from "../client/src/components/V2Processing";
 import { buildProductApplicationV3, buildFifwmFromReportPayload, fifwmScore } from "../client/src/data/amcProductApplicationV3";
 import { buildV2Input } from "../client/src/data/amcV2Model";
+import { buildV2EvidenceRequest } from "../client/src/data/v2ExternalEvidenceClient";
 import { v2DemoFixture } from "../client/src/data/amcV2Demos";
 import { withKoreanParticle } from "../client/src/data/koreanParticle";
 import { V2ChangingView } from "../client/src/components/V2AnalysisView";
@@ -209,7 +210,7 @@ describe("evidence observation records request shape without customer text", () 
     expect(observed[0].requestShape).toEqual({
       caseType: "MBA / EMBA / PhD Decision", language: "ko",
       areas: ["programOutcomes", "employmentRelevance", "funding", "opportunityCost"],
-      defaultAreas: true, targetLength: 26, geographyLength: 2,
+      defaultAreas: true, targetLength: 26, keyFactCount: 0, geographyLength: 2,
     });
     const text = JSON.stringify(observed);
     expect(text).not.toContain("PRIVATE-LOOKING");
@@ -515,8 +516,8 @@ describe("round 3: framework plan, auto comparison, citation markers", () => {
     expect(v2AutoComparison("caution", "weak")).toBe("watch");
     expect(v2AutoComparison("caution", "heavy")).toBe("watch");
     expect(v2AutoComparison("supportive", "strong")).toBe("fits");
-    expect(v2AutoComparison("supportive", "unknown")).toBe("check");
-    expect(v2AutoComparison("mixed", "developing")).toBe("check");
+    expect(v2AutoComparison("supportive", "unknown")).toBe("open");
+    expect(v2AutoComparison("mixed", "developing")).toBe("conditional");
   });
 
   it("removes provider citation markers", async () => {
@@ -563,7 +564,9 @@ describe("issues B2-B4: situational topics, target cleanup, a card per topic", (
     const degree = { caseType: "MBA / EMBA / PhD Decision" as const, externalAreas: [] as never[] };
     expect(v2SituationalAreas({ ...degree, targetGeography: "영국" })).toContain("geographyMobility");
     expect(v2SituationalAreas({ ...degree, targetGeography: "서울" })).not.toContain("geographyMobility");
-    expect(v2SituationalAreas({ ...degree, targetGeography: "영국", externalAreas: ["funding"] as never[] })).toEqual(["funding"]);
+    const picked = v2SituationalAreas({ ...degree, targetGeography: "영국", externalAreas: ["funding"] as never[] });
+    expect(picked[0]).toBe("funding");
+    expect(picked).toContain("geographyMobility");
   });
 
   it("cleans intent words from the search target (B3)", async () => {
@@ -689,5 +692,116 @@ describe("current role keywords do not decide the type", () => {
   ] as const)("%j → %s", async (text, expected) => {
     const { inferV2CaseType } = await import("../client/src/data/v2CaseInference");
     expect(inferV2CaseType(text)).toBe(expected);
+  });
+});
+
+describe("benchmark round: path map and indicator profile", () => {
+  it("indicator profile shows definition, baseline state, reading and check question for all seven", async () => {
+    const { default: V2IndicatorProfile } = await import("../client/src/components/V2IndicatorProfile");
+    const fixture = v2DemoFixture("industry", "ko");
+    const html = renderToStaticMarkup(React.createElement(V2IndicatorProfile, { language: "ko", core: fixture.baseline, intelligence: fixture.intelligence }));
+    expect((html.match(/<article/g) || []).length).toBe(7);
+    expect(html).toContain("확인 질문");
+    expect(html).toContain("기준선");
+    expect(html).toContain('data-baseline="true"');
+    expect(html).not.toMatch(/\d+\s*%/);
+  });
+
+  it("path map shows where you are, the next step, the goal with gaps, and alternatives", async () => {
+    const { default: V2PathMap } = await import("../client/src/components/V2PathMap");
+    const fixture = v2DemoFixture("industry", "ko");
+    const analysis = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo");
+    const html = renderToStaticMarkup(React.createElement(V2PathMap, { language: "ko", state: fixture.state, core: fixture.baseline, analysis, intelligence: fixture.intelligence }));
+    for (const label of ["현재 위치", "다음 단계", "고민하는 커리어 · 목표"]) expect(html).toContain(label);
+    expect(html).toContain(fixture.state.optionB);
+    if (analysis.plays.length > 1) expect(html).toContain("대안 경로");
+  });
+});
+
+describe("round 6: EN toggle, automatic comparison wording", () => {
+  it("researches the case's standard topics even when the customer ticks only some", async () => {
+    const { v2SituationalAreas } = await import("../client/src/data/v2ExternalEvidenceClient");
+    const areas = v2SituationalAreas({ caseType: "Overseas Relocation", targetGeography: "싱가포르", externalAreas: ["visaMobility", "compensation"] as never[] });
+    expect(areas.slice(0, 2)).toEqual(["visaMobility", "compensation"]);
+    expect(areas).toEqual(expect.arrayContaining(["hiringDemand", "geography"]));
+  });
+
+  it("fills merged cards round-robin so one topic cannot crowd out the rest", async () => {
+    const { mergeV2Evidence } = await import("../shared/v2EvidenceMerge");
+    const live = (dimension: string, n: number) => ({
+      ...v2DemoFixture("industry", "ko").intelligence, status: "live" as const, sourceCoverage: "complete" as const, contextConfidence: "medium" as const,
+      evidenceBlocks: Array.from({ length: n }, (_, i) => ({ dimension, headline: `${dimension} ${i}`, direction: "mixed" as const, fact: `사실 ${i}입니다.`, whyItMatters: "범위입니다.", sourceLabel: "출처", sourceUrl: `https://example.org/${dimension}/${i}`, provenance: "EXTERNAL_EVIDENCE" as const })),
+    });
+    const merged = mergeV2Evidence([live("비자", 6), live("보상", 4), live("채용", 4)] as never, { caseType: "Overseas Relocation", externalAreas: ["visaMobility", "compensation", "hiringDemand"], targetGeography: "Singapore", targetLabel: "real estate", language: "ko" } as never);
+    const visa = merged.evidenceBlocks.filter(b => b.dimension === "비자").length;
+    expect(merged.evidenceBlocks).toHaveLength(10);
+    expect(visa).toBeLessThanOrEqual(4);
+  });
+
+  it("renders common Korean role fields in English locally", async () => {
+    const { v2EnglishRole, v2DecisionText } = await import("../client/src/data/v2InputGlossary");
+    expect(v2EnglishRole("한국 대기업 차장")).toBe("Deputy general manager at a large company in Korea");
+    expect(v2EnglishRole("싱가포르 부동산 기업 이직")).toBe("Move to a real estate company in Singapore");
+    expect(v2EnglishRole("영국 철학 박사")).toBe("PhD in philosophy in the UK");
+    expect(v2EnglishRole("IT 스타트업 창업")).toBe("Start an IT startup");
+    // Unrecognised words are never guessed.
+    expect(v2EnglishRole("홍콩 영주권 취득하여 가족과 생활")).toBeNull();
+    const fields = { decision: "현재: 한국 대기업 차장 → 고민: 홍콩 영주권 취득하여 가족과 생활", optionA: "한국 대기업 차장", optionB: "홍콩 영주권 취득하여 가족과 생활" };
+    expect(v2DecisionText("en", fields)).toBe("Current: Deputy general manager at a large company in Korea → Considering: The career you are considering");
+    expect(v2DecisionText("ko", fields)).toBe(fields.decision);
+  });
+
+  it("keeps Korean role text out of the English engine output", () => {
+    const fixture = v2DemoFixture("industry", "ko");
+    const state = { ...fixture.state, language: "en" as const, optionA: "한국 대기업 차장", optionB: "싱가포르 부동산 기업 이직" };
+    const input = buildV2Input(state, fixture.intelligence);
+    expect(input.optionA).toBe("Deputy general manager at a large company in Korea");
+    expect(input.answers[1]).not.toMatch(/[가-힣]/);
+  });
+
+  it("shows an automatic reading instead of 'not compared yet'", () => {
+    const fixture = v2DemoFixture("industry", "ko");
+    const analysis = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo");
+    const all = JSON.stringify(analysis);
+    expect(all).not.toContain("아직 대조하지 않음");
+    expect(all).not.toContain("아직 직접 대조되지 않았습니다");
+    expect(analysis.evidenceLinks[0].comparisonLabel).toMatch(/^자동 대조 · /);
+  });
+});
+
+describe("round 7: key facts (A) and level examples (B)", () => {
+  it("sends only catalogue ids and rejects free text", async () => {
+    const { parseV2EvidenceRequest } = await import("../shared/externalIntelligenceV2Request");
+    const base = { caseType: "Overseas Relocation", externalAreas: ["visaMobility"], targetGeography: "Singapore", targetLabel: "real estate", language: "ko" };
+    expect(parseV2EvidenceRequest({ ...base, keyFacts: ["family:children", "offer:offer"] })?.keyFacts).toEqual(["family:children", "offer:offer"]);
+    expect(parseV2EvidenceRequest({ ...base, keyFacts: ["family:가족 다섯 명"] })).toBeNull();
+    expect(parseV2EvidenceRequest({ ...base, keyFacts: ["admission:admitted"] })).toBeNull();
+    expect(parseV2EvidenceRequest(base)).not.toHaveProperty("keyFacts");
+  });
+
+  it("turns ids into fixed English research hints", async () => {
+    const { v2KeyFactHints } = await import("../shared/v2KeyFacts");
+    const hints = v2KeyFactHints("Overseas Relocation", ["family:children", "language:fluent"]);
+    expect(hints).toHaveLength(1);
+    expect(hints[0]).toMatch(/school fees/);
+  });
+
+  it("builds the request with key facts and reads them into the analysis without changing the posture", () => {
+    const fixture = v2DemoFixture("industry", "ko");
+    const plain = { ...fixture.state, caseType: "Overseas Relocation" as const, keyFacts: {} };
+    const withFacts = { ...plain, keyFacts: { family: "children", offer: "exploring" } };
+    expect(buildV2EvidenceRequest({ ...withFacts, publicSearchTarget: "부동산", targetGeography: "싱가포르" })?.keyFacts).toEqual(["offer:exploring", "family:children"]);
+    const a = buildProductApplicationV3(buildV2Input(plain, fixture.intelligence));
+    const b = buildProductApplicationV3(buildV2Input(withFacts, fixture.intelligence));
+    expect(b.currentStructuralPosture).toEqual(a.currentStructuralPosture);
+    const analysis = buildV2Analysis(withFacts, b, fixture.intelligence, "demo");
+    expect(analysis.situation.map(s => s.id)).toEqual(["offer", "family"]);
+    expect(analysis.situation[1].check).toContain("학비");
+  });
+
+  it("explains each chosen level with a concrete example", async () => {
+    const { v2BandAnchor } = await import("../client/src/data/v2BandAnchors");
+    expect(v2BandAnchor("financialRoom", "developing", true)).toBe("소득 없이 3~6개월 생활할 수 있음");
+    expect(v2BandAnchor("constraintLoad", "heavy", false)).toMatch(/Under 3 hours/);
   });
 });
