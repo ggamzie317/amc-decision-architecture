@@ -7,7 +7,9 @@ export const v2EvidenceLimits = {
   sourceUrl: 2048,
   signal: 240,
   implication: 600,
-  blocks: 4,
+  blocks: 6,
+  /** Cards kept after merging topic searches (each search still ≤ blocks). */
+  mergedBlocks: 10,
   opportunitySignals: 2,
   frictionSignals: 2,
   uncertainties: 3,

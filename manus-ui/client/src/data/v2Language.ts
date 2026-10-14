@@ -7,19 +7,19 @@ export const v2Copy = {
     "간단히 입력하고, 결정 조건을 깊이 살펴보세요.",
   ],
   startIntro: [
-    "Set up your decision in three short lines. Guided choices do the rest.",
-    "고민과 두 선택지를 짧게 적어 주세요. 나머지는 단계별로 선택하면 됩니다.",
+    "Write your current role and the career you are considering. Guided choices do the rest.",
+    "현재 직무와 고민하는 커리어만 적어 주세요. 나머지는 단계별로 선택하면 됩니다.",
   ],
   decisionSetup: ["Decision Setup", "결정 설정"],
   decision: ["Current decision", "지금 고민하는 결정"],
-  optionA: ["Option A", "선택지 A"],
-  optionB: ["Option B", "선택지 B"],
+  optionA: ["Current role / work", "현재 직무/업무"],
+  optionB: ["Career you are considering", "고민하는 커리어"],
   decisionPlaceholder: [
     "What decision are you facing?",
     "어떤 결정을 앞두고 있나요?",
   ],
-  optionAPlaceholder: ["Current path", "현재 경로"],
-  optionBPlaceholder: ["Alternative path", "다른 경로"],
+  optionAPlaceholder: ["e.g. Marketing team lead at a large company", "예: 대기업 마케팅 팀장"],
+  optionBPlaceholder: ["e.g. PhD in philosophy, a job in Hong Kong, starting a business", "예: 철학 박사 과정, 홍콩 이직, 창업"],
   caseConfirm: ["This looks closest to:", "해당하는 결정 유형:"],
   change: ["Change", "유형 바꾸기"],
   consent: [
@@ -58,7 +58,7 @@ export const v2Copy = {
   of: ["of", "/"],
   optional: ["Optional", "선택"],
   currentSituation: ["Current Situation", "현재 상황"],
-  options: ["Option A / Option B", "선택지 A / B"],
+  options: ["Current role / Considered career", "현재 직무 / 고민하는 커리어"],
   externalPressure: ["External Pressure", "외부 환경"],
   readiness: ["Internal Readiness", "실행 준비도"],
   safety: ["Safety Margin", "안전 여유"],
@@ -78,7 +78,7 @@ export const v2Copy = {
   harder: ["Position becomes harder", "상황이 어려워짐"],
   unsure: ["Not sure", "잘 모르겠음"],
   protect: ["What does this path protect?", "이 경로가 지켜 주는 것은?"],
-  expose: ["What could Option B expose?", "선택지 B의 위험은?"],
+  expose: ["What could the considered career expose?", "고민하는 커리어의 위험은?"],
   open: ["What could this path open?", "이 경로가 열어 주는 것은?"],
   validateArea: [
     "What should external evidence help verify?",
@@ -92,7 +92,7 @@ export const v2Copy = {
   reversibility: ["Reversibility", "되돌릴 수 있는 여지"],
   downside: ["Downside Exposure", "손실 위험"],
   addContext: ["Add context", "맥락 추가"],
-  supportBand: ["Option B Support", "대안 실행을 돕는 지원"],
+  supportBand: ["Support for the considered career", "고민하는 커리어를 돕는 지원"],
   supportSource: [
     "Where could support come from?",
     "어디에서 도움을 받을 수 있나요?",
@@ -114,9 +114,9 @@ export const v2Copy = {
     "What would materially change your decision? Choose up to three.",
     "무엇이 달라지면 판단이 바뀔까요? 최대 세 개를 선택하세요.",
   ],
-  supportsB: ["Supports deeper Option B testing", "대안을 더 검토할 근거"],
+  supportsB: ["Supports testing the considered career further", "고민하는 커리어를 더 검토할 근거"],
   supportsA: [
-    "Strengthens Option A or delay",
+    "Strengthens staying in the current role or waiting",
     "현재 계획 유지 또는 보류의 근거",
   ],
   customCondition: [
@@ -184,8 +184,8 @@ export const v2Copy = {
     "확인 가능한 출처를 찾지 못했습니다. 현재의 구조 판단은 그대로이며, 나중에 다시 확인할 수 있습니다.",
   ],
   evidenceDisclosure: [
-    "Public research sends the visible research topic, selected areas and geography (if given) to AMC's connected search provider. Personal notes and internal financial or readiness conditions are not sent. allofmycareer does not store your written answers.",
-    "공개 검색 주제, 선택한 확인 항목, 대상 지역(입력한 경우)이 AMC에 연결된 검색 제공자에게 전달됩니다. 개인 메모와 내부 재정·준비 조건은 전송하지 않으며, 작성한 답변 원문은 allofmycareer에 저장하지 않습니다. 검색 주제에는 공개된 직무·기관·산업 키워드를 사용하세요.",
+    "Public research sends the visible research topic, selected areas and geography (if given) to allofmycareer's connected search provider. Personal notes and internal financial or readiness conditions are not sent. allofmycareer does not store your written answers.",
+    "공개 검색 주제, 선택한 확인 항목, 대상 지역(입력한 경우)이 allofmycareer에 연결된 검색 제공자에게 전달됩니다. 개인 메모와 내부 재정·준비 조건은 전송하지 않으며, 작성한 답변 원문은 allofmycareer에 저장하지 않습니다. 검색 주제에는 공개된 직무·기관·산업 키워드를 사용하세요.",
   ],
   evidenceOptionalLater: [
     "The final analysis action includes public research. You can also review a structural draft without research.",
@@ -333,11 +333,11 @@ export const v2Copy = {
     "판단 근거를 한 문서에서 확인하세요.",
   ],
   simulatorIntro: [
-    "AMC has selected the few conditions most capable of changing the current decision structure. Other structural conditions remain fixed at baseline. Hypothetical states are not evidence.",
+    "allofmycareer has selected the few conditions most capable of changing the current decision structure. Other structural conditions remain fixed at baseline. Hypothetical states are not evidence.",
     "판단에 영향을 줄 수 있는 조건만 표시했습니다. 보이지 않는 조건은 현재 상태로 유지됩니다. 조건을 바꿔 보는 것은 실제 근거를 확인한 것이 아닙니다.",
   ],
   sensitivityIntro: [
-    "The same key conditions are tested against the current baseline using the AMC rules.",
+    "The same key conditions are tested against the current baseline using the allofmycareer rules.",
     "위 조건을 하나씩 바꿨을 때 현재 판단이 어떻게 달라지는지 보여줍니다.",
   ],
   noThreshold: [
@@ -347,8 +347,8 @@ export const v2Copy = {
   conditionChanged: ["condition changed", "개 조건 변경"],
   conditionsChanged: ["conditions changed", "개 조건 변경"],
   inputHint: [
-    "Three short fields, then guided choices.",
-    "세 가지 짧은 문장 다음에는 선택지만 고르면 됩니다.",
+    "Two short fields, then guided choices.",
+    "두 칸만 적으면 나머지는 선택지로 진행됩니다.",
   ],
   fromContext: ["From your setup", "입력한 결정"],
   selectUpTo: ["Select what applies", "해당하는 항목을 선택하세요"],
@@ -357,7 +357,7 @@ export const v2Copy = {
     "실행 가능한 판단 구조",
   ],
   executiveBoard: ["Executive Decision Board", "핵심 판단 보드"],
-  optionComparison: ["Option A vs Option B", "선택지 A와 B 비교"],
+  optionComparison: ["Current role vs considered career", "현재 직무와 고민하는 커리어 비교"],
   readinessSafety: ["Readiness and Safety Margin", "실행 준비도와 안전 여유"],
   missingChanging: [
     "Missing variable and structural options",

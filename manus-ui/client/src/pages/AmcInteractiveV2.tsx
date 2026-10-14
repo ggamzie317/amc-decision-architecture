@@ -11,7 +11,6 @@ import {
 import { trackV2Journey, type JourneyEventType, type JourneyTrackingObservation } from "../data/amcFounderOps";
 import {
   initialV2State,
-  suggestV2CaseType,
   v2Choices,
   v2ExternalOptions,
   v2ModuleKeys,
@@ -63,9 +62,23 @@ import {
   initialCanonicalFifwmAssessment,
   v2CanAskCanonicalFifwm,
 } from "../data/v2CanonicalFifwm";
+import { v2EvidenceAreas } from "../../../shared/externalIntelligenceV2Request";
+import { mergeV2Evidence, v2EvidenceGroups } from "../../../shared/v2EvidenceMerge";
+import V2Processing from "../components/V2Processing";
+import { v2CaseFifwmSet } from "../data/v2CaseFifwm";
+import {
+  inferV2CaseRanking,
+  inferV2CaseType,
+  inferV2Geography,
+  inferV2SearchTarget,
+  v2CaseDescription,
+} from "../data/v2CaseInference";
+import { Compass, FileSearch, Layers, Lock } from "lucide-react";
 import "../styles/v2.css";
 
-type Phase = "setup" | "modules" | "dashboard" | "report";
+// "processing" holds the customer on an honest in-progress screen while the
+// explicit public-evidence analysis runs; results open only after it settles.
+type Phase = "setup" | "modules" | "processing" | "dashboard" | "report";
 const bandStrength = ["strong", "developing", "weak", "unknown"] as const;
 const bandRisk = ["low", "moderate", "high", "unknown"] as const;
 const bandLoad = ["light", "material", "heavy", "unknown"] as const;
@@ -95,6 +108,7 @@ export default function AmcInteractiveV2() {
   const [phase, setPhase] = useState<Phase>(demoMode ? "dashboard" : "setup");
   const [step, setStep] = useState(0);
   const [casePinned, setCasePinned] = useState(false);
+  const [showAllCases, setShowAllCases] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [showBandError, setShowBandError] = useState(false);
   const [showSelfCheckError, setShowSelfCheckError] = useState(false);
@@ -116,8 +130,37 @@ export default function AmcInteractiveV2() {
   const languagePinned = useRef(params.has("lang"));
   const simOpened = useRef(false);
   const restorePrintTitle = useRef<(() => void) | null>(null);
+  const [processingSeconds, setProcessingSeconds] = useState(0);
+  const [topicStates, setTopicStates] = useState<{ areas: string[]; state: "running" | "done" | "empty" }[]>([]);
   const [trackingObservation, setTrackingObservation] = useState<JourneyTrackingObservation | null>(null);
   const t = (key: V2CopyKey) => v2t(language, key);
+  const caseFifwm = v2CaseFifwmSet(state.caseType);
+  const topicLabels = topicStates.map(topic => ({
+    label: topic.areas.map(area => v2t(language, area as V2CopyKey)).join("·"),
+    state: topic.state,
+  }));
+  const caseRanking = useMemo(
+    () => inferV2CaseRanking(state),
+    [state.decision, state.optionA, state.optionB]
+  );
+  // Until the customer picks a type, it follows what they wrote in all three sentences.
+  // The decision sentence is derived from the two fields the customer writes.
+  const withDecision = (next: V2State): V2State => ({
+    ...next,
+    decision: next.optionA.trim() || next.optionB.trim()
+      ? language === "ko"
+        ? `현재: ${next.optionA.trim()} → 고민: ${next.optionB.trim()}`
+        : `Current: ${next.optionA.trim()} → Considering: ${next.optionB.trim()}`
+      : "",
+  });
+  const pinKoreanFromText = (value: string) => {
+    if (!languagePinned.current && /[가-힣]/.test(value)) setLanguage("ko");
+  };
+  const withInferredCase = (next: V2State): V2State => {
+    if (casePinned) return next;
+    const caseType = inferV2CaseType(next);
+    return caseType === next.caseType ? next : { ...next, caseType, publicSearchTarget: undefined };
+  };
   const selfCards = useMemo(
     () => selfCheckCards(state.caseType, language),
     [state.caseType, language]
@@ -209,17 +252,31 @@ export default function AmcInteractiveV2() {
     }
   }, [phase]);
   useEffect(() => () => restorePrintTitle.current?.(), []);
+  // Real elapsed time of the in-flight request; no simulated progress.
+  useEffect(() => {
+    if (phase !== "processing" || evidenceLoadingLanguage === null) return;
+    const started = Date.now();
+    setProcessingSeconds(0);
+    const timer = window.setInterval(
+      () => setProcessingSeconds(Math.round((Date.now() - started) / 1000)),
+      1000
+    );
+    return () => window.clearInterval(timer);
+  }, [phase, evidenceLoadingLanguage]);
   const intelligence = useMemo(
     () =>
       demoMode
         ? v2DemoFixture(kind, language).intelligence
-        : (evidenceByLanguage[researchLanguage] ??
+        : (evidenceByLanguage[language] ??
+          evidenceByLanguage[researchLanguage] ??
           unavailableIntelligence(state.caseType, language)),
     [demoMode, kind, language, researchLanguage, state.caseType, evidenceByLanguage]
   );
+  // Language the evidence wording is actually in (translation when available).
+  const evidenceTextLanguage: V2Language = demoMode || evidenceByLanguage[language] ? language : researchLanguage;
   const evidencePhase = demoMode
     ? "demo"
-    : evidenceLoadingLanguage !== null
+    : evidenceLoadingLanguage !== null && evidenceByLanguage[researchLanguage]?.status !== "live"
       ? "loading"
       : (evidenceByLanguage[researchLanguage]?.status ?? "not_checked");
   const input = useMemo(
@@ -430,18 +487,26 @@ export default function AmcInteractiveV2() {
                   ? "공개 검색 대상: 고객군과 제안할 제품·서비스"
                   : state.caseType === "Industry Transition"
                     ? "공개 검색 대상: 전환할 산업과 직무"
-                    : "공개 검색 대상: 직무·기관·과정 등 구체적인 목표"
+                    : state.caseType === "MBA / EMBA / PhD Decision"
+                      ? "공개 검색 대상: 기관명과 과정명"
+                    : state.caseType === "Overseas Relocation"
+                      ? "공개 검색 대상: 목적지에서 하려는 일과 체류 경로(취업비자·영주권 등)"
+                      : "공개 검색 대상: 직무·기관·과정 등 구체적인 목표"
                 : state.caseType === "Entrepreneurship"
                   ? "Public search target: customer group and offer"
                   : state.caseType === "Industry Transition"
                     ? "Public search target: target industry and role"
-                    : "Public search target: specific role, institution or program"}
+                    : state.caseType === "MBA / EMBA / PhD Decision"
+                      ? "Public search target: institution and program name"
+                    : state.caseType === "Overseas Relocation"
+                      ? "Public search target: the work and residence route at the destination (work visa, permanent residence)"
+                      : "Public search target: specific role, institution or program"}
               <input
                 value={v2PublicSearchTarget(state)}
                 maxLength={120}
                 placeholder={language === "ko"
-                  ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : "구체적인 공개 검색 대상을 입력하세요"
-                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : "Enter a specific public research target"}
+                  ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : state.caseType === "MBA / EMBA / PhD Decision" ? "예: ○○대학교 경영전문대학원 EMBA 주말 과정" : "구체적인 공개 검색 대상을 입력하세요"
+                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : state.caseType === "MBA / EMBA / PhD Decision" ? "e.g. [University] Executive MBA, weekend format" : "Enter a specific public research target"}
                 onChange={e => update({ publicSearchTarget: e.target.value })}
               />
             </label>
@@ -455,8 +520,8 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "외부 근거를 검색하려면 구체적인 공개 검색 대상과 지역을 직접 입력하세요. 입력하지 않아도 구조 분석은 진행되지만 검색은 실행되지 않습니다. 선택지의 자유서술·자가진단 메모·재정 정보는 검색에 복사하지 않습니다."
-                : "Enter a specific public target and geography to search for external evidence. Structural analysis still works without them, but no search runs. Option prose, self-check notes and financial information are never copied into the search."}
+                ? "검색 대상과 지역은 입력하신 '고민하는 커리어'에서 자동으로 채웠습니다. 분석 마지막 단계에서 이 내용으로 공개 근거를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 들어 있다면 지워 주세요. 자가진단 메모와 재정 정보는 검색에 쓰지 않습니다."
+                : "The search target and geography were filled in from the career you are considering. The final step searches public evidence with them. Edit them if needed, and remove any confidential or personal details. Self-check notes and financial information are never used in the search."}
             </p>
             </>)}
           </>
@@ -521,6 +586,57 @@ export default function AmcInteractiveV2() {
                   </fieldset>
                 ))}
                 <small>{language === "ko" ? "선택한 내용은 자기보고입니다. 공개 자료로 개인의 조직 경험을 검증한 것은 아닙니다." : "These answers are self-reported. Public sources do not verify your personal experience in the organization."}</small>
+              </section>
+            )}
+            {caseFifwm && (
+              <section className="v2-self-card v2-canonical-fifwm v2-case-fifwm" aria-label={language === "ko" ? "사례 맞춤 구조 평가" : "Case-adapted structure assessment"}>
+                <div className="v2-self-card-head"><h3>{language === "ko" ? "사례 맞춤 구조 평가" : "Case-adapted structure assessment"}</h3></div>
+                <p>{language === "ko"
+                  ? "기회의 조건·연결 가능성·구조 적합성·실행 현실성·버틸 수 있는가, 다섯 요소를 이 결정에 맞게 묻습니다. 대상이 구체적일 때만 답하세요. 답하지 않은 항목은 미평가로 남습니다."
+                  : "The same five factors — opportunity conditions, connection, structural fit, execution reality and staying power — asked for this kind of decision. Answer only when the target is specific. Unanswered items remain unassessed."}</p>
+                <fieldset className="v2-field">
+                  <legend>{caseFifwm.target[language === "ko" ? 1 : 0]}</legend>
+                  <div className="v2-band-choices">
+                    {(["known", "not_applicable", "unsure"] as const).map(status => (
+                      <button key={status} type="button" aria-pressed={fifwmAssessment.targetRoleStatus === status}
+                        onClick={() => setFifwmAssessment(previous => status === "known"
+                          ? { ...previous, targetRoleStatus: status }
+                          : { ...initialCanonicalFifwmAssessment(), targetRoleStatus: status })}>
+                        {status === "known"
+                          ? (language === "ko" ? "있음" : "Yes")
+                          : status === "not_applicable"
+                            ? (language === "ko" ? "해당 없음" : "Not applicable")
+                            : (language === "ko" ? "아직 모름" : "Not sure yet")}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                {fifwmAssessment.targetRoleStatus === "known" && caseFifwm.questions.map(question => (
+                  <fieldset className="v2-field" key={question.field}>
+                    <legend>{question.question[language === "ko" ? 1 : 0]}</legend>
+                    <div className="v2-band-choices">
+                      {question.choices.map((choice, score) => (
+                        <button type="button" key={score} aria-pressed={fifwmAssessment.answers[question.field] === String(score)}
+                          onClick={() => setFifwmAssessment(previous => ({ ...previous,
+                            answers: { ...previous.answers, [question.field]: String(score) },
+                          }))}>
+                          {choice[language === "ko" ? 1 : 0]}
+                        </button>
+                      ))}
+                      {(["__unknown__", "__na__"] as const).map(choice => (
+                        <button type="button" key={choice} aria-pressed={fifwmAssessment.answers[question.field] === choice}
+                          onClick={() => setFifwmAssessment(previous => ({ ...previous,
+                            answers: { ...previous.answers, [question.field]: choice },
+                          }))}>
+                          {choice === "__unknown__"
+                            ? (language === "ko" ? "아직 모름" : "Not sure yet")
+                            : (language === "ko" ? "해당 없음" : "Not applicable")}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                ))}
+                <small>{language === "ko" ? "선택한 내용은 자기보고입니다. 공개 자료로 검증한 것은 아닙니다." : "These answers are self-reported and not verified by public sources."}</small>
               </section>
             )}
           </>
@@ -600,6 +716,56 @@ export default function AmcInteractiveV2() {
         );
     }
   };
+  const structuralSummary = (
+    summaryInput: typeof input,
+    summaryCore: typeof core,
+    externalEvidenceStatus: ExternalIntelligenceV2["status"]
+  ) => ({
+    ...v2Identity,
+    completedIntakeQuestionCount: 8,
+    baselineBands: baselineBands(summaryInput),
+    currentStructuralPosture: { label: summaryCore.currentStructuralPosture.label },
+    safetyMargin: { band: summaryCore.safetyMargin.band },
+    changingPlays: summaryCore.changingPlays.map(p => ({ family: p.family })),
+    decisionSwitchCount: summaryCore.decisionSwitches.length,
+    externalEvidenceStatus,
+  });
+  // dashboard_generated is recorded only when results actually open: after the
+  // evidence analysis settles, or after an explicit structural-draft choice.
+  const openDashboard = (
+    summaryInput: typeof input,
+    summaryCore: typeof core,
+    externalEvidenceStatus: ExternalIntelligenceV2["status"]
+  ) => {
+    track(
+      "dashboard_generated",
+      {
+        currentStage: "dashboard_generated",
+        reportGeneratedAt: new Date().toISOString(),
+        structuralOutputJson: structuralSummary(summaryInput, summaryCore, externalEvidenceStatus),
+        externalEvidenceMode: externalEvidenceStatus === "live" ? "live" : "fallback",
+      },
+      {
+        selectedVariables: selectV2SimulatorVariables(
+          buildV2Sensitivity(summaryInput, summaryCore),
+          baselineBands(summaryInput)
+        ),
+      }
+    );
+    setPhase("dashboard");
+    window.scrollTo(0, 0);
+  };
+  const runEvidenceAnalysis = async () => {
+    setPhase("processing");
+    window.scrollTo(0, 0);
+    let opened = false;
+    const outcome = await checkCurrentEvidence(firstLive => {
+      opened = true;
+      openDashboard(firstLive.input, firstLive.core, "live");
+    });
+    if (!opened && outcome?.result.status === "live")
+      openDashboard(outcome.input, outcome.core, "live");
+  };
   const finish = (withEvidence = true) => {
     if (!v2AllBandsAnswered(state)) {
       const firstIncomplete = [3, 4, 5, 6].find(
@@ -615,41 +781,14 @@ export default function AmcInteractiveV2() {
       setShowSelfCheckError(true);
       return;
     }
-    const now = new Date().toISOString();
-    const structuralOutputJson = {
-      ...v2Identity,
-      completedIntakeQuestionCount: 8,
-      baselineBands: baselineBands(input),
-      currentStructuralPosture: { label: core.currentStructuralPosture.label },
-      safetyMargin: { band: core.safetyMargin.band },
-      changingPlays: core.changingPlays.map(p => ({ family: p.family })),
-      decisionSwitchCount: core.decisionSwitches.length,
-      externalEvidenceStatus: intelligence.status,
-    };
     track("full_intake_completed", {
       currentStage: "full_intake_completed",
-      fullIntakeCompletedAt: now,
-      structuralOutputJson,
+      fullIntakeCompletedAt: new Date().toISOString(),
+      structuralOutputJson: structuralSummary(input, core, intelligence.status),
       externalEvidenceMode: "fallback",
     });
-    track(
-      "dashboard_generated",
-      {
-        currentStage: "dashboard_generated",
-        reportGeneratedAt: now,
-        structuralOutputJson,
-        externalEvidenceMode: "fallback",
-      },
-      {
-        selectedVariables: selectV2SimulatorVariables(
-          buildV2Sensitivity(input, core),
-          baselineBands(input)
-        ),
-      }
-    );
-    setPhase("dashboard");
-    window.scrollTo(0, 0);
-    if (withEvidence) void checkCurrentEvidence();
+    if (withEvidence && buildV2EvidenceRequest({ ...state, language })) void runEvidenceAnalysis();
+    else openDashboard(input, core, intelligence.status);
   };
   const switchLanguage = (next: V2Language) => {
     languagePinned.current = true;
@@ -659,61 +798,92 @@ export default function AmcInteractiveV2() {
     restorePrintTitle.current = null;
     setLanguage(next);
   };
-  const checkCurrentEvidence = async () => {
-    if (
-      demoMode ||
-      evidencePending.current ||
-      evidenceByLanguage[language]?.status === "live"
-    )
-      return;
+  type EvidenceOutcome = { result: ExternalIntelligenceV2; input: typeof input; core: typeof core };
+  // Each topic is its own request (its own serverless time budget). Results
+  // fill in as topics arrive; results open after the first usable topic.
+  const checkCurrentEvidence = async (onFirstLive?: (outcome: EvidenceOutcome) => void): Promise<EvidenceOutcome | null> => {
+    if (demoMode || evidencePending.current) return null;
+    const existing = evidenceByLanguage[language];
+    if (existing?.status === "live")
+      return { result: existing, input, core };
     const request = buildV2EvidenceRequest({ ...state, language });
     if (!request) {
       setStep(2);
       setPhase("modules");
       window.scrollTo(0, 0);
-      return;
+      return null;
     }
     evidencePending.current = true;
     setResearchLanguage(request.language);
     setEvidenceLoadingLanguage(language);
+    const groups = v2EvidenceGroups(request);
+    setTopicStates(groups.map(areas => ({ areas, state: "running" })));
     track(
       "external_evidence_requested",
       {},
       { externalEvidenceMode: "checking" }
     );
-    const result = await requestV2Evidence(request, fetch, observation => {
-      setEvidenceHttpByLanguage(previous => ({
+    const other: V2Language = request.language === "ko" ? "en" : "ko";
+    const lives: (ExternalIntelligenceV2 | undefined)[] = groups.map(() => undefined);
+    let lastResult: ExternalIntelligenceV2 | null = null;
+    let first = true;
+    const merged = () => mergeV2Evidence(lives.filter((l): l is ExternalIntelligenceV2 => !!l), request);
+    const outcomeFor = (result: ExternalIntelligenceV2): EvidenceOutcome => {
+      const updatedInput = buildV2Input({ ...state, language: request.language }, result, fifwmAssessment);
+      return { result, input: updatedInput, core: buildProductApplicationV3(updatedInput) };
+    };
+    await Promise.all(groups.map(async (areas, index) => {
+      // Stagger starts so parallel topics do not hit the provider at once.
+      if (index) await new Promise(resolve => setTimeout(resolve, index * 700));
+      const ask = (topicAreas: string[]) => requestV2Evidence({ ...request, externalAreas: topicAreas }, fetch, observation => {
+        setEvidenceHttpByLanguage(previous => ({ ...previous, [request.language]: observation }));
+      });
+      let result = await ask(areas);
+      // A topic with no usable evidence is retried once, narrower: each item
+      // on its own (issue B1). Two items become two focused searches.
+      if (result.status !== "live") {
+        const retries = await Promise.all((areas.length > 1 ? areas.map(area => [area]) : [areas]).map(ask));
+        const found = retries.filter(retry => retry.status === "live");
+        if (found.length) result = mergeV2Evidence(found, { ...request, externalAreas: areas });
+      }
+      lastResult = result;
+      setTopicStates(previous => previous.map((topic, i) => i === index
+        ? { ...topic, state: result.status === "live" ? "done" : "empty" }
+        : topic));
+      if (result.status !== "live") return;
+      lives[index] = result;
+      // One search may return both languages; store each so the toggle
+      // switches wording without searching again.
+      const { translation, ...primary } = merged();
+      setEvidenceByLanguage(previous => ({
         ...previous,
-        [request.language]: observation,
+        [request.language]: primary,
+        ...(translation ? { [other]: translation } : {}),
       }));
-    });
-    setEvidenceByLanguage(previous => ({
-      ...previous,
-      [request.language]: result,
+      if (first) {
+        first = false;
+        onFirstLive?.(outcomeFor(merged()));
+      }
     }));
-    const updatedInput = buildV2Input({ ...state, language: request.language }, result, fifwmAssessment);
-    const updatedCore = buildProductApplicationV3(updatedInput);
+    const final = lives.some(Boolean)
+      ? merged()
+      : (lastResult ?? unavailableIntelligence(request.caseType, request.language));
+    if (!lives.some(Boolean))
+      setEvidenceByLanguage(previous => ({ ...previous, [request.language]: final }));
+    const outcome = outcomeFor(final);
     track(
-      result.status === "live"
+      final.status === "live"
         ? "external_evidence_live"
         : "external_evidence_fallback",
       {
-        externalEvidenceMode: result.status === "live" ? "live" : "fallback",
-        structuralOutputJson: {
-          ...v2Identity,
-          completedIntakeQuestionCount: 8,
-          baselineBands: baselineBands(updatedInput),
-          currentStructuralPosture: { label: updatedCore.currentStructuralPosture.label },
-          safetyMargin: { band: updatedCore.safetyMargin.band },
-          changingPlays: updatedCore.changingPlays.map(play => ({ family: play.family })),
-          decisionSwitchCount: updatedCore.decisionSwitches.length,
-          externalEvidenceStatus: result.status,
-        },
+        externalEvidenceMode: final.status === "live" ? "live" : "fallback",
+        structuralOutputJson: structuralSummary(outcome.input, outcome.core, final.status),
       },
-      { externalEvidenceMode: result.status === "live" ? "live" : "unverified" }
+      { externalEvidenceMode: final.status === "live" ? "live" : "unverified" }
     );
     evidencePending.current = false;
     setEvidenceLoadingLanguage(null);
+    return outcome;
   };
   const switchDemo = (next: V2DemoKind) => {
     if (next === kind) return;
@@ -738,9 +908,12 @@ export default function AmcInteractiveV2() {
       data-evidence-source-check={evidenceHttpByLanguage[researchLanguage]?.sourceFailure}
       data-evidence-upstream-status={evidenceHttpByLanguage[researchLanguage]?.upstreamStatus}>
       <header className="v2-site-header">
-        <a className="v2-wordmark" href="/amc-interactive-v2">
-          allofmycareer
-        </a>
+        <div className="v2-masthead">
+          <a className="v2-wordmark" href="/amc-interactive-v2">
+            allofmycareer
+          </a>
+          <span className="v2-masthead-tag">Career Decision Research</span>
+        </div>
         <div className="v2-header-right">
           {demoMode && <span className="v2-demo-label">{t("demoBadge")}</span>}
           <div className="v2-language" role="group" aria-label={language === "ko" ? "화면 언어" : "Interface language"}>
@@ -785,46 +958,29 @@ export default function AmcInteractiveV2() {
             <p className="v2-kicker">{t("eyebrow")}</p>
             <h1>{t("startTitle")}</h1>
             <p>{t("startIntro")}</p>
-            <div className="v2-intake-line">
-              <span>01</span>
-              <span>02</span>
-              <span>03</span>
-              <span>04–08</span>
-            </div>
+            <ul className="v2-method-points" aria-label={language === "ko" ? "분석 방법" : "How the analysis works"}>
+              {([
+                [Compass, "Structure First", "정답을 대신 고르지 않고, 무엇을 지키고 얻는지와 위험이 모이는 곳을 구조로 보여 줍니다.", "We do not choose for you. We show what the choice protects, opens and where risk concentrates."],
+                [Layers, language === "ko" ? "다섯 가지 구조 렌즈" : "Five structural lenses", "기회의 조건 · 연결 가능성 · 구조 적합성 · 실행 현실성 · 버틸 수 있는가", "Opportunity conditions · connection · structural fit · execution reality · staying power"],
+                [FileSearch, language === "ko" ? "검증 가능한 공개 근거" : "Verifiable public evidence", "인용 출처가 실제로 열리는지 확인한 공개 자료만 근거로 씁니다.", "Only public sources whose cited pages actually open are used as evidence."],
+                [Lock, language === "ko" ? "원문 비저장" : "Your words stay private", "작성한 답변 원문은 저장하지 않으며, 검색에는 공개 검색 대상만 사용합니다.", "Written answers are not stored; only the public search target is used to search."],
+              ] as const).map(([Icon, title, ko, en]) => (
+                <li key={en}>
+                  <Icon aria-hidden size={18} />
+                  <div>
+                    <strong>{title}</strong>
+                    <span>{language === "ko" ? ko : en}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="v2-intake-steps">{language === "ko" ? "결정 설정 → 8단계 구조 질문 → 공개 근거 검색 → 분석·보고서" : "Decision setup → 8 structural steps → public evidence → analysis and report"}</p>
           </div>
           <section className="v2-intake-panel">
             <p className="v2-kicker">{t("decisionSetup")}</p>
             <h2>{t("decisionSetup")}</h2>
             <p>{t("inputHint")}</p>
             <div className="v2-setup-fields">
-              <label>
-                {t("decision")}
-                <input
-                  required
-                  autoComplete="off"
-                  value={state.decision}
-                  placeholder={t("decisionPlaceholder")}
-                  maxLength={240}
-                  onChange={e => {
-                    if (
-                      !languagePinned.current &&
-                      /[가-힣]/.test(e.target.value)
-                    )
-                      setLanguage("ko");
-                    setState(s => {
-                      const nextCase = casePinned
-                        ? s.caseType
-                        : suggestV2CaseType(e.target.value);
-                      return {
-                        ...s,
-                        decision: e.target.value,
-                        caseType: nextCase,
-                        ...(nextCase === s.caseType ? {} : { publicSearchTarget: undefined }),
-                      };
-                    });
-                  }}
-                />
-              </label>
               <label>
                 {t("optionA")}
                 <input
@@ -833,7 +989,7 @@ export default function AmcInteractiveV2() {
                   value={state.optionA}
                   placeholder={t("optionAPlaceholder")}
                   maxLength={120}
-                  onChange={e => update({ optionA: e.target.value })}
+                  onChange={e => { pinKoreanFromText(e.target.value); setState(s => withInferredCase(withDecision({ ...s, optionA: e.target.value }))); }}
                 />
               </label>
               <label>
@@ -844,33 +1000,48 @@ export default function AmcInteractiveV2() {
                   value={state.optionB}
                   placeholder={t("optionBPlaceholder")}
                   maxLength={120}
-                  onChange={e => update({ optionB: e.target.value })}
+                  onChange={e => { pinKoreanFromText(e.target.value); setState(s => withInferredCase(withDecision({ ...s, optionB: e.target.value }))); }}
                 />
               </label>
             </div>
-            <div className="v2-case-confirm">
-              <span>
-                {t("caseConfirm")}{" "}
-                <b>{v2CaseLabel(language, state.caseType)}</b>
-              </span>
-            </div>
-            <label className="v2-case-selector">
-              <span>{language === "ko" ? "검토할 결정에 맞는 유형을 선택하세요" : "Choose the type that matches your decision"}</span>
-              <select
-                aria-label={t("caseConfirm")}
-                value={state.caseType}
-                onChange={e => {
-                  update({ caseType: e.target.value as V2CaseType, publicSearchTarget: undefined });
-                  setCasePinned(true);
-                }}
-              >
-                {caseTypes.map(c => (
-                  <option key={c} value={c}>
-                    {v2CaseLabel(language, c)}
-                  </option>
+            <section className="v2-case-picker" aria-label={language === "ko" ? "결정 유형" : "Decision type"}>
+              <p className="v2-case-picker-label">
+                {language === "ko" ? "입력하신 내용으로 판단한 결정 유형" : "Decision type inferred from what you wrote"}
+              </p>
+              <div className="v2-case-recommended" data-case={state.caseType}>
+                <strong>{v2CaseLabel(language, state.caseType)}</strong>
+                <span>{v2CaseDescription(language, state.caseType)}</span>
+                {inferV2Geography(state, language) && (
+                  <span className="v2-case-geo">
+                    {language === "ko" ? "인식한 지역: " : "Detected place: "}<b>{inferV2Geography(state, language)}</b>
+                    {language === "ko" ? " · 공개 근거 검색에 사용합니다" : " · used for the public evidence search"}
+                  </span>
+                )}
+                {caseRanking[0]?.caseType === state.caseType && caseRanking[0].matched.length > 0 && (
+                  <small>{language === "ko" ? "판단 근거: " : "Based on: "}{caseRanking[0].matched.map(word => `‘${word}’`).join(" · ")}</small>
+                )}
+              </div>
+              <p className="v2-case-picker-hint">
+                {language === "ko" ? "다르다면 가장 가까운 유형을 고르세요." : "If this is not right, choose the closest type."}
+              </p>
+              <div className="v2-case-options" role="radiogroup" aria-label={language === "ko" ? "결정 유형 선택" : "Choose decision type"}>
+                {(showAllCases
+                  ? caseTypes
+                  : Array.from(new Set([state.caseType, ...caseRanking.filter(r => r.score > 0).map(r => r.caseType), "General Career Reconfiguration" as V2CaseType])).slice(0, 3)
+                ).map(c => (
+                  <button key={c} type="button" role="radio" aria-checked={state.caseType === c}
+                    onClick={() => { update({ caseType: c, publicSearchTarget: undefined }); setCasePinned(true); }}>
+                    <b>{v2CaseLabel(language, c)}</b>
+                    <span>{v2CaseDescription(language, c)}</span>
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+              {!showAllCases && (
+                <button type="button" className="v2-link-button" onClick={() => setShowAllCases(true)}>
+                  {language === "ko" ? "모든 유형 보기 (9개)" : "Show all types (9)"}
+                </button>
+              )}
+            </section>
             <p className="v2-privacy">{t("privacy")}</p>
             <label className="v2-consent">
               <input
@@ -892,13 +1063,19 @@ export default function AmcInteractiveV2() {
               className="v2-primary"
               type="button"
               disabled={
-                !state.decision.trim() ||
                 !state.optionA.trim() ||
                 !state.optionB.trim() ||
                 !state.serviceConsent
               }
               onClick={() => {
                 setCasePinned(true);
+                // Prefill the public search from the path being explored; the
+                // customer reviews and can edit it before any search runs.
+                setState(s => ({
+                  ...s,
+                  publicSearchTarget: s.publicSearchTarget?.trim() ? s.publicSearchTarget : inferV2SearchTarget(s),
+                  targetGeography: s.targetGeography.trim() ? s.targetGeography : inferV2Geography(s, language),
+                }));
                 track(
                   "preview_started",
                   {
@@ -1048,6 +1225,34 @@ export default function AmcInteractiveV2() {
           </section>
         </main>
       )}
+      {phase === "processing" && (
+        <V2Processing
+          language={language}
+          running={evidenceLoadingLanguage !== null}
+          seconds={processingSeconds}
+          target={v2PublicSearchTarget(state)}
+          geography={state.targetGeography}
+          areas={(state.externalAreas.length ? state.externalAreas : v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] }) as V2CopyKey[]).map(t)}
+          observation={evidenceHttpByLanguage[researchLanguage]}
+          onRetry={() => void runEvidenceAnalysis()}
+          onEditTarget={() => {
+            setStep(2);
+            setPhase("modules");
+            window.scrollTo(0, 0);
+          }}
+          onDraft={() => openDashboard(input, core, intelligence.status)}
+          topics={topicLabels}
+        />
+      )}
+      {phase === "dashboard" && topicLabels.some(topic => topic.state === "running") && (
+        <div className="v2-collecting" role="status" aria-live="polite">
+          <strong>{language === "ko" ? "근거 추가 수집 중" : "Still collecting evidence"}</strong>
+          <span>
+            {topicLabels.map(topic => `${topic.label} ${topic.state === "running" ? (language === "ko" ? "· 수집 중" : "· collecting") : topic.state === "done" ? "✓" : (language === "ko" ? "· 근거 없음" : "· none")}`).join("   ")}
+          </span>
+          <small>{language === "ko" ? "도착하는 근거는 이 화면과 보고서에 자동으로 반영됩니다. 검색을 다시 실행하지 않습니다." : "Arriving evidence is added to this view and the report automatically, without a new search."}</small>
+        </div>
+      )}
       {phase === "dashboard" && (
         <>
           <V2Dashboard
@@ -1057,9 +1262,10 @@ export default function AmcInteractiveV2() {
             onComparisonChange={(key, answer) => setEvidenceComparisons(current => ({ ...current, [key]: answer }))}
             core={core}
             intelligence={intelligence}
-            evidenceLanguage={demoMode ? language : researchLanguage}
+            evidenceLanguage={evidenceTextLanguage}
             evidencePhase={evidencePhase}
-            onCheckEvidence={checkCurrentEvidence}
+            onCheckEvidence={() => void checkCurrentEvidence()}
+            input={input}
             onReport={() => {
               track("detailed_report_opened", {
                 currentStage: "detailed_report_opened",
@@ -1078,7 +1284,7 @@ export default function AmcInteractiveV2() {
             visibleVariables={visibleVariables}
             overrides={scenarioOverrides}
             intelligence={intelligence}
-            evidenceLanguage={demoMode ? language : researchLanguage}
+            evidenceLanguage={evidenceTextLanguage}
             evidencePhase={evidencePhase}
             onScenarioChange={setScenarioOverrides}
             onEvent={(event, metadata) => {
@@ -1091,6 +1297,19 @@ export default function AmcInteractiveV2() {
           />
         </>
       )}
+      {phase !== "report" && (
+        <footer className="v2-site-footer">
+          <div>
+            <strong>allofmycareer</strong>
+            <span>{language === "ko" ? "Structure First 커리어 의사결정 리서치" : "Structure First career decision research"}</span>
+          </div>
+          <p>
+            {language === "ko"
+              ? "allofmycareer는 결정을 대신하거나 특정 진로를 권하지 않습니다. 결과는 입력한 조건과 확인된 공개 근거에 따른 구조적 해석이며, 법률·세무·의료·이민·재무 자문이 아닙니다."
+              : "allofmycareer does not decide for you or recommend a path. Results are a structural reading of your inputs and verified public evidence, not legal, tax, medical, immigration or financial advice."}
+          </p>
+        </footer>
+      )}
       {phase === "report" && (
         <V2Report
           state={state}
@@ -1102,7 +1321,7 @@ export default function AmcInteractiveV2() {
           visibleVariables={visibleVariables}
           scenarioOverrides={scenarioOverrides}
           intelligence={intelligence}
-          evidenceLanguage={demoMode ? language : researchLanguage}
+          evidenceLanguage={evidenceTextLanguage}
           evidencePhase={evidencePhase}
           onClose={() => {
             restorePrintTitle.current?.();

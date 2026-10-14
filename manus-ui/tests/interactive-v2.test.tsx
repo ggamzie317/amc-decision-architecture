@@ -63,12 +63,12 @@ const root =
     : process.cwd();
 
 describe("AMC interactive V2 experience", () => {
-  it("has eight guided modules, exactly three required prose fields and nine existing case families", () => {
+  it("has eight guided modules, exactly two required prose fields (current role, considered career) and nine existing case families", () => {
     expect(v2ModuleKeys).toHaveLength(8);
     expect(new Set(v2ModuleKeys).size).toBe(8);
     expect(caseTypes).toHaveLength(9);
     const html = renderToStaticMarkup(React.createElement(AmcInteractiveV2));
-    expect(html.match(/ required=""/g) || []).toHaveLength(3);
+    expect(html.match(/ required=""/g) || []).toHaveLength(2);
     expect(html).toContain("Decision Setup");
     expect(html).not.toContain("15 questions");
   });
@@ -365,7 +365,7 @@ describe("AMC interactive V2 experience", () => {
       expect(values(simulator, "v2-decision-switch")).toEqual(selected);
       expect(values(report, "v2-sensitivity-row")).toEqual(selected);
       expect(values(report, "v2-report-switch")).toEqual(selected);
-      expect(simulator).toContain("AMC has selected");
+      expect(simulator).toContain("allofmycareer has selected");
       if (count === 0) {
         expect(simulator).toContain(
           "No tested single condition materially changes"

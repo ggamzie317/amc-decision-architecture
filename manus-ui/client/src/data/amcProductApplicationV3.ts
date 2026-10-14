@@ -1,3 +1,5 @@
+import { withKoreanParticle } from "./koreanParticle";
+
 export const AMC_ANALYSIS_SEQUENCE = [
   "User Input", "Live External Evidence", "FIFWM / Decision Structure",
   "What You May Be Missing", "Current Structural Posture", "Changing",
@@ -73,7 +75,7 @@ export type ProductApplicationV3 = {
   presentation: ProductApplicationPresentation;
   decisionStructure: {
     fifwm: FifwmStructure;
-    fifwmSource: "canonical-current-case" | "unavailable";
+    fifwmSource: "canonical-current-case" | "case-adapted" | "unavailable";
     insideReality: string;
     outsideEvidence: string;
     constraints: string;
@@ -119,7 +121,7 @@ export type ProductApplicationBuildInput = {
   optionB: string;
   answers: Record<number, string>;
   fifwm: FifwmStructure;
-  fifwmSource: "canonical-current-case" | "unavailable";
+  fifwmSource: "canonical-current-case" | "case-adapted" | "unavailable";
   safetyMarginInputs: SafetyMarginInputs;
   structuralSignals: {
     externalValidation: StructuralSignal<StructuralStrength>;
@@ -156,8 +158,11 @@ const scoreKeys = {
   marketPolicy: "F_MarketPolicy",
 } as const;
 
-function fifwmScore(value: unknown): 0 | 1 | 2 | null {
-  const numeric = typeof value === "number" ? value : Number(value);
+/** Missing values (null, "", false, whitespace) stay unassessed; only a real 0/1/2 scores. */
+export function fifwmScore(value: unknown): 0 | 1 | 2 | null {
+  const numeric = typeof value === "number"
+    ? value
+    : typeof value === "string" && /^\s*[0-2]\s*$/.test(value) ? Number(value) : NaN;
   return numeric === 0 || numeric === 1 || numeric === 2 ? numeric : null;
 }
 
@@ -328,9 +333,17 @@ function deriveChangingPlays(input: ProductApplicationBuildInput, presentation: 
   const roleScopeEligible = input.caseType === "Corporate Stay vs Exit" || input.caseType === "Role Upgrade / Downgrade";
   const pathwayEligible = input.caseType === "MBA / EMBA / PhD Decision" || input.caseType === "Industry Transition" || input.caseType === "Overseas Relocation";
 
-  if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"], [`Test whether ${optionA} can be redesigned before treating departure as necessary.`, `${optionA}를 유지하면서 역할과 범위를 재설계할 수 있는지 먼저 검증합니다.`], ["Exit decision → role redesign test", "퇴사 결정 → 역할 재설계 검증"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
-  else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Test an intermediate route that can create evidence for ${optionB} before full conversion.`, `${optionB}로 완전히 전환하기 전에 근거를 만들 수 있는 중간 경로를 검증합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One bounded pathway test", "한 번의 제한된 경로 검증"]);
-  else if (externalNeedsValidation) add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as the base while testing ${optionB} with real evidence.`, `${optionA}를 기반으로 유지하면서 실제 근거로 ${optionB}를 검증합니다.`], ["Assumption → observable test", "가정 → 관찰 가능한 검증"], presentation.protects, ["External proof", "외부 근거"], ["One bounded validation cycle", "한 번의 제한된 검증 주기"]);
+  // Role Upgrade / Downgrade is a role-level change, not an exit decision.
+  const roleChange = input.caseType === "Role Upgrade / Downgrade";
+  if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"],
+    roleChange
+      ? [`Test whether the scope of ${optionA} can be adjusted before committing fully to the role change.`, `역할 변경을 확정하기 전에 ${optionA}의 범위를 조정할 수 있는지 먼저 검증합니다.`]
+      : [`Test whether ${optionA} can be redesigned before treating departure as necessary.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서 역할과 범위를 재설계할 수 있는지 먼저 검증합니다.`],
+    roleChange
+      ? ["Full role change → scope adjustment test", "역할 전면 변경 → 범위 조정 검증"]
+      : ["Exit decision → role redesign test", "퇴사 결정 → 역할 재설계 검증"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
+  else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Test an intermediate route that can create evidence for ${optionB} before full conversion.`, `${withKoreanParticle(optionB, "으로/로")} 완전히 전환하기 전에 근거를 만들 수 있는 중간 경로를 검증합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One bounded pathway test", "한 번의 제한된 경로 검증"]);
+  else if (externalNeedsValidation) add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as the base while testing ${optionB} with real evidence.`, `${withKoreanParticle(optionA, "을/를")} 기반으로 유지하면서 실제 근거로 ${withKoreanParticle(optionB, "을/를")} 검증합니다.`], ["Assumption → observable test", "가정 → 관찰 가능한 검증"], presentation.protects, ["External proof", "외부 근거"], ["One bounded validation cycle", "한 번의 제한된 검증 주기"]);
 
   if (safetyNeedsProtection || downsideNeedsProtection) add("resource", ["Resource Reconfiguration", "자원 재구성"], ["Increase protected capacity before increasing commitment.", "몰입을 늘리기 전에 보호된 여력을 강화합니다."], ["Current capacity → protected capacity", "현재 여력 → 보호된 여력"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible exposure yet", "아직 되돌릴 수 없는 노출 없음"]);
   if (reversibilityNeedsProtection) add("timing", ["Timing Reconfiguration", "시기 재구성"], ["Move the commitment point until the recovery path is clearer.", "회복 경로가 명확해질 때까지 확정 시점을 조정합니다."], ["Fixed date → evidence-led timing", "고정된 시점 → 근거 기반 시기"], presentation.protects, ["A clear recovery path", "명확한 회복 경로"], ["Review before commitment", "확정 전 재검토"]);
@@ -347,8 +360,8 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
   const missingValidation = answer(input.answers, 14, input.validationFocus);
   const internalReadiness = answer(input.answers, 17, ko ? "필요한 역량과 증거의 준비 수준을 확인합니다." : "The required capability and proof still need to be made visible.");
   const constraint = answer(input.answers, 25, answer(input.answers, 3, input.primaryRiskMeaning));
-  const optionAProtection = answer(input.answers, 6, ko ? `${input.optionA}는 현재 기반과 검증 시간을 보호합니다.` : `${input.optionA} protects the current base and time to validate.`);
-  const optionBUpside = answer(input.answers, 9, ko ? `${input.optionB}는 새로운 커리어 가치를 열 수 있습니다.` : `${input.optionB} may open a new source of career value.`);
+  const optionAProtection = answer(input.answers, 6, ko ? `${withKoreanParticle(input.optionA.trim(), "은/는")} 현재 기반과 검증 시간을 보호합니다.` : `${input.optionA} protects the current base and time to validate.`);
+  const optionBUpside = answer(input.answers, 9, ko ? `${withKoreanParticle(input.optionB.trim(), "은/는")} 새로운 커리어 가치를 열 수 있습니다.` : `${input.optionB} may open a new source of career value.`);
   const concise = casePresentation(input);
 
   // Structure is assembled first. Posture reads only canonical FIFWM and explicit
@@ -362,10 +375,12 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
   ];
   const guardrailConstraintText = guardrailConstraints.length > 2
     ? `${guardrailConstraints.slice(0, -1).join(", ")}${ko ? " 및 " : ", and "}${guardrailConstraints.at(-1)}`
-    : guardrailConstraints.join(ko ? "과 " : " and ");
+    : ko && guardrailConstraints.length === 2
+      ? `${withKoreanParticle(guardrailConstraints[0], "과/와")} ${guardrailConstraints[1]}`
+      : guardrailConstraints.join(" and ");
   const guardrailExplanation = postureAssessment.guardrailApplied
     ? (ko
-        ? `${optionB}에 대한 기회 근거는 존재하지만, ${guardrailConstraintText}이 실행 노출의 규모를 제한합니다. 현재 자세는 몰입을 확대하기 전에 배우고 회복하며 검증할 여력을 보호합니다.`
+        ? `${optionB}에 대한 기회 근거는 존재하지만, ${withKoreanParticle(guardrailConstraintText, "이/가")} 실행 노출의 규모를 제한합니다. 현재 자세는 몰입을 확대하기 전에 배우고 회복하며 검증할 여력을 보호합니다.`
         : `Opportunity evidence for ${optionB} remains present, but ${guardrailConstraintText} constrain the scale of execution exposure. The current posture protects room to learn, recover, and validate before scaling commitment.`)
     : "";
   const currentStructuralPosture = postureFamily === "transition"
@@ -478,7 +493,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
         ? (ko
             ? `실험이 확인된 노출 한도를 넘거나 회복 역량을 약화시키면 해당 실험 또는 실행 노출을 중단하거나 재설계합니다. 확인된 보호 범위 안에서는 제한된 검증과 학습을 계속할 수 있으며, 보호 범위가 아직 확인되지 않았다면 먼저 명확히 합니다.`
             : `Pause or redesign the experiment or its execution exposure if it exceeds the established exposure boundary or weakens recovery capacity. Bounded validation and learning can continue within confirmed protection; if that protection is not yet established, clarify it first.`)
-        : ko ? `근거가 생기기 전에 ${financialRoom}을 약화시키는 경우 중단하거나 재설계합니다.` : `Pause or redesign if the test weakens this protected room before credible evidence appears: ${financialRoom}`,
+        : ko ? `근거가 생기기 전에 시험이 보호해야 할 여력을 약화시키면 중단하거나 재설계합니다: ${financialRoom}` : `Pause or redesign if the test weakens this protected room before credible evidence appears: ${financialRoom}`,
       reassessAt: ko ? "각 검증 단계가 끝날 때, 그리고 노출을 확대하기 전에 현재 구조적 자세를 다시 봅니다." : "Reassess the Current Structural Posture at the end of each stage and before increasing exposure.",
       stages: input.plan,
     },

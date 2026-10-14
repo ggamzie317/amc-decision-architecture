@@ -125,11 +125,13 @@ export function createJevScenarioHandler(options: Options = {}) {
         work = (async () => {
           let reserved = false;
           try {
+            // V2 use is opt-in by the owner through AMC_JEV_V2_ENABLED; off by default.
             const enabled =
               options.enabled ??
-              (process.env.VERCEL_ENV === "preview" &&
+              ((process.env.VERCEL_ENV === "preview" &&
                 process.env.VERCEL_GIT_COMMIT_REF ===
-                  "experiment/allofmycareer-interactive-v1");
+                  "experiment/allofmycareer-interactive-v1") ||
+                process.env.AMC_JEV_V2_ENABLED === "true");
             const credential = enabled
               ? (options.credential ?? gatewayCredential)()
               : undefined;

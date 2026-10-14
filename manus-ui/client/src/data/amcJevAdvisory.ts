@@ -139,13 +139,16 @@ export function createJevSession(provider?: JevProvider, timeoutMs = 8000) {
   };
 }
 
-export const serverJevProvider: JevProvider = {
-  async assess(input) {
+export const serverJevProvider: JevProvider = createServerJevProvider("interactive-v1");
+
+/** The server answers only for a stored, consented, completed journey of this experience. */
+export function createServerJevProvider(experience: "interactive-v1" | "interactive-v2"): JevProvider {
+  return { async assess(input) {
     const response = await fetch("/api/amc/jev-scenario", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-amc-submission-id": activeAmcSubmissionId("interactive-v1") || "",
+        "x-amc-submission-id": activeAmcSubmissionId(experience) || "",
       },
       body: JSON.stringify(input),
       signal: AbortSignal.timeout(5000),
@@ -154,5 +157,5 @@ export const serverJevProvider: JevProvider = {
     const result = await response.json();
     if (result.status !== "available") throw new Error("unavailable");
     return result.advisory;
-  },
-};
+  } };
+}

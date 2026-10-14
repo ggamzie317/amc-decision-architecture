@@ -28,7 +28,7 @@ export function buildV2EvidenceRequest(
   if (!v2PublicSearchTarget(state) || !state.targetGeography.trim()) return null;
   return parseV2EvidenceRequest({
     caseType: state.caseType,
-    externalAreas: state.externalAreas,
+    externalAreas: v2SituationalAreas(state),
     targetGeography: state.targetGeography,
     targetLabel: v2PublicSearchTarget(state),
     language: state.language,
@@ -43,7 +43,7 @@ export async function requestV2Evidence(
   const fallback = () =>
     unavailableIntelligence(request.caseType, request.language);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 35_000);
+  const timer = setTimeout(() => controller.abort(), 270_000);
   try {
     const response = await fetchImpl("/api/amc/external-intelligence-v2", {
       method: "POST",
@@ -117,8 +117,9 @@ export function acceptV2Evidence(
       if (!block || typeof block !== "object" || Array.isArray(block))
         return false;
       const item = block as Record<string, unknown>;
-      if (typeof item.sourceUrl !== "string" || citedUrls.has(item.sourceUrl)) return false;
-      citedUrls.add(item.sourceUrl);
+      const citationKey = `${String(item.sourceUrl)}\n${String(item.dimension)}`;
+      if (typeof item.sourceUrl !== "string" || citedUrls.has(citationKey)) return false;
+      citedUrls.add(citationKey);
       return (
         item.provenance === "EXTERNAL_EVIDENCE" &&
         (item.area === undefined || (v2EvidenceAreas(request).includes(String(item.area)) &&
@@ -128,6 +129,7 @@ export function acceptV2Evidence(
         v2BoundedText(item.headline, limit.headline) &&
         v2BoundedText(item.fact, limit.fact) &&
         v2BoundedText(item.whyItMatters, limit.whyItMatters) &&
+        (item.action === undefined || v2BoundedText(item.action, limit.signal)) &&
         v2BoundedText(item.sourceLabel, limit.headline) &&
         v2BoundedText(item.sourceUrl, limit.sourceUrl) &&
         /^https:\/\//.test(item.sourceUrl) &&
@@ -158,5 +160,31 @@ export function acceptV2Evidence(
     )
   )
     return null;
-  return value as ExternalIntelligenceV2;
+  const { translation: rawTranslation, ...primary } = value;
+  // The other-language version must carry exactly the same cards; otherwise it
+  // is dropped and the toggle shows the research language with a notice.
+  const translation = rawTranslation && typeof rawTranslation === "object" && !("translation" in (rawTranslation as object))
+    ? acceptV2Evidence(rawTranslation, { ...request, language: request.language === "ko" ? "en" : "ko" })
+    : null;
+  const key = (block: { sourceUrl?: string; dimension: string }) => `${block.sourceUrl}\n${block.dimension}`;
+  const sameCards = translation?.status === "live" &&
+    translation.evidenceBlocks.map(key).join("|") === (primary.evidenceBlocks as ExternalIntelligenceV2["evidenceBlocks"]).map(key).join("|");
+  return (sameCards
+    ? { ...primary, translation }
+    : primary) as ExternalIntelligenceV2;
+}
+
+const domestic = /^(?:한국|대한민국|서울|부산|판교|인천|대구|대전|광주|south korea|korea|seoul|busan|pangyo)$/i;
+/**
+ * Default topics plus the ones the customer's situation implies (issue B2):
+ * a degree abroad also needs living, family and mobility facts. Explicit
+ * customer choices are kept as chosen.
+ */
+export function v2SituationalAreas(state: Pick<V2State, "caseType" | "externalAreas" | "targetGeography">): V2State["externalAreas"] {
+  if (state.externalAreas.length) return state.externalAreas;
+  const areas = [...v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] })];
+  const geography = state.targetGeography.trim();
+  if (state.caseType === "MBA / EMBA / PhD Decision" && geography && !domestic.test(geography) && !areas.includes("geographyMobility"))
+    areas.push("geographyMobility");
+  return areas as V2State["externalAreas"];
 }

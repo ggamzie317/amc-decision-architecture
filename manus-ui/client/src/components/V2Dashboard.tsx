@@ -1,3 +1,8 @@
+import V2ExecutiveBrief from "./V2ExecutiveBrief";
+import V2FrameworkPlan from "./V2FrameworkPlan";
+import V2InsightBoard from "./V2InsightBoard";
+import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
+import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2State } from "../data/amcV2Model";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
@@ -159,6 +164,9 @@ export function V2ExternalBoard({
                 )}
                 <div className="v2-source">
                   {t("source")}:{" "}
+                  {v2SharedSourceNote(intelligence.evidenceBlocks, index, state.language) && (
+                    <b className="v2-shared-source">{v2SharedSourceNote(intelligence.evidenceBlocks, index, state.language)} · </b>
+                  )}
                   {block.sourceUrl ? (
                     <a href={block.sourceUrl} target="_blank" rel="noreferrer">
                       {block.sourceLabel}
@@ -239,6 +247,7 @@ export default function V2Dashboard({
   evidenceLanguage = state.language,
   onCheckEvidence = () => {},
   onReport,
+  input,
 }: {
   state: V2State;
   core: ProductApplicationV3;
@@ -250,6 +259,8 @@ export default function V2Dashboard({
   evidenceLanguage?: V2State["language"];
   onCheckEvidence?: () => void;
   onReport: () => void;
+  /** Baseline input for engine-derived decision switches. */
+  input?: import("../data/amcProductApplicationV3").ProductApplicationBuildInput;
 }) {
   const t = (key: V2CopyKey) => fmt(state, key),
     ko = state.language === "ko";
@@ -272,33 +283,17 @@ export default function V2Dashboard({
       className="v2-dashboard v2-analysis-dashboard"
       data-testid="v2-dashboard"
     >
-      <section className="v2-hero">
-        <div className="v2-hero-copy">
-          <p className="v2-kicker">Executive Dashboard / {analysis.topic}</p>
-          <div className={`v2-analysis-status ${draft ? "draft" : ""}`}>
-            {t(v2EvidenceStatusLabel(evidencePhase))}
-            {draft && ` · ${say("구조 초안", "Structural draft")}`}
-          </div>
-          <h1>{analysis.posture}</h1>
-          <p className="v2-hero-sub">{analysis.boundary}</p>
-        </div>
-        <aside className="v2-hero-side">
-          <span>
-            {say("판단을 바꿀 핵심 질문", "The question that matters")}
-          </span>
-          <strong>{analysis.question}</strong>
-          <small>Safety Margin / {t(core.safetyMargin.band)}</small>
-        </aside>
-      </section>
-      <div className="v2-first-fold" aria-label={say("판단의 핵심", "Decision essentials")}>
-        <div><span>{say("핵심 득실", "Core trade-off")}</span><strong>{analysis.tradeoff}</strong></div>
-        <div><span>{say("아직 확인할 조건", "Still to establish")}</span><strong>{analysis.missingConcept}</strong></div>
-        <div><span>{say("다음 확인", "Next check")}</span><strong>{analysis.experiment.output}</strong></div>
+      <div className={`v2-analysis-status ${draft ? "draft" : ""}`}>
+        {t(v2EvidenceStatusLabel(evidencePhase))}
+        {draft && ` · ${say("구조 초안", "Structural draft")}`}
       </div>
+      <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
       <details className="v2-overview-detail">
         <summary>{say("판단 근거와 공개 자료의 한계 자세히 보기", "Read the reasoning and public-evidence limits")}</summary>
         <p>{analysis.summary}</p>
       </details>
+      <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="board" />
+      <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
       <nav
         className="v2-analysis-nav"
         aria-label={say("분석 바로가기", "Analysis navigation")}

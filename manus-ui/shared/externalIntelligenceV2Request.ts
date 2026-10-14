@@ -50,8 +50,14 @@ export function allowedV2ExternalAreas(
 export function v2EvidenceAreas(request: Pick<V2EvidenceRequest, "caseType" | "externalAreas">): readonly string[] {
   if (request.externalAreas.length) return request.externalAreas;
   if (request.caseType === "Entrepreneurship") return ["customerDemand", "competition", "pricing", "distribution"];
-  if (request.caseType === "MBA / EMBA / PhD Decision") return ["programOutcomes", "employmentRelevance", "funding"];
+  // Published cost, schedule and format are often the most available degree facts
+  // (owner decision 2026-10-14); outcome reports are frequently not published.
+  if (request.caseType === "MBA / EMBA / PhD Decision") return ["programOutcomes", "employmentRelevance", "funding", "opportunityCost"];
   if (request.caseType === "Industry Transition") return ["hiringDemand", "roleDemand", "requiredSkills", "compensation"];
+  // Owner decision 2026-10-14: existing areas only, chosen per case family.
+  if (request.caseType === "Overseas Relocation") return ["visaMobility", "hiringDemand", "compensation", "geography"];
+  if (request.caseType === "Burnout-driven Decision" || request.caseType === "Family Constraint-heavy Decision")
+    return ["roleDemand", "compensation", "geography"];
   return allowedV2ExternalAreas(request.caseType).slice(0, 3);
 }
 

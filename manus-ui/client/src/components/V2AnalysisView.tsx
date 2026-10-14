@@ -54,7 +54,7 @@ export function V2DecisionMap({
     {
       x: 18,
       y: 145,
-      title: say("A / 현재 기반", "A / Current base"),
+      title: say("현재 직무", "Current role"),
       value: cut(state.optionA.trim() || protectedLabel, ko ? 26 : 37),
       tone: "base",
     },
@@ -68,7 +68,7 @@ export function V2DecisionMap({
     {
       x: 622,
       y: 145,
-      title: say("B / 탐색할 경로", "B / Path to explore"),
+      title: say("고민하는 커리어", "Considered career"),
       value: state.optionB.trim() || analysis.target,
       tone: "target",
     },
@@ -215,7 +215,7 @@ export function V2Reasoning({
 }) {
   const ko = analysis.language === "ko";
   return (
-    <div className="v2-reasoning" data-testid="v2-integrated-reasoning">
+    <div className="v2-reasoning" data-testid="v2-integrated-reasoning" data-count={analysis.findings.length}>
       {analysis.findings.map((f, i) => (
         <article key={f.id} data-provenance={f.provenance.join(" ")}>
           <div className="v2-reasoning-heading">
@@ -241,9 +241,11 @@ export function V2Reasoning({
                 {link.comparisonDetail && <p className="v2-self-report">{ko ? "고객 자기보고: " : "Customer self-report: "}{link.comparisonDetail}</p>}
                 {!compact && (
                   <>
-                    <p className="v2-source-condition">{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
+                    {/* Headline and status stay visible; the long fact sits behind one toggle. */}
                     <details className="v2-evidence-trace-detail">
-                      <summary>{ko ? "자료의 범위·현재 조건·다음 확인" : "Source scope, current conditions and next check"}</summary>
+                      <summary>{ko ? "근거 내용·적용 범위·다음 확인 보기" : "Show the fact, scope and next check"}</summary>
+                      <p className="v2-source-condition">{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
+                      {block.action && <p className="v2-source-condition"><b>{ko ? "할 일: " : "To do: "}</b>{v2CustomerEvidenceText(analysis.language, block.action)}</p>}
                       <dl className="v2-evidence-trace">
                     <div><dt>{ko ? "검색 요약의 적용 설명" : "Search-summary applicability"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
                     <div><dt>{ko ? "현재 조건 · 입력 기반 구조 판단" : "Current condition · user input and core rules"}</dt><dd>{link.condition}</dd></div>
@@ -283,9 +285,13 @@ export function V2FactorMap({
           ? ko
             ? "기존 다섯 항목의 평가 입력이 없어 미확인 상태입니다. 준비 상태나 안전 여유로 대신 평가하지 않습니다."
             : "The existing five-part assessment inputs are unavailable, so these items remain unassessed. Readiness and safety bands do not substitute for them."
-          : ko
-            ? "응답한 항목만 기존 규칙으로 평가했습니다. 미응답·모름·해당 없음은 미평가이며, 공개 근거는 점수를 바꾸지 않습니다."
-            : "Only answered items use the existing rules. Unanswered, unsure and inapplicable items remain unassessed. Public evidence does not change the scores."}
+          : analysis.fifwmSource === "case-adapted"
+            ? ko
+              ? "응답한 항목만 같은 0·1·2 기준으로 평가했습니다. 원래 조직 평가와는 다른 사례 맞춤 질문이며, 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items are scored on the same 0/1/2 scale. These are case-adapted questions, distinct from the original organization assessment. Public evidence does not change the scores."
+            : ko
+              ? "응답한 항목만 기존 규칙으로 평가했습니다. 미응답·모름·해당 없음은 미평가이며, 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items use the existing rules. Unanswered, unsure and inapplicable items remain unassessed. Public evidence does not change the scores."}
       </p>
       {analysis.factors.map((f, i) => (
         <article key={f.id} data-factor={f.id}>
@@ -365,7 +371,7 @@ export function V2SafetyView({
 export function V2ChangingView({ analysis }: { analysis: V2Analysis }) {
   const ko = analysis.language === "ko";
   return (
-    <div className="v2-changing-analysis" data-testid="v2-changing-analysis">
+    <div className="v2-changing-analysis" data-testid="v2-changing-analysis" data-count={analysis.plays.length}>
       {analysis.plays.length ? (
         analysis.plays.map((p, i) => (
           <article key={p.family} data-family={p.family}>

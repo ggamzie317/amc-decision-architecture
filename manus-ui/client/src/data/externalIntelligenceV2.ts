@@ -13,6 +13,8 @@ export type ExternalIntelligenceV2 = {
   /** Provider confidence in bounded public context, never personal fit.
    * Absent for older snapshots and removed when a cited source is excluded. */
   contextConfidence?: "low" | "medium" | "high";
+  /** Same search and cards in the other UI language (en/ko); never a new search. */
+  translation?: ExternalIntelligenceV2;
   evidenceBlocks: Array<{
     /** Existing public-research ID; presentation routing only, never a score. */
     area?: string;
@@ -21,6 +23,8 @@ export type ExternalIntelligenceV2 = {
     direction: "supportive" | "caution" | "mixed";
     fact: string;
     whyItMatters: string;
+    /** One preparation step this fact implies for the customer; optional. */
+    action?: string;
     sourceLabel: string;
     sourceUrl?: string;
     sourceDate?: string;

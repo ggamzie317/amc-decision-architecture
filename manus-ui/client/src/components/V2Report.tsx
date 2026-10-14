@@ -1,3 +1,8 @@
+import V2ExecutiveBrief from "./V2ExecutiveBrief";
+import V2FrameworkPlan from "./V2FrameworkPlan";
+import V2InsightBoard from "./V2InsightBoard";
+import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
+import { v2SharedSourceNote } from "../data/v2SourceSharing";
 import { useEffect, useRef } from "react";
 import { buildV2Analysis, type V2EvidencePhase } from "../data/amcV2Analysis";
 import type { SelfChecks } from "../data/v2SelfDiagnostic";
@@ -212,6 +217,9 @@ export default function V2Report({
           )}
           <small>
             {t("source")}:{" "}
+            {v2SharedSourceNote(intelligence.evidenceBlocks, id, state.language) && (
+              <b className="v2-shared-source">{v2SharedSourceNote(intelligence.evidenceBlocks, id, state.language)} · </b>
+            )}
             {b.sourceUrl ? (
               <a href={b.sourceUrl} target="_blank" rel="noreferrer">
                 {b.sourceLabel}
@@ -276,6 +284,9 @@ export default function V2Report({
               </p>
               <p>{t("baselineReading")}</p>
               <h1>{analysis.posture}</h1>
+              <p className="v2-posture-coverage" data-coverage={core.postureEvidenceCoverage}>
+                {v2PostureCoverageNote(core, state.language).text}
+              </p>
               <p>{v2CaseLabel(state.language, state.caseType)}</p>
             </div>
             <div className="v2-cover-mark">allofmycareer</div>
@@ -284,6 +295,7 @@ export default function V2Report({
             {t("context")}: {state.decision}
           </p>
           <p className="v2-paper-lead">{analysis.executiveSummary}</p>
+          <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} printed cardsOnly />
           <div className="v2-paper-priorities">
             <article>
               <span>01 / {say("핵심 질문", "Key question")}</span>
@@ -347,22 +359,16 @@ export default function V2Report({
             <span>{evidenceLabel}</span>
             <p>{evidenceNote}</p>
             {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p>{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
-            {evidencePhase === "live" && (
-              <p>
-                {say(
-                  "출처 링크 접근을 확인했습니다. 주장과 적용 범위는 원문에서 대조하세요.",
-                  "Source links were reachable. Compare claims and applicability with the source text."
-                )}
-              </p>
-            )}
             <p>{analysis.externalReading}</p>
-            {hasSources && <p>{say(
-              "개인의 자격·구매 반응·실행 여력은 이 자료만으로 확인되지 않습니다. 실행 경로 조정과 실험은 6번 섹션, 전환 조건은 8번 섹션에서 확인하세요.",
-              "These sources alone do not establish personal eligibility, purchases or execution capacity. Changing and the experiment appear in section 6; switching conditions appear in section 8."
-            )}</p>}
           </div>
           {hasSources ? (
-            <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} compact />
+            <>
+              <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="evidence" />
+              {/* The customer's own comparisons and notes stay in the report. */}
+              {analysis.evidenceLinks.some(link => link.comparisonStatus !== "unreviewed" || link.comparisonDetail) && (
+                <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} compact />
+              )}
+            </>
           ) : (
             <div className="v2-paper-note">
               <strong>
@@ -527,7 +533,30 @@ export default function V2Report({
             </p>
             {partialEvidenceNote && <p className="v2-paper-caption">{partialEvidenceNote}</p>}
             {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p className="v2-paper-caption">{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
-            {sources(false)}
+            <h3 className="v2-reference-title">{say("allofmycareer 프레임워크 실행 계획", "allofmycareer framework action plan")}</h3>
+            <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} printed />
+            <h3 className="v2-reference-title">{say("출처 레퍼런스 (원문)", "Source references (original)")}</h3>
+            <p className="v2-paper-caption">
+              {say("본문의 근거 문장은 화면 언어로 옮겨 적었습니다. 정확한 표현과 범위는 아래 원문에서 확인하세요.",
+                "Evidence wording in the report is in the interface language. Check exact wording and scope in the originals below.")}
+            </p>
+            <ol className="v2-source-references">
+              {intelligence.evidenceBlocks.map((b, id) => (
+                <li key={id}>
+                  <span>{String(id + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>{b.sourceLabel}</strong>
+                    <small>
+                      {v2EvidenceDimensionLabel(state.language, b.dimension)}
+                      {b.sourceDate && b.sourceDateKind
+                        ? ` · ${t(b.sourceDateKind === "published" ? "sourcePublished" : "sourceUpdated")}: ${b.sourceDate}`
+                        : ""}
+                    </small>
+                    {b.sourceUrl && <a href={b.sourceUrl} target="_blank" rel="noreferrer">{b.sourceUrl}</a>}
+                  </div>
+                </li>
+              ))}
+            </ol>
             {intelligence.uncertainties.length > 0 && (
               <p className="v2-paper-caption">
                 {t("uncertainty")}:{" "}
