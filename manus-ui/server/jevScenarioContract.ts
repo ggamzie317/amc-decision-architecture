@@ -65,20 +65,13 @@ export function parseOfflineGatewayAdvisory(raw: unknown): JevAdvisory | null {
     Object.keys(data).some(
       k => !["model", "answers", "provider_metadata", "usage"].includes(k)
     ) ||
+    // Gateway metadata grows over time (cost, attempts, provider blocks); it is
+    // never read. Identity is still checked exactly below, and answers strictly.
     !data.provider_metadata ||
-    Object.keys(data.provider_metadata).some(k => k !== "gateway") ||
+    typeof data.provider_metadata !== "object" ||
     !data.provider_metadata.gateway ||
-    Object.keys(data.provider_metadata.gateway).some(k => k !== "routing") ||
     !routing ||
-    Object.keys(routing).some(
-      k =>
-        ![
-          "originalModelId",
-          "canonicalSlug",
-          "resolvedProvider",
-          "finalProvider",
-        ].includes(k)
-    ) ||
+    typeof routing !== "object" ||
     data.model !== "typesafe-ai/jev" ||
     routing?.originalModelId !== "typesafe-ai/jev" ||
     routing?.canonicalSlug !== "typesafe-ai/jev" ||
