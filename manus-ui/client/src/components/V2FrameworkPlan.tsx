@@ -1,5 +1,6 @@
 import { CheckSquare, GitBranch, GraduationCap, Search, ShieldCheck, Shuffle, Wallet } from "lucide-react";
-import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
+import type { ProductApplicationBuildInput, ProductApplicationV3 } from "../data/amcProductApplicationV3";
+import { v2EngineSwitches } from "../data/v2EngineSwitches";
 import type { V2Analysis } from "../data/amcV2Analysis";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
@@ -23,10 +24,13 @@ export default function V2FrameworkPlan({
   core,
   analysis,
   intelligence,
+  input,
   printed = false,
 }: {
   language: V2Language;
   core: ProductApplicationV3;
+  /** Baseline input; enables engine-derived switches. */
+  input?: ProductApplicationBuildInput;
   analysis: V2Analysis;
   intelligence: ExternalIntelligenceV2;
   printed?: boolean;
@@ -40,9 +44,24 @@ export default function V2FrameworkPlan({
   const money = cards.filter(card => (card.area && moneyAreas.has(card.area)) || hasAmount(`${card.headline} ${card.fact}`));
   const skills = cards.filter(card => card.area && skillAreas.has(card.area));
   const actions = Array.from(new Set(cards.map(card => card.action).filter((a): a is string => !!a)));
-  const switches = analysis.switching.length
-    ? analysis.switching
-    : core.decisionSwitches.slice(0, 3).map(item => ({ signal: item.signal, direction: item.direction }));
+  // Customer-chosen switches first, then the ones the engine itself finds (A3).
+  const engineSwitches = input ? v2EngineSwitches(input, core, language) : [];
+  const switches = [
+    ...analysis.switching.map(item => ({ ...item, engine: false })),
+    ...engineSwitches.map(item => ({ signal: item.signal, direction: item.direction, engine: true })),
+  ].slice(0, 4);
+  // Customer-specific open items for the Missing point (A4).
+  const unknownLabels: Record<string, [string, string]> = {
+    externalValidation: ["market evidence", "시장 근거"], internalReadiness: ["readiness", "실행 준비도"],
+    safetyMargin: ["safety margin", "안전 여유"], reversibility: ["reversibility", "되돌릴 여지"],
+    optionBSupport: ["support", "실행 지원"], structuralRisk: ["downside", "손실 위험"], constraintLoad: ["constraints", "제약"],
+  };
+  const unknowns = Object.entries(core.postureBasis)
+    .filter(([key, signal]) => unknownLabels[key] && signal.band === "unknown")
+    .map(([key]) => unknownLabels[key][ko ? 1 : 0]);
+  const uncovered = analysis.researchCoverage.filter(row => !row.evidenceIds.length).map(row => row.title);
+  // Intermediate routes the evidence itself shows, for Changing (A5).
+  const routeCards = cards.filter(card => /원격|시간제|파트타임|병행|주말|온라인|단계적|remote|part-time|online|weekend|distance|phased/i.test(`${card.headline} ${card.fact}`));
 
   return (
     <section className={`v2-framework-plan${printed ? " printed" : ""}`} data-testid="v2-framework-plan"
@@ -52,6 +71,12 @@ export default function V2FrameworkPlan({
           <h3><Search aria-hidden size={16} />{say("놓치기 쉬운 조건", "Missing point")}</h3>
           <strong>{analysis.missingConcept}</strong>
           <p>{analysis.question}</p>
+          {(unknowns.length > 0 || uncovered.length > 0) && (
+            <ul className="v2-plan-open">
+              {unknowns.length > 0 && <li><b>{say("아직 미확인인 내 조건: ", "Your unconfirmed conditions: ")}</b>{unknowns.join(" · ")}</li>}
+              {uncovered.length > 0 && <li><b>{say("공개 근거를 못 찾은 주제: ", "Topics without public evidence: ")}</b>{uncovered.join(" · ")}</li>}
+            </ul>
+          )}
           <small>{text(core.missingPoint)}</small>
         </article>
 
@@ -86,6 +111,11 @@ export default function V2FrameworkPlan({
             <p>{say("지금 조건에서는 도출된 조정 경로가 없습니다. 미확인 조건을 확인하면 다시 도출됩니다.",
               "No reconfiguration is derived under current conditions. It is re-derived once unknown conditions are confirmed.")}</p>
           )}
+          {routeCards.length > 0 && (
+            <ul className="v2-plan-open">
+              <li><b>{say("근거로 확인된 중간 경로: ", "Intermediate routes in the evidence: ")}</b>{routeCards.slice(0, 2).map(card => text(card.headline)).join(" · ")}</li>
+            </ul>
+          )}
         </article>
 
         <article>
@@ -93,7 +123,10 @@ export default function V2FrameworkPlan({
           {switches.length ? (
             <ol>
               {switches.map((item, i) => (
-                <li key={i}><b>{text(item.signal)}</b> → {text(item.direction)}</li>
+                <li key={i}>
+                  <b>{text(item.signal)}</b> → {text(item.direction)}
+                  {item.engine && <em className="v2-plan-engine">{say("엔진 계산", "engine")}</em>}
+                </li>
               ))}
             </ol>
           ) : (
@@ -107,6 +140,7 @@ export default function V2FrameworkPlan({
           {skills.length > 0 && (
             <div>
               <h3><GraduationCap aria-hidden size={16} />{say("준비할 역량과 준비 경로", "Skills to prepare and where")}</h3>
+              <p className="v2-plan-mine">{say("내 실행 준비도: ", "Your readiness: ")}<b>{v2t(language, core.postureBasis.internalReadiness.band)}</b></p>
               <ul>
                 {skills.slice(0, 4).map((card, i) => (
                   <li key={i}><b>{text(card.headline)}</b> {text(firstSentence(card.fact))}</li>

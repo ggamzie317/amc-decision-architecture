@@ -1265,6 +1265,7 @@ export default function AmcInteractiveV2() {
             evidenceLanguage={evidenceTextLanguage}
             evidencePhase={evidencePhase}
             onCheckEvidence={() => void checkCurrentEvidence()}
+            input={input}
             onReport={() => {
               track("detailed_report_opened", {
                 currentStage: "detailed_report_opened",

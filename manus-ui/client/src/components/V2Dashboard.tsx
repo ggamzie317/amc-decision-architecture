@@ -246,6 +246,7 @@ export default function V2Dashboard({
   evidenceLanguage = state.language,
   onCheckEvidence = () => {},
   onReport,
+  input,
 }: {
   state: V2State;
   core: ProductApplicationV3;
@@ -257,6 +258,8 @@ export default function V2Dashboard({
   evidenceLanguage?: V2State["language"];
   onCheckEvidence?: () => void;
   onReport: () => void;
+  /** Baseline input for engine-derived decision switches. */
+  input?: import("../data/amcProductApplicationV3").ProductApplicationBuildInput;
 }) {
   const t = (key: V2CopyKey) => fmt(state, key),
     ko = state.language === "ko";
@@ -310,7 +313,7 @@ export default function V2Dashboard({
         <p>{analysis.summary}</p>
       </details>
       <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} />
-      <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} />
+      <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
       <nav
         className="v2-analysis-nav"
         aria-label={say("분석 바로가기", "Analysis navigation")}

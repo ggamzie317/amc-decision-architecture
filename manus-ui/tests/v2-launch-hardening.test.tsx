@@ -584,3 +584,44 @@ describe("issues B2-B4: situational topics, target cleanup, a card per topic", (
   });
 });
 
+
+describe("issues A3-A5: framework elements filled from engine and evidence", () => {
+  it("engine switches are exactly the one-step moves that change the posture (A3)", async () => {
+    const { v2EngineSwitches } = await import("../client/src/data/v2EngineSwitches");
+    const { evaluateScenario } = await import("../client/src/data/amcScenario");
+    const fixture = v2DemoFixture("industry", "ko");
+    const input = buildV2Input(fixture.state, fixture.intelligence);
+    const core = buildProductApplicationV3(input);
+    const switches = v2EngineSwitches(input, core, "ko", 10);
+    for (const item of switches) {
+      const band = item.signal.split("→")[1].trim();
+      expect(item.direction).toContain("구조 판단이");
+      expect(item.direction).not.toContain(core.currentStructuralPosture.label + "'");
+      expect(band.length).toBeGreaterThan(0);
+    }
+    // Recompute independently: every reported variable changes the posture for some one-step move.
+    for (const item of switches) {
+      const ladders: Record<string, string[]> = { downsideExposure: ["high", "moderate", "low"], constraintLoad: ["heavy", "material", "light"] };
+      const ladder = ladders[item.variable] ?? ["weak", "developing", "strong"];
+      const changes = ladder.some(b => evaluateScenario(input, { [item.variable]: b } as never).currentStructuralPosture.label !== core.currentStructuralPosture.label);
+      expect(changes).toBe(true);
+    }
+  });
+
+  it("plan shows engine switches, open conditions and evidence routes (A3-A5)", async () => {
+    const { default: V2FrameworkPlan } = await import("../client/src/components/V2FrameworkPlan");
+    const fixture = v2DemoFixture("industry", "ko");
+    const unknownState = { ...fixture.state, bands: { ...fixture.state.bands, reversibility: "unknown" as const } };
+    const input = buildV2Input(unknownState, fixture.intelligence);
+    const core = buildProductApplicationV3(input);
+    const analysis = buildV2Analysis(unknownState, core, fixture.intelligence, "demo");
+    const intelligence = { ...fixture.intelligence, evidenceBlocks: [{ ...fixture.intelligence.evidenceBlocks[0], headline: "원격 박사 경로가 공개됨", fact: "이 대학은 원격 연구 경로를 안내합니다." }] };
+    const html = renderToStaticMarkup(React.createElement(V2FrameworkPlan, { language: "ko", core, analysis, intelligence, input }));
+    expect(html).toContain("아직 미확인인 내 조건");
+    expect(html).toContain("되돌릴 여지");
+    expect(html).toContain("근거로 확인된 중간 경로");
+    expect(html).toContain("원격 박사 경로가 공개됨");
+    const { v2EngineSwitches } = await import("../client/src/data/v2EngineSwitches");
+    if (v2EngineSwitches(input, core, "ko").length) expect(html).toContain("엔진 계산");
+  });
+});

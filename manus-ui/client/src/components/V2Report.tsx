@@ -533,7 +533,7 @@ export default function V2Report({
             {partialEvidenceNote && <p className="v2-paper-caption">{partialEvidenceNote}</p>}
             {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p className="v2-paper-caption">{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
             <h3 className="v2-reference-title">{say("allofmycareer 프레임워크 실행 계획", "allofmycareer framework action plan")}</h3>
-            <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} printed />
+            <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} printed />
             <h3 className="v2-reference-title">{say("출처 레퍼런스 (원문)", "Source references (original)")}</h3>
             <p className="v2-paper-caption">
               {say("본문의 근거 문장은 화면 언어로 옮겨 적었습니다. 정확한 표현과 범위는 아래 원문에서 확인하세요.",
