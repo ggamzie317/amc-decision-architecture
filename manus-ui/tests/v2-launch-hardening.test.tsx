@@ -632,7 +632,9 @@ describe("simulator explains a scenario in customer terms", () => {
     const { v2Scenario } = await import("../client/src/data/amcV2Model");
     const fixture = v2DemoFixture("industry", "ko");
     const input = buildV2Input(fixture.state, fixture.intelligence);
-    const overrides = { financialRoom: "strong" as const };
+    const { baselineBands } = await import("../client/src/data/amcScenario");
+    const current = (baselineBands(input) as Record<string, string>).financialRoom;
+    const overrides = { financialRoom: (current === "strong" ? "weak" : "strong") as "strong" | "weak" };
     const scenarioInput = v2Scenario(input, overrides).input;
     const html = renderToStaticMarkup(React.createElement(V2ScenarioExplain, {
       language: "ko", input, scenarioInput, overrides,
