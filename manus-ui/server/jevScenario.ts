@@ -11,6 +11,7 @@ import {
 import {
   buildOfflineScenarioPacket,
   parseOfflineGatewayAdvisory,
+  describeGatewayShape,
 } from "./jevScenarioContract.js";
 import { getFounderOpsStore } from "./founderOpsStore.js";
 import type { FounderOpsStore } from "./founderOpsTypes.js";
@@ -187,10 +188,12 @@ export function createJevScenarioHandler(options: Options = {}) {
               } finally {
                 reader.releaseLock();
               }
-              const advisory = parseOfflineGatewayAdvisory(
-                JSON.parse(Buffer.concat(chunks).toString("utf8"))
-              );
-              if (!advisory) throw new Error("contract");
+              const reply = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+              const advisory = parseOfflineGatewayAdvisory(reply);
+              if (!advisory) {
+                console.info(JSON.stringify({ event: "amc_jev_contract_shape", shape: describeGatewayShape(reply) }));
+                throw new Error("contract");
+              }
               await store.addEvent(id, "jev_assessment_completed", {
                 scenarioPlausibility: advisory.scenarioPlausibility,
                 evidenceSupport: advisory.evidenceSupport,
