@@ -86,6 +86,45 @@ UI changes (no analysis or scoring changes):
   **Test record ID: `AMC-20261013-24CA46AE`; exclude it from statistics.** The record was not read back through admin, which needs owner login.
 - Case-adapted structure assessment for Entrepreneurship, Degree, Overseas, Burnout and Family is implemented. General Career Reconfiguration uses the original Q18–22 when the target is known. The source label is `case-adapted`. Posture formula and boundaries are unchanged. The before/after table is in `docs/v2_case_fifwm_question_design.md`: no posture changed in 54 computed rows, because support moves by at most ±1.
 
+## Owner test round 2 (2026-10-14) — inference, bilingual evidence, fan-out
+
+Owner feedback after testing: the HK residency decision was typed as stay-or-exit; the customer was asked for the search target; KO cards showed Traditional Chinese; there was too little external evidence; the dashboard and report were sparse; differentiators were not visible.
+
+Changes:
+- **Decision type** is inferred from all three setup sentences. The setup screen shows the cue words, the detected place and plain-language alternatives. The search target and geography are prefilled from option B, and the customer edits them if needed.
+- **Bilingual evidence**: one search returns `en` and `ko` wording, so the toggle switches wording without a new search. Cards not written in the requested language are excluded (`language_mismatch`). Original titles are listed under "Source references" in report section 9.
+- **More evidence**:
+  - research brief per decision type: procedures, requirements, timelines, market, pay, costs
+  - scope definitions for every area
+  - up to 6 cards; overseas defaults add compensation
+  - V2 preset `medium` (`PERPLEXITY_V2_AGENT_PRESET` overrides)
+  - **parallel topic searches** (≤3; overseas visa/residency alone)
+  - 429 retry with Retry-After/backoff
+  - searches stop at 95s keeping finished topics; source checks on their own 12s budget
+  - function maxDuration 120s
+- **Insight board**:
+  - dashboard: Missing point / Safety Margin / Changing / Decision-switch tiles, a 7-axis structure radar (unknown dashed), a five-factor pentagon when assessed, and interactive market-vs-you rows
+  - report: tiles on page 1; profile and expanded comparison on page 3
+- **JEV advisory** beside the simulator: off unless `AMC_JEV_V2_ENABLED=true`; reference only.
+- Site root `/` redirects to V2.
+
+Real calls on the Preview (owner-approved), in order:
+
+| Call | Setting | Result |
+|---|---|---|
+| HK | fast, single search | 2 cards (hiring, pay), bilingual OK, no Chinese, **no visa** |
+| HK | medium, single search | result not captured (tool limit) |
+| HK | medium, single search | timeout 50s |
+| HK | medium, 120s | timeout 110s |
+| Startup | medium, 120s | 4 cards, 103s |
+| Degree | fan-out | **6 cards, 59s** (tuition 2,200만 원/term, employer 50% support, schedule, no published outcomes) |
+| Startup | fan-out | 3 cards, 69s; one topic hit 429 |
+| HK | fan-out | 429 on all topics → added retry |
+| HK, full UI | fan-out + retry | reached source checks at ~105s, then the overall timeout discarded everything → split deadlines |
+| HK, full UI | final | **live**: processing → dashboard; 2 cards (hiring, pay), no Chinese, 1 evidence request. **The visa and living-cost topics did not finish within 95s.** |
+
+Open risk: **visa/residency evidence for HK is still not delivered.** That topic's medium search is slower than the budget. Options are a `low` preset for that topic only, or an asynchronous "evidence still arriving" mode. Either needs more real calls.
+
 ## Verification performed
 
 | Check | Result |

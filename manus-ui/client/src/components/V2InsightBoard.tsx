@@ -128,14 +128,15 @@ export default function V2InsightBoard({
       icon: Search,
       label: ["Missing point", "놓치기 쉬운 조건"],
       value: analysis.missingConcept,
-      detail: core.missingPoint,
+      // The question that would resolve it, not a restatement of the title.
+      detail: analysis.question,
       href: "#v2-map",
     },
     {
       icon: ShieldCheck,
       label: ["Safety Margin", "안전 여유"],
       value: v2t(language, core.safetyMargin.band),
-      detail: core.safetyMargin.weakestMargin || core.safetyMargin.reading,
+      detail: core.safetyMargin.reading,
       href: "#v2-safety",
     },
     {
