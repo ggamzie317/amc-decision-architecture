@@ -106,7 +106,7 @@ export function makeJevInput(
   };
 }
 /** Session cache: no localStorage, persistence, automatic retry or background request. */
-export function createJevSession(provider?: JevProvider, timeoutMs = 8000) {
+export function createJevSession(provider?: JevProvider, timeoutMs = 28_000) {
   const cache = new Map<string, Promise<JevResult>>();
   return {
     assess(input: JevInput): Promise<JevResult> {
@@ -151,7 +151,8 @@ export function createServerJevProvider(experience: "interactive-v1" | "interact
         "x-amc-submission-id": activeAmcSubmissionId(experience) || "",
       },
       body: JSON.stringify(input),
-      signal: AbortSignal.timeout(5000),
+      // The server allows the model 20s; the browser waits a little longer.
+      signal: AbortSignal.timeout(25_000),
     });
     if (!response.ok) throw new Error("unavailable");
     const result = await response.json();

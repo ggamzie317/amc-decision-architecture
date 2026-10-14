@@ -5,6 +5,9 @@
     },
     "api/amc/external-intelligence-v2.ts": {
       "maxDuration": 300
+    },
+    "api/amc/jev-scenario.ts": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
