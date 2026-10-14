@@ -434,3 +434,21 @@ describe("topic fan-out", () => {
   });
 });
 
+describe("rate-limited topic searches are retried", () => {
+  it("retries a 429 and then uses the successful response", async () => {
+    const { inspectV2AgentResponse: _unused } = await import("../server/externalIntelligenceV2Service");
+    let calls = 0;
+    const result = await resolveV2ExternalIntelligence(
+      { caseType: "Entrepreneurship", externalAreas: ["pricing"], targetGeography: "Seoul", targetLabel: "t", language: "en" },
+      { apiKey: "k", observe: () => {}, retryDelayMs: 0, sourceAvailable: async () => true,
+        fetchImpl: (async () => {
+          calls++;
+          if (calls < 3) return new Response("busy", { status: 429 });
+          return new Response("not json", { status: 200 });
+        }) as typeof fetch }
+    );
+    expect(calls).toBe(3); // two retries, then the response is used
+    expect(result.status).toBe("unavailable");
+  });
+});
+

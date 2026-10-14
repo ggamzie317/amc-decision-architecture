@@ -82,7 +82,7 @@ describe("V2 stage diagnostics through the actual resolver, route and browser cl
           resolveV2ExternalIntelligence: (input, options) => resolveV2ExternalIntelligence(input, {
             ...options, apiKey: expected.mode === "missing-key" ? "" : "synthetic-key",
             fetchImpl: provider as typeof fetch, sourceAvailable: async () => expected.mode !== "blocked",
-            observe: observations,
+            observe: observations, retryDelayMs: 0,
           }),
         },
       }));
@@ -93,7 +93,8 @@ describe("V2 stage diagnostics through the actual resolver, route and browser cl
     expect(headers["X-AMC-Evidence-Stage"]).toBe(expected.stage);
     expect(client.status).toBe(expected.mode === "live" ? "live" : "unavailable");
     expect(client.evidenceBlocks.length).toBe(expected.mode === "live" ? 1 : 0);
-    expect(provider).toHaveBeenCalledTimes(expected.mode === "missing-key" ? 0 : 1);
+    // A rate-limited (429) search is retried twice before failing closed.
+    expect(provider).toHaveBeenCalledTimes(expected.mode === "missing-key" ? 0 : expected.mode === "upstream" ? 3 : 1);
     expect(JSON.stringify({ headers, observations: observations.mock.calls, clientMetadata: capture.mock.calls }))
       .not.toMatch(/PRIVATE|synthetic-key|example\.org|Education consulting|United States/);
   });
@@ -310,7 +311,7 @@ describe("V2 provider diagnostics without retaining provider text", () => {
     await resolveV2ExternalIntelligence(request, {
       apiKey: "synthetic-key",
       fetchImpl: (async () => new Response("PRIVATE provider error", { status: 429 })) as typeof fetch,
-      observe: failed,
+      observe: failed, retryDelayMs: 0,
     });
     expect(failed).toHaveBeenCalledWith(expect.objectContaining({
       reasonCode: "provider_failure", upstreamHttpStatus: 429,

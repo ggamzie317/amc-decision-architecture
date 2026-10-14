@@ -22,6 +22,8 @@ import type {
 } from "../shared/v2EvidenceProtocol.js";
 
 type ResolveOptions = {
+  /** Base delay for staggering and 429 retries; tests set it to 0. */
+  retryDelayMs?: number;
   apiKey?: string;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
@@ -332,6 +334,14 @@ export function mergeV2Evidence(lives: ExternalIntelligenceV2[], request: V2Evid
   return primary;
 }
 
+function pause(ms: number, signal: AbortSignal) {
+  return new Promise<void>(resolve => {
+    if (!ms || signal.aborted) return resolve();
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => { clearTimeout(timer); resolve(); }, { once: true });
+  });
+}
+
 export async function resolveV2ExternalIntelligence(
   request: V2EvidenceRequest,
   options: ResolveOptions = {}
@@ -422,11 +432,13 @@ export async function resolveV2ExternalIntelligence(
     // Topic fan-out: each group is one narrower search, run in parallel.
     const groups = v2EvidenceGroups(request);
     const cap = Math.max(2, Math.ceil(limit.blocks / groups.length));
-    const outcomes = await Promise.all(groups.map(async areas => {
+    const outcomes = await Promise.all(groups.map(async (areas, index) => {
       const groupRequest = { ...request, externalAreas: areas };
       const dimensions = v2EvidenceFocus(groupRequest);
       try {
-        const response = await (options.fetchImpl ?? fetch)(
+        // Stagger starts slightly so parallel topics do not arrive at once.
+        if (index) await pause(index * (options.retryDelayMs ?? 400), controller.signal);
+        const send = () => (options.fetchImpl ?? fetch)(
           "https://api.perplexity.ai/v1/agent",
           {
             method: "POST",
@@ -451,6 +463,17 @@ export async function resolveV2ExternalIntelligence(
             }),
           }
         );
+        // Rate limit (429): wait as the provider asks (or a short jittered
+        // delay) and retry up to twice while the overall time budget allows.
+        let response = await send();
+        for (let attempt = 0; response.status === 429 && attempt < 2 && !controller.signal.aborted; attempt++) {
+          const retryAfter = Number(response.headers.get("retry-after"));
+          const wait = Number.isFinite(retryAfter) && retryAfter > 0 && retryAfter <= 20
+            ? retryAfter * 1000
+            : (options.retryDelayMs ?? 2000) * (attempt + 1) + Math.floor(Math.random() * (options.retryDelayMs ?? 2000) / 2);
+          await pause(wait, controller.signal);
+          response = await send();
+        }
         if (!response.ok) return { status: response.status, diagnostic: { category: "upstream_http" } as V2ResponseDiagnostic };
         const parsed = await response.json().then(
           (value: unknown) => ({ ok: true as const, value }),
