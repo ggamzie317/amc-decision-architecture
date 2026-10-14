@@ -16,6 +16,7 @@ import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2Analysis } from "../data/amcV2Analysis";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
+import { v2AutoComparison, v2AutoComparisonWord, v2GroupAxis } from "../data/v2EvidenceComparison";
 import { v2EvidenceDimensionLabel, v2t, type V2Language } from "../data/v2Language";
 
 /**
@@ -105,30 +106,8 @@ function Radar({
   );
 }
 
-/**
- * First-pass comparison shown until the customer compares a row themselves:
- * the evidence direction against the customer's own band for that condition.
- * Labelled "auto"; it never replaces or stores a customer comparison.
- */
-const groupAxis: Record<string, { key: keyof ProductApplicationV3["postureBasis"] }> = {
-  finance: { key: "safetyMargin" },
-  capacity: { key: "constraintLoad" },
-  readiness: { key: "internalReadiness" },
-  public: { key: "internalReadiness" },
-};
-export function v2AutoComparison(direction: string, band: string): "watch" | "fits" | "check" {
-  // level() already reads risk and load bands in the favourable direction.
-  const v = level[band] ?? null;
-  if (v === null) return "check";
-  if (direction === "caution" && v <= 1) return "watch";
-  if (direction === "supportive" && v === 2) return "fits";
-  return "check";
-}
-const autoLabel: Record<"watch" | "fits" | "check", [string, string]> = {
-  watch: ["Auto: watch", "자동: 주의"],
-  fits: ["Auto: fits", "자동: 부합 가능"],
-  check: ["Auto: check", "자동: 확인 필요"],
-};
+// Automatic first-pass comparison lives with the comparison model so every view agrees.
+export { v2AutoComparison } from "../data/v2EvidenceComparison";
 
 const directionIcon: Record<string, LucideIcon> = { supportive: TrendingUp, caution: TrendingDown, mixed: Minus };
 
@@ -179,7 +158,7 @@ export default function V2InsightBoard({
   const live = intelligence.status === "live" || intelligence.status === "demo";
   const rows = live ? intelligence.evidenceBlocks : [];
   const statusLabel: Record<string, [string, string]> = {
-    unreviewed: ["Not compared", "미대조"], matches: ["Matches", "부합"],
+    matches: ["Matches", "부합"],
     gap: ["Gap", "부족"], not_applicable: ["Not my target", "해당 없음"],
   };
   const tiles: { icon: LucideIcon; label: [string, string]; value: string; detail: string; href: string }[] = [
@@ -270,8 +249,7 @@ export default function V2InsightBoard({
                 const link = analysis.evidenceLinks[i];
                 const Dir = directionIcon[block.direction] ?? Minus;
                 const status = link?.comparisonStatus ?? "unreviewed";
-                const axis = groupAxis[link?.conditionGroup ?? "public"] ?? groupAxis.public;
-                const auto = v2AutoComparison(block.direction, core.postureBasis[axis.key].band);
+                const auto = v2AutoComparison(block.direction, core.postureBasis[v2GroupAxis[link?.conditionGroup ?? "public"]].band);
                 return (
                   <li key={i} data-direction={block.direction} data-status={status}
                     aria-expanded={printed || focus === i} onClick={() => !printed && setFocus(focus === i ? null : i)}>
@@ -279,7 +257,7 @@ export default function V2InsightBoard({
                     <span className="v2-versus-market"><Dir aria-hidden size={15} />{v2CustomerEvidenceText(language, block.headline)}</span>
                     <span className="v2-versus-you">{link?.condition ?? "—"}</span>
                     <span className="v2-versus-status" data-auto={status === "unreviewed" ? auto : undefined}>
-                      {status === "unreviewed" ? autoLabel[auto][ko ? 1 : 0] : statusLabel[status][ko ? 1 : 0]}
+                      {status === "unreviewed" ? `${say("자동", "Auto")} · ${v2AutoComparisonWord(auto, ko)}` : statusLabel[status][ko ? 1 : 0]}
                     </span>
                     {(printed || focus === i) && (
                       <p className="v2-versus-detail">

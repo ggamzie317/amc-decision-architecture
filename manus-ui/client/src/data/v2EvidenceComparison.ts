@@ -15,7 +15,7 @@ export function v2ComparisonKey(block: Block, language: V2State["language"]): st
 }
 export function v2ComparisonLabel(status: EvidenceComparisonStatus, ko: boolean): string {
   const labels: Record<EvidenceComparisonStatus, [string, string]> = {
-    unreviewed: ["아직 대조하지 않음", "Not compared yet"],
+    unreviewed: ["자동 대조 사용", "Use the automatic reading"],
     matches: ["내 근거와 부합함", "My evidence matches"],
     gap: ["부족한 조건이 있음", "A gap remains"],
     not_applicable: ["내 목표에 적용되지 않음", "Not applicable to my target"],
@@ -35,4 +35,38 @@ export function v2ConditionGroup(area: string | null): "finance" | "capacity" | 
   if (["geography", "visaMobility", "geographyMobility"].includes(area ?? "")) return "capacity";
   if (["requiredSkills", "programOutcomes", "employmentRelevance", "researchRelevance"].includes(area ?? "")) return "readiness";
   return "public";
+}
+
+/**
+ * Automatic first pass for a card the customer has not compared yet: the
+ * evidence direction read against the customer's own band for the matching
+ * condition. Descriptive only — it never scores, stores or replaces a
+ * customer comparison.
+ */
+export type V2AutoComparison = "watch" | "fits" | "conditional" | "open";
+const favourable: Record<string, number> = { strong: 2, developing: 1, weak: 0, low: 2, moderate: 1, high: 0, light: 2, material: 1, heavy: 0 };
+export const v2GroupAxis = {
+  finance: "safetyMargin", capacity: "constraintLoad", readiness: "internalReadiness", public: "internalReadiness",
+} as const;
+export function v2AutoComparison(direction: string, band: string): V2AutoComparison {
+  const v = favourable[band];
+  if (v === undefined) return "open";
+  if (direction === "caution" && v <= 1) return "watch";
+  if (direction === "supportive" && v === 2) return "fits";
+  return "conditional";
+}
+const autoWords: Record<V2AutoComparison, [string, string]> = {
+  watch: ["주의", "Watch"],
+  fits: ["부합 가능", "Likely fits"],
+  conditional: ["조건부", "Conditional"],
+  open: ["내 조건 입력 시 판단", "Needs your condition"],
+};
+export function v2AutoComparisonWord(kind: V2AutoComparison, ko: boolean): string {
+  return autoWords[kind][ko ? 0 : 1];
+}
+/** "자동 대조 · 주의 (재정 여력: 보통)" — the reading and the condition it used. */
+export function v2AutoComparisonLabel(kind: V2AutoComparison, conditionLabel: string, bandLabel: string, ko: boolean): string {
+  const word = v2AutoComparisonWord(kind, ko);
+  if (kind === "open") return ko ? `자동 대조 · ${word}` : `Auto reading · ${word}`;
+  return ko ? `자동 대조 · ${word} (내 ${conditionLabel}: ${bandLabel})` : `Auto reading · ${word} (your ${conditionLabel}: ${bandLabel})`;
 }

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { v2SurveyGroups, v2SurveyGroupsFor, type V2SurveyField } from "../data/v2SurveyGroups";
+import { v2RoleFields } from "../data/v2InputGlossary";
 import { buildProductApplicationV3 } from "../data/amcProductApplicationV3";
 import { baselineBands, type ScenarioOverrides } from "../data/amcScenario";
 import { selectV2SimulatorVariables } from "../data/amcV2SensitivityView";
@@ -305,18 +307,42 @@ export default function AmcInteractiveV2() {
   ) => (
     <fieldset className="v2-field">
       <legend>{t(label)}</legend>
-      <div className="v2-chips">
-        {choices.map(choice => (
-          <button
-            type="button"
-            key={choice}
-            aria-pressed={state[field].includes(choice)}
-            onClick={() => toggle(field, choice, limit)}
-          >
-            {t(choice)}
-          </button>
-        ))}
-      </div>
+      {field in v2SurveyGroups ? (
+        // Grouped, specific wording; the keys and what the engine reads are unchanged.
+        <div className="v2-chip-groups">
+          {v2SurveyGroupsFor(field as V2SurveyField, choices, language, t).map(group => (
+            <div className="v2-chip-group" key={group.title}>
+              <span className="v2-chip-group-title">{group.title}</span>
+              <div className="v2-chips">
+                {group.items.map(item => (
+                  <button
+                    type="button"
+                    key={item.key}
+                    aria-pressed={state[field].includes(item.key)}
+                    onClick={() => toggle(field, item.key, limit)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="v2-chips">
+          {choices.map(choice => (
+            <button
+              type="button"
+              key={choice}
+              aria-pressed={state[field].includes(choice)}
+              onClick={() => toggle(field, choice, limit)}
+            >
+              {t(choice)}
+            </button>
+          ))}
+        </div>
+      )}
+      {limit < 99 && <small className="v2-chip-limit">{language === "ko" ? `최대 ${limit}개` : `Up to ${limit}`}</small>}
     </fieldset>
   );
   const bandGroup = (
@@ -460,11 +486,11 @@ export default function AmcInteractiveV2() {
             <div className="v2-options-recap">
               <div>
                 <span>{t("optionA")}</span>
-                <strong>{state.optionA}</strong>
+                <strong>{v2RoleFields(language, state).current.text}</strong>
               </div>
               <div>
                 <span>{t("optionB")}</span>
-                <strong>{state.optionB}</strong>
+                <strong>{v2RoleFields(language, state).target.text}</strong>
               </div>
             </div>
             {chipGroup("protect", "protects", v2Choices.protects)}
@@ -520,8 +546,8 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "검색 대상과 지역은 입력하신 '고민하는 커리어'에서 자동으로 채웠습니다. 분석 마지막 단계에서 이 내용으로 공개 근거를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 들어 있다면 지워 주세요. 자가진단 메모와 재정 정보는 검색에 쓰지 않습니다."
-                : "The search target and geography were filled in from the career you are considering. The final step searches public evidence with them. Edit them if needed, and remove any confidential or personal details. Self-check notes and financial information are never used in the search."}
+                ? "위에서 고른 주제를 먼저 조사하고, 이 결정 유형의 기본 주제(예: 해외 이동은 비자·채용 수요·보상·생활비)도 함께 조사합니다. 검색 대상과 지역은 입력하신 '고민하는 커리어'에서 자동으로 채웠습니다. 분석 마지막 단계에서 이 내용으로 공개 근거를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 들어 있다면 지워 주세요. 자가진단 메모와 재정 정보는 검색에 쓰지 않습니다."
+                : "Topics you pick are researched first; the standard topics for this kind of decision (for a move abroad: visa, hiring demand, pay and living costs) are researched too. The search target and geography were filled in from the career you are considering. The final step searches public evidence with them. Edit them if needed, and remove any confidential or personal details. Self-check notes and financial information are never used in the search."}
             </p>
             </>)}
           </>

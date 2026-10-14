@@ -239,7 +239,7 @@ describe("V2 live External Intelligence boundary", () => {
     ).toBe("IT, AI, MBA, transferable proofing");
     expect(v2t("ko", "tradeoff")).toBe("핵심 득실");
     expect(v2t("ko", "material")).toBe("무시하기 어려움");
-    expect(v2t("ko", "unknown")).toBe("아직 확인되지 않음");
+    expect(v2t("ko", "unknown")).toBe("잘 모름");
   });
   it("accepts only the five bounded public-search fields and canonical case areas", () => {
     const fixture = v2DemoFixture("entrepreneurship", "en");
@@ -267,9 +267,11 @@ describe("V2 live External Intelligence boundary", () => {
         "targetLabel",
       ].sort()
     );
+    // Customer picks come first; the case's standard topics fill the rest.
+    expect(built.externalAreas.slice(0, 2)).toEqual(["customerDemand", "pricing"]);
+    expect(built.externalAreas.length).toBeLessThanOrEqual(5);
     expect(built).toMatchObject({
       caseType: "Entrepreneurship",
-      externalAreas: ["customerDemand", "pricing"],
       targetGeography: "Seoul",
       targetLabel: "Advisory service for Seoul small businesses",
     });

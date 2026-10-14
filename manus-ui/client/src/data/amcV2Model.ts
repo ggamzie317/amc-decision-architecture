@@ -1,4 +1,5 @@
 import { buildCurrentCaseStructuralSignals } from "./amcCurrentCaseStructuralSignals";
+import { v2CustomerInput } from "./v2InputGlossary";
 import {
   buildProductApplicationV3,
   type ProductApplicationBuildInput,
@@ -340,6 +341,12 @@ export function buildV2Input(
   fifwmAssessment?: CanonicalFifwmAssessment,
 ): ProductApplicationBuildInput {
   const language = s.language;
+  // English view: the customer's Korean role fields in local English, never sent out for translation.
+  const optionA = v2CustomerInput(language, s.optionA, "your current role").text;
+  const optionB = v2CustomerInput(language, s.optionB, "the career you are considering").text;
+  const decision = language === "en" && /^현재:/.test(s.decision.trim()) && s.optionA.trim() && s.optionB.trim()
+    ? `Current: ${optionA} → Considering: ${optionB}`
+    : v2CustomerInput(language, s.decision, `${optionA} → ${optionB}`).text;
   const selections = {
     17: s.bands.internalReadiness,
     19: s.bands.financialRoom,
@@ -361,9 +368,9 @@ export function buildV2Input(
     .filter(c => s.switchIds.includes(c.id))
     .map(c => c.text);
   const answers: Record<number, string> = {
-    1: s.decision,
-    5: s.optionA,
-    8: s.optionB,
+    1: decision,
+    5: optionA,
+    8: optionB,
     6: selected(s, s.protects),
     9: selected(s, s.opens),
     14: externalArea,
@@ -378,8 +385,8 @@ export function buildV2Input(
   return {
     language,
     caseType: s.caseType,
-    optionA: s.optionA,
-    optionB: s.optionB,
+    optionA,
+    optionB,
     answers,
     ...buildV2CanonicalFifwm(s.caseType, language, fifwmAssessment),
     ...coreSignals,

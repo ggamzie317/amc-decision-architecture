@@ -180,11 +180,16 @@ const domestic = /^(?:한국|대한민국|서울|부산|판교|인천|대구|대
  * a degree abroad also needs living, family and mobility facts. Explicit
  * customer choices are kept as chosen.
  */
+/**
+ * Topics to research: the customer's picks first, then the case's standard
+ * topics, so a framework section never stays empty because a topic was not
+ * ticked (owner feedback 2026-10-14). At most 5 topics (3 parallel groups).
+ */
 export function v2SituationalAreas(state: Pick<V2State, "caseType" | "externalAreas" | "targetGeography">): V2State["externalAreas"] {
-  if (state.externalAreas.length) return state.externalAreas;
-  const areas = [...v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] })];
+  const defaults = [...v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] })];
   const geography = state.targetGeography.trim();
-  if (state.caseType === "MBA / EMBA / PhD Decision" && geography && !domestic.test(geography) && !areas.includes("geographyMobility"))
-    areas.push("geographyMobility");
+  if (state.caseType === "MBA / EMBA / PhD Decision" && geography && !domestic.test(geography) && !defaults.includes("geographyMobility"))
+    defaults.push("geographyMobility");
+  const areas = [...state.externalAreas, ...defaults].filter((area, i, all) => all.indexOf(area) === i).slice(0, Math.max(5, state.externalAreas.length));
   return areas as V2State["externalAreas"];
 }

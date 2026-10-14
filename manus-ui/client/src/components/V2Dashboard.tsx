@@ -1,4 +1,5 @@
 import V2IndicatorProfile from "./V2IndicatorProfile";
+import { v2AsEntered, v2DecisionText, v2RoleFields } from "../data/v2InputGlossary";
 import V2PathMap from "./V2PathMap";
 import V2ExecutiveBrief from "./V2ExecutiveBrief";
 import V2FrameworkPlan from "./V2FrameworkPlan";
@@ -268,6 +269,7 @@ export default function V2Dashboard({
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
   const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage);
+  const roles = v2RoleFields(state.language, state);
   const draft = evidencePhase !== "live" && evidencePhase !== "demo";
   const head = (n: string, english: string, title: string, note?: string) => (
     <div className="v2-section-top">
@@ -348,15 +350,15 @@ export default function V2Dashboard({
           <summary>
             {say("고객이 입력한 결정 맥락", "Your decision context")}
           </summary>
-          <p>{state.decision}</p>
+          <p>{v2DecisionText(state.language, state)}</p>
           <dl>
             <div>
               <dt>{t("optionA")}</dt>
-              <dd>{state.optionA}</dd>
+              <dd>{roles.current.text}{v2AsEntered(state.language, roles.current.original)}</dd>
             </div>
             <div>
               <dt>{t("optionB")}</dt>
-              <dd>{state.optionB}</dd>
+              <dd>{roles.target.text}{v2AsEntered(state.language, roles.target.original)}</dd>
             </div>
           </dl>
         </details>

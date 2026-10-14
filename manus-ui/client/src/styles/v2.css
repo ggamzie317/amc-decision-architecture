@@ -2218,3 +2218,9 @@
 .v2-collecting strong { color: #7a6320; }
 .v2-collecting small { color: var(--muted); font-size: 12px; }
 @media print { .v2-collecting { display: none; } }
+
+/* Grouped survey choices */
+.v2-chip-groups { display: grid; gap: 12px; }
+.v2-chip-group { display: grid; gap: 6px; }
+.v2-chip-group-title { font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+.v2-chip-limit { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }

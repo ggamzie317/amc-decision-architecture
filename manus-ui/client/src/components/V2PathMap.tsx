@@ -1,4 +1,5 @@
 import { ArrowRight, Flag, GitFork, MapPin, Milestone } from "lucide-react";
+import { v2RoleFields } from "../data/v2InputGlossary";
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2Analysis } from "../data/amcV2Analysis";
 import type { V2State } from "../data/amcV2Model";
@@ -38,8 +39,9 @@ export default function V2PathMap({
     })
     .map(indicator => v2t(language, indicator.label));
   const requirement = blocks.find(block => /요건|자격|비자|요구|requirement|eligib|visa|qualif/i.test(`${block.headline} ${block.fact}`));
-  const current = state.optionA.trim() || say("현재 직무", "Current role");
-  const target = state.optionB.trim() || say("고민하는 커리어", "Considered career");
+  const roles = v2RoleFields(language, state);
+  const current = roles.current.text;
+  const target = roles.target.text;
 
   return (
     <section className="v2-pathmap" data-testid="v2-path-map" aria-label={say("커리어 경로 지도", "Career path map")}>
