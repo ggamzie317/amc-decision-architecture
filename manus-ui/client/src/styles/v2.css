@@ -2240,3 +2240,4 @@
 .v2-feedback a { white-space: nowrap; text-decoration: none; }
 @media (max-width: 640px) { .v2-feedback { flex-direction: column; align-items: flex-start; margin: 20px 16px 0; } }
 @media print { .v2-feedback { display: none; } }
+.v2-jump-step { display: block; margin: 10px 0; }

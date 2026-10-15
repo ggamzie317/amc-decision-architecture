@@ -570,7 +570,7 @@ export default function AmcInteractiveV2() {
               />
             </label>
             <label className="v2-optional">
-              {t("targetGeography")}
+              {t("targetGeography")} {language === "ko" ? "(검색에 필요)" : "(needed for the search)"}
               <input
                 value={state.targetGeography}
                 maxLength={80}
@@ -1133,7 +1133,8 @@ export default function AmcInteractiveV2() {
                 setState(s => ({
                   ...s,
                   publicSearchTarget: s.publicSearchTarget?.trim() ? s.publicSearchTarget : inferV2SearchTarget(s),
-                  targetGeography: s.targetGeography.trim() ? s.targetGeography : inferV2Geography(s, language),
+                  // No place named: a Korean entry defaults to Korea (editable in step 3) so the search can run.
+                  targetGeography: s.targetGeography.trim() ? s.targetGeography : inferV2Geography(s, language) || (language === "ko" ? "한국" : ""),
                 }));
                 track(
                   "preview_started",
@@ -1212,11 +1213,7 @@ export default function AmcInteractiveV2() {
                   {state.targetGeography && ` / ${state.targetGeography}`}
                 </p>
                 <p>
-                  {state.externalAreas.length
-                    ? state.externalAreas.map(t).join(" · ")
-                    : language === "ko"
-                      ? "이 사례에 필요한 기본 공개 요건"
-                      : "Default public requirements for this case"}
+                  {(v2SituationalAreas(state) as V2CopyKey[]).map(t).join(" · ")}
                 </p>
                 <small>
                   {buildV2EvidenceRequest(state)
@@ -1227,6 +1224,11 @@ export default function AmcInteractiveV2() {
                       ? "공개 근거를 검색하려면 3단계에서 검색 대상과 지역을 입력하세요. 구조 초안은 바로 볼 수 있습니다."
                       : "Enter a public target and geography in step 3 to search. You can review the structural draft now."}
                 </small>
+                {!buildV2EvidenceRequest(state) && (
+                  <button type="button" className="v2-primary v2-jump-step" onClick={() => { setStep(2); window.scrollTo(0, 0); }}>
+                    {language === "ko" ? "3단계에서 검색 대상·지역 입력하기 ↩" : "Enter the target and geography in step 3 ↩"}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="v2-link-button"
