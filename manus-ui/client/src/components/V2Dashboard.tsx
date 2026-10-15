@@ -270,6 +270,8 @@ export default function V2Dashboard({
   const say = (a: string, b: string) => (ko ? a : b);
   const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage);
   const roles = v2RoleFields(state.language, state);
+  // Only the levels the customer actually chose.
+  const answeredBands: Record<string, string> = Object.fromEntries(Object.entries(state.bands).filter(([k]) => state.bandSelections[k as keyof typeof state.bands]));
   const draft = evidencePhase !== "live" && evidencePhase !== "demo";
   const head = (n: string, english: string, title: string, note?: string) => (
     <div className="v2-section-top">
@@ -302,10 +304,10 @@ export default function V2Dashboard({
       </section>
       <section className="v2-analysis-section" id="v2-indicators">
         {head("B", "Structural Indicators", say("일곱 가지 구조 지표", "Seven structural indicators"))}
-        <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={Object.fromEntries(Object.entries(state.bands).filter(([k]) => state.bandSelections[k as keyof typeof state.bands]))} />
+        <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={answeredBands} />
       </section>
       <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="board" />
-      <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
+      <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} bands={answeredBands} />
       <nav
         className="v2-analysis-nav"
         aria-label={say("분석 바로가기", "Analysis navigation")}

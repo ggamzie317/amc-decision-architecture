@@ -1,4 +1,5 @@
 import type { V2Analysis } from "../data/amcV2Analysis";
+import { v2EvidenceLimit, v2EvidenceNature, v2EvidenceNatureLabel } from "../data/v2Readings";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import { v2EvidenceDimensionLabel } from "../data/v2Language";
@@ -34,6 +35,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
           <td data-label={labels[0]}>
             <span className="v2-comparison-reference">{say("근거", "Evidence")} {link.id + 1} / {v2EvidenceDimensionLabel(analysis.language, block.dimension)}</span>
             <p>{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
+            <p className="v2-evidence-scope"><b>{v2EvidenceNatureLabel(v2EvidenceNature(block), analysis.language)}</b>{block.sourceDate ? ` · ${block.sourceDate}` : ""} · {v2EvidenceLimit(block.area, analysis.language)}</p>
             {block.sourceUrl && <a href={block.sourceUrl} target="_blank" rel="noreferrer">{block.sourceLabel} ↗</a>}
           </td>
           <td data-label={labels[1]}>

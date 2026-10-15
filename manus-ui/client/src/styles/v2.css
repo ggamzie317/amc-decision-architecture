@@ -2227,3 +2227,10 @@
 .v2-key-facts { margin: 18px 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .v2-key-facts h3 { margin: 0 0 4px; font-size: 15px; }
 .v2-band-choice-note { display: block; font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.v2-brief-plain { margin: 4px 0 10px; font-size: 13px; opacity: .8; }
+.v2-brief-basis { display: grid; gap: 6px; margin: 10px 0 12px; }
+.v2-brief-basis div { display: grid; grid-template-columns: minmax(140px, 190px) 1fr; gap: 8px; font-size: 13.5px; }
+.v2-brief-basis dt { opacity: .75; }
+.v2-brief-basis dd { margin: 0; font-weight: 600; }
+@media (max-width: 640px) { .v2-brief-basis div { grid-template-columns: 1fr; gap: 0; } }
+.v2-brief.printed > .v2-brief-basis { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }

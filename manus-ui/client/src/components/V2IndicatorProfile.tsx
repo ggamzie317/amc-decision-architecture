@@ -1,6 +1,7 @@
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import { v2BandAnchor } from "../data/v2BandAnchors";
+import { v2ChartQuestion } from "../data/v2Readings";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2BandLevel, v2IndicatorReading, v2Indicators } from "../data/v2Indicators";
 import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
@@ -31,16 +32,19 @@ export default function V2IndicatorProfile({
   return (
     <section className={`v2-indicators${printed ? " printed" : ""}`} data-testid="v2-indicator-profile"
       aria-label={say("구조 지표 프로필", "Structural indicator profile")}>
+      <p className="v2-chart-question">{v2ChartQuestion("indicators", language)}</p>
       <header className="v2-indicators-head">
         <span>{say("지표", "Indicator")}</span>
         <span>{say("내 상태와 전환 기준선", "Your state vs the transition baseline")}</span>
-        <span>{say("해석과 확인 질문", "Reading and check question")}</span>
+        <span>{say("근거 구분과 조건부 해석", "Sources and conditional reading")}</span>
       </header>
       {v2Indicators.map((indicator, index) => {
         const band = core.postureBasis[indicator.key].band;
         const level = v2BandLevel[band] ?? null;
         const state = level === null ? "unknown" : level < indicator.reference ? "gap" : "met";
-        const card = indicator.evidence ? blocks.find(block => indicator.evidence!.test(`${block.headline} ${block.fact}`)) : undefined;
+        const card = indicator.key === "externalValidation" ? blocks[0] : indicator.evidence ? blocks.find(block => indicator.evidence!.test(`${block.headline} ${block.fact}`)) : undefined;
+        const answered = indicator.variable ? bands?.[indicator.variable] : undefined;
+        const anchor = indicator.variable && answered ? v2BandAnchor(indicator.variable, answered, ko) : undefined;
         return (
           <article key={indicator.key} data-state={state}>
             <div className="v2-ind-name">
@@ -58,16 +62,35 @@ export default function V2IndicatorProfile({
                 ))}
               </div>
               <b>{v2t(language, band as V2CopyKey)}</b>
-              {indicator.variable && bands?.[indicator.variable] && v2BandAnchor(indicator.variable, bands[indicator.variable], ko) && (
-                <small className="v2-ind-anchor">{v2BandAnchor(indicator.variable, bands[indicator.variable], ko)}</small>
-              )}
               <small>{state === "gap" ? say("기준선 미달", "Below baseline") : state === "met" ? say("기준선 충족", "Meets baseline") : say("미확인", "Unconfirmed")}</small>
             </div>
             <div className="v2-ind-reading">
-              <p>{v2IndicatorReading(level, indicator.reference, ko)}</p>
-              <p className="v2-ind-question"><b>{say("확인 질문", "Check")}</b>{pick(indicator.question)}</p>
+              {/* Benchmark (CareerLeader): what you said, what public sources show, our reading and what is open stay apart. */}
+              <dl className="v2-ind-sources">
+                <div data-source="you">
+                  <dt>{say("내가 답한 것", "What you said")}</dt>
+                  <dd>{indicator.variable === "externalValidation"
+                    ? say("직접 답하는 항목이 아닙니다 — 공개 근거로만 판단합니다.", "Not a self-reported item — read from public evidence only.")
+                    : answered
+                      ? `${v2t(language, answered as V2CopyKey)}${anchor ? ` — ${anchor}` : ""}`
+                      : say("답하지 않음", "Not answered")}</dd>
+                </div>
+                <div data-source="public">
+                  <dt>{say("공개 근거", "Public evidence")}</dt>
+                  <dd>{card ? v2CustomerEvidenceText(language, card.headline) : say("이 조건에 직접 연결된 공개 근거 없음", "No public evidence tied to this condition")}</dd>
+                </div>
+                <div data-source="reading">
+                  <dt>{say("allofmycareer 해석", "allofmycareer reading")}</dt>
+                  <dd>{v2IndicatorReading(level, indicator.reference, ko)}</dd>
+                </div>
+                <div data-source="open">
+                  <dt>{say("아직 확인할 것", "Still to check")}</dt>
+                  <dd>{pick(indicator.question)}</dd>
+                </div>
+              </dl>
+              <p className="v2-ind-cond"><b>{say("활용되는 조건", "Works when")}</b>{pick(indicator.worksWhen)}</p>
+              <p className="v2-ind-cond weak"><b>{say("약해지는 조건", "Weakens when")}</b>{pick(indicator.weakensWhen)}</p>
               {state !== "met" && <p className="v2-ind-how"><b>{say("보강 방법", "Strengthen")}</b>{pick(indicator.how)}</p>}
-              {card && !printed && <p className="v2-ind-evidence"><b>{say("관련 근거", "Evidence")}</b>{v2CustomerEvidenceText(language, card.headline)}</p>}
             </div>
           </article>
         );

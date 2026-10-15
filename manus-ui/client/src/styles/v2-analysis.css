@@ -1629,3 +1629,49 @@
 .v2-plan-situation li { display: grid; gap: 2px; font-size: 13.5px; }
 .v2-plan-fact { color: var(--muted, #56707b); font-size: 12.5px; }
 .v2-plan-fact b { color: var(--ink, #112b39); margin-left: 4px; }
+.v2-scenario-delta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0; }
+.v2-scenario-delta > div { border: 1px solid var(--line, #d6dedb); border-radius: 8px; padding: 10px 12px; background: #fff; }
+.v2-scenario-delta b { display: block; font-size: 12px; color: var(--muted, #56707b); margin-bottom: 4px; }
+.v2-scenario-delta p { margin: 0; font-size: 13.5px; }
+.v2-chart-question { margin: 0 0 8px; font-size: 13px; color: var(--muted, #56707b); }
+.v2-chart-question::before { content: "Q. "; font-weight: 700; color: var(--c-next, #237f84); }
+.v2-ind-sources { display: grid; gap: 4px; margin: 0 0 8px; }
+.v2-ind-sources > div { display: grid; grid-template-columns: 136px 1fr; gap: 8px; font-size: 13px; line-height: 1.45; }
+.v2-ind-sources dt { color: var(--muted, #56707b); font-weight: 600; }
+.v2-ind-sources dt::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: #9aa9ae; }
+.v2-ind-sources [data-source="public"] dt::before { background: var(--c-figures, #2f6f9f); }
+.v2-ind-sources [data-source="reading"] dt::before { background: var(--c-next, #237f84); }
+.v2-ind-sources [data-source="open"] dt::before { background: var(--c-missing, #b58a1b); }
+.v2-ind-sources dd { margin: 0; }
+.v2-ind-cond { margin: 2px 0; font-size: 12.5px; }
+.v2-ind-cond b { margin-right: 6px; color: #2f7d4f; }
+.v2-ind-cond.weak b { color: #b05a2a; }
+@media (max-width: 640px) { .v2-ind-sources > div { grid-template-columns: 1fr; gap: 0; } }
+@media print { .v2-ind-sources > div { grid-template-columns: 96px 1fr; } }
+.v2-plan-plain { display: block; margin: -2px 0 8px; font-size: 12.5px; color: var(--muted, #56707b); }
+.v2-plan-unknowns { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
+.v2-plan-unknowns li { display: grid; gap: 2px; font-size: 13px; padding-left: 10px; border-left: 3px solid var(--c-missing, #9a5b8a); }
+.v2-plan-unknowns span { color: #33464f; }
+.v2-plan-note { display: block; margin-top: 6px; font-size: 12px; color: var(--muted, #56707b); font-style: italic; }
+.v2-plan-absorb { display: grid; gap: 4px; margin: 8px 0; }
+.v2-plan-absorb div { display: grid; grid-template-columns: 1fr; gap: 0; font-size: 13px; }
+.v2-plan-absorb dt { font-weight: 600; color: #2f7d4f; }
+.v2-plan-absorb div + div dt { color: #b05a2a; }
+.v2-plan-absorb dd { margin: 0; }
+.v2-plan-certainty { display: block; margin: 6px 0; font-size: 12px; color: var(--muted, #56707b); }
+.v2-plan-recheck { display: block; font-size: 12px; color: var(--muted, #56707b); margin-top: 2px; }
+.v2-plan-experiment { margin-top: 14px; border: 1px solid var(--line, #d6dedb); border-left: 4px solid var(--c-next, #237f84); border-radius: 8px; padding: 14px 16px; background: #fff; }
+.v2-plan-experiment h3 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; font-size: 15px; }
+.v2-plan-experiment h3 small { font-weight: 400; font-size: 12.5px; color: var(--muted, #56707b); }
+.v2-plan-experiment dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 0; }
+.v2-plan-experiment dt { font-size: 12px; font-weight: 700; color: var(--c-next, #237f84); }
+.v2-plan-experiment dd { margin: 2px 0 0; font-size: 13.5px; }
+@media (max-width: 640px) { .v2-plan-absorb div { grid-template-columns: 1fr; gap: 0; } }
+.v2-evidence-scope { display: inline-block; margin-top: 4px; font-size: 12px; color: var(--muted, #56707b); }
+.v2-evidence-scope b { color: #33464f; font-weight: 600; }
+figcaption .v2-chart-question, .v2-insight-panel-head .v2-chart-question, .v2-insight-fifwm .v2-chart-question { display: block; font-style: normal; margin: 2px 0 4px; }
+.v2-path-terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin: 12px 0 4px; }
+.v2-path-terms > div { border-top: 2px solid var(--c-next, #237f84); padding-top: 6px; }
+.v2-path-terms dt { font-size: 12px; font-weight: 700; color: var(--c-next, #237f84); }
+.v2-path-terms dd { margin: 2px 0 0; font-size: 13px; }
+.v2-path-alt li small { display: block; color: var(--muted, #56707b); font-size: 12px; margin-top: 2px; }

@@ -5,6 +5,7 @@ import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2EngineSwitches } from "../data/v2EngineSwitches";
 import { v2PostureCoverageNote } from "../data/v2PostureCoverage";
+import { v2PlainQuestion, v2PostureBasisSplit } from "../data/v2Readings";
 import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
 
 /**
@@ -23,8 +24,9 @@ export function v2AmountKeywords(blocks: ExternalIntelligenceV2["evidenceBlocks"
     const source = `${block.headline} ${block.fact}`;
     const match = source.match(amountPattern);
     if (!match) continue;
-    const label = v2CustomerEvidenceText(language, block.headline).replace(amountPattern, "").replace(/[:：,·\s]+$/, "").trim();
-    out.push({ amount: match[0].trim(), label: label.length > 26 ? `${label.slice(0, 25)}…` : label });
+    // Keep the headline whole: cutting the amount out leaves broken Korean ("전형료 이 명시").
+    const label = v2CustomerEvidenceText(language, block.headline).trim();
+    out.push({ amount: match[0].trim(), label: label.length > 44 ? `${label.slice(0, 43)}…` : label });
     if (out.length >= max) break;
   }
   return out;
@@ -71,13 +73,14 @@ export default function V2ExecutiveBrief({
   const switchItem = customerSwitch ?? engineSwitch;
   const firstAction = blocks.find(block => block.action)?.action;
   const coverage = v2PostureCoverageNote(core, language);
+  const basis = v2PostureBasisSplit(core, Object.fromEntries(signalOrder.map(([key, label]) => [key, v2t(language, label)])));
   const cards: { icon: LucideIcon; label: string; keyword: string; detail: string; tone?: "warn" }[] = [
     {
       icon: CircleDollarSign,
       label: say("핵심 숫자", "Key figures"),
       keyword: amounts[0]?.amount ?? say("금액 근거 없음", "No figures yet"),
       detail: amounts.length
-        ? amounts.map(a => `${a.amount} ${a.label}`).join(" · ")
+        ? amounts.map(a => a.label).join(" · ")
         : say("학비·생활비·임금 같은 금액이 확인되면 여기에 표시됩니다.", "Costs, fees or pay appear here once confirmed."),
     },
     {
@@ -114,12 +117,22 @@ export default function V2ExecutiveBrief({
     },
   ];
 
+  const basisList = (basis.supports.length > 0 || basis.limits.length > 0 || basis.unknown.length > 0) ? (
+    <dl className="v2-brief-basis">
+      {basis.supports.length > 0 && <div><dt>{say("이 해석을 지지하는 조건", "What supports this reading")}</dt><dd>{basis.supports.join(" · ")}</dd></div>}
+      {basis.limits.length > 0 && <div><dt>{say("이 해석을 제한하는 조건", "What limits it")}</dt><dd>{basis.limits.join(" · ")}</dd></div>}
+      {basis.unknown.length > 0 && <div><dt>{say("확인되면 달라질 수 있는 조건", "Could change once confirmed")}</dt><dd>{basis.unknown.join(" · ")}</dd></div>}
+    </dl>
+  ) : null;
+
   return (
     <section className={`v2-brief${printed ? " printed" : ""}`} data-testid="v2-executive-brief" aria-label={say("핵심 요약", "Executive brief")}>
       {!cardsOnly && <div className="v2-brief-head">
         <div>
           <p className="v2-kicker">{say("핵심 요약", "Executive brief")} / {analysis.topic}</p>
           <h1>{analysis.posture}</h1>
+          <p className="v2-brief-plain">{v2PlainQuestion("posture", language)}</p>
+          {basisList}
           <p className="v2-brief-coverage" data-coverage={coverage.level}>
             {coverage.text}
           </p>
@@ -129,6 +142,7 @@ export default function V2ExecutiveBrief({
           <strong>{analysis.question}</strong>
         </aside>
       </div>}
+      {cardsOnly && basisList}
       <div className="v2-brief-cards">
         {cards.map(({ icon: Icon, label, keyword, detail, tone }) => (
           <article key={label} data-tone={tone}>
