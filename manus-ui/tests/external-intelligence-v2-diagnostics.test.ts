@@ -164,9 +164,11 @@ describe("V2 provider diagnostics without retaining provider text", () => {
     expect(headers["X-AMC-Evidence-Reason"]).toBe("live");
     expect(headers["X-AMC-Evidence-Stage"]).toBe("ready");
     expect(headers["X-AMC-Evidence-Diagnostic"]).toBe("duplicate_citation");
-    expect(client).toMatchObject({ status: "live", sourceCoverage: "partial",
+    // Owner rule (2026-10-15): a topic that lost a repeated card still counts, so the one
+    // requested area (customerDemand) is covered and the provider confidence reaches the engine.
+    expect(client).toMatchObject({ status: "live", sourceCoverage: "complete", contextConfidence: "high",
       opportunitySignals: [], frictionSignals: [] });
-    expect(client).not.toHaveProperty("contextConfidence");
+    expect(client).not.toHaveProperty("topicConfidence");
     expect(client.evidenceBlocks).toHaveLength(1);
     expect(client.evidenceBlocks[0].fact).toBe(value.evidenceBlocks[0].fact);
     expect(provider).toHaveBeenCalledTimes(1);

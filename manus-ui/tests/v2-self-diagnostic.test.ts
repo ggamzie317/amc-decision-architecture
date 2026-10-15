@@ -95,6 +95,6 @@ describe("V2 case-specific self-diagnostic", () => {
     expect(JSON.stringify(fixture.baseline)).toBe(baseline);
     expect(JSON.stringify(fixture.intelligence)).toBe(source);
     expect(JSON.stringify(buildV2EvidenceRequest(fixture.state))).not.toContain("직무 결과물");
-    expect(updated.factors.every(factor => factor.status === "미확인")).toBe(true);
+    expect(updated.factors.every(factor => factor.status === "확인 전")).toBe(true);
   });
 });

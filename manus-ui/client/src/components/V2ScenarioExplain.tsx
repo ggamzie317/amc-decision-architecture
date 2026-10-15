@@ -24,8 +24,8 @@ const meaning: Record<string, { label: V2CopyKey; what: [ko: string, en: string]
   internalReadiness: { label: "readinessBand", what: ["새 경로가 요구하는 역량과 결과물을 이미 갖춘 정도", "How far you already have the skills and work the new path needs"],
     how: ["요구 역량 중 부족한 것을 하나 골라 결과물(과제·자격·포트폴리오)로 만듭니다.", "Pick one missing requirement and turn it into a work sample, credential or portfolio piece."],
     evidence: /역량|자격|요건|요구|skill|qualif|requirement/i },
-  optionBSupport: { label: "supportBand", what: ["새 경로를 실제로 도와줄 사람·제도·시간", "People, programmes and time that will actually help the new path"],
-    how: ["도와줄 사람과 제도를 이름과 역할까지 구체적으로 확보합니다.", "Secure named people and programmes with specific roles."],
+  optionBSupport: { label: "supportBand", what: ["새 경로를 실제로 도와줄 사람·제도·시간", "People, programs and time that will actually help the new path"],
+    how: ["도와줄 사람과 제도를 이름과 역할까지 구체적으로 확보합니다.", "Secure named people and programs with specific roles."],
     evidence: /장학|지원|후원|scholar|fund|support|sponsor/i },
   constraintLoad: { label: "constraint", what: ["본업·가족·건강 등 동시에 감당해야 하는 부담", "Load from work, family or health you carry at the same time"],
     how: ["일정과 역할을 조정해 새 경로를 준비할 시간을 비워 둡니다.", "Rearrange schedules and roles to free time to prepare for the new path."] },
@@ -35,7 +35,7 @@ const meaning: Record<string, { label: V2CopyKey; what: [ko: string, en: string]
 
 function distance(support: number, ko: boolean) {
   if (support >= 8) return ko ? "전환 판단 기준에 도달" : "At the level needed for a move";
-  if (support <= 1) return ko ? "재정비 판단 기준에 도달" : "At the level that calls for reorganising";
+  if (support <= 1) return ko ? "재정비 판단 기준에 도달" : "At the level that calls for reorganizing";
   const toTransition = 8 - support;
   return ko
     ? toTransition <= 2 ? "전환 판단 기준에 가까움" : "중간 구간 · 현재 계획 유지"
@@ -75,7 +75,7 @@ export default function V2ScenarioExplain({
           ? say("이 변화만으로는 판단 위치가 움직이지 않습니다.", "This change alone does not move the reading.")
           : after > before
             ? say("전환 쪽으로 움직였습니다.", "It moves toward transition.")
-            : say("지키고 재정비하는 쪽으로 움직였습니다.", "It moves toward protecting and reorganising.")}</small>
+            : say("지키고 재정비하는 쪽으로 움직였습니다.", "It moves toward protecting and reorganizing.")}</small>
       </p>
       <ul>
         {changed.map(([key, band]) => {

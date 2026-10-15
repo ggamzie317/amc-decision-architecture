@@ -87,8 +87,8 @@ export function buildV2CanonicalFifwm(
     if (score !== 0 && score !== 1 && score !== 2) continue;
     payload[field.outputField] = score;
     payload[field.outputField.replace(/_Score$/, "_Text")] = language === "ko"
-      ? `고객 자기보고(외부 검증 전): ${canonicalFifwmChoiceLabel(value, language)}.`
-      : `Customer self-report (not externally verified): ${canonicalFifwmChoiceLabel(value, language)}.`;
+      ? `본인 응답 (외부 확인 전): ${canonicalFifwmChoiceLabel(value, language)}.`
+      : `Your answer (not externally checked): ${canonicalFifwmChoiceLabel(value, language)}.`;
     validCount++;
   }
   return validCount

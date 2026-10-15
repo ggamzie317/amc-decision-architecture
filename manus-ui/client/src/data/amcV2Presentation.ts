@@ -7,7 +7,7 @@ type MissingPoint = { point: Bilingual; why: Bilingual };
 // presentation. Wording for the V2 explanation stays outside the core engine.
 const missingByCase: Record<V2CaseType, MissingPoint> = {
   "Corporate Stay vs Exit": {
-    point: ["Unused internal value", "현재 직무에서 아직 활용하지 못한 역량"],
+    point: ["Skills your current role is not using yet", "현재 직무에서 아직 활용하지 못한 역량"],
     why: [
       "Check whether the current role can be redesigned before treating exit as necessary.",
       "퇴사를 결정하기 전에 현재 역할을 재설계할 수 있는지 확인하세요.",
@@ -21,21 +21,21 @@ const missingByCase: Record<V2CaseType, MissingPoint> = {
     ],
   },
   "Overseas Relocation": {
-    point: ["Destination operating fit", "현지에서의 일과 생활"],
+    point: ["Whether life and work there fit", "현지에서의 일과 생활"],
     why: [
       "Check whether work, family and practical living conditions fit at the destination.",
       "목적지의 일·가족·생활 조건이 실제로 맞는지 확인하세요.",
     ],
   },
   Entrepreneurship: {
-    point: ["Repeatable paid demand", "고객의 반복 구매 가능성"],
+    point: ["Customers who pay again", "다시 돈을 내는 고객"],
     why: [
       "Test whether customers will pay repeatedly, beyond initial interest.",
       "초기 관심뿐 아니라 고객이 계속 비용을 지불할지 확인하세요.",
     ],
   },
   "Industry Transition": {
-    point: ["Transferable proof", "새 산업에서도 통하는 기존 성과"],
+    point: ["Results that carry over", "새 산업에서도 통하는 기존 성과"],
     why: [
       "Check whether the target industry recognizes your existing results.",
       "새 산업의 채용 담당자가 기존 성과를 어떻게 평가하는지 확인하세요.",
@@ -52,20 +52,20 @@ const missingByCase: Record<V2CaseType, MissingPoint> = {
     point: ["Recovery before direction", "방향을 정하기 전 필요한 회복"],
     why: [
       "Separate the need to recover from the question of career fit.",
-      "회복의 필요성과 경력 방향의 적합성을 구분해 보세요.",
+      "회복이 필요한 문제와 경력 방향이 맞는지의 문제를 나눠 보세요.",
     ],
   },
   "Family Constraint-heavy Decision": {
-    point: ["Family operating fit", "가족의 일상과 맞는 실행 방법"],
+    point: ["Whether it fits your family's routine", "가족의 일상과 맞는 실행 방법"],
     why: [
       "Test whether the daily family arrangement can support the chosen path.",
       "이 선택을 가족의 일상과 함께 지속할 수 있는지 확인하세요.",
     ],
   },
   "General Career Reconfiguration": {
-    point: ["Proof that carries over to the new path", "새 경로에서도 통할 나의 증거"],
+    point: ["Experience the new field will recognize", "새 분야에서도 인정받을 내 경력"],
     why: [
-      "Check which parts of your experience the new field actually recognises, with real people and published requirements.",
+      "Check which parts of your experience the new field actually recognizes, with real people and published requirements.",
       "지금까지의 경력 중 무엇이 새 분야에서도 인정받는지, 실제 사람과 공개 요건으로 확인하세요.",
     ],
   },
@@ -85,6 +85,13 @@ const evidenceTerms: Bilingual[] = [
     key => [v2t("en", key), v2t("ko", key)] as const
   ),
   ["Missing Point", v2t("ko", "missing")],
+  // Earlier English names of the same concepts, still used in provider prose.
+  ["Unused internal value", "현재 직무에서 아직 활용하지 못한 역량"],
+  ["Destination operating fit", "현지에서의 일과 생활"],
+  ["Repeatable paid demand", "다시 돈을 내는 고객"],
+  ["Transferable proof", "새 산업에서도 통하는 기존 성과"],
+  ["Family operating fit", "가족의 일상과 맞는 실행 방법"],
+  ["Proof that carries over to the new path", "새 분야에서도 인정받을 내 경력"],
 ];
 const evidenceTermLabels = new Map(
   evidenceTerms.map(([english, korean]) => [english.toLowerCase(), korean])

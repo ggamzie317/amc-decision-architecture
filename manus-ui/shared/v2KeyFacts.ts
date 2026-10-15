@@ -78,7 +78,7 @@ const sets: Partial<Record<CaseType, V2KeyFactQuestion[]>> = {
         { id: "employer", label: ["현지 회사를 통해 취업비자 받기", "A work visa through a local employer"], hint: "Route: employer-sponsored work pass.", areas: ["visaMobility"] },
         { id: "transfer", label: ["지금 회사에서 주재원·전보로 가기", "A transfer or posting by my current company"], hint: "Route: intra-company transfer or posting.", areas: ["visaMobility"],
           check: ["전보라면 현지 급여와 체류 비용을 누가 내는지, 돌아올 조건이 문서로 있는지 확인하세요.", "For a transfer, confirm who covers local pay and costs, and whether return terms are in writing."] },
-        { id: "pr", label: ["영주권이나 이민 제도로 가기", "Permanent residence or a migration programme"], hint: "Route: permanent residence; cover the published path and minimum period to PR.", areas: ["visaMobility"],
+        { id: "pr", label: ["영주권이나 이민 제도로 가기", "Permanent residence or a migration program"], hint: "Route: permanent residence; cover the published path and minimum period to PR.", areas: ["visaMobility"],
           check: ["영주권이 목표라면 취업비자에서 영주권까지 가는 공식 경로와 최소 기간을 따로 확인하세요.", "If permanent residence is the goal, check the official path and minimum time from work visa to permanent residence."] },
         { id: "spouse", label: ["배우자·가족 비자로 가기", "A spouse or family visa"], hint: "Route: dependant or family visa; cover work rights for dependants.", areas: ["visaMobility"] },
         { id: "unsure", label: ["아직 정하지 않음", "Not decided yet"] },
@@ -138,7 +138,7 @@ const sets: Partial<Record<CaseType, V2KeyFactQuestion[]>> = {
       question: ["입학은 어디까지 진행됐나요?", "Where are you with admission?"],
       options: [
         { id: "admitted", label: ["합격했음", "I have been admitted"], hint: "The person is admitted: focus on enrolment steps, tuition payment and funding deadlines.", areas: ["funding", "opportunityCost"],
-          check: ["합격했다면 등록 마감일, 학비 납부 일정, 장학금 신청 기한을 먼저 확인하세요.", "If admitted, first check enrolment deadlines, tuition payment dates and funding application dates."] },
+          check: ["합격했다면 등록 마감일, 학비 납부 일정, 장학금 신청 기한을 먼저 확인하세요.", "If admitted, first check enrollment deadlines, tuition payment dates and funding application dates."] },
         { id: "applying", label: ["지원을 준비하거나 지원했음", "Preparing to apply or applied"], hint: "The person is applying: cover admission requirements and deadlines.", areas: ["programOutcomes"] },
         { id: "exploring", label: ["아직 알아보는 중", "Still looking around"] },
       ],

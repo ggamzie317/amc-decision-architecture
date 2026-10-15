@@ -90,8 +90,8 @@ export default function V2PathMap({
         </div>
       )}
       <p className="v2-path-note">{say(
-        "경로는 allofmycareer가 계산한 경로 조정안과 공개 근거로 그렸습니다. 단계 사이의 간격은 배치일 뿐, 점수가 아닙니다.",
-        "Routes come from the path adjustments allofmycareer calculated and from public evidence. The spacing between steps is layout only, not a score."
+        "경로는 allofmycareer가 계산한 경로 조정안과 공개 자료로 그렸습니다. 단계 사이의 간격은 배치일 뿐, 점수가 아닙니다.",
+        "Routes come from the path adjustments allofmycareer calculated and from public sources. The spacing between steps is layout only, not a score."
       )}</p>
     </section>
   );

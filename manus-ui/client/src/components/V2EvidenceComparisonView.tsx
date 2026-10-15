@@ -21,14 +21,14 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
     <p className="v2-analysis-note">{analysis.externalContextReading}</p>
     <ul className="v2-research-coverage" aria-label={say("검색 항목별 근거 범위", "Evidence by research topic")}>
       {analysis.researchCoverage.map(item => <li key={item.area} data-covered={!!item.evidenceIds.length}>
-        <span>{item.title}</span><strong>{item.status === "found" ? say("공개 자료 있음", "Public material found")
+        <span>{item.title}</span><strong>{item.status === "found" ? say("공개 자료 있음", "Public sources found")
           : item.status === "pending" ? say("찾는 중", "Collecting")
             : item.status === "not_searched" ? say("아직 찾지 않음", "Not searched yet")
               : say("찾은 자료 없음", "Nothing usable found")}</strong>
       </li>)}
     </ul>
     {analysis.evidenceLinks.length > 0 ? <>
-      <p id={captionId} className="v2-comparison-caption">{say("공개 자료와 내 근거 비교 · 내가 충족하는지는 외부 확인 전", "Public evidence compared with yours · whether you meet it is not externally checked")}</p>
+      <p id={captionId} className="v2-comparison-caption">{say("공개 자료와 내 근거 비교 · 내가 충족하는지는 외부 확인 전", "Public sources compared with yours · whether you meet them is not externally checked")}</p>
       <table aria-labelledby={captionId}>
       <thead><tr>{labels.map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
       <tbody>{analysis.evidenceLinks.map(link => {
@@ -66,7 +66,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
           <td data-label={labels[2]}><p>{compact ? link.testReference : link.test}</p>{!compact && <small>{link.unresolved}</small>}</td>
         </tr>;
       })}</tbody>
-    </table></> : <p>{say("공개 자료가 확인되면 이 표에서 내 조건과 비교합니다. 확인하지 않은 요건으로 적합성을 판단하지 않습니다.", "Once public evidence is found, this table compares it with your conditions. Requirements that have not been checked are not used to judge fit.")}</p>}
+    </table></> : <p>{say("공개 자료가 확인되면 이 표에서 내 조건과 비교합니다. 확인하지 않은 요건으로 적합성을 판단하지 않습니다.", "Once public sources are found, this table compares them with your conditions. Requirements that have not been checked are not used to judge fit.")}</p>}
     {onChange && <p className="v2-analysis-note">{say("이 답은 본인 응답이며, 점수나 검증 완료로 바뀌지 않습니다. 지금 연 탭에만 남습니다.", "These are your own answers. They do not become scores or a verified mark, and they stay in this tab only.")}</p>}
   </div>;
 }

@@ -12,12 +12,12 @@ const labels: Record<ScenarioVariable, V2CopyKey> = {
   constraintLoad: "constraint",
   externalValidation: "externalValidation",
 };
-// [EN letter, KO letter, property, KO label, EN label]
+// [EN short label, KO short label, property, KO label, EN label]
 const impacts = [
-  ["P", "판", "posture", "현재 판단", "Current reading"],
-  ["S", "안", "safety", "안전 여유", "Safety Margin"],
-  ["C", "경", "changing", "경로 조정", "Path adjustment"],
-  ["N", "확", "nextTest", "다음 확인", "Next check"],
+  ["Reading", "판단", "posture", "현재 판단", "Current reading"],
+  ["Safety", "안전", "safety", "안전 여유 (Safety Margin)", "Safety Margin"],
+  ["Path", "경로", "changing", "경로 조정 (Changing)", "Path options (Changing)"],
+  ["Check", "확인", "nextTest", "다음 확인", "Next check"],
 ] as const;
 export default function V2SensitivityMatrix({
   rows,

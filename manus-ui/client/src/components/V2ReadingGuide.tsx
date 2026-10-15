@@ -9,9 +9,9 @@ export default function V2ReadingGuide({ language, printed = false }: { language
   const steps = ko
     ? [
         "맨 위의 한 줄이 지금 조건에서의 판단입니다. 정답이나 추천이 아닙니다.",
-        "'가장 부족한 조건'과 '놓치기 쉬운 조건'을 먼저 보세요. 판단이 바뀔 수 있는 곳입니다.",
+        "‘가장 부족한 조건’과 ‘놓치기 쉬운 조건’을 먼저 보세요. 판단이 바뀔 수 있는 곳입니다.",
         "예상과 다른 결과가 있다면 그 부분을 가장 먼저 읽어 보세요.",
-        "'다음 30일'에 적힌 한 가지를 해 보면, 무엇을 더 확인해야 할지 분명해집니다.",
+        "‘다음 30일’에 적힌 한 가지를 해 보면, 무엇을 더 확인해야 할지 분명해집니다.",
       ]
     : [
         "The line at the top is the reading under your current conditions. It is not an answer or a recommendation.",

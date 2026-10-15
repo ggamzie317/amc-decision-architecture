@@ -316,7 +316,7 @@ describe("V2 live External Intelligence boundary", () => {
       observe: () => {},
     });
     expect(result.status).toBe("live");
-    expect(sent.input[1].content).toContain("Repeatable paid demand");
+    expect(sent.input[1].content).toContain("Customers who pay again");
     expect(sent.input[1].content).toContain("Customer demand");
     expect(sent.input[1].content).toContain("Pricing");
     expect(sent.input[1].content).toContain("Advisory service");
@@ -430,7 +430,7 @@ describe("V2 live External Intelligence boundary", () => {
       state: f.state, core: f.baseline, intelligence: both, evidencePhase: "live", onReport: () => {},
     }));
     expect(html).toContain("근거 1과 같은 출처");
-    expect(html).toContain("공개 근거 2건(출처 1곳)을");
+    expect(html).toContain("공개 자료 2건(출처 1곳)을");
   });
 
   it("treats no suitable source as unavailable and drops dependent provider summaries", async () => {
@@ -494,7 +494,7 @@ describe("V2 live External Intelligence boundary", () => {
     for (const html of [dashboard, report]) {
       expect(html).toContain("Published: 2026-08-10");
       expect(html).not.toContain("Updated: 2026-10-03");
-      expect(html).toContain("Evidence checked on");
+      expect(html).toContain("Sources checked on");
     }
     const ko = normalizeV2AgentResponse(
       envelope(providerContent("ko"), [
@@ -514,7 +514,7 @@ describe("V2 live External Intelligence boundary", () => {
     );
     expect(koDashboard).toContain("발행일: 2026-08-10");
     expect(koDashboard).not.toContain("갱신일: 2026-10-03");
-    expect(koDashboard).toContain("외부 근거 확인일");
+    expect(koDashboard).toContain("공개 자료 확인일");
   });
 
   it("keeps independently cited accessible cards when another source fails, without retry", async () => {
@@ -891,8 +891,8 @@ describe("V2 live External Intelligence boundary", () => {
         onReport: () => {},
       })
     );
-    expect(demo).toContain("DEMO DATA — NOT LIVE EVIDENCE");
-    expect(demo).not.toContain("Check current evidence");
+    expect(demo).toContain("Demo data — not live evidence");
+    expect(demo).not.toContain("Check public sources");
     const dashboard = renderToStaticMarkup(
       React.createElement(V2Dashboard, {
         state: f.state,
@@ -930,9 +930,9 @@ describe("V2 live External Intelligence boundary", () => {
     expect(dashboard).toContain(live.evidenceBlocks[0].headline);
     expect(report).toContain(live.evidenceBlocks[0].headline);
     expect(report).toContain(live.evidenceBlocks[0].sourceUrl);
-    expect(report).toContain("Evidence checked on");
+    expect(report).toContain("Sources checked on");
     expect(report).toContain("Public source links accessible");
-    expect(report).not.toContain("DEMO DATA — NOT LIVE EVIDENCE");
+    expect(report).not.toContain("Demo data — not live evidence");
     expect(report.match(/class="v2-paper-page"/g) ?? []).toHaveLength(9);
   });
 
@@ -949,10 +949,10 @@ describe("V2 live External Intelligence boundary", () => {
       })
     );
     expect(notChecked).toContain(
-      "Current external evidence has not been checked."
+      "Public sources have not been checked yet."
     );
-    expect(notChecked).toContain("Check current evidence");
-    expect(notChecked).toContain("visible research topic");
+    expect(notChecked).toContain("Check public sources");
+    expect(notChecked).toContain("visible search topic");
     expect(notChecked).toContain(
       "Personal notes and internal financial or readiness conditions are not sent."
     );
@@ -967,12 +967,12 @@ describe("V2 live External Intelligence boundary", () => {
         onReport: () => {},
       })
     );
-    expect(loading).toContain("Checking current public evidence");
+    expect(loading).toContain("Checking current public sources");
     expect(loading).toContain(
       "Searching current public sources for the selected external questions."
     );
     expect(loading).not.toContain("Search has not run.");
-    expect(loading).not.toContain("Check current evidence</button>");
+    expect(loading).not.toContain("Check public sources</button>");
     const korean = v2DemoFixture("entrepreneurship", "ko");
     const koLive = normalizeV2AgentResponse(envelope(providerContent("ko")), {
       ...request,
@@ -1011,7 +1011,7 @@ describe("V2 live External Intelligence boundary", () => {
     );
     expect(koReport).toContain("공개 수요 자료");
     expect(koReport).toContain("고객 수요");
-    expect(koReport).toContain("근거 확인일");
+    expect(koReport).toContain("공개 자료 확인일");
     expect(koReport).not.toContain("데모 자료 — 실시간 근거 아님");
   });
 

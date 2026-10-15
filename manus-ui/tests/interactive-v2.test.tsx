@@ -100,15 +100,15 @@ describe("AMC interactive V2 experience", () => {
   });
   it("uses established Missing Point concepts for all nine case families", () => {
     const concepts = [
-      "Unused internal value",
+      "Skills your current role is not using yet",
       "Alternative access routes",
-      "Destination operating fit",
-      "Repeatable paid demand",
-      "Transferable proof",
+      "Whether life and work there fit",
+      "Customers who pay again",
+      "Results that carry over",
       "Real scope change",
       "Recovery before direction",
-      "Family operating fit",
-      "Proof that carries over to the new path",
+      "Whether it fits your family's routine",
+      "Experience the new field will recognize",
     ];
     caseTypes.forEach((caseType, index) => {
       const state = initialV2State();
@@ -187,7 +187,7 @@ describe("AMC interactive V2 experience", () => {
     expect(visible.length).toBeLessThanOrEqual(4);
     expect(html).toContain("진한 칸: 이 조건만 바꾸면 달라지는 부분");
     expect(html).toContain("되돌릴 수 있는 여지");
-    expect(html).toContain(">판<");
+    expect(html).toContain(">판단<");
   });
   it("prioritizes posture then safety then changing then next-test and diversifies variables", () => {
     const f = v2DemoFixture("industry", "en");
@@ -266,7 +266,7 @@ describe("AMC interactive V2 experience", () => {
       })
     );
     expect(normal).not.toContain("Pilot interest appears uneven");
-    expect(normal).toContain("Current external evidence is not verified.");
+    expect(normal).toContain("Current public sources have not been confirmed.");
   });
   it("deterministically selects four diverse, decision-relevant levers in both demos", () => {
     const examples = {
@@ -431,7 +431,7 @@ describe("AMC interactive V2 experience", () => {
       expect(controls.length).toBeLessThanOrEqual(4);
       expect(rows).not.toHaveLength(7);
       expect(simulator).toContain(
-        language === "ko" ? "핵심 조건 시뮬레이션" : "Key Condition Simulator"
+        language === "ko" ? "핵심 조건 시뮬레이션" : "Key condition simulator"
       );
     }
   });
@@ -496,15 +496,15 @@ describe("AMC interactive V2 experience", () => {
       })
     );
     expect(report).toContain("<h1>Keep the current plan for now</h1>");
-    expect(report).toContain("READING FROM YOUR ANSWERS");
-    expect(report).toContain("HYPOTHETICAL SCENARIO");
+    expect(report).toContain("Reading from your answers");
+    expect(report).toContain("Hypothetical scenario");
     expect(report).toContain(
       "Keep the current plan for now → A stronger case for moving"
     );
     expect(report).toContain(
       "This shows a changed condition only. It is not new evidence."
     );
-    expect(report).toContain("Current external evidence is not verified.");
+    expect(report).toContain("Current public sources have not been confirmed.");
     const switches = Array.from(
       report.matchAll(
         /data-testid="v2-report-switch" data-variable="([^"]+)"/g
@@ -529,8 +529,8 @@ describe("AMC interactive V2 experience", () => {
     expect(v2ExternalOptions("Industry Transition")).toEqual(
       v2Choices.careerExternal
     );
-    expect(v2t("ko", "posture")).toBe("현재 구조 판단");
-    expect(v2t("ko", "missing")).toBe("아직 확인할 핵심 조건");
+    expect(v2t("ko", "posture")).toBe("현재 판단");
+    expect(v2t("ko", "missing")).toBe("놓치기 쉬운 조건");
     expect(v2t("ko", "scenarioPlausibility")).toBe("시나리오 현실성");
     expect(v2CaseLabel("ko", "Entrepreneurship")).toBe("창업");
     expect(v2FamilyLabel("ko", "resource")).toBe("자원 조정");
@@ -580,9 +580,9 @@ describe("AMC interactive V2 experience", () => {
     );
     expect(intelligence.status).toBe("unavailable");
     expect(intelligence.evidenceBlocks).toEqual([]);
-    expect(html).toContain("Current external evidence is not verified.");
+    expect(html).toContain("Current public sources have not been confirmed.");
     expect(html).not.toContain("Pilot interest appears uneven");
-    expect(html).not.toContain("DEMO DATA");
+    expect(html).not.toContain("Demo data");
   });
   it("gates synthetic evidence behind explicit demo mode and provenance", () => {
     const fixture = v2DemoFixture("entrepreneurship", "en");
@@ -605,8 +605,8 @@ describe("AMC interactive V2 experience", () => {
         onReport: () => {},
       })
     );
-    expect(html).toContain("DEMO DATA — NOT LIVE EVIDENCE");
-    expect(html).toContain("Synthetic scenario fixture");
+    expect(html).toContain("Demo data — not live evidence");
+    expect(html).toContain("Example data");
     expect(html).toContain('data-provenance="EXTERNAL_EVIDENCE"');
   });
   it("creates two complete demo fixtures with baseline, scenario and all seven sensitivity variables", () => {
@@ -689,14 +689,14 @@ describe("AMC interactive V2 experience", () => {
       })
     );
     expect(normal.match(/class="v2-paper-page"/g) || []).toHaveLength(8);
-    expect(normal).toContain("Transferable proof");
+    expect(normal).toContain("Results that carry over");
     expect(normal).toContain("Income · Network ↔ Growth · Learning");
     expect(normal).toContain("Risk you take on");
     expect(normal).toContain("allofmycareer</div>");
     expect(normal.match(/data-testid="v2-sensitivity-row"/g)).toHaveLength(4);
     expect(demo.match(/class="v2-paper-page"/g) || []).toHaveLength(9);
-    expect(normal).not.toContain("Synthetic scenario fixture");
-    expect(demo).toContain("DEMO DATA — NOT LIVE EVIDENCE");
+    expect(normal).not.toContain("Example data");
+    expect(demo).toContain("Demo data — not live evidence");
   });
   it("projects V2 founder data to bounded structural fields, dropping private prose", () => {
     const patch = projectInteractivePatch({

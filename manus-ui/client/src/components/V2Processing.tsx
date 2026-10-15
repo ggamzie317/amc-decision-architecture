@@ -42,8 +42,8 @@ export function v2ProcessingFailureKind(
 
 const failureCopy: Record<FailureKind, [en: string, ko: string]> = {
   no_evidence: [
-    "The search ran, but it found no public source that could be cited for this exact target and geography. Nothing was filled in with general statements. A more specific institution, program or role name may change the result.",
-    "검색은 실행되었지만, 입력한 대상과 지역에 대해 출처로 인용할 수 있는 공개 자료를 찾지 못했습니다. 일반론으로 대신 채우지 않았습니다. 기관명·과정명·직무명을 더 구체적으로 입력하면 결과가 달라질 수 있습니다.",
+    "The search ran, but it found no public source that could be cited for this exact target and place. Nothing was filled in with general statements. A more specific institution, program or role name may change the result.",
+    "검색은 실행되었지만, 입력한 대상과 지역으로는 인용할 수 있는 공개 자료를 찾지 못했습니다. 일반론으로 대신 채우지 않았습니다. 기관명·과정명·직무명을 더 구체적으로 입력하면 결과가 달라질 수 있습니다.",
   ],
   sources: [
     "Sources were found, but none could be opened and checked as public pages, so they were not used as evidence.",
@@ -67,11 +67,11 @@ type StepState = "done" | "running" | "pending" | "failed";
 
 /** The five structural lenses, in the customer wording defined by the report spec. */
 const lenses: { icon: LucideIcon; title: [string, string]; question: [string, string] }[] = [
-  { icon: Landmark, title: ["Conditions of the opportunity", "기회의 조건"], question: ["Who decides, and on what formal terms?", "누가, 어떤 공식 조건으로 결정하는가"] },
-  { icon: Users, title: ["Connection", "연결 가능성"], question: ["Who would actively support your success?", "누가 성공을 실제로 도와줄 수 있는가"] },
-  { icon: Building2, title: ["Structural fit", "구조 적합성"], question: ["How stable is the structure you would enter?", "들어갈 구조는 얼마나 안정적인가"] },
-  { icon: Workflow, title: ["Execution reality", "실행 현실성"], question: ["Can the day-to-day work actually be sustained?", "일상의 업무를 실제로 지속할 수 있는가"] },
-  { icon: TrendingUp, title: ["Staying power", "버틸 수 있는가"], question: ["How much could policy and market shocks shake it?", "정책·시장 변화에 얼마나 흔들리는가"] },
+  { icon: Landmark, title: ["Conditions of the opportunity", "기회의 조건"], question: ["Who decides, and on what formal terms?", "누가 어떤 조건으로 결정하나요?"] },
+  { icon: Users, title: ["Connection", "연결 가능성"], question: ["Who would actively support your success?", "누가 실제로 성공을 도와줄 수 있나요?"] },
+  { icon: Building2, title: ["Structural fit", "구조 적합성"], question: ["How stable is the structure you would enter?", "들어갈 조직은 얼마나 안정적인가요?"] },
+  { icon: Workflow, title: ["Execution reality", "실행 현실성"], question: ["Can the day-to-day work actually be sustained?", "매일의 업무를 실제로 이어 갈 수 있나요?"] },
+  { icon: TrendingUp, title: ["Staying power", "버틸 수 있는가"], question: ["How much could policy and market shocks shake it?", "정책·시장 변화에 얼마나 흔들리나요?"] },
 ];
 
 // Same customer labels as v2Language (tradeoff, missing, posture, safety,
@@ -137,11 +137,11 @@ export default function V2Processing({
   return (
     <main className="v2-processing" data-testid="v2-processing" data-processing-state={running ? "running" : "failed"}>
       <section className="v2-processing-status" aria-live="polite" aria-busy={running}>
-        <p className="v2-kicker">{say("공개 근거 분석", "Public evidence analysis")}</p>
+        <p className="v2-kicker">{say("공개 자료 분석", "Public source analysis")}</p>
         <h1>
           {running
-            ? say("공개 근거를 검색하고 출처를 확인하고 있습니다", "Searching public evidence and checking sources")
-            : say("이번 검색에서는 쓸 수 있는 공개 근거를 찾지 못했습니다", "This search found no public evidence we could use")}
+            ? say("공개 자료를 검색하고 출처를 확인하고 있습니다", "Searching public sources and checking them")
+            : say("이번 검색에서는 쓸 수 있는 공개 자료를 찾지 못했습니다", "This search found no public sources we could use")}
         </h1>
         <ol className="v2-processing-steps">
           {steps.map(({ icon: Icon, label, detail, state }) => (
@@ -189,8 +189,8 @@ export default function V2Processing({
             <p className="v2-processing-failure" data-failure-kind={kind}>{failureCopy[kind][ko ? 1 : 0]}</p>
             <p className="v2-guidance">
               {say(
-                "다시 검색하거나 검색 대상을 고칠 수 있습니다. 외부 근거 없이 구조 초안을 볼 수도 있으며, 이때 결과에 '구조 초안'으로 표시됩니다.",
-                "You can search again or edit the search target. You can also view a structural draft without public evidence. It will be marked as a draft."
+                "다시 검색하거나 검색 대상을 고칠 수 있습니다. 검색 없이 본 초안을 볼 수도 있으며, 이때 결과에 ‘검색 없이 본 초안’으로 표시됩니다.",
+                "You can search again or edit the search target. You can also see a draft without public search. It will be marked as a draft."
               )}
             </p>
             <div className="v2-module-nav">
@@ -198,7 +198,7 @@ export default function V2Processing({
                 {say("검색 대상 수정", "Edit search target")}
               </button>
               <button type="button" onClick={onDraft}>
-                {say("외부 근거 없는 구조 초안 보기", "View structural draft without public evidence")}
+                {say("검색 없이 본 초안 보기", "See draft without public search")}
               </button>
               <button type="button" className="v2-primary" onClick={onRetry}>
                 {say("다시 검색", "Search again")}
@@ -209,7 +209,7 @@ export default function V2Processing({
       </section>
 
       <aside className="v2-processing-method" aria-label={say("allofmycareer 분석 방법", "How allofmycareer analyzes")}>
-        <p className="v2-kicker">Structure First</p>
+        <p className="v2-kicker">{say("구조부터 보는 커리어 결정 분석", "Structure First")}</p>
         <h2>{say("정답을 대신 고르지 않습니다. 선택의 구조를 드러냅니다.", "We do not choose for you. We make the structure of the choice visible.")}</h2>
         <p>
           {say(
@@ -238,11 +238,11 @@ export default function V2Processing({
           {outputs.map((key, i) => (
             <li key={key}><span>{String(i + 1).padStart(2, "0")}</span>{v2t(language, key)}</li>
           ))}
-          <li><span>07</span>{say("다음에 확인할 것과 30·60·90일 계획", "Next check and a 30/60/90-day plan")}</li>
+          <li><span>07</span>{say("다음 확인과 30·60·90일 확인", "Next check and a 30/60/90-day check")}</li>
         </ol>
         <p className="v2-method-note">
           {say(
-            "공개 근거는 검증 가능한 출처가 있을 때만 사용합니다. 작성하신 원문은 저장하지 않습니다.",
+            "공개 자료는 확인할 수 있는 출처가 있을 때만 사용합니다. 작성하신 원문은 저장하지 않습니다.",
             "Public evidence is used only with a verifiable source. Your written answers are not stored."
           )}
         </p>

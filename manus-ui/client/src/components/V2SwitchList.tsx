@@ -87,8 +87,8 @@ export default function V2SwitchList({
                     : "This assumes you have actually confirmed your fit and real demand. Reading public sources alone does not meet it."
                   : postureSame
                     ? ko
-                      ? "이 조건 하나만 바뀌어서는 현재 판단이 달라지지 않습니다. 준비도, 제약, 되돌아올 여유도 함께 확인하세요."
-                      : "This condition alone does not change the current reading. Check readiness, constraints and room to absorb a setback as well."
+                      ? "이 조건 하나만 바뀌어서는 현재 판단이 달라지지 않습니다. 실행 준비도, 생활 속 제약, 돌아올 길도 함께 확인하세요."
+                      : "This condition alone does not change the current reading. Check readiness, life constraints and the way back as well."
                     : ko
                       ? "이 조건이 달라진다면 판단이 이렇게 바뀐다는 계산입니다. 실제로 움직이기 전에 이 조건이 사실인지 확인하세요."
                       : "This shows how the reading would change if this condition were different. Before acting, check that the condition is real."}

@@ -202,7 +202,7 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
     expect(a.evidenceLinks[0].conditionGroup).toBe("public");
     expect(a.findings[1].evidenceIds).toEqual([]);
     expect(a.findings[1].implication).not.toContain("통계의 총량");
-    expect(a.factors.every(factor => factor.status === "미확인")).toBe(true);
+    expect(a.factors.every(factor => factor.status === "확인 전")).toBe(true);
   });
 
   it("distinguishes accessible source coverage from unanswered research questions", () => {
@@ -216,16 +216,16 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
     // Customer picks first, then the case's standard topics that were also researched.
     expect(a.researchCoverage.slice(0, 2).map(item => [item.area, item.evidenceIds])).toEqual([["customerDemand", []], ["regulation", [0]]]);
     expect(a.researchCoverage.map(item => item.area)).toEqual(expect.arrayContaining(["competition", "pricing"]));
-    expect(a.summary).toContain("대응하는 공개 근거는 없습니다");
-    expect(a.missingConcept).toContain("반복 구매");
+    expect(a.summary).toContain("맞는 공개 자료는 찾지 못했습니다");
+    expect(a.missingConcept).toContain("다시 돈을 내는 고객");
   });
 
   it("shows original unassessed scope for all nine cases instead of replacing the canonical questions", () => {
     for (const caseType of caseTypes) {
       const state = { ...initialV2State("ko"), caseType };
       const a = buildV2Analysis(state, buildProductApplicationV3(buildV2Input(state)), unavailableIntelligence(caseType, "ko"));
-      expect(a.factors.every(item => item.status === "미확인")).toBe(true);
-      expect(a.factorScopeNote).toMatch(/원본|조직·직무|사례 맞춤 구조 평가/);
+      expect(a.factors.every(item => item.status === "확인 전")).toBe(true);
+      expect(a.factorScopeNote).toMatch(/회사와 직무|이 결정에 맞춘 다섯 가지 질문/);
       expect(a.factors.map(item => item.title)).toEqual(["기회의 조건", "연결 가능성", "구조 적합성", "실행 현실성", "버틸 수 있는가"]);
     }
   });

@@ -162,7 +162,7 @@ export default function V2Report({
     <section className="v2-paper-page" data-page={n}>
       <header>
         <span>
-          allofmycareer <i>/</i> Decision Brief
+          allofmycareer <i>/</i> {say("결정 보고서", "Decision report")}
         </span>
         <span>
           {say("섹션", "Section")} {String(n).padStart(2, "0")} / {hasSources ? "09" : "08"}
@@ -178,7 +178,7 @@ export default function V2Report({
       <footer>
         <span>allofmycareer</span>
         <span>
-          {draft ? `${say("구조 초안", "Structural draft")} · ` : ""}
+          {draft ? `${say("검색 없이 본 초안", "Draft without public search")} · ` : ""}
           {evidenceLabel}
         </span>
       </footer>
@@ -266,8 +266,8 @@ export default function V2Report({
         <span>
           {draft
             ? say(
-                "구조 초안 / 공개 근거 확인 전",
-                "Structural draft / public evidence not yet checked"
+                "검색 없이 본 초안 / 공개 자료 확인 전",
+                "Draft without public search / public sources not yet checked"
               )
             : t("report")}
         </span>
@@ -277,7 +277,7 @@ export default function V2Report({
       </div>
       {page(
         1,
-        "Executive Overview",
+        say("핵심 요약", "Summary"),
         analysis.topic,
         <>
           <div className="v2-cover">
@@ -285,12 +285,12 @@ export default function V2Report({
               <p>
                 {draft
                   ? say(
-                      "구조 초안 · 공개 근거 확인 전",
-                      "Structural draft · public evidence not yet checked"
+                      "검색 없이 본 초안 · 공개 자료 확인 전",
+                      "Draft without public search · public sources not yet checked"
                     )
                   : evidenceLabel}
               </p>
-              <p>{t("baselineReading")}</p>
+              <p>{say("답한 내용으로 본 판단", "Reading from your answers")}</p>
               <h1>{analysis.posture}</h1>
               <p className="v2-posture-coverage" data-coverage={core.postureEvidenceCoverage}>
                 {v2PostureCoverageNote(core, state.language).text}
@@ -311,7 +311,7 @@ export default function V2Report({
               <h3>{analysis.question}</h3>
             </article>
             <article>
-              <span>02 / Safety Margin</span>
+              <span>02 / {say("안전 여유 (Safety Margin)", "Safety Margin")}</span>
               <h3>{t(core.safetyMargin.band)}</h3>
               <p>{analysis.boundary}</p>
             </article>
@@ -331,7 +331,7 @@ export default function V2Report({
       )}
       {page(
         2,
-        "Structural Reading",
+        say("판단 이유", "Why this reading"),
         say("지금 이렇게 판단한 이유", "Why this is the current reading"),
         <>
           <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={answeredBands} printed />
@@ -359,10 +359,10 @@ export default function V2Report({
       )}
       {page(
         3,
-        "External Evidence × Current Conditions",
+        say("공개 자료와 내 조건", "Public sources and your conditions"),
         say(
           "공개 자료와 내 조건 비교",
-          "Public evidence compared with your conditions"
+          "Public sources compared with your conditions"
         ),
         <>
           <div className="v2-paper-band">
@@ -383,16 +383,16 @@ export default function V2Report({
             <div className="v2-paper-note">
               <strong>
                 {say(
-                  "공개 근거를 아직 확인하지 않았습니다",
-                  "Public evidence not yet checked"
+                  "공개 자료를 아직 확인하지 않았습니다",
+                  "Public sources not yet checked"
                 )}
               </strong>
               <p>{analysis.question}</p>
               <p>{analysis.experiment.action}</p>
               <p>
                 {say(
-                  "대시보드에서 공개 근거를 확인한 뒤 이 리포트를 다시 열면, 같은 답변으로 다시 만들어집니다.",
-                  "Check public evidence on the dashboard, then reopen this report. It is rebuilt from the same answers."
+                  "대시보드에서 공개 자료를 확인한 뒤 이 보고서를 다시 열면, 같은 답변으로 다시 만들어집니다.",
+                  "Check public sources on the dashboard, then reopen this report. It is rebuilt from the same answers."
                 )}
               </p>
             </div>
@@ -401,7 +401,7 @@ export default function V2Report({
       )}
       {page(
         4,
-        "Decision Map / Decision Structure",
+        say("결정 지도", "Decision map"),
         say("갈 수 있는 경로와 목표 쪽 여건", "Possible paths and conditions on the target side"),
         <>
           <V2PathMap language={state.language} state={state} core={core} analysis={analysis} intelligence={intelligence} />
@@ -416,7 +416,7 @@ export default function V2Report({
       )}
       {page(
         5,
-        "Safety Margin",
+        say("안전 여유 (Safety Margin)", "Safety Margin"),
         say(
           "계획대로 되지 않아도 버틸 수 있나요?",
           "Could you absorb it if the plan does not work out?"
@@ -435,7 +435,7 @@ export default function V2Report({
       )}
       {page(
         6,
-        "Changing / Next Experiment",
+        say("경로 조정 (Changing) · 다음 확인", "Path options (Changing) · Next check"),
         say(
           "목표는 그대로 두고 방법 바꾸기",
           "Keep the goal, change how you get there"
@@ -447,13 +447,13 @@ export default function V2Report({
       )}
       {page(
         7,
-        "Interactive Scenario / Sensitivity",
+        say("조건이 바뀌면", "If conditions change"),
         t("scenarioSensitivity"),
         <>
           <div className="v2-paper-band">
-            <span>{t("baselineReading")}</span>
+            <span>{say("답한 내용으로 본 판단", "Reading from your answers")}</span>
             <strong>
-              {analysis.posture} / Safety Margin: {t(core.safetyMargin.band)}
+              {analysis.posture} / {say("안전 여유 (Safety Margin)", "Safety Margin")}: {t(core.safetyMargin.band)}
             </strong>
             <p>{t("sensitivityIntro")}</p>
           </div>
@@ -492,10 +492,10 @@ export default function V2Report({
       )}
       {page(
         8,
-        "Switching / 30–60–90-Day Validation",
+        say("판단이 바뀌는 조건 (Switching) · 30·60·90일 확인", "What would change the reading (Switching) · 30/60/90-day check"),
         say(
           "판단이 바뀌는 조건과 30·60·90일 확인 계획",
-          "What would change the reading, and a 30–60–90-day check plan"
+          "What would change the reading, and a 30/60/90-day check plan"
         ),
         <>
           <V2SwitchList
@@ -527,7 +527,7 @@ export default function V2Report({
       {hasSources &&
         page(
           9,
-          "Sources / Scope / Decision Context",
+          say("출처와 범위", "Sources and scope"),
           t("sourceNotes"),
           <>
             <p className="v2-paper-caption">
@@ -548,8 +548,8 @@ export default function V2Report({
             <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} bands={answeredBands} printed />
             <h3 className="v2-reference-title">{say("출처 원문", "Original sources")}</h3>
             <p className="v2-paper-caption">
-              {say("본문의 근거 문장은 화면 언어로 옮겨 적었습니다. 정확한 표현과 범위는 아래 원문에서 확인하세요.",
-                "Evidence in the report is written in the interface language. Check the exact wording and scope in the originals below.")}
+              {say("본문의 근거 문장은 한국어로 옮겨 적었습니다. 정확한 표현과 범위는 아래 원문에서 확인하세요.",
+                "Evidence in the report is written in English. Check the exact wording and scope in the originals below.")}
             </p>
             <ol className="v2-source-references">
               {intelligence.evidenceBlocks.map((b, id) => (

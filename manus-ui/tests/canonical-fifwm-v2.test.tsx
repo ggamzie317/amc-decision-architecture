@@ -86,7 +86,7 @@ describe("canonical Python FIFWM in the private browser intake", () => {
       expect(html).toContain("이번 평가 질문: 조직 개편·리더십 변화");
       expect(html).toContain("조직 개편·리더십 변화");
       expect(html).toContain("큰 변화가 여러 차례 있었음");
-      expect(html).toContain("고객 자기보고(외부 검증 전)");
+      expect(html).toContain("본인 응답 (외부 확인 전)");
     }
     const english = buildProductApplicationV3(buildV2Input(v2DemoFixture("industry", "en").state));
     const englishHtml = renderToStaticMarkup(React.createElement(V2Dashboard, {
