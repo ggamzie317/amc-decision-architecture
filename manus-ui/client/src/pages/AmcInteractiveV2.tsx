@@ -12,7 +12,8 @@ import {
   projectInteractivePatch,
   v2Identity,
 } from "../../../shared/interactivePrivacy";
-import { trackV2Journey, type JourneyEventType, type JourneyTrackingObservation } from "../data/amcFounderOps";
+import { activeAmcSubmissionId, trackV2Journey, type JourneyEventType, type JourneyTrackingObservation } from "../data/amcFounderOps";
+import { v2FeedbackMailto } from "../data/v2Feedback";
 import {
   initialV2State,
   v2Choices,
@@ -1354,6 +1355,21 @@ export default function AmcInteractiveV2() {
             }}
           />
         </>
+      )}
+      {phase === "dashboard" && !demoMode && (
+        // Launch-test feedback: opens the tester's own email to the product inbox.
+        // Nothing is stored or sent by the app; only the record ID is pre-filled.
+        <section className="v2-feedback" aria-label={language === "ko" ? "테스트 의견 보내기" : "Send test feedback"}>
+          <div>
+            <strong>{language === "ko" ? "써 보신 의견을 들려주세요" : "Tell us how it worked for you"}</strong>
+            <p>{language === "ko"
+              ? "도움이 된 부분, 이해하기 어려웠던 부분, 빠졌다고 느낀 근거를 알려 주세요. 메일 앱이 열리며, 보내기 전까지 아무것도 전송되지 않습니다."
+              : "What helped, what was hard to follow, and which evidence felt missing. Your email app opens; nothing is sent until you send it."}</p>
+          </div>
+          <a className="v2-primary v2-feedback-link" href={v2FeedbackMailto(language, activeAmcSubmissionId("interactive-v2"))}>
+            {language === "ko" ? "의견 보내기 ↗" : "Send feedback ↗"}
+          </a>
+        </section>
       )}
       {phase !== "report" && (
         <footer className="v2-site-footer">

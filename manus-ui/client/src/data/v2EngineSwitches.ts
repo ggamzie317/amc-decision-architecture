@@ -1,3 +1,4 @@
+import { withKoreanParticle } from "./koreanParticle";
 import type { ProductApplicationBuildInput, ProductApplicationV3 } from "./amcProductApplicationV3";
 import { baselineBands, evaluateScenario, type ScenarioOverrides } from "./amcScenario";
 import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
@@ -62,7 +63,7 @@ export function v2EngineSwitches(
           ? `${label}: ${v2t(language, current as V2CopyKey)} → ${v2t(language, move.band as V2CopyKey)}`
           : `${label}: ${v2t(language, current as V2CopyKey)} → ${v2t(language, move.band as V2CopyKey)}`,
         direction: ko
-          ? `구조 판단이 '${scenario.currentStructuralPosture.label}'(으)로 바뀝니다`
+          ? `구조 판단이 ${withKoreanParticle(`'${scenario.currentStructuralPosture.label}'`, "으로/로")} 바뀝니다`
           : `The structural reading becomes '${scenario.currentStructuralPosture.label}'`,
       });
     }
@@ -107,7 +108,7 @@ function pairSwitches(
           improves,
           signal: `${part(a, bandA)} + ${part(b, bandB)}`,
           direction: ko
-            ? `두 조건이 함께 바뀌면 구조 판단이 '${scenario.currentStructuralPosture.label}'(으)로 바뀝니다`
+            ? `두 조건이 함께 바뀌면 구조 판단이 ${withKoreanParticle(`'${scenario.currentStructuralPosture.label}'`, "으로/로")} 바뀝니다`
             : `If both change, the structural reading becomes '${scenario.currentStructuralPosture.label}'`,
         });
       }
