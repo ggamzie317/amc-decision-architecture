@@ -41,7 +41,7 @@ function writePersonal(key: string, value: Personal) {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode: keep in memory only */ }
 }
 
-export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2TraceSnapshot; recordId?: string | null }) {
+export default function V2DecisionTrace({ snapshot, recordId, printBlocked = false }: { snapshot: V2TraceSnapshot; recordId?: string | null; printBlocked?: boolean }) {
   const ko = snapshot.language === "ko";
   const say = (k: string, e: string) => (ko ? k : e);
   // Without a record ID, key by the decision itself so one analysis never shows another's notes.
@@ -92,6 +92,7 @@ export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2Tr
     setPersonal(emptyPersonal);
   };
   const print = () => {
+    if (printBlocked) return;
     document.body.classList.add("v2-trace-printing");
     const done = () => { document.body.classList.remove("v2-trace-printing"); window.removeEventListener("afterprint", done); };
     window.addEventListener("afterprint", done);
@@ -109,7 +110,7 @@ export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2Tr
         </div>
         <div className="v2-trace-actions" data-trace-control>
           <button type="button" onClick={exportHtml}><Download aria-hidden size={15} />{say("파일로 저장", "Save as file")}</button>
-          <button type="button" onClick={print}><Printer aria-hidden size={15} />{say("인쇄·PDF", "Print / PDF")}</button>
+          <button type="button" onClick={print} disabled={printBlocked}><Printer aria-hidden size={15} />{printBlocked ? say("근거 수집 중", "Collecting evidence") : say("인쇄·PDF", "Print / PDF")}</button>
           <button type="button" onClick={clearPersonal}><Trash2 aria-hidden size={15} />{say("메모 모두 지우기", "Clear my notes")}</button>
         </div>
       </header>

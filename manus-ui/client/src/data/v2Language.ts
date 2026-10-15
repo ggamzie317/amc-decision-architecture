@@ -165,6 +165,8 @@ export const v2Copy = {
   openReport: ["Open report", "보고서 보기"],
   closeReport: ["Back to dashboard", "대시보드로 돌아가기"],
   print: ["Print / save PDF", "PDF로 저장·인쇄"],
+  evidenceCollecting: ["Collecting evidence", "근거 수집 중"],
+  retryFailedTopics: ["Search the failed topics again", "실패한 주제만 다시 검색"],
   context: ["What you told us", "입력한 내용"],
   reading: ["What your conditions show", "지금 조건으로 본 해석"],
   implication: ["Decision implication", "판단에 주는 의미"],

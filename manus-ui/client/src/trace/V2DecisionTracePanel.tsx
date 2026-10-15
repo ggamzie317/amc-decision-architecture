@@ -24,11 +24,12 @@ export default function V2DecisionTracePanel(props: {
   evidencePhase?: V2EvidencePhase;
   evidenceLanguage?: V2State["language"];
   recordId?: string | null;
+  printBlocked?: boolean;
 }) {
   const { state, input, core, intelligence, sensitivity, selfChecks, comparisons, evidencePhase = intelligence.status, evidenceLanguage = state.language } = props;
   const snapshot = useMemo(() => buildV2TraceSnapshot({
     state, input, core, intelligence, sensitivity,
     analysis: buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage),
   }), [state, input, core, intelligence, sensitivity, selfChecks, comparisons, evidencePhase, evidenceLanguage]);
-  return <V2DecisionTrace snapshot={snapshot} recordId={props.recordId} />;
+  return <V2DecisionTrace snapshot={snapshot} recordId={props.recordId} printBlocked={props.printBlocked} />;
 }

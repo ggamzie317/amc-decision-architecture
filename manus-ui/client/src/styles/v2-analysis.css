@@ -1525,6 +1525,17 @@
   color: var(--teal); background: #e8f2f1; border: 1px solid #b9d6d3;
 }
 .v2-analysis-dashboard > .v2-analysis-status.draft { color: #8f4f1c; background: #fbf1e6; border-color: #e3c4a3; }
+.v2-analysis-dashboard > .v2-retry-failed {
+  margin-left: 10px;
+  border: 1px solid var(--teal);
+  background: var(--navy);
+  color: white;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.v2-analysis-dashboard > .v2-retry-failed:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 
 /* Polish: compact label | content rows and consistent section headings. */
 .v2-changing-analysis dl { display: grid; gap: 0; margin: 8px 0 0; }

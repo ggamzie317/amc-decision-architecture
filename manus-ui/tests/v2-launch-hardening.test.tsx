@@ -90,12 +90,14 @@ describe("results do not open before the explicit evidence analysis settles", ()
 
   it("dashboard_generated is only emitted when results actually open", () => {
     const emitters = source.split('"dashboard_generated"').length - 1;
-    expect(emitters).toBe(2); // openDashboard() and the currentStage value inside it
+    expect(emitters).toBe(2); // recordDashboard() and the currentStage value inside it
     const runBody = source.slice(source.indexOf("const runEvidenceAnalysis"), source.indexOf("const finish = "));
     expect(runBody.indexOf('setPhase("processing")')).toBeGreaterThan(-1);
     expect(runBody.indexOf('setPhase("processing")')).toBeLessThan(runBody.indexOf("await checkCurrentEvidence("));
-    // Results open when the first topic with usable evidence arrives (or at the end if live).
-    expect(runBody).toContain('openDashboard(firstLive.input, firstLive.core, "live")');
+    // Results may open at the first usable topic, but dashboard_generated is
+    // recorded only after every topic has settled (after the await).
+    expect(runBody).not.toContain("openDashboard(");
+    expect(runBody.indexOf('recordDashboard(outcome.input, outcome.core, "live")')).toBeGreaterThan(runBody.indexOf("await checkCurrentEvidence("));
     expect(runBody).toContain('outcome?.result.status === "live"');
   });
 
