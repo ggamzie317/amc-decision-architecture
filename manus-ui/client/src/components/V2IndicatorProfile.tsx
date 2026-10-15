@@ -61,7 +61,7 @@ export default function V2IndicatorProfile({
                   <i key={step} data-on={level !== null && step <= level} data-baseline={step === indicator.reference} />
                 ))}
               </div>
-              <b>{v2t(language, band as V2CopyKey)}</b>
+              <b>{indicator.key === "externalValidation" && band === "unknown" ? say("근거 확인 전", "Not yet established") : v2t(language, band as V2CopyKey)}</b>
               <small>{state === "gap" ? say("기준선 미달", "Below baseline") : state === "met" ? say("기준선 충족", "Meets baseline") : say("미확인", "Unconfirmed")}</small>
             </div>
             <div className="v2-ind-reading">
