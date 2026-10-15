@@ -110,6 +110,12 @@ export default function V2Report({
     (evidencePhase === "live" && intelligence.status === "live") ||
     (evidencePhase === "demo" && intelligence.status === "demo");
   const draft = !hasSources;
+  // A public search ran and ended without a usable source; the customer then chose the draft.
+  // It must not read as "no search was run".
+  const searchFailed = evidencePhase === "unavailable";
+  const draftStatus = searchFailed
+    ? t("evidenceUnavailable")
+    : say("공개 자료 확인 전", "public sources not yet checked");
   const evidenceLabel = t(
     evidencePhase === "live"
       ? "liveEvidence"
@@ -265,10 +271,7 @@ export default function V2Report({
         <button onClick={onClose}>{t("closeReport")}</button>
         <span>
           {draft
-            ? say(
-                "검색 없이 본 초안 / 공개 자료 확인 전",
-                "Draft without public search / public sources not yet checked"
-              )
+            ? `${say("검색 없이 본 초안", "Draft without public search")} / ${draftStatus}`
             : t("report")}
         </span>
         <button onClick={onPrint} disabled={evidencePhase === "loading"}>
@@ -284,10 +287,7 @@ export default function V2Report({
             <div>
               <p>
                 {draft
-                  ? say(
-                      "검색 없이 본 초안 · 공개 자료 확인 전",
-                      "Draft without public search · public sources not yet checked"
-                    )
+                  ? `${say("검색 없이 본 초안", "Draft without public search")} · ${draftStatus}`
                   : evidenceLabel}
               </p>
               <p>{say("답한 내용으로 본 판단", "Reading from your answers")}</p>
@@ -382,10 +382,15 @@ export default function V2Report({
           ) : (
             <div className="v2-paper-note">
               <strong>
-                {say(
-                  "공개 자료를 아직 확인하지 않았습니다",
-                  "Public sources not yet checked"
-                )}
+                {searchFailed
+                  ? say(
+                      "이번 검색에서는 쓸 수 있는 공개 자료를 찾지 못했습니다",
+                      "This search found no public sources we could use"
+                    )
+                  : say(
+                      "공개 자료를 아직 확인하지 않았습니다",
+                      "Public sources not yet checked"
+                    )}
               </strong>
               <p>{analysis.question}</p>
               <p>{analysis.experiment.action}</p>

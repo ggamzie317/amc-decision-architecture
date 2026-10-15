@@ -716,6 +716,7 @@
   border: 1px solid #d9e3dc;
   background: #fff;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 5px;
@@ -726,18 +727,27 @@
 }
 .v2-matrix-impacts {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   flex-shrink: 0;
 }
+/* Markers size to their label: whole words (EN) and both syllables (KO) on one line. */
 .v2-matrix-impacts abbr {
-  width: 16px;
-  height: 16px;
-  display: grid;
-  place-items: center;
+  min-width: 16px;
+  min-height: 16px;
+  padding: 1px 4px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 2px;
   text-decoration: none;
   font-size: 9px;
   font-weight: 900;
+  line-height: 14px;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 .v2-marker-active {
   background: #d6ece4;
