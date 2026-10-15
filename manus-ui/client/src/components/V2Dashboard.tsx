@@ -119,15 +119,15 @@ export function V2ExternalBoard({
               {v2EvidenceCheckedDate(intelligence.generatedAt, state.language)}
               {" · "}
               {state.language === "ko"
-                ? "출처 링크 접근을 확인했습니다. 주장과 적용 범위는 원문에서 대조하세요."
-                : "Source links were reachable. Compare claims and applicability with the source text."}
+                ? "출처 링크가 열리는 것을 확인했습니다. 내용과 적용 범위는 원문과 비교해 보세요."
+                : "Source links open. Compare the claims and their scope with the original text."}
             </p>
           )}
           {phase === "live" && intelligence.sourceCoverage === "partial" && (
             <p className="v2-evidence-caveat" role="status">
               {state.language === "ko"
-                ? "일부 카드가 제외되어 종합 요약은 표시하지 않습니다. 남은 주장도 원문과 대조해야 합니다."
-                : "Some cards were excluded, so dependent summaries are omitted. Compare each remaining claim with its source text."}
+                ? "일부 자료를 제외해 종합 요약은 보여 드리지 않습니다. 남은 자료도 원문과 비교해 보세요."
+                : "Some sources were excluded, so the combined summary is not shown. Compare the remaining sources with their original text too."}
             </p>
           )}
           <div className="v2-evidence-grid">
@@ -154,14 +154,14 @@ export function V2ExternalBoard({
                 </div>
                 {analysis.evidenceLinks[index] && (
                   <details className="v2-evidence-trace-detail">
-                    <summary>{state.language === "ko" ? "현재 조건과 판단 근거 보기" : "How this relates to current conditions"}</summary>
+                    <summary>{state.language === "ko" ? "내 조건과의 관계 보기" : "How this relates to your conditions"}</summary>
                     <dl className="v2-evidence-trace">
-                      <div><dt>{state.language === "ko" ? "출처가 주장하는 사실" : "Claim from source summary"}</dt><dd>{evidenceText(analysis.evidenceLinks[index].sourceFact)}</dd></div>
-                      <div><dt>{state.language === "ko" ? "관련 고객 조건" : "Related customer condition"}</dt><dd>{analysis.evidenceLinks[index].condition}</dd></div>
-                      {analysis.evidenceLinks[index].selfReport && <div><dt>{state.language === "ko" ? "고객 자기보고" : "Customer self-report"}</dt><dd>{analysis.evidenceLinks[index].selfReport}</dd></div>}
-                      <div><dt>{state.language === "ko" ? "기존 구조에 따른 해석" : "Reading under existing rules"}</dt><dd>{analysis.evidenceLinks[index].interpretation}</dd></div>
+                      <div><dt>{state.language === "ko" ? "출처가 말하는 내용" : "What the source says"}</dt><dd>{evidenceText(analysis.evidenceLinks[index].sourceFact)}</dd></div>
+                      <div><dt>{state.language === "ko" ? "관련된 내 조건" : "Your related condition"}</dt><dd>{analysis.evidenceLinks[index].condition}</dd></div>
+                      {analysis.evidenceLinks[index].selfReport && <div><dt>{state.language === "ko" ? "본인 응답 (외부 확인 전)" : "Your answer (not externally checked)"}</dt><dd>{analysis.evidenceLinks[index].selfReport}</dd></div>}
+                      <div><dt>{state.language === "ko" ? "allofmycareer 해석" : "allofmycareer reading"}</dt><dd>{analysis.evidenceLinks[index].interpretation}</dd></div>
                       <div><dt>{state.language === "ko" ? "아직 확인할 조건" : "Still to verify"}</dt><dd>{analysis.evidenceLinks[index].unresolved}</dd></div>
-                      <div><dt>{state.language === "ko" ? "다음 행동" : "Next action"}</dt><dd>{analysis.evidenceLinks[index].test}</dd></div>
+                      <div><dt>{state.language === "ko" ? "다음에 할 일" : "Next step"}</dt><dd>{analysis.evidenceLinks[index].test}</dd></div>
                     </dl>
                   </details>
                 )}
@@ -295,11 +295,11 @@ export default function V2Dashboard({
       </div>
       <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
       <details className="v2-overview-detail">
-        <summary>{say("판단 근거와 공개 자료의 한계 자세히 보기", "Read the reasoning and public-evidence limits")}</summary>
+        <summary>{say("판단 이유와 공개 자료의 한계 자세히 보기", "See the reasoning and the limits of public evidence")}</summary>
         <p>{analysis.summary}</p>
       </details>
       <section className="v2-analysis-section" id="v2-path">
-        {head("A", "Career Path", say("지금 위치에서 고민하는 커리어까지의 경로", "From where you are to the career you are considering"))}
+        {head("A", "Career Path", say("지금 자리에서 고민하는 커리어까지", "From where you are to the career you are considering"))}
         <V2PathMap language={state.language} state={state} core={core} analysis={analysis} intelligence={intelligence} />
       </section>
       <section className="v2-analysis-section" id="v2-indicators">
@@ -323,14 +323,14 @@ export default function V2Dashboard({
           "01",
           "Structural Reading",
           say(
-            "현재 조건에서 도출한 판단 이유",
-            "Why the current conditions lead here"
+            "지금 이렇게 판단한 이유",
+            "Why this is the current reading"
           )
         )}
         <V2Reasoning analysis={analysis} intelligence={intelligence} />
       </section>
       <section className="v2-analysis-section" id="v2-conditions">
-        {head("01A", "External Conditions × Customer Evidence", say("공개 조건과 내 근거의 차이", "Public conditions and your evidence"))}
+        {head("01A", "External Conditions × Customer Evidence", say("공개 자료와 내 근거 비교", "Public evidence compared with yours"))}
         <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} onChange={onComparisonChange} />
       </section>
       <section className="v2-analysis-section" id="v2-map">
@@ -338,8 +338,8 @@ export default function V2Dashboard({
           "02",
           "Decision Map",
           say(
-            "유지할 기반과 탐색할 경로",
-            "The protected base and the path to explore"
+            "지킬 기반과 알아볼 경로",
+            "What to keep, and the path to explore"
           )
         )}
         <V2DecisionMap
@@ -350,7 +350,7 @@ export default function V2Dashboard({
         />
         <details className="v2-input-context">
           <summary>
-            {say("고객이 입력한 결정 맥락", "Your decision context")}
+            {say("입력한 상황", "Your decision context")}
           </summary>
           <p>{v2DecisionText(state.language, state)}</p>
           <dl>
@@ -370,8 +370,8 @@ export default function V2Dashboard({
           "03",
           "Decision Structure",
           say(
-            "환경–준비 적합도",
-            "Environment–readiness fit"
+            "목표 쪽 조직·직무 여건",
+            "Organisation and role conditions on the target side"
           )
         )}
         <V2FactorMap analysis={analysis} />
@@ -381,8 +381,8 @@ export default function V2Dashboard({
           "04",
           "Safety Margin",
           say(
-            "계획이 틀려도 회복할 수 있는 범위",
-            "Room to recover if the plan is wrong"
+            "계획대로 되지 않아도 버틸 수 있는 여유",
+            "Room to absorb it if the plan does not work out"
           )
         )}
         <V2SafetyView analysis={analysis} band={core.safetyMargin.band} />
@@ -392,8 +392,8 @@ export default function V2Dashboard({
           "05",
           "Changing",
           say(
-            "목표를 유지하며 실행 구조를 바꾸는 방법",
-            "Ways to change the structure while keeping the goal"
+            "목표는 그대로 두고 방법을 바꾸는 길",
+            "Keep the goal, change how you get there"
           )
         )}
         <V2ChangingView analysis={analysis} />
@@ -410,8 +410,8 @@ export default function V2Dashboard({
           "06",
           "Next Experiment",
           say(
-            "다음 결정을 위한 작은 검증",
-            "A bounded test for the next decision"
+            "다음 결정 전에 작게 확인하기",
+            "A small check before the next decision"
           )
         )}
         <V2ExperimentView analysis={analysis} compact />
@@ -422,8 +422,8 @@ export default function V2Dashboard({
           <h2>
             {draft
               ? say(
-                  "외부 근거를 확인하면 분석을 완성할 수 있습니다",
-                  "Complete the analysis by checking external evidence"
+                  "공개 근거를 확인하면 분석이 완성됩니다",
+                  "Check public evidence to complete the analysis"
                 )
               : t("reportInvite")}
           </h2>

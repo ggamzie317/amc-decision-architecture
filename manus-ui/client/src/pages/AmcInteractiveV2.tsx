@@ -432,8 +432,8 @@ export default function AmcInteractiveV2() {
     const answer = selfChecks[id];
     const incomplete = showSelfCheckError && !selfCheckComplete(card, selfChecks, state.bandSelections);
     const statusLabels: Record<SelfCheckStatus, string> = language === "ko"
-      ? { notChecked: "아직 확인하지 않음", unsure: "잘 모르겠음", checked: "직접 확인한 내용 있음" }
-      : { notChecked: "Not checked yet", unsure: "Not sure", checked: "I checked something" };
+      ? { notChecked: "아직 확인하지 않음", unsure: "잘 모르겠음", checked: "직접 확인한 것이 있음" }
+      : { notChecked: "Not checked yet", unsure: "Not sure", checked: "I have checked something" };
     return (
       <section className={`v2-self-card${incomplete ? " v2-band-error" : ""}`} key={id} aria-label={card.title}>
         <div className="v2-self-card-head"><span>{selfCards.indexOf(card) + 1} / {selfCards.length}</span><h3>{card.title}</h3></div>
@@ -441,7 +441,7 @@ export default function AmcInteractiveV2() {
         <p className="v2-self-example">{card.example}</p>
         {controls}
         <fieldset className="v2-field">
-          <legend>{language === "ko" ? "확인 근거의 현재 상태" : "Current basis for your answer"}</legend>
+          <legend>{language === "ko" ? "이 내용을 직접 확인해 봤나요?" : "Have you checked this yourself?"}</legend>
           <div className="v2-band-choices">
             {(["notChecked", "unsure", "checked"] as const).map(status => (
               <button type="button" key={status} aria-pressed={answer.status === status}
@@ -453,14 +453,14 @@ export default function AmcInteractiveV2() {
         </fieldset>
         {answer.status === "checked" && (
           <label className="v2-optional">
-            {language === "ko" ? "직접 확인한 내용을 간단히 적어 주세요 (자기보고)" : "Briefly note what you checked (self-reported)"}
+            {language === "ko" ? "무엇을 확인했는지 짧게 적어 주세요" : "Briefly note what you checked"}
             <textarea maxLength={180} value={answer.detail} onChange={event =>
               setSelfChecks(previous => ({...previous, [id]: {...previous[id], detail: event.target.value}}))
             } />
           </label>
         )}
-        {incomplete && <p className="v2-band-error-text">{language === "ko" ? "현재 상태와 각 조건을 선택해 주세요. 확인한 내용이 있다면 간단히 적어 주세요." : "Select a basis and each condition. If checked, briefly describe what you checked."}</p>}
-        <small>{language === "ko" ? "이 답변은 자기보고이며 외부 검증 완료를 뜻하지 않습니다." : "This is self-reported and does not mean external verification is complete."}</small>
+        {incomplete && <p className="v2-band-error-text">{language === "ko" ? "확인 여부와 각 항목을 골라 주세요. 확인한 것이 있다면 짧게 적어 주세요." : "Choose whether you checked it and answer each item. If you checked something, note it briefly."}</p>}
+        <small>{language === "ko" ? "본인 응답입니다. 외부에서 확인한 결과는 아닙니다." : "This is your own answer. It has not been checked externally."}</small>
       </section>
     );
   };
@@ -470,11 +470,11 @@ export default function AmcInteractiveV2() {
         return (
           <>
             {chipGroup("whyNow", "whyNow", v2Choices.whyNow, 2)}
-            <section className="v2-key-facts" aria-label={language === "ko" ? "내 상황의 핵심 사실" : "Key facts about your situation"}>
-              <h3>{language === "ko" ? "내 상황의 핵심 사실" : "Key facts about your situation"}</h3>
+            <section className="v2-key-facts" aria-label={language === "ko" ? "내 상황을 조금 더 알려 주세요" : "Tell us a bit more about your situation"}>
+              <h3>{language === "ko" ? "내 상황을 조금 더 알려 주세요" : "Tell us a bit more about your situation"}</h3>
               <p className="v2-guidance">{language === "ko"
-                ? "고른 답에 맞춰 조사할 제도·비용을 좁히고, 분석에 내 상황 기준의 확인 사항을 넣습니다. 점수에는 쓰지 않습니다. 모르면 비워 두세요."
-                : "Your answers narrow which rules and costs are researched and add checks for your situation to the analysis. They are not scored. Leave blank if unsure."}</p>
+                ? "답에 맞춰 찾아볼 제도와 비용을 좁히고, 내 상황에서 확인할 것을 분석에 넣습니다. 점수에는 반영하지 않습니다. 모르는 질문은 넘어가도 됩니다."
+                : "Your answers narrow which rules and costs we look up, and add checks that fit your situation. They do not affect any score. Skip any question you are unsure about."}</p>
               {v2KeyFactQuestions(state.caseType).map(question => (
                 <fieldset className="v2-field" key={question.id}>
                   <legend>{question.question[language === "ko" ? 0 : 1]}</legend>
@@ -543,29 +543,29 @@ export default function AmcInteractiveV2() {
             <label className="v2-optional">
               {language === "ko"
                 ? state.caseType === "Entrepreneurship"
-                  ? "공개 검색 대상: 고객군과 제안할 제품·서비스"
+                  ? "검색할 대상: 어떤 고객에게 무엇을 팔지"
                   : state.caseType === "Industry Transition"
-                    ? "공개 검색 대상: 전환할 산업과 직무"
+                    ? "검색할 대상: 옮겨 갈 산업과 직무"
                     : state.caseType === "MBA / EMBA / PhD Decision"
-                      ? "공개 검색 대상: 기관명과 과정명"
+                      ? "검색할 대상: 학교 이름과 과정 이름"
                     : state.caseType === "Overseas Relocation"
-                      ? "공개 검색 대상: 목적지에서 하려는 일과 체류 경로(취업비자·영주권 등)"
-                      : "공개 검색 대상: 직무·기관·과정 등 구체적인 목표"
+                      ? "검색할 대상: 현지에서 할 일과 머물 방법, 예: 취업비자·영주권"
+                      : "검색할 대상: 구체적인 직무·기관·과정"
                 : state.caseType === "Entrepreneurship"
-                  ? "Public search target: customer group and offer"
+                  ? "What to search for: who you would sell to, and what"
                   : state.caseType === "Industry Transition"
-                    ? "Public search target: target industry and role"
+                    ? "What to search for: the industry and role you are moving to"
                     : state.caseType === "MBA / EMBA / PhD Decision"
-                      ? "Public search target: institution and program name"
+                      ? "What to search for: the school and programme name"
                     : state.caseType === "Overseas Relocation"
-                      ? "Public search target: the work and residence route at the destination (work visa, permanent residence)"
-                      : "Public search target: specific role, institution or program"}
+                      ? "What to search for: the work you would do there and how you would stay, e.g. work visa or permanent residence"
+                      : "What to search for: a specific role, organisation or programme"}
               <input
                 value={v2PublicSearchTarget(state)}
                 maxLength={120}
                 placeholder={language === "ko"
-                  ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : state.caseType === "MBA / EMBA / PhD Decision" ? "예: ○○대학교 경영전문대학원 EMBA 주말 과정" : "구체적인 공개 검색 대상을 입력하세요"
-                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : state.caseType === "MBA / EMBA / PhD Decision" ? "e.g. [University] Executive MBA, weekend format" : "Enter a specific public research target"}
+                  ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : state.caseType === "MBA / EMBA / PhD Decision" ? "예: ○○대학교 경영전문대학원 EMBA 주말 과정" : "구체적인 직무나 기관 이름을 적어 주세요"
+                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : state.caseType === "MBA / EMBA / PhD Decision" ? "e.g. [University] Executive MBA, weekend format" : "Enter a specific role or organisation"}
                 onChange={e => update({ publicSearchTarget: e.target.value })}
               />
             </label>
@@ -579,8 +579,8 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "위에서 고른 주제를 먼저 조사하고, 이 결정 유형의 기본 주제(예: 해외 이동은 비자·채용 수요·보상·생활비)도 함께 조사합니다. 검색 대상과 지역은 입력하신 '고민하는 커리어'에서 자동으로 채웠습니다. 분석 마지막 단계에서 이 내용으로 공개 근거를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 들어 있다면 지워 주세요. 자가진단 메모와 재정 정보는 검색에 쓰지 않습니다."
-                : "Topics you pick are researched first; the standard topics for this kind of decision (for a move abroad: visa, hiring demand, pay and living costs) are researched too. The search target and geography were filled in from the career you are considering. The final step searches public evidence with them. Edit them if needed, and remove any confidential or personal details. Self-check notes and financial information are never used in the search."}
+                ? "위에서 고른 주제를 먼저 찾고, 이 결정 유형에서 기본으로 보는 주제도 함께 찾습니다. 예를 들어 해외 이주라면 비자, 채용 수요, 급여, 생활비를 봅니다. 검색 대상과 지역은 처음에 적은 '고민하는 커리어'로 미리 채워 두었습니다. 마지막 단계에서 이 내용으로 공개 자료를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 있으면 지워 주세요. 점검 메모와 재정 정보는 검색에 쓰지 않습니다."
+                : "We look up the topics you picked first, plus the standard topics for this kind of decision. For a move abroad, that means visas, hiring demand, pay and living costs. The search target and place were filled in from the career you are considering. The final step searches public sources with them. Edit them if needed, and remove any confidential or personal details. Your check notes and financial answers are never used in the search."}
             </p>
             </>)}
           </>
@@ -597,13 +597,13 @@ export default function AmcInteractiveV2() {
             )}
             </>)}
             {v2CanAskCanonicalFifwm(state.caseType) && (
-              <section className="v2-self-card v2-canonical-fifwm" aria-label={language === "ko" ? "목표 조직·직무의 기존 평가" : "Existing target organization and role assessment"}>
-                <div className="v2-self-card-head"><h3>{language === "ko" ? "목표 조직·직무의 기존 평가" : "Existing target organization and role assessment"}</h3></div>
+              <section className="v2-self-card v2-canonical-fifwm" aria-label={language === "ko" ? "목표 회사와 직무 살펴보기" : "Your target company and role"}>
+                <div className="v2-self-card-head"><h3>{language === "ko" ? "목표 회사와 직무 살펴보기" : "Your target company and role"}</h3></div>
                 <p>{language === "ko"
-                  ? "구체적인 목표 회사·사업부와 직무·팀이 있을 때만 답하세요. 창업 계획이나 학위 과정으로 바꿔 평가하지 않습니다. 답하지 못한 항목은 미평가로 남습니다."
-                  : "Answer only if you have a specific target company or unit and role or team. Unanswered items remain unassessed."}</p>
+                  ? "옮겨 갈 회사·부서와 직무·팀이 구체적일 때만 답해 주세요. 창업 계획이나 학위 과정은 여기서 평가하지 않습니다. 답하지 않은 항목은 평가하지 않습니다."
+                  : "Answer only if you have a specific target company or team and role. Business plans and degree programmes are not assessed here. Questions you skip are not assessed."}</p>
                 <fieldset className="v2-field">
-                  <legend>{language === "ko" ? "구체적인 목표 조직과 직무가 있나요?" : "Do you have a specific target organization and role?"}</legend>
+                  <legend>{language === "ko" ? "옮겨 갈 회사와 직무가 정해져 있나요?" : "Do you have a specific company and role in mind?"}</legend>
                   <div className="v2-band-choices">
                     {(["known", "not_applicable", "unsure"] as const).map(status => (
                       <button key={status} type="button" aria-pressed={fifwmAssessment.targetRoleStatus === status}
@@ -644,15 +644,15 @@ export default function AmcInteractiveV2() {
                     </div>
                   </fieldset>
                 ))}
-                <small>{language === "ko" ? "선택한 내용은 자기보고입니다. 공개 자료로 개인의 조직 경험을 검증한 것은 아닙니다." : "These answers are self-reported. Public sources do not verify your personal experience in the organization."}</small>
+                <small>{language === "ko" ? "본인 응답입니다. 공개 자료로 개인의 경험을 확인한 것은 아닙니다." : "These are your own answers. Public sources do not check your personal experience."}</small>
               </section>
             )}
             {caseFifwm && (
               <section className="v2-self-card v2-canonical-fifwm v2-case-fifwm" aria-label={language === "ko" ? "사례 맞춤 구조 평가" : "Case-adapted structure assessment"}>
                 <div className="v2-self-card-head"><h3>{language === "ko" ? "사례 맞춤 구조 평가" : "Case-adapted structure assessment"}</h3></div>
                 <p>{language === "ko"
-                  ? "기회의 조건·연결 가능성·구조 적합성·실행 현실성·버틸 수 있는가, 다섯 요소를 이 결정에 맞게 묻습니다. 대상이 구체적일 때만 답하세요. 답하지 않은 항목은 미평가로 남습니다."
-                  : "The same five factors — opportunity conditions, connection, structural fit, execution reality and staying power — asked for this kind of decision. Answer only when the target is specific. Unanswered items remain unassessed."}</p>
+                  ? "기회의 조건, 연결 가능성, 구조 적합성, 실행 현실성, 버틸 수 있는가. 이 다섯 가지를 이 결정에 맞춰 묻습니다. 대상이 구체적일 때만 답해 주세요. 답하지 않은 항목은 평가하지 않습니다."
+                  : "We ask about the same five areas, adapted to this kind of decision: opportunity conditions, connection, structural fit, execution reality and staying power. Answer only if your target is specific. Questions you skip are not assessed."}</p>
                 <fieldset className="v2-field">
                   <legend>{caseFifwm.target[language === "ko" ? 1 : 0]}</legend>
                   <div className="v2-band-choices">
@@ -695,7 +695,7 @@ export default function AmcInteractiveV2() {
                     </div>
                   </fieldset>
                 ))}
-                <small>{language === "ko" ? "선택한 내용은 자기보고입니다. 공개 자료로 검증한 것은 아닙니다." : "These answers are self-reported and not verified by public sources."}</small>
+                <small>{language === "ko" ? "본인 응답입니다. 공개 자료로 확인한 것은 아닙니다." : "These are your own answers, not checked against public sources."}</small>
               </section>
             )}
           </>
@@ -1019,10 +1019,10 @@ export default function AmcInteractiveV2() {
             <p>{t("startIntro")}</p>
             <ul className="v2-method-points" aria-label={language === "ko" ? "분석 방법" : "How the analysis works"}>
               {([
-                [Compass, "Structure First", "정답을 대신 고르지 않고, 무엇을 지키고 얻는지와 위험이 모이는 곳을 구조로 보여 줍니다.", "We do not choose for you. We show what the choice protects, opens and where risk concentrates."],
-                [Layers, language === "ko" ? "다섯 가지 구조 렌즈" : "Five structural lenses", "기회의 조건 · 연결 가능성 · 구조 적합성 · 실행 현실성 · 버틸 수 있는가", "Opportunity conditions · connection · structural fit · execution reality · staying power"],
-                [FileSearch, language === "ko" ? "검증 가능한 공개 근거" : "Verifiable public evidence", "인용 출처가 실제로 열리는지 확인한 공개 자료만 근거로 씁니다.", "Only public sources whose cited pages actually open are used as evidence."],
-                [Lock, language === "ko" ? "원문 비저장" : "Your words stay private", "작성한 답변 원문은 저장하지 않으며, 검색에는 공개 검색 대상만 사용합니다.", "Written answers are not stored; only the public search target is used to search."],
+                [Compass, "Structure First", "정답을 대신 고르지 않습니다. 무엇을 지키고 무엇을 얻는지, 위험이 어디에 있는지 보여 줍니다.", "We do not choose for you. We show what the choice keeps, what it opens and where the risk sits."],
+                [Layers, language === "ko" ? "다섯 가지 관점" : "Five lenses", "기회의 조건 · 연결 가능성 · 구조 적합성 · 실행 현실성 · 버틸 수 있는가", "Opportunity conditions · connection · structural fit · execution reality · staying power"],
+                [FileSearch, language === "ko" ? "확인할 수 있는 공개 근거" : "Public evidence you can check", "인용한 페이지가 실제로 열리는 공개 자료만 근거로 씁니다.", "We only use public sources whose cited pages actually open."],
+                [Lock, language === "ko" ? "답변 원문은 저장하지 않음" : "Your words stay private", "작성한 답변 원문은 저장하지 않습니다. 검색에는 검색 대상만 씁니다.", "Your written answers are not stored. Only the search target is used to search."],
               ] as const).map(([Icon, title, ko, en]) => (
                 <li key={en}>
                   <Icon aria-hidden size={18} />
@@ -1033,7 +1033,7 @@ export default function AmcInteractiveV2() {
                 </li>
               ))}
             </ul>
-            <p className="v2-intake-steps">{language === "ko" ? "결정 설정 → 8단계 구조 질문 → 공개 근거 검색 → 분석·보고서" : "Decision setup → 8 structural steps → public evidence → analysis and report"}</p>
+            <p className="v2-intake-steps">{language === "ko" ? "고민 적기 → 8단계 질문 → 공개 자료 검색 → 분석·보고서" : "Your decision → 8 steps of questions → public evidence → analysis and report"}</p>
           </div>
           <section className="v2-intake-panel">
             <p className="v2-kicker">{t("decisionSetup")}</p>
@@ -1065,19 +1065,19 @@ export default function AmcInteractiveV2() {
             </div>
             <section className="v2-case-picker" aria-label={language === "ko" ? "결정 유형" : "Decision type"}>
               <p className="v2-case-picker-label">
-                {language === "ko" ? "입력하신 내용으로 판단한 결정 유형" : "Decision type inferred from what you wrote"}
+                {language === "ko" ? "적어 주신 내용으로 본 결정 유형" : "The decision type that fits what you wrote"}
               </p>
               <div className="v2-case-recommended" data-case={state.caseType}>
                 <strong>{v2CaseLabel(language, state.caseType)}</strong>
                 <span>{v2CaseDescription(language, state.caseType)}</span>
                 {inferV2Geography(state, language) && (
                   <span className="v2-case-geo">
-                    {language === "ko" ? "인식한 지역: " : "Detected place: "}<b>{inferV2Geography(state, language)}</b>
-                    {language === "ko" ? " · 공개 근거 검색에 사용합니다" : " · used for the public evidence search"}
+                    {language === "ko" ? "찾은 지역: " : "Place found: "}<b>{inferV2Geography(state, language)}</b>
+                    {language === "ko" ? " · 공개 자료 검색에 씁니다" : " · used for the public search"}
                   </span>
                 )}
                 {caseRanking[0]?.caseType === state.caseType && caseRanking[0].matched.length > 0 && (
-                  <small>{language === "ko" ? "판단 근거: " : "Based on: "}{caseRanking[0].matched.map(word => `‘${word}’`).join(" · ")}</small>
+                  <small>{language === "ko" ? "이 단어를 보고 골랐습니다: " : "Picked from: "}{caseRanking[0].matched.map(word => `‘${word}’`).join(" · ")}</small>
                 )}
               </div>
               <p className="v2-case-picker-hint">
@@ -1169,7 +1169,7 @@ export default function AmcInteractiveV2() {
               <i style={{ width: `${(step + 1) * 12.5}%` }} />
             </div>
             <p className="v2-self-progress" aria-live="polite">
-              {language === "ko" ? `${selfCards.length}개 중 ${completedSelfChecks}개 응답` : `${completedSelfChecks} of ${selfCards.length} check cards answered`}
+              {language === "ko" ? `점검 질문 ${selfCards.length}개 중 ${completedSelfChecks}개 답함` : `${completedSelfChecks} of ${selfCards.length} check questions answered`}
             </p>
             <ol>
               {v2ModuleKeys.map((key, i) => (
@@ -1195,7 +1195,7 @@ export default function AmcInteractiveV2() {
                       ? t("oneSelectionNeeded")
                       : `${v2UnansweredBands(state, step).length}${language === "ko" ? "" : " "}${t("selectionsNeeded")}`
                   : selfCards.some(card => card.step === step && !selfCheckComplete(card, selfChecks, state.bandSelections))
-                    ? language === "ko" ? "점검 카드 응답 필요" : "Check card needs an answer"
+                    ? language === "ko" ? "점검 질문에 답해 주세요" : "A check question needs an answer"
                     : v2RequiredBandsByStep[step] ? t("complete") : t("optional")}
               </span>
             </div>
@@ -1205,11 +1205,11 @@ export default function AmcInteractiveV2() {
               <div className="v2-search-review">
                 <strong>
                   {language === "ko"
-                    ? "최종 분석에 사용할 공개 검색"
-                    : "Public research for the final analysis"}
+                    ? "마지막 분석에서 검색할 내용"
+                    : "What the final analysis will search for"}
                 </strong>
                 <p>
-                  {v2PublicSearchTarget(state) || (language === "ko" ? "공개 검색 대상 미입력" : "Public target not entered")}
+                  {v2PublicSearchTarget(state) || (language === "ko" ? "검색 대상을 아직 적지 않음" : "No search target yet")}
                   {state.targetGeography && ` / ${state.targetGeography}`}
                 </p>
                 <p>
@@ -1218,15 +1218,15 @@ export default function AmcInteractiveV2() {
                 <small>
                   {buildV2EvidenceRequest(state)
                     ? language === "ko"
-                      ? "이 버튼을 누르면 위에 입력한 대상과 지역의 공개 근거를 검색합니다."
-                      : "This action searches public evidence for the target and geography entered above."
+                      ? "아래 버튼을 누르면 위 대상과 지역으로 공개 자료를 검색합니다."
+                      : "The button below searches public sources for the target and place above."
                     : language === "ko"
-                      ? "공개 근거를 검색하려면 3단계에서 검색 대상과 지역을 입력하세요. 구조 초안은 바로 볼 수 있습니다."
-                      : "Enter a public target and geography in step 3 to search. You can review the structural draft now."}
+                      ? "공개 자료를 검색하려면 3단계에서 검색 대상과 지역을 적어 주세요. 구조 초안은 지금 바로 볼 수 있습니다."
+                      : "To search, enter a target and place in step 3. You can view a structural draft now."}
                 </small>
                 {!buildV2EvidenceRequest(state) && (
                   <button type="button" className="v2-primary v2-jump-step" onClick={() => { setStep(2); window.scrollTo(0, 0); }}>
-                    {language === "ko" ? "3단계에서 검색 대상·지역 입력하기 ↩" : "Enter the target and geography in step 3 ↩"}
+                    {language === "ko" ? "3단계로 가서 검색 대상과 지역 적기 ↩" : "Go to step 3 to enter the target and place ↩"}
                   </button>
                 )}
                 <button
@@ -1236,7 +1236,7 @@ export default function AmcInteractiveV2() {
                 >
                   {language === "ko"
                     ? "외부 검색 없이 구조 초안 먼저 보기"
-                    : "Review a structural draft without public research"}
+                    : "View a structural draft first, without searching"}
                 </button>
               </div>
             )}
@@ -1277,8 +1277,8 @@ export default function AmcInteractiveV2() {
               >
                 {step === 7
                   ? language === "ko"
-                    ? "공개 근거와 함께 분석"
-                    : "Analyze with public evidence"
+                    ? "공개 자료를 찾아 분석하기"
+                    : "Search public sources and analyze"
                   : t("next")}{" "}
                 ↗
               </button>

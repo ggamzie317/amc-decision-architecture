@@ -84,8 +84,8 @@ describe("V2 case-specific self-diagnostic", () => {
     const source = JSON.stringify(fixture.intelligence);
     const first = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo", checks);
     expect(first.findings.find(finding => finding.id === "fit")?.selfReports.join(" ")).toContain("포트폴리오를 현업 담당자에게 보여 줌");
-    expect(first.findings.find(finding => finding.id === "recovery")?.selfReports.join(" ")).toContain("잘 모르겠음");
-    expect(first.findings.find(finding => finding.id === "fit")?.selfReports.join(" ")).toContain("아직 확인하지 않음");
+    expect(first.findings.find(finding => finding.id === "recovery")?.selfReports.join(" ")).toContain("확인했는지 잘 모르겠다고 답함");
+    expect(first.findings.find(finding => finding.id === "fit")?.selfReports.join(" ")).toContain("아직 직접 확인하지 않았다고 답함");
     // Role demand is a public market signal, not proof of this person's readiness.
     expect(first.evidenceLinks.filter(link => link.conditionGroup === "public").every(link => !link.selfReport?.includes("포트폴리오"))).toBe(true);
     checks.readiness.detail = "직무 결과물에 대한 피드백을 받음";

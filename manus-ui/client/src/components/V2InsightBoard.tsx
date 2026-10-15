@@ -126,9 +126,9 @@ function GapSummary({ rows, ko }: { rows: GapRow[]; ko: boolean }) {
   );
   return (
     <ul className="v2-gap-summary">
-      {line("gap", "기준선보다 부족", "Below the baseline")}
-      {line("unknown", "아직 미확인", "Not yet confirmed")}
-      {line("strength", "기준선 충족", "At or above the baseline")}
+      {line("gap", "기준에 못 미침", "Below the level needed")}
+      {line("unknown", "아직 확인 전", "Not yet confirmed")}
+      {line("strength", "기준 충족", "Meets the level needed")}
     </ul>
   );
 }
@@ -159,7 +159,7 @@ export default function V2InsightBoard({
   const live = intelligence.status === "live" || intelligence.status === "demo";
   const rows = live ? intelligence.evidenceBlocks : [];
   const statusLabel: Record<string, [string, string]> = {
-    matches: ["Matches", "부합"],
+    matches: ["Matches", "맞음"],
     gap: ["Gap", "부족"], not_applicable: ["Not my target", "해당 없음"],
   };
   const tiles: { icon: LucideIcon; label: [string, string]; value: string; detail: string; href: string }[] = [
@@ -183,8 +183,8 @@ export default function V2InsightBoard({
       label: ["Changing", "실행 경로 조정"],
       value: analysis.plays.length
         ? say(`${analysis.plays.length}개 경로`, `${analysis.plays.length} route${analysis.plays.length > 1 ? "s" : ""}`)
-        : say("도출 없음", "None derived"),
-      detail: analysis.plays[0]?.title ?? say("검증 후 다시 도출합니다.", "Re-derived after validation."),
+        : say("없음", "None yet"),
+      detail: analysis.plays[0]?.title ?? say("확인한 뒤 다시 계산합니다.", "Recalculated once you have checked."),
       href: "#v2-changing",
     },
     {
@@ -214,38 +214,38 @@ export default function V2InsightBoard({
       {mode !== "tiles" && <div className="v2-insight-grid">
         <figure className="v2-insight-panel">
           <figcaption>
-            <strong>{say("구조 프로필", "Structure profile")}</strong>
+            <strong>{say("일곱 가지 조건 한눈에 보기", "Your seven conditions at a glance")}</strong>
             <em className="v2-chart-question">{v2ChartQuestion("radar", language)}</em>
-            <span>{say(`입력 ${values.length}개 중 ${known}개 확인 · 바깥일수록 유리 · 점선은 allofmycareer 판단 공식에서 '전환'이 나오는 최소 균형 수준`, `${known} of ${values.length} confirmed · outer is more favourable · the dashed line is the least balanced profile the allofmycareer formula reads as transition`)}</span>
+            <span>{say(`${values.length}개 중 ${known}개 확인 · 바깥쪽일수록 유리 · 점선은 '전환' 판단에 필요한 최소 수준`, `${known} of ${values.length} confirmed · further out is better · the dashed line is the minimum level needed for a 'transition' reading`)}</span>
           </figcaption>
           <GapSummary ko={ko} rows={gapRows(values, axes.map(a => a.reference), axes.map(a => a.label[ko ? 1 : 0]))} />
           <Radar values={values} labels={axes.map(a => a.label[ko ? 1 : 0])} marketIndex={0} ko={ko}
             reference={axes.map(a => a.reference)}
-            title={say("구조 프로필과 전환 기준선 비교 레이더 차트", "Structure profile against the transition baseline")} />
+            title={say("일곱 가지 조건을 전환 판단 기준과 비교한 차트", "Your seven conditions against the level needed for a move")} />
           <p className="v2-insight-legend">
-            <i className="dot market" />{say("시장 근거(공개 자료)", "Market evidence (public sources)")}
+            <i className="dot market" />{say("시장 근거 · 공개 자료", "Market evidence · public sources")}
             <i className="dot" />{say("내 상태", "You")}
-            <i className="line" />{say("전환 기준선", "Transition baseline")}
-            <CircleDashed aria-hidden size={12} />{say("미확인", "Unconfirmed")}
+            <i className="line" />{say("전환 판단 기준", "Level needed for a move")}
+            <CircleDashed aria-hidden size={12} />{say("확인 전", "Not yet confirmed")}
           </p>
           {fifwmAssessed && (
             <div className="v2-insight-fifwm">
-              <strong>{analysis.fifwmSource === "case-adapted" ? say("사례 맞춤 구조 평가", "Case-adapted structure assessment") : say("조직·직무 구조 평가", "Organization and role assessment")}</strong>
+              <strong>{analysis.fifwmSource === "case-adapted" ? say("상황에 맞춘 구조 평가", "Structure assessment adapted to your situation") : say("조직·직무 구조 평가", "Organisation and role assessment")}</strong>
               <em className="v2-chart-question">{v2ChartQuestion("pentagon", language)}</em>
               <GapSummary ko={ko} rows={gapRows(fifwmScores, fifwmScores.map(() => 1), analysis.factors.map(f => f.title))} />
               <Radar values={fifwmScores} labels={analysis.factors.map(f => f.title)} ko={ko}
                 reference={fifwmScores.map(() => 1)}
-                title={say("다섯 구조 요소와 중간 기준선 비교 오각형 맵", "Five structural factors against the middle baseline")} />
-              <small className="v2-insight-caption">{say("점선은 각 요소의 중간 수준(1점)입니다. 안쪽은 취약, 바깥쪽은 강점입니다.", "The dashed line is the middle level (1) of each factor; inside is weak, outside is strong.")}</small>
+                title={say("다섯 구조 요소를 중간 수준과 비교한 차트", "Five structural factors against the middle level")} />
+              <small className="v2-insight-caption">{say("점선은 각 요소의 중간 수준인 1점입니다. 점선보다 안쪽이면 약하고, 바깥쪽이면 강합니다.", "The dashed line marks the middle level, 1 point, for each factor. Inside it is weak; outside it is strong.")}</small>
             </div>
           )}
         </figure>
 
         <div className="v2-insight-panel">
           <div className="v2-insight-panel-head">
-            <strong>{say("시장 대 고객", "Market vs you")}</strong>
+            <strong>{say("공개 자료와 내 조건", "Public evidence and you")}</strong>
             <em className="v2-chart-question">{v2ChartQuestion("versus", language)}</em>
-            <span>{say("공개 근거의 핵심과 내 조건의 대조 상태", "Key public fact against your condition")}</span>
+            <span>{say("자료의 핵심 내용이 내 조건과 맞는지 비교했습니다", "How each key fact compares with your condition")}</span>
           </div>
           {rows.length ? (
             <ul className="v2-versus">
@@ -261,7 +261,7 @@ export default function V2InsightBoard({
                     <span className="v2-versus-market"><Dir aria-hidden size={15} />{v2CustomerEvidenceText(language, block.headline)}</span>
                     <span className="v2-versus-you">{link?.condition ?? "—"}</span>
                     <span className="v2-versus-status" data-auto={status === "unreviewed" ? auto : undefined}>
-                      {status === "unreviewed" ? `${say("자동", "Auto")} · ${v2AutoComparisonWord(auto, ko)}` : statusLabel[status][ko ? 1 : 0]}
+                      {status === "unreviewed" ? `${say("자동 비교", "Auto comparison")} · ${v2AutoComparisonWord(auto, ko)}` : statusLabel[status][ko ? 1 : 0]}
                     </span>
                     {(printed || focus === i) && (
                       <p className="v2-versus-detail">
@@ -282,7 +282,7 @@ export default function V2InsightBoard({
                 "No public evidence is connected yet. Once evidence is found, each area shows the market condition beside yours.")}
             </p>
           )}
-          {rows.length > 0 && !printed && <p className="v2-insight-note">{say("행을 누르면 근거 사실과 다음 확인이 펼쳐집니다.", "Select a row to expand the fact and the next check.")}</p>}
+          {rows.length > 0 && !printed && <p className="v2-insight-note">{say("행을 누르면 자료 내용과 다음에 확인할 점이 펼쳐집니다.", "Select a row to see the fact and what to check next.")}</p>}
         </div>
       </div>}
     </section>

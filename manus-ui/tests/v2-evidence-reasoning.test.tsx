@@ -49,7 +49,7 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
     const input = buildV2Input(state, evidence);
     const core = buildProductApplicationV3(input);
     const analysis = buildV2Analysis(state, core, evidence, "live");
-    expect(analysis.evidenceLinks[0].testReference).toContain(`자료 ‘대조표 근거 1: ${headline}’의 조건이 목표`);
+    expect(analysis.evidenceLinks[0].testReference).toContain("비교표 근거 1 ‘공정 수율과 결함 데이터를 분석한 결과물이 요구됩니다’가 Semiconductor process technology에도 맞는 기준인지");
     expect(analysis.evidenceLinks[0].sourceFact).toBe(fact);
     const key = v2ComparisonKey(evidence.evidenceBlocks[0], state.language);
     const excluded = buildV2Analysis(state, core, evidence, "live", undefined, {
@@ -235,7 +235,7 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
     const a = buildV2Analysis(state, core, none);
     expect(core.changingPlays).toHaveLength(0);
     const html = renderToStaticMarkup(<V2DecisionMap state={state} analysis={a} phase="unavailable" safetyBand="unknown" />);
-    expect(html).toContain("조정안 미도출");
+    expect(html).toContain("조건 확인 전 · 조정안 없음");
     expect(html).toContain(state.optionB);
     expect(html).not.toContain("작은 범위에서 요건 확인");
   });

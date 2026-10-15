@@ -63,10 +63,10 @@ const missingByCase: Record<V2CaseType, MissingPoint> = {
     ],
   },
   "General Career Reconfiguration": {
-    point: ["The real decision condition", "판단을 바꿀 핵심 조건"],
+    point: ["Proof that carries over to the new path", "새 경로에서도 통할 나의 증거"],
     why: [
-      "Identify which observable condition would change the decision.",
-      "어떤 확인 가능한 조건이 달라지면 판단이 바뀌는지 정하세요.",
+      "Check which parts of your experience the new field actually recognises, with real people and published requirements.",
+      "지금까지의 경력 중 무엇이 새 분야에서도 인정받는지, 실제 사람과 공개 요건으로 확인하세요.",
     ],
   },
 };

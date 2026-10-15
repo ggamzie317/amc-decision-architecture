@@ -133,7 +133,9 @@ export function v2EnglishRole(value: string): string | null {
   else if (move === "Start") text = `Start ${noun ? (head ? noun : withArticle(`${domain || noun} business`)) : "a business"}${place ? ` in ${place}` : ""}`;
   else {
     if (place) noun = noun ? `${noun} in ${place}` : place;
-    text = move ? (noun ? `${move} ${noun}` : move) : noun;
+    // "컨설턴트 이직" → "Move to a consultant role", not "Move to consultant".
+    const roleOnly = titles.length > 0 && !head && !place;
+    text = move ? (noun ? `${move} ${roleOnly && move !== "Promotion to" ? withArticle(`${noun} role`) : noun}` : move) : noun;
   }
   if (!text) return null;
   return text.charAt(0).toUpperCase() + text.slice(1);

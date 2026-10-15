@@ -16,7 +16,8 @@ import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
  */
 // Numbers keep thousands separators but never a trailing comma or period.
 const number = String.raw`\d{1,3}(?:[,.]\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?`;
-const amountPattern = new RegExp(String.raw`(?:HK\$|US\$|A\$|S\$|£|€|\$|₩)\s?(?:${number})(?:\s?(?:만|억|천))?|(?:${number})\s?(?:만 ?원|억 ?원|원|파운드|달러|유로)`);
+// Korean amounts keep the 억 part ("1억 2,000만 원"), never just the tail.
+const amountPattern = new RegExp(String.raw`(?:HK\$|US\$|A\$|S\$|£|€|\$|₩)\s?(?:${number})(?:\s?(?:만|억|천))?|\d+\s?억(?:\s?(?:${number})\s?만)?\s?원|(?:${number})\s?(?:만 ?원|억 ?원|원|파운드|달러|유로)`);
 
 export function v2AmountKeywords(blocks: ExternalIntelligenceV2["evidenceBlocks"], language: V2Language, max = 3) {
   const out: { amount: string; label: string }[] = [];
@@ -82,19 +83,19 @@ export default function V2ExecutiveBrief({
     {
       icon: CircleDollarSign,
       label: say("핵심 숫자", "Key figures"),
-      keyword: amounts[0]?.amount ?? say("금액 근거 없음", "No figures yet"),
+      keyword: amounts[0]?.amount ?? say("금액 자료 없음", "No figures yet"),
       detail: amounts.length
         ? amounts.map(a => a.label).join(" · ")
         : say("학비·생활비·임금 같은 금액이 확인되면 여기에 표시됩니다.", "Costs, fees or pay appear here once confirmed."),
     },
     {
       icon: TriangleAlert,
-      label: say("가장 큰 부족", "Biggest gap"),
-      keyword: weakest ? v2t(language, weakest[1]) : say("기준선 충족", "Baseline met"),
+      label: say("가장 부족한 조건", "Weakest condition"),
+      keyword: weakest ? v2t(language, weakest[1]) : say("모두 기준 충족", "All at the level needed"),
       detail: weakest && weakestBand
-        ? say(`현재 ${weakestLabel}${gaps.length > 1 ? ` · 함께 부족: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — 전환 기준선에 가장 못 미치는 조건입니다.`,
-          `Now ${weakestLabel}${gaps.length > 1 ? ` · also short: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — furthest below the transition baseline.`)
-        : say("모든 조건이 전환 기준선을 충족합니다.", "Every condition meets the transition baseline."),
+        ? say(`지금 상태: ${weakestLabel}. 전환 판단 기준에서 가장 멀리 있는 조건입니다.${gaps.length > 1 ? ` 함께 부족한 것: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""}`,
+          `Now: ${weakestLabel}. This is the condition furthest from the level needed for a move.${gaps.length > 1 ? ` Also short: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""}`)
+        : say("모든 조건이 전환 판단 기준을 충족합니다.", "Every condition meets the level needed for a move."),
       tone: weakest ? "warn" : undefined,
     },
     {
@@ -106,26 +107,26 @@ export default function V2ExecutiveBrief({
     },
     {
       icon: GitBranch,
-      label: say("판단을 바꿀 조건", "What would change it"),
+      label: say("판단이 바뀌는 조건", "What would change the reading"),
       keyword: switchItem
         ? engineSwitch
-          ? `${engineSwitch.labels.join(" + ")} ${engineSwitch.improves ? say("강화 시", "improve") : say("약화 시", "weaken")}`
+          ? `${engineSwitch.labels.join(" + ")} ${engineSwitch.improves ? say("나아지면", "improve") : say("나빠지면", "weaken")}`
           : text(switchItem.signal)
         : say("아직 없음", "None yet"),
-      detail: switchItem ? `${text(switchItem.signal)} → ${text(switchItem.direction)}` : say("조건이 정해지면 표시됩니다.", "Appears once a condition is set."),
+      detail: switchItem ? `${text(switchItem.signal)} → ${text(switchItem.direction)}` : say("조건을 정하면 여기에 표시됩니다.", "Appears here once a condition is set."),
     },
     {
       icon: CalendarCheck,
       label: say("다음 30일 할 일", "Next 30 days"),
-      keyword: say("작은 시험 1개", "One small test"),
+      keyword: say("작게 확인할 것 1개", "One small check"),
       detail: firstAction ? text(firstAction) : analysis.experiment.briefAction,
     },
   ];
 
   const basisList = (basis.supports.length > 0 || basis.limits.length > 0 || basis.unknown.length > 0) ? (
     <dl className="v2-brief-basis">
-      {basis.supports.length > 0 && <div><dt>{say("이 해석을 지지하는 조건", "What supports this reading")}</dt><dd>{basis.supports.join(" · ")}</dd></div>}
-      {basis.limits.length > 0 && <div><dt>{say("이 해석을 제한하는 조건", "What limits it")}</dt><dd>{basis.limits.join(" · ")}</dd></div>}
+      {basis.supports.length > 0 && <div><dt>{say("이 판단을 뒷받침하는 조건", "What supports this reading")}</dt><dd>{basis.supports.join(" · ")}</dd></div>}
+      {basis.limits.length > 0 && <div><dt>{say("이 판단을 약하게 하는 조건", "What holds it back")}</dt><dd>{basis.limits.join(" · ")}</dd></div>}
       {basis.unknown.length > 0 && <div><dt>{say("확인되면 달라질 수 있는 조건", "Could change once confirmed")}</dt><dd>{basis.unknown.join(" · ")}</dd></div>}
     </dl>
   ) : null;
@@ -143,7 +144,7 @@ export default function V2ExecutiveBrief({
           </p>
         </div>
         <aside>
-          <span>{say("판단을 바꿀 핵심 질문", "The question that matters")}</span>
+          <span>{say("가장 먼저 답할 질문", "The question to answer first")}</span>
           <strong>{analysis.question}</strong>
         </aside>
       </div>}

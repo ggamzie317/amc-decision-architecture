@@ -30,25 +30,25 @@ export function V2DecisionMap({
   const id = useId().replace(/:/g, ""),
     ko = state.language === "ko";
   const say = (a: string, b: string) => (ko ? a : b);
-  const protectedLabel = state.protects.length
-    ? state.protects.map(k => v2t(state.language, k)).join(" · ")
+  const protectedLabel = state.protects.some(k => k !== "other")
+    ? state.protects.filter(k => k !== "other").map(k => v2t(state.language, k)).join(" · ")
     : say("현재 소득과 생활 기반", "Current income and living base");
   const play =
     analysis.plays[0]?.title ??
-    say("조건 미확인 · 조정안 미도출", "Conditions unresolved · no play derived");
+    say("조건 확인 전 · 조정안 없음", "Conditions not yet confirmed · no adjustment yet");
   const evidence =
     phase === "live"
-      ? say("인용 링크 접근 가능 · 주장 미검증", "Cited links accessible · claims unverified")
+      ? say("출처 링크 열림 · 내용은 아직 확인 전", "Source links open · claims not yet checked")
       : phase === "demo"
-        ? say("합성 예시 근거", "Synthetic example evidence")
+        ? say("예시용 근거", "Example evidence")
         : phase === "loading"
-          ? say("공개 근거 확인 중", "Public research in progress")
-          : say("외부 요건 미확인", "External requirements unresolved");
+          ? say("공개 근거 확인 중", "Checking public evidence")
+          : say("목표 요건 확인 전", "Target requirements not yet checked");
   const nodes = [
     {
       x: 320,
       y: 14,
-      title: say("공개 근거", "External Evidence"),
+      title: say("공개 근거", "Public evidence"),
       value: analysis.priorityEvidence?.headline ?? evidence,
       tone: "evidence",
     },
@@ -78,7 +78,7 @@ export function V2DecisionMap({
       y: 276,
       title: "Safety Margin → Switching",
       value: say(
-        `안전마진: ${v2t(state.language, safetyBand as V2CopyKey)}`,
+        `안전 여유: ${v2t(state.language, safetyBand as V2CopyKey)}`,
         `Safety: ${v2t(state.language, safetyBand as V2CopyKey)}`
       ),
       tone: "review",
@@ -94,8 +94,8 @@ export function V2DecisionMap({
       >
         <title id={`${id}-title`}>
           {say(
-            "현재 기반, 공개 근거, 병행 시험과 전환 조건의 관계",
-            "Relationships between current capacity, public evidence, testing and switching conditions"
+            "현재 기반, 공개 근거, 작은 검증, 판단 전환 조건의 관계",
+            "How your current base, public evidence, small checks and switching conditions connect"
           )}
         </title>
         <desc id={`${id}-desc`}>
@@ -129,16 +129,16 @@ export function V2DecisionMap({
         </g>
         <g className="v2-map-edge-labels">
           <text x="448" y="126">
-            {say("요건 대조", "Requirements")}
+            {say("요건 비교", "Compare requirements")}
           </text>
           <text x="270" y="177">
-            {say("유지", "Protect")}
+            {say("지키기", "Keep")}
           </text>
           <text x="568" y="177">
-            {analysis.plays.length ? say("검증", "Test") : say("미확인", "Unresolved")}
+            {analysis.plays.length ? say("확인", "Check") : say("확인 전", "Not yet checked")}
           </text>
           <text x="448" y="257">
-            {analysis.plays.length ? say("결과 확인", "Review results") : say("조건 확인", "Establish conditions")}
+            {analysis.plays.length ? say("결과 확인", "Review results") : say("조건 확인", "Check conditions")}
           </text>
         </g>
         {nodes.map(n => (
@@ -194,8 +194,8 @@ export function V2DecisionMap({
           <div>
             <dt>{v2t(state.language, "exposureRisk")}</dt>
             <dd>
-              {state.exposes.length
-                ? state.exposes.map(k => v2t(state.language, k)).join(" · ")
+              {state.exposes.some(k => k !== "other")
+                ? state.exposes.filter(k => k !== "other").map(k => v2t(state.language, k)).join(" · ")
                 : v2t(state.language, "noneYet")}
             </dd>
           </div>
@@ -239,7 +239,7 @@ export function V2Reasoning({
                   {v2CustomerEvidenceText(analysis.language, block.headline)}
                 </strong>
                 <p className="v2-comparison-reading">{link.comparisonLabel}</p>
-                {link.comparisonDetail && <p className="v2-self-report">{ko ? "고객 자기보고: " : "Customer self-report: "}{link.comparisonDetail}</p>}
+                {link.comparisonDetail && <p className="v2-self-report">{ko ? "본인 응답: " : "Your answer: "}{link.comparisonDetail}</p>}
                 {!compact && (
                   <>
                     {/* Headline and status stay visible; the long fact sits behind one toggle. */}
@@ -248,10 +248,10 @@ export function V2Reasoning({
                       <p className="v2-source-condition">{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
                       {block.action && <p className="v2-source-condition"><b>{ko ? "할 일: " : "To do: "}</b>{v2CustomerEvidenceText(analysis.language, block.action)}</p>}
                       <dl className="v2-evidence-trace">
-                    <div><dt>{ko ? "검색 요약의 적용 설명" : "Search-summary applicability"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
-                    <div><dt>{ko ? "현재 조건 · 입력 기반 구조 판단" : "Current condition · user input and core rules"}</dt><dd>{link.condition}</dd></div>
-                    {link.selfReport && !f.selfReports.includes(link.selfReport) && <div><dt>{ko ? "고객 자기보고" : "Customer self-report"}</dt><dd>{link.selfReport}</dd></div>}
-                    <div><dt>{ko ? "아직 확인되지 않은 점" : "Still unverified"}</dt><dd>{link.unresolved}</dd></div>
+                    <div><dt>{ko ? "자료가 다루는 범위" : "What the source covers"}</dt><dd>{v2CustomerEvidenceText(analysis.language, link.sourceScope)}</dd></div>
+                    <div><dt>{ko ? "내 조건과 판단" : "Your condition and the reading"}</dt><dd>{link.condition}</dd></div>
+                    {link.selfReport && !f.selfReports.includes(link.selfReport) && <div><dt>{ko ? "본인 응답 (외부 확인 전)" : "Your answer (not externally checked)"}</dt><dd>{link.selfReport}</dd></div>}
+                    <div><dt>{ko ? "아직 확인되지 않은 점" : "Not yet confirmed"}</dt><dd>{link.unresolved}</dd></div>
                     <div><dt>{ko ? "다음 확인" : "Next check"}</dt><dd>{link.test}</dd></div>
                       </dl>
                     </details>
@@ -284,15 +284,15 @@ export function V2FactorMap({
         {analysis.factorScopeNote}{" "}
         {analysis.fifwmSource === "unavailable"
           ? ko
-            ? "기존 다섯 항목의 평가 입력이 없어 미확인 상태입니다. 준비 상태나 안전 여유로 대신 평가하지 않습니다."
-            : "The existing five-part assessment inputs are unavailable, so these items remain unassessed. Readiness and safety bands do not substitute for them."
+            ? "다섯 항목에 답한 내용이 없어 평가하지 않았습니다. 실행 준비도나 안전 여유로 대신 평가하지도 않습니다."
+            : "There are no answers for the five items, so they were not assessed. Readiness and safety are not used in their place."
           : analysis.fifwmSource === "case-adapted"
             ? ko
-              ? "응답한 항목만 같은 0·1·2 기준으로 평가했습니다. 원래 조직 평가와는 다른 사례 맞춤 질문이며, 공개 근거는 점수를 바꾸지 않습니다."
-              : "Only answered items are scored on the same 0/1/2 scale. These are case-adapted questions, distinct from the original organization assessment. Public evidence does not change the scores."
+              ? "답한 항목만 같은 0·1·2 기준으로 평가했습니다. 질문은 이 상황에 맞춘 것으로, 원래 조직 평가와 다릅니다. 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items are scored, on the same 0/1/2 scale. The questions are adapted to this situation and differ from the original organisation assessment. Public evidence does not change the scores."
             : ko
-              ? "응답한 항목만 기존 규칙으로 평가했습니다. 미응답·모름·해당 없음은 미평가이며, 공개 근거는 점수를 바꾸지 않습니다."
-              : "Only answered items use the existing rules. Unanswered, unsure and inapplicable items remain unassessed. Public evidence does not change the scores."}
+              ? "답한 항목만 기존 규칙으로 평가했습니다. 답하지 않았거나 '모름'·'해당 없음'을 고른 항목은 평가하지 않았습니다. 공개 근거는 점수를 바꾸지 않습니다."
+              : "Only answered items were assessed, using the existing rules. Items left blank or marked unsure or not applicable were not assessed. Public evidence does not change the scores."}
       </p>
       {analysis.factors.map((f, i) => (
         <article key={f.id} data-factor={f.id}>
@@ -312,8 +312,8 @@ export function V2FactorMap({
               {f.evidenceIds.length
                 ? `${ko ? "관련 공개 근거" : "Related public evidence"} ${f.evidenceIds.map(id => id + 1).join(", ")}`
                 : ko
-                  ? "이 평가에 연결된 공개 근거 없음"
-                  : "No public evidence mapped to this assessment"}
+                  ? "이 항목과 연결된 공개 근거는 없습니다"
+                  : "No public evidence linked to this item"}
             </small>
           </div>
         </article>
@@ -363,18 +363,42 @@ export function V2SafetyView({
       </div>
       <small>
         {ko
-          ? "막대는 입력한 조건의 단계 표시입니다. 확률이나 새로운 점수가 아닙니다. 손실 위험은 낮을수록 회복 여력이 커지는 방향으로 표시합니다."
-          : "Bars represent qualitative input bands, not probabilities or new scores. Lower downside is shown as more room for recovery."}
+          ? "막대는 답한 조건의 단계를 보여 줍니다. 확률이나 새 점수가 아닙니다. 손실 위험은 낮을수록 칸이 더 많이 찹니다."
+          : "Bars show the level of each condition you entered, not a probability or a new score. For downside, a lower risk fills more cells."}
       </small>
     </div>
   );
 }
 export function V2ChangingView({ analysis }: { analysis: V2Analysis }) {
   const ko = analysis.language === "ko";
+  const plays = analysis.plays;
+  // Values identical in every card are shown once above the cards.
+  const same = (pick: (p: V2Analysis["plays"][number]) => string) =>
+    plays.length > 1 && plays.every(p => pick(p) === pick(plays[0]));
+  const sharedProtects = same(p => p.protects);
+  const sharedTiming = same(p => p.timeExposure);
+  const protectsLabel = ko ? "지킬 기반" : "What to keep";
+  const timingLabel = ko ? "다시 볼 시점" : "When to review";
   return (
-    <div className="v2-changing-analysis" data-testid="v2-changing-analysis" data-count={analysis.plays.length}>
-      {analysis.plays.length ? (
-        analysis.plays.map((p, i) => (
+    <div className="v2-changing-analysis" data-testid="v2-changing-analysis" data-count={plays.length}>
+      {(sharedProtects || sharedTiming) && (
+        <dl className="v2-changing-shared" style={{ gridColumn: "1 / -1", margin: 0 }}>
+          {sharedProtects && (
+            <div>
+              <dt>{protectsLabel} · {ko ? "모든 방법에 공통" : "applies to every option"}</dt>
+              <dd>{plays[0].protects}</dd>
+            </div>
+          )}
+          {sharedTiming && (
+            <div>
+              <dt>{timingLabel} · {ko ? "모든 방법에 공통" : "applies to every option"}</dt>
+              <dd>{plays[0].timeExposure}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+      {plays.length ? (
+        plays.map((p, i) => (
           <article key={p.family} data-family={p.family}>
             <div className="v2-changing-title">
               <span>0{i + 1}</span>
@@ -386,34 +410,38 @@ export function V2ChangingView({ analysis }: { analysis: V2Analysis }) {
                 <dt>{ko ? "달라지는 점" : "What changes"}</dt>
                 <dd>{p.changes}</dd>
               </div>
+              {!sharedProtects && (
+                <div>
+                  <dt>{protectsLabel}</dt>
+                  <dd>{p.protects}</dd>
+                </div>
+              )}
               <div>
-                <dt>{ko ? "유지할 기반" : "Protect"}</dt>
-                <dd>{p.protects}</dd>
-              </div>
-              <div>
-                <dt>{ko ? "먼저 확보할 조건" : "Prerequisites"}</dt>
+                <dt>{ko ? "먼저 갖출 것" : "Needed first"}</dt>
                 <dd>{p.needs}</dd>
               </div>
               <div>
-                <dt>{ko ? "확인할 결과" : "Evidence to collect"}</dt>
+                <dt>{ko ? "확인할 결과" : "Result to check"}</dt>
                 <dd>{p.evidence}</dd>
               </div>
               <div>
-                <dt>{ko ? "노출 범위" : "Exposure"}</dt>
+                <dt>{ko ? "감수할 부담" : "The risk you take on"}</dt>
                 <dd>{p.exposure}</dd>
               </div>
-              <div>
-                <dt>{ko ? "재검토 시점" : "Review timing"}</dt>
-                <dd>{p.timeExposure}</dd>
-              </div>
+              {!sharedTiming && (
+                <div>
+                  <dt>{timingLabel}</dt>
+                  <dd>{p.timeExposure}</dd>
+                </div>
+              )}
             </dl>
           </article>
         ))
       ) : (
         <p>
           {ko
-            ? "현재 엔진에서 도출된 경로 조정안이 없습니다. 확인되지 않은 요건을 먼저 검증하세요."
-            : "The current engine derives no reconfiguration play. Validate unresolved requirements first."}
+            ? "지금 조건으로는 제시할 경로 조정안이 없습니다. 확인되지 않은 요건부터 확인하세요."
+            : "No path adjustment comes out of the current conditions. Check the unconfirmed requirements first."}
         </p>
       )}
     </div>
@@ -430,10 +458,10 @@ export function V2ExperimentView({
   return (
     <div className="v2-experiment-analysis" data-testid="v2-next-experiment">
       <div className="v2-experiment-now">
-        <span>{ko ? "다음에 확인할 질문" : "Next question to test"}</span>
+        <span>{ko ? "다음에 확인할 질문" : "Next question to check"}</span>
         <h3>{analysis.question}</h3>
         <p>{compact ? analysis.experiment.briefAction : analysis.experiment.action}</p>
-        <strong>{ko ? "남길 결과물" : "Deliverable"}</strong>
+        <strong>{ko ? "남길 기록" : "What to record"}</strong>
         <p>{analysis.experiment.output}</p>
       </div>
       {!compact && (
@@ -457,14 +485,14 @@ export function V2ExperimentView({
         <article>
           <strong>
             {ko
-              ? "다음 단계 검토 조건"
-              : "Condition for reviewing the next step"}
+              ? "다음 단계를 검토할 때"
+              : "When to review the next step"}
           </strong>
           <p>{analysis.experiment.continue}</p>
         </article>
         <article>
           <strong>
-            {ko ? "범위를 줄일 조건" : "Condition for reducing scope"}
+            {ko ? "규모를 줄일 때" : "When to scale back"}
           </strong>
           <p>{analysis.experiment.pause}</p>
         </article>

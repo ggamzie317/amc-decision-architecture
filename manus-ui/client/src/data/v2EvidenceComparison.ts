@@ -15,7 +15,7 @@ export function v2ComparisonKey(block: Block, language: V2State["language"]): st
 }
 export function v2ComparisonLabel(status: EvidenceComparisonStatus, ko: boolean): string {
   const labels: Record<EvidenceComparisonStatus, [string, string]> = {
-    unreviewed: ["자동 대조 사용", "Use the automatic reading"],
+    unreviewed: ["자동 비교 사용", "Use the automatic comparison"],
     matches: ["내 근거와 부합함", "My evidence matches"],
     gap: ["부족한 조건이 있음", "A gap remains"],
     not_applicable: ["내 목표에 적용되지 않음", "Not applicable to my target"],
@@ -59,14 +59,14 @@ const autoWords: Record<V2AutoComparison, [string, string]> = {
   watch: ["주의", "Watch"],
   fits: ["부합 가능", "Likely fits"],
   conditional: ["조건부", "Conditional"],
-  open: ["내 조건 입력 시 판단", "Needs your condition"],
+  open: ["내 조건을 입력하면 판단", "Needs your condition"],
 };
 export function v2AutoComparisonWord(kind: V2AutoComparison, ko: boolean): string {
   return autoWords[kind][ko ? 0 : 1];
 }
-/** "자동 대조 · 주의 (재정 여력: 보통)" — the reading and the condition it used. */
+/** "자동 비교: 주의 — 내 실행 준비도 일부 갖춤" — the reading and the condition it used. */
 export function v2AutoComparisonLabel(kind: V2AutoComparison, conditionLabel: string, bandLabel: string, ko: boolean): string {
   const word = v2AutoComparisonWord(kind, ko);
-  if (kind === "open") return ko ? `자동 대조 · ${word}` : `Auto reading · ${word}`;
-  return ko ? `자동 대조 · ${word} (내 ${conditionLabel}: ${bandLabel})` : `Auto reading · ${word} (your ${conditionLabel}: ${bandLabel})`;
+  if (kind === "open") return ko ? `자동 비교: ${word}` : `Automatic comparison: ${word}`;
+  return ko ? `자동 비교: ${word} — 내 ${conditionLabel} ${bandLabel}` : `Automatic comparison: ${word} — your ${conditionLabel}: ${bandLabel}`;
 }

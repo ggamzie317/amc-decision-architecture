@@ -336,8 +336,9 @@ export function v2SwitchCandidates(
     candidates[0].text += ` (${t("demoNotVerification")})`;
   return candidates;
 }
+// "기타" (other) carries no meaning inside a sentence, so it is left out of text.
 const selected = (s: V2State, keys: V2CopyKey[]) =>
-  keys.map(k => v2t(s.language, k)).join(s.language === "ko" ? " · " : " · ");
+  keys.filter(k => k !== "other").map(k => v2t(s.language, k)).join(s.language === "ko" ? " · " : " · ");
 export function buildV2Input(
   s: V2State,
   intelligence?: ExternalIntelligenceV2,

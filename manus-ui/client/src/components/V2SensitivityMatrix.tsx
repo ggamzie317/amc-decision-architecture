@@ -12,11 +12,12 @@ const labels: Record<ScenarioVariable, V2CopyKey> = {
   constraintLoad: "constraint",
   externalValidation: "externalValidation",
 };
+// [EN letter, KO letter, property, KO label, EN label]
 const impacts = [
-  ["P", "posture", "posture"],
-  ["S", "safety", "safety"],
-  ["C", "changing", "changing"],
-  ["N", "nextTest", "nextTestShort"],
+  ["P", "판", "posture", "현재 판단", "Current reading"],
+  ["S", "안", "safety", "안전 여유", "Safety Margin"],
+  ["C", "경", "changing", "경로 조정", "Path adjustment"],
+  ["N", "확", "nextTest", "다음 확인", "Next check"],
 ] as const;
 export default function V2SensitivityMatrix({
   rows,
@@ -28,13 +29,15 @@ export default function V2SensitivityMatrix({
   language: V2Language;
 }) {
   const t = (key: V2CopyKey) => v2t(language, key);
+  const ko = language === "ko";
+  const legend = ko ? "진한 칸: 이 조건만 바꾸면 달라지는 부분" : "Shaded: what changes if only this condition changes";
   return (
     <div className="v2-sensitivity-matrix" data-testid="v2-sensitivity-matrix">
-      <div className="v2-matrix-legend" aria-label={t("impactLegend")}>
-        <span>{t("impactLegend")}</span>
-        {impacts.map(([letter, , label]) => (
+      <div className="v2-matrix-legend" aria-label={legend}>
+        <span>{legend}</span>
+        {impacts.map(([letter, koLetter, , koLabel, enLabel]) => (
           <span key={letter}>
-            <b>{letter}</b> {t(label)}
+            <b>{ko ? koLetter : letter}</b> {ko ? koLabel : enLabel}
           </span>
         ))}
       </div>
@@ -56,15 +59,15 @@ export default function V2SensitivityMatrix({
               <div className="v2-matrix-alternative" key={row.band}>
                 <span>{t(row.band as V2CopyKey)}</span>
                 <div className="v2-matrix-impacts">
-                  {impacts.map(([letter, property, label]) => (
+                  {impacts.map(([letter, koLetter, property, koLabel, enLabel]) => (
                     <abbr
                       key={letter}
                       className={
                         row[property] ? "v2-marker-active" : "v2-marker-muted"
                       }
-                      title={`${t(label)}: ${row[property] ? t("changeLabel") : t("noChange")}`}
+                      title={`${ko ? koLabel : enLabel}: ${row[property] ? (ko ? "달라짐" : "changes") : (ko ? "그대로" : "no change")}`}
                     >
-                      {letter}
+                      {ko ? koLetter : letter}
                     </abbr>
                   ))}
                 </div>

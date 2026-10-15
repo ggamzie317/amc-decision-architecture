@@ -1675,3 +1675,7 @@ figcaption .v2-chart-question, .v2-insight-panel-head .v2-chart-question, .v2-in
 .v2-path-terms dt { font-size: 12px; font-weight: 700; color: var(--c-next, #237f84); }
 .v2-path-terms dd { margin: 2px 0 0; font-size: 13px; }
 .v2-path-alt li small { display: block; color: var(--muted, #56707b); font-size: 12px; margin-top: 2px; }
+/* Label + sentence as a hanging indent so wrapped lines stay beside their label (screen and PDF). */
+.v2-ind-reading .v2-ind-cond, .v2-ind-reading .v2-ind-how { display: grid; grid-template-columns: 84px 1fr; gap: 6px; align-items: start; }
+.v2-ind-reading .v2-ind-cond b, .v2-ind-reading .v2-ind-how b { min-width: 0; margin: 0; }
+@media print { .v2-ind-reading .v2-ind-cond, .v2-ind-reading .v2-ind-how { grid-template-columns: 70px 1fr; } }

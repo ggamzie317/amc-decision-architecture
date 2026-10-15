@@ -67,11 +67,11 @@ type StepState = "done" | "running" | "pending" | "failed";
 
 /** The five structural lenses, in the customer wording defined by the report spec. */
 const lenses: { icon: LucideIcon; title: [string, string]; question: [string, string] }[] = [
-  { icon: Landmark, title: ["Conditions of the opportunity", "기회의 조건"], question: ["Who decides, and on what formal terms?", "누가 어떤 공식 조건으로 결정하는가"] },
+  { icon: Landmark, title: ["Conditions of the opportunity", "기회의 조건"], question: ["Who decides, and on what formal terms?", "누가, 어떤 공식 조건으로 결정하는가"] },
   { icon: Users, title: ["Connection", "연결 가능성"], question: ["Who would actively support your success?", "누가 성공을 실제로 도와줄 수 있는가"] },
   { icon: Building2, title: ["Structural fit", "구조 적합성"], question: ["How stable is the structure you would enter?", "들어갈 구조는 얼마나 안정적인가"] },
   { icon: Workflow, title: ["Execution reality", "실행 현실성"], question: ["Can the day-to-day work actually be sustained?", "일상의 업무를 실제로 지속할 수 있는가"] },
-  { icon: TrendingUp, title: ["Staying power", "버틸 수 있는가"], question: ["How exposed is it to policy and market shocks?", "정책·시장 충격에 얼마나 노출되는가"] },
+  { icon: TrendingUp, title: ["Staying power", "버틸 수 있는가"], question: ["How much could policy and market shocks shake it?", "정책·시장 변화에 얼마나 흔들리는가"] },
 ];
 
 // Same customer labels as v2Language (tradeoff, missing, posture, safety,
@@ -118,10 +118,10 @@ export default function V2Processing({
   // Only states the client actually knows: input validated, request in flight
   // or failed. Later steps stay pending until results really open.
   const steps: { icon: LucideIcon; label: [string, string]; detail: [string, string]; state: StepState }[] = [
-    { icon: ShieldCheck, label: ["Inputs validated", "입력 확인"], detail: ["Required answers and consent checked", "필수 응답과 동의 확인 완료"], state: "done" },
-    { icon: FileSearch, label: ["Public search and source check", "공개 검색·출처 확인"], detail: ["Server searches the target only, then opens each cited page", "서버가 검색 대상만으로 검색하고, 인용된 페이지가 실제로 열리는지 확인"], state: running ? "running" : "failed" },
-    { icon: Network, label: ["Connect to the allofmycareer structure", "allofmycareer 구조에 연결"], detail: ["Evidence is placed beside your conditions; scores are unchanged by sources", "근거를 고객 조건 옆에 배치하며, 출처가 점수를 바꾸지 않음"], state: "pending" },
-    { icon: GitBranch, label: ["Open your analysis", "분석 결과 열기"], detail: ["Dashboard, simulator and report share one snapshot", "대시보드·시뮬레이터·보고서가 같은 결과를 사용"], state: "pending" },
+    { icon: ShieldCheck, label: ["Answers checked", "답변 확인"], detail: ["Required answers and consent are in place", "필수 답변과 동의를 확인했습니다"], state: "done" },
+    { icon: FileSearch, label: ["Public search and source check", "공개 검색·출처 확인"], detail: ["We search with the target only, then check that each cited page opens", "검색 대상만으로 검색하고, 인용한 페이지가 실제로 열리는지 확인합니다"], state: running ? "running" : "failed" },
+    { icon: Network, label: ["Place evidence beside your answers", "내 조건과 함께 정리"], detail: ["Evidence sits next to your answers. Sources do not change scores", "근거를 내 조건 옆에 놓습니다. 출처는 점수를 바꾸지 않습니다"], state: "pending" },
+    { icon: GitBranch, label: ["Open your analysis", "분석 결과 열기"], detail: ["The dashboard, simulator and report use the same result", "대시보드, 시뮬레이터, 보고서가 같은 결과를 씁니다"], state: "pending" },
   ];
   const StateIcon = ({ state }: { state: StepState }) =>
     state === "done" ? <CheckCircle2 aria-hidden className="v2-step-state done" size={18} />
@@ -130,7 +130,7 @@ export default function V2Processing({
           : <Circle aria-hidden className="v2-step-state pending" size={18} />;
   const stateLabel = (state: StepState) => ({
     done: say("완료", "Done"), running: say("진행 중", "In progress"),
-    failed: say("근거 미확보", "No usable evidence"), pending: say("대기", "Waiting"),
+    failed: say("근거 찾지 못함", "No usable evidence"), pending: say("대기", "Waiting"),
   })[state];
   const ActiveLens = lenses[lens].icon;
 
@@ -141,7 +141,7 @@ export default function V2Processing({
         <h1>
           {running
             ? say("공개 근거를 검색하고 출처를 확인하고 있습니다", "Searching public evidence and checking sources")
-            : say("이번 검색에서는 사용할 수 있는 공개 근거를 확보하지 못했습니다", "No usable public evidence was secured in this search")}
+            : say("이번 검색에서는 쓸 수 있는 공개 근거를 찾지 못했습니다", "This search found no public evidence we could use")}
         </h1>
         <ol className="v2-processing-steps">
           {steps.map(({ icon: Icon, label, detail, state }) => (
@@ -161,7 +161,7 @@ export default function V2Processing({
               <li key={topic.label} data-state={topic.state}>
                 <StateIcon state={topic.state === "running" ? "running" : topic.state === "done" ? "done" : "failed"} />
                 <span>{topic.label}</span>
-                <b>{topic.state === "running" ? say("수집 중", "Collecting") : topic.state === "done" ? say("근거 확보", "Evidence found") : say("근거 없음", "No evidence")}</b>
+                <b>{topic.state === "running" ? say("수집 중", "Collecting") : topic.state === "done" ? say("근거 찾음", "Evidence found") : say("근거 없음", "No evidence")}</b>
               </li>
             ))}
           </ul>
@@ -172,25 +172,25 @@ export default function V2Processing({
             <dd>{target}</dd>
           </div>
           <div>
-            <dt>{say("지역", "Geography")}</dt>
+            <dt>{say("지역", "Place")}</dt>
             <dd>{geography}</dd>
           </div>
           <div>
-            <dt>{say("검색 범위", "Scope")}</dt>
+            <dt>{say("검색 주제", "Topics")}</dt>
             <dd>{areas.join(" · ")}</dd>
           </div>
         </dl>
         {running ? (
           <p className="v2-processing-elapsed">
-            {say(`경과 시간 ${seconds}초 · 깊이 있는 검색이라 1~2분 걸릴 수 있습니다`, `Elapsed ${seconds}s · a thorough search can take 1–2 minutes`)}
+            {say(`경과 시간 ${seconds}초 · 꼼꼼히 찾느라 1~2분 걸릴 수 있습니다`, `${seconds}s so far · a thorough search can take 1–2 minutes`)}
           </p>
         ) : (
           <>
             <p className="v2-processing-failure" data-failure-kind={kind}>{failureCopy[kind][ko ? 1 : 0]}</p>
             <p className="v2-guidance">
               {say(
-                "다시 검색하거나 대상을 수정할 수 있습니다. 또는 외부 근거 없이 구조 초안을 볼 수 있으며, 이 경우 결과에 '구조 초안'으로 표시됩니다.",
-                "You can search again or edit the target. Or view the structural draft without public evidence; it will be marked as a structural draft."
+                "다시 검색하거나 검색 대상을 고칠 수 있습니다. 외부 근거 없이 구조 초안을 볼 수도 있으며, 이때 결과에 '구조 초안'으로 표시됩니다.",
+                "You can search again or edit the search target. You can also view a structural draft without public evidence. It will be marked as a draft."
               )}
             </p>
             <div className="v2-module-nav">
@@ -214,13 +214,13 @@ export default function V2Processing({
         <p>
           {say(
             "무엇을 지키고 무엇을 얻으려는 선택인지, 위험이 어디에 모이는지, 아직 확인되지 않은 것은 무엇인지, 어떤 조건이 달라지면 판단이 바뀌는지를 봅니다.",
-            "What the choice protects and opens, where risk concentrates, what is still unverified, and which conditions would change the reading."
+            "We look at what the choice protects and opens, where the risk sits, what is still unchecked, and which conditions would change the reading."
           )}
         </p>
         <div className="v2-lens-feature" aria-live="off">
           <span className="v2-lens-icon"><ActiveLens aria-hidden size={22} /></span>
           <div>
-            <small>{say(`구조 렌즈 ${lens + 1} / 5`, `Structural lens ${lens + 1} of 5`)}</small>
+            <small>{say(`살펴보는 관점 ${lens + 1} / 5`, `Lens ${lens + 1} of 5`)}</small>
             <strong>{lenses[lens].title[ko ? 1 : 0]}</strong>
             <p>{lenses[lens].question[ko ? 1 : 0]}</p>
           </div>
@@ -238,7 +238,7 @@ export default function V2Processing({
           {outputs.map((key, i) => (
             <li key={key}><span>{String(i + 1).padStart(2, "0")}</span>{v2t(language, key)}</li>
           ))}
-          <li><span>07</span>{say("다음 실험과 30·60·90일 검증", "Next experiment and 30/60/90-day checks")}</li>
+          <li><span>07</span>{say("다음에 확인할 것과 30·60·90일 계획", "Next check and a 30/60/90-day plan")}</li>
         </ol>
         <p className="v2-method-note">
           {say(

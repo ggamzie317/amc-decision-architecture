@@ -15,7 +15,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
 }) {
   const ko = analysis.language === "ko";
   const say = (a: string, b: string) => ko ? a : b;
-  const labels = [say("공개 자료의 조건", "Public condition"), say("고객의 현재 근거", "Your current evidence"), say("남은 확인", "Still to establish")];
+  const labels = [say("공개 자료의 조건", "What the public source says"), say("지금 내 근거", "Your evidence now"), say("아직 확인할 것", "Still to check")];
   const captionId = compact ? "v2-report-comparison-caption" : "v2-screen-comparison-caption";
   return <div className={`v2-condition-comparison ${compact ? "compact" : ""}`} data-testid="v2-condition-comparison">
     <p className="v2-analysis-note">{analysis.externalContextReading}</p>
@@ -25,7 +25,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
       </li>)}
     </ul>
     {analysis.evidenceLinks.length > 0 ? <>
-      <p id={captionId} className="v2-comparison-caption">{say("외부 조건과 고객 근거의 대조 · 개인의 충족 여부는 독립 검증 전", "Public conditions compared with customer evidence · personal fit is not independently verified")}</p>
+      <p id={captionId} className="v2-comparison-caption">{say("공개 자료와 내 근거 비교 · 내가 충족하는지는 외부 확인 전", "Public evidence compared with yours · whether you meet it is not externally checked")}</p>
       <table aria-labelledby={captionId}>
       <thead><tr>{labels.map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
       <tbody>{analysis.evidenceLinks.map(link => {
@@ -43,7 +43,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
             <p>{link.customerEvidence}</p>
             <span className="v2-comparison-status">{link.comparisonLabel}</span>
             {onChange && <fieldset>
-              <legend>{say("이 조건을 내 상황과 대조해 보세요", "Compare this condition with your situation")}</legend>
+              <legend>{say("이 조건을 내 상황과 비교해 보세요", "Compare this condition with your situation")}</legend>
               <div className="v2-comparison-options">
                 {(["unreviewed", "matches", "gap", "not_applicable"] as const).map(status => <button
                   key={status} type="button" aria-pressed={link.comparisonStatus === status}
@@ -51,7 +51,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
                 >{v2ComparisonLabel(status, ko)}</button>)}
               </div>
               {link.comparisonStatus !== "unreviewed" && <label>
-                <span>{say("대조한 결과물·수치·반응 (선택)", "Work, figures or responses compared (optional)")}</span>
+                <span>{say("비교에 쓴 결과물·수치·반응 · 선택", "Work, figures or responses you compared · optional")}</span>
                 <textarea maxLength={240} rows={2}
                   value={link.comparisonDetail}
                   onChange={event => onChange(link.comparisonKey, { status: link.comparisonStatus, detail: event.target.value })}
@@ -63,7 +63,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
           <td data-label={labels[2]}><p>{compact ? link.testReference : link.test}</p>{!compact && <small>{link.unresolved}</small>}</td>
         </tr>;
       })}</tbody>
-    </table></> : <p>{say("외부 자료가 확보되면 같은 표에서 고객 조건과 대조합니다. 확인하지 않은 외부 요건으로 적합성을 판단하지 않습니다.", "When external material is available, this table compares it with your conditions. Unestablished external requirements do not prove fit.")}</p>}
-    {onChange && <p className="v2-analysis-note">{say("이 응답은 고객 자기보고이며 점수나 검증 완료 표시로 바뀌지 않습니다. 현재 탭에만 유지됩니다.", "These answers are self-reports, not scores or independent verification. They remain in this tab only.")}</p>}
+    </table></> : <p>{say("공개 자료가 확인되면 이 표에서 내 조건과 비교합니다. 확인하지 않은 요건으로 적합성을 판단하지 않습니다.", "Once public evidence is found, this table compares it with your conditions. Requirements that have not been checked are not used to judge fit.")}</p>}
+    {onChange && <p className="v2-analysis-note">{say("이 답은 본인 응답이며, 점수나 검증 완료로 바뀌지 않습니다. 지금 연 탭에만 남습니다.", "These are your own answers. They do not become scores or a verified mark, and they stay in this tab only.")}</p>}
   </div>;
 }
