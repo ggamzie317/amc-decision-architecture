@@ -277,7 +277,7 @@ const casePresentations: Record<string, CasePresentation> = {
   Entrepreneurship: {
     missing: ["Repeatable paid demand", "반복 가능한 지불 수요"], protects: ["Income continuity", "소득 연속성"],
     opens: ["Founder-led value", "창업가 주도 가치"], tension: ["Market upside ↔ income continuity", "시장 기회 ↔ 소득 연속성"],
-    constraint: ["Runway and delivery load", "소득 여유와 제공 부담"], nextTest: ["Run a bounded paid pilot", "제한된 유료 Pilot 검증"],
+    constraint: ["Runway and delivery load", "소득 여유와 제공 부담"], nextTest: ["Run a small paid pilot", "작은 유료 시범 운영"],
   },
   "Industry Transition": {
     missing: ["Transferable proof", "전환 가능한 성과 근거"], protects: ["Established career capital", "기존 커리어 자산"],
@@ -300,7 +300,7 @@ const casePresentations: Record<string, CasePresentation> = {
     constraint: ["Location and support", "지역과 지원 체계"], nextTest: ["Test family-compatible path", "가족 적합 경로 검증"],
   },
   "General Career Reconfiguration": {
-    missing: ["The real decision condition", "실제 결정 조건"], protects: ["Current stability", "현재의 안정성"],
+    missing: ["Proof that carries over to the new path", "새 경로에서도 통할 나의 증거"], protects: ["Current stability", "현재의 안정성"],
     opens: ["Future career value", "미래 커리어 가치"], tension: ["Stability ↔ future value", "안정성 ↔ 미래 가치"],
     constraint: ["Evidence before commitment", "확정 전 근거"], nextTest: ["Test the key assumption", "핵심 가정 검증"],
   },
@@ -337,16 +337,16 @@ function deriveChangingPlays(input: ProductApplicationBuildInput, presentation: 
   const roleChange = input.caseType === "Role Upgrade / Downgrade";
   if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"],
     roleChange
-      ? [`Test whether the scope of ${optionA} can be adjusted before committing fully to the role change.`, `역할 변경을 확정하기 전에 ${optionA}의 범위를 조정할 수 있는지 먼저 검증합니다.`]
-      : [`Test whether ${optionA} can be redesigned before treating departure as necessary.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서 역할과 범위를 재설계할 수 있는지 먼저 검증합니다.`],
+      ? [`Check whether the scope of ${optionA} can be adjusted before fully accepting the role change.`, `역할 변경을 확정하기 전에 ${optionA}의 범위를 조정할 수 있는지 먼저 확인합니다.`]
+      : [`Check whether ${optionA} can be redesigned before deciding you have to leave.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서 역할과 범위를 다시 짤 수 있는지 먼저 확인합니다.`],
     roleChange
-      ? ["Full role change → scope adjustment test", "역할 전면 변경 → 범위 조정 검증"]
-      : ["Exit decision → role redesign test", "퇴사 결정 → 역할 재설계 검증"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
-  else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Test an intermediate route that can create evidence for ${optionB} before full conversion.`, `${withKoreanParticle(optionB, "으로/로")} 완전히 전환하기 전에 근거를 만들 수 있는 중간 경로를 검증합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One bounded pathway test", "한 번의 제한된 경로 검증"]);
-  else if (externalNeedsValidation) add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as the base while testing ${optionB} with real evidence.`, `${withKoreanParticle(optionA, "을/를")} 기반으로 유지하면서 실제 근거로 ${withKoreanParticle(optionB, "을/를")} 검증합니다.`], ["Assumption → observable test", "가정 → 관찰 가능한 검증"], presentation.protects, ["External proof", "외부 근거"], ["One bounded validation cycle", "한 번의 제한된 검증 주기"]);
+      ? ["Full role change → scope adjustment check", "역할 전면 변경 → 범위 조정 확인"]
+      : ["Exit decision → role redesign check", "퇴사 결정 → 역할 재설계 확인"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
+  else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Try an intermediate route that builds evidence for ${optionB} before moving fully.`, `${withKoreanParticle(optionB, "으로/로")} 완전히 전환하기 전에, 근거를 만들 수 있는 중간 경로를 먼저 확인합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One intermediate step only", "중간 경로 한 번만 확인"]);
+  else if (externalNeedsValidation) add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as your base while checking ${optionB} against real evidence.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서, ${withKoreanParticle(optionB, "이/가")} 맞는지 실제 근거로 확인합니다.`], ["Assumption → direct check", "가정 → 직접 확인"], presentation.protects, ["External proof", "외부 근거"], ["One short checking period", "한 번의 짧은 확인 기간"]);
 
-  if (safetyNeedsProtection || downsideNeedsProtection) add("resource", ["Resource Reconfiguration", "자원 재구성"], ["Increase protected capacity before increasing commitment.", "몰입을 늘리기 전에 보호된 여력을 강화합니다."], ["Current capacity → protected capacity", "현재 여력 → 보호된 여력"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible exposure yet", "아직 되돌릴 수 없는 노출 없음"]);
-  if (reversibilityNeedsProtection) add("timing", ["Timing Reconfiguration", "시기 재구성"], ["Move the commitment point until the recovery path is clearer.", "회복 경로가 명확해질 때까지 확정 시점을 조정합니다."], ["Fixed date → evidence-led timing", "고정된 시점 → 근거 기반 시기"], presentation.protects, ["A clear recovery path", "명확한 회복 경로"], ["Review before commitment", "확정 전 재검토"]);
+  if (safetyNeedsProtection || downsideNeedsProtection) add("resource", ["Resource Reconfiguration", "자원 재구성"], ["Build up the room you need to protect before committing more.", "투입을 늘리기 전에 지켜야 할 여유부터 늘립니다."], ["Current room → protected room", "현재 여유 → 지켜야 할 여유"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible decisions yet", "되돌릴 수 없는 결정은 아직 하지 않음"]);
+  if (reversibilityNeedsProtection) add("timing", ["Timing Reconfiguration", "시기 재구성"], ["Hold off on a fixed move date until the way back is clearer.", "돌아올 길이 분명해질 때까지 옮기는 시점을 늦춥니다."], ["Fixed date → timing set by evidence", "정해 둔 날짜 → 근거를 보고 정하는 시점"], presentation.protects, ["A clear way back", "분명한 복귀 경로"], ["Review before deciding", "확정하기 전에 다시 보기"]);
   return plays;
 }
 
@@ -354,13 +354,13 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
   const ko = input.language === "ko";
   const optionA = cleanOptionLabel(input.optionA);
   const optionB = cleanOptionLabel(input.optionB);
-  const financialRoom = answer(input.answers, 19, ko ? "소득 연속성과 감당 가능한 실험 범위를 먼저 확인해야 합니다." : "Income continuity and a tolerable test boundary still need to be confirmed.");
-  const recoveryPath = answer(input.answers, 20, ko ? "되돌릴 수 있는 순서와 회복 경로를 유지합니다." : "Keep a reversible sequence and a credible recovery path.");
-  const downside = answer(input.answers, 21, ko ? "검증 전에 회복하기 어려운 노출을 늘리지 않습니다." : "Do not increase hard-to-recover exposure before validation.");
+  const financialRoom = answer(input.answers, 19, ko ? "소득이 이어지는지, 어디까지 시도해 볼 수 있는지 먼저 확인해야 합니다." : "Whether your income continues, and how far you can afford to try, still need to be confirmed.");
+  const recoveryPath = answer(input.answers, 20, ko ? "되돌릴 수 있는 순서로 움직이고, 돌아올 길을 남겨 둡니다." : "Move in an order you can undo, and keep a way back.");
+  const downside = answer(input.answers, 21, ko ? "확인되기 전에는 되돌리기 어려운 지출이나 결정을 늘리지 않습니다." : "Do not add spending or decisions that are hard to reverse before the path is checked.");
   const missingValidation = answer(input.answers, 14, input.validationFocus);
-  const internalReadiness = answer(input.answers, 17, ko ? "필요한 역량과 증거의 준비 수준을 확인합니다." : "The required capability and proof still need to be made visible.");
+  const internalReadiness = answer(input.answers, 17, ko ? "필요한 역량과 그것을 보여 줄 근거가 얼마나 준비됐는지 확인합니다." : "The required skills, and the evidence that shows them, still need to be made visible.");
   const constraint = answer(input.answers, 25, answer(input.answers, 3, input.primaryRiskMeaning));
-  const optionAProtection = answer(input.answers, 6, ko ? `${withKoreanParticle(input.optionA.trim(), "은/는")} 현재 기반과 검증 시간을 보호합니다.` : `${input.optionA} protects the current base and time to validate.`);
+  const optionAProtection = answer(input.answers, 6, ko ? `${withKoreanParticle(input.optionA.trim(), "은/는")} 지금의 기반과 새 경로를 확인할 시간을 지켜 줍니다.` : `${input.optionA} protects your current base and the time to check the new path.`);
   const optionBUpside = answer(input.answers, 9, ko ? `${withKoreanParticle(input.optionB.trim(), "은/는")} 새로운 커리어 가치를 열 수 있습니다.` : `${input.optionB} may open a new source of career value.`);
   const concise = casePresentation(input);
 
@@ -369,9 +369,9 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
   const postureAssessment = derivePostureAssessment(input);
   const postureFamily = postureAssessment.effectivePosture;
   const guardrailConstraints = [
-    ko ? "약한 Safety Margin" : "weak Safety Margin",
-    ...(input.structuralSignals.reversibility.band === "weak" ? [ko ? "약한 가역성" : "weak reversibility"] : []),
-    ...(input.structuralSignals.structuralRisk.band === "high" ? [ko ? "높은 하방 노출" : "high downside exposure"] : []),
+    ko ? "부족한 안전 여유" : "a limited safety margin",
+    ...(input.structuralSignals.reversibility.band === "weak" ? [ko ? "돌아가기 어려운 상황" : "a hard way back"] : []),
+    ...(input.structuralSignals.structuralRisk.band === "high" ? [ko ? "큰 손실 위험" : "a high potential loss"] : []),
   ];
   const guardrailConstraintText = guardrailConstraints.length > 2
     ? `${guardrailConstraints.slice(0, -1).join(", ")}${ko ? " 및 " : ", and "}${guardrailConstraints.at(-1)}`
@@ -380,48 +380,48 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
       : guardrailConstraints.join(" and ");
   const guardrailExplanation = postureAssessment.guardrailApplied
     ? (ko
-        ? `${optionB}에 대한 기회 근거는 존재하지만, ${withKoreanParticle(guardrailConstraintText, "이/가")} 실행 노출의 규모를 제한합니다. 현재 자세는 몰입을 확대하기 전에 배우고 회복하며 검증할 여력을 보호합니다.`
-        : `Opportunity evidence for ${optionB} remains present, but ${guardrailConstraintText} constrain the scale of execution exposure. The current posture protects room to learn, recover, and validate before scaling commitment.`)
+        ? `${optionB} 쪽 기회를 뒷받침하는 근거는 있습니다. 다만 ${guardrailConstraintText} 때문에 한 번에 크게 옮기기는 어렵습니다. 지금 판단은 본격적으로 옮기기 전에, 배우고 다시 시도할 여유부터 지키는 쪽입니다.`
+        : `There is evidence of opportunity in ${optionB}. But ${guardrailConstraintText} limit how far you can move at once. The current reading is to protect room to learn and try again before moving further.`)
     : "";
   const currentStructuralPosture = postureFamily === "transition"
     ? {
         label: ko ? "더 강해진 전환 근거" : "Stronger Transition Case",
-        sentence: ko ? `현재 구조에서는 ${optionB}의 근거가 더 강해졌지만, 노출을 한 번에 늘리기보다 단계적으로 전환하는 자세가 가장 잘 뒷받침됩니다.` : `The current structure supports a stronger case for ${optionB}, with commitment increasing in stages rather than all at once.`,
+        sentence: ko ? `지금 조건에서는 ${optionB} 쪽 근거가 더 강해졌습니다. 다만 한 번에 옮기기보다 단계적으로 옮겨 가는 편이 가장 잘 뒷받침됩니다.` : `Current conditions give stronger support for ${optionB}. Moving in stages, rather than all at once, is the best-supported way.`,
       }
     : postureFamily === "reconfigure"
       ? {
           label: ko ? "기반을 보호하며 재구성" : "Protect and Reconfigure",
-          sentence: ko ? `현재 구조는 회복 역량과 유효한 선택지를 보호하면서, 제한된 변화로 ${optionB}의 핵심 가능성을 검증할 수 있도록 경로를 재구성하는 자세를 뒷받침합니다.` : `The current structure supports protecting recovery capacity and viable options while reconfiguring the path to test the most valuable elements of ${optionB} through bounded changes.`,
+          sentence: ko ? `지금 조건에서는 다시 일어설 여유와 현재 선택지를 지키면서, 작은 변화로 ${optionB}의 핵심 가능성을 확인하도록 경로를 조정하는 편이 더 잘 뒷받침됩니다.` : `Current conditions better support protecting your room to recover and your current options, while adjusting the path to check what matters most in ${optionB} through small changes.`,
         }
       : {
           label: ko ? "보존하며 검증" : "Preserve and Validate",
           sentence: postureAssessment.guardrailApplied
             ? guardrailExplanation
-            : ko ? `현재 구조는 ${optionA}의 기반을 보존하면서 ${optionB}의 외부 근거를 검증하는 방향을 더 강하게 뒷받침합니다.` : `The current structure better supports Option A — ${optionA} — while validating the external case for ${optionB}.`,
+            : ko ? `지금 조건에서는 ${optionA}의 기반을 지키면서 ${optionB}의 외부 근거를 확인하는 방향이 더 잘 뒷받침됩니다.` : `Current conditions better support keeping ${optionA} while checking the outside evidence for ${optionB}.`,
         };
 
   const decisionSwitches = input.decisionConditions.slice(0, 3).map((signal, index) => ({
     signal,
     direction: postureAssessment.guardrailApplied
       ? (ko
-          ? `이 조건이 달라지면 ${optionB}의 기회 근거와 하방 노출을 함께 재평가합니다. 몰입 확대는 기회 근거가 이를 뒷받침하고 ${guardrailConstraintText}에 대한 보호가 확인될 때만 검토할 수 있습니다.`
-          : `A change in this condition calls for reassessing the opportunity evidence for ${optionB} and downside exposure together. Increased commitment is supportable only when the opportunity evidence supports it and protection around ${guardrailConstraintText} is confirmed.`)
+          ? `이 조건이 달라지면 ${optionB} 쪽 기회 근거와 손실 위험을 함께 다시 봅니다. 더 본격적으로 옮기는 것은 근거가 뒷받침하고 ${withKoreanParticle(guardrailConstraintText, "을/를")} 보완할 방법이 확인될 때만 검토하세요.`
+          : `If this condition changes, look again at the opportunity evidence for ${optionB} and the potential loss together. Consider moving further only when the evidence supports it and a way to cover ${guardrailConstraintText} is confirmed.`)
       : postureFamily === "transition"
-      ? (ko ? `${optionB} 근거가 유지되면 단계적 몰입을 계속 뒷받침하고, 약해지면 노출을 줄여 현재 기반을 다시 보호합니다.` : `If it holds, it supports continued staged commitment to ${optionB}; if it weakens, reduce exposure and restore protection around the current base.`)
+      ? (ko ? `${optionB} 쪽 근거가 유지되면 단계적으로 계속 옮겨 가고, 약해지면 투입을 줄여 현재 기반을 다시 지킵니다.` : `If it holds, keep moving toward ${optionB} in stages; if it weakens, scale back and protect your current base again.`)
       : index < 2
-        ? (ko ? `확인되면 ${optionB}에 대한 단계적 몰입이 더 설명 가능해집니다.` : `If observed, a staged increase in commitment to ${optionB} becomes more defensible.`)
-        : (ko ? `약해지면 현재 자세를 재평가하고 ${optionA}의 보호 범위를 넓힙니다.` : `If it weakens, reassess the posture and expand the protection retained in ${optionA}.`),
+        ? (ko ? `이 조건이 맞으면 ${optionB} 쪽으로 단계적으로 옮겨 가는 데 힘이 실립니다.` : `If this holds, a staged move toward ${optionB} becomes better supported.`)
+        : (ko ? `약해지면 현재 판단을 다시 보고, ${optionA} 쪽 기반을 더 단단히 지킵니다.` : `If it weakens, revisit the current reading and protect more of ${optionA}.`),
   }));
 
   const changingPlays = deriveChangingPlays(input, concise, missingValidation, optionAProtection);
 
   const safetyReading = input.structuralSignals.safetyMargin.band === "strong"
-    ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 구조는 제한된 실험을 가능하게 하며, 시도하고 배우고 회복해 다시 선택할 여지를 지킵니다." : "Safety Margin protects the space to change. The current structure enables bounded experimentation by preserving room to try, learn, recover, and choose again.")
+    ? (ko ? "안전 여유는 다시 방향을 바꿀 수 있는 여지를 지켜 줍니다. 지금 조건에서는 작은 단계로 시도하고, 배우고, 다시 선택할 여유가 있습니다." : "Your safety margin protects room to change course. Under current conditions you have room to try in small steps, learn, recover and choose again.")
     : input.structuralSignals.safetyMargin.band === "weak"
-      ? (ko ? "Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다. 현재 구조는 변화를 막지는 않지만, 회복과 재시도 역량을 위해 노출 경계를 좁혀야 합니다." : "Safety Margin protects the space to change. The current structure does not prohibit experimentation, but it constrains exposure so recovery and retry capacity remain protected.")
+      ? (ko ? "안전 여유는 다시 방향을 바꿀 수 있는 여지를 지켜 줍니다. 지금 조건이 변화를 막지는 않습니다. 다만 일이 틀어져도 다시 시도할 수 있도록, 한 번에 감수할 부담을 작게 잡으세요." : "Your safety margin protects room to change course. Current conditions do not rule out change. But keep the risk you take on at any one time small, so you can recover and try again.")
       : input.structuralSignals.safetyMargin.band === "unknown"
-        ? (ko ? "Safety Margin이 아직 확인되지 않았습니다. 노출을 늘리기 전에 재정 여유와 회복 역량을 명확히 하세요. Safety Margin은 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin is not yet established. Clarify financial room and recovery capacity before increasing exposure. Safety Margin protects the space to change.")
-        : (ko ? "Safety Margin은 더 안전한 선택을 고르는 것이 아니라 다시 바꿀 수 있는 공간을 보호합니다." : "Safety Margin protects the space to change; it does not simply identify the safer option.");
+        ? (ko ? "안전 여유가 아직 확인되지 않았습니다. 투입을 늘리기 전에 재정 여유와 일이 틀어져도 버틸 여유를 먼저 확인하세요." : "Your safety margin is not yet established. Before committing more, check your financial room and your room to absorb a setback.")
+        : (ko ? "안전 여유는 더 안전한 선택을 고르는 기준이 아닙니다. 다시 방향을 바꿀 수 있는 여지를 지켜 주는 조건입니다." : "Your safety margin is not about picking the safer option. It protects room to change course.");
 
   return {
     analysisSequence: AMC_ANALYSIS_SEQUENCE,
@@ -430,7 +430,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
       missingPointKeyword: concise.missing[ko ? 1 : 0],
       safetyMarginKeyword: input.structuralSignals.safetyMargin.band === "strong" ? "Strong"
         : input.structuralSignals.safetyMargin.band === "developing" ? "Developing"
-          : input.structuralSignals.safetyMargin.band === "weak" ? (ko ? "제약됨" : "Constrained")
+          : input.structuralSignals.safetyMargin.band === "weak" ? (ko ? "부족함" : "Limited")
             : (ko ? "아직 확인되지 않음" : "Not Yet Established"),
       coreTradeoffKeyword: concise.tension[ko ? 1 : 0],
       nextTestKeyword: concise.nextTest[ko ? 1 : 0],
@@ -458,10 +458,10 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
       topDrivers: [guardrailExplanation || optionAProtection, input.externalImplication, internalReadiness].filter(Boolean).slice(0, 3),
       biggestRisk: `${input.primaryRisk}: ${input.primaryRiskMeaning}`,
       strongestCounterargument: ko
-        ? (postureFamily === "transition" ? `이 자세에 대한 가장 강한 반론은 ${optionAProtection}` : `이 자세에 대한 가장 강한 반론은 ${optionBUpside}`)
+        ? (postureFamily === "transition" ? `이 판단에 대한 가장 강한 반론: ${optionAProtection}` : `이 판단에 대한 가장 강한 반론: ${optionBUpside}`)
         : postureFamily === "transition"
-          ? `The strongest case against this posture is that ${optionAProtection.charAt(0).toLowerCase()}${optionAProtection.slice(1)}`
-          : `The strongest case against this posture is that ${optionBUpside.charAt(0).toLowerCase()}${optionBUpside.slice(1)}`,
+          ? `The strongest case against this reading is that ${optionAProtection.charAt(0).toLowerCase()}${optionAProtection.slice(1)}`
+          : `The strongest case against this reading is that ${optionBUpside.charAt(0).toLowerCase()}${optionBUpside.slice(1)}`,
     },
     changingPlays,
     safetyMargin: {
@@ -475,7 +475,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
       roomToBeWrong: `${financialRoom} ${recoveryPath}`,
       strongestProtection: optionAProtection,
       weakestMargin: downside,
-      protectedCapacity: ko ? "소득 연속성, 회복 가능성, 학습과 재시도 역량" : "Income continuity, recovery capacity, and the ability to learn and retry",
+      protectedCapacity: ko ? "끊기지 않는 소득, 다시 일어설 여유, 배우고 다시 시도할 힘" : "Steady income, room to recover, and the ability to learn and try again",
       exposureBoundary: downside,
     },
     decisionSwitches,
@@ -486,15 +486,15 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
       exposureBoundary: downside,
       continueCondition: postureAssessment.guardrailApplied
         ? (ko
-            ? `${decisionSwitches[0]?.signal || input.validationFocus} 몰입 확대에는 ${guardrailConstraintText}의 재평가와 신뢰할 수 있는 보호도 필요합니다.`
-            : `${decisionSwitches[0]?.signal || input.validationFocus} Increasing commitment also requires ${guardrailConstraintText} to be reassessed and credibly protected.`)
+            ? `${decisionSwitches[0]?.signal || input.validationFocus} 더 본격적으로 옮기려면 ${withKoreanParticle(guardrailConstraintText, "을/를")} 다시 확인하고 보완할 방법도 갖춰야 합니다.`
+            : `${decisionSwitches[0]?.signal || input.validationFocus} Moving further also requires ${guardrailConstraintText} to be rechecked and covered.`)
         : decisionSwitches[0]?.signal || input.validationFocus,
       pauseCondition: postureAssessment.guardrailApplied
         ? (ko
-            ? `실험이 확인된 노출 한도를 넘거나 회복 역량을 약화시키면 해당 실험 또는 실행 노출을 중단하거나 재설계합니다. 확인된 보호 범위 안에서는 제한된 검증과 학습을 계속할 수 있으며, 보호 범위가 아직 확인되지 않았다면 먼저 명확히 합니다.`
-            : `Pause or redesign the experiment or its execution exposure if it exceeds the established exposure boundary or weakens recovery capacity. Bounded validation and learning can continue within confirmed protection; if that protection is not yet established, clarify it first.`)
-        : ko ? `근거가 생기기 전에 시험이 보호해야 할 여력을 약화시키면 중단하거나 재설계합니다: ${financialRoom}` : `Pause or redesign if the test weakens this protected room before credible evidence appears: ${financialRoom}`,
-      reassessAt: ko ? "각 검증 단계가 끝날 때, 그리고 노출을 확대하기 전에 현재 구조적 자세를 다시 봅니다." : "Reassess the Current Structural Posture at the end of each stage and before increasing exposure.",
+            ? `확인 단계가 미리 정한 한도를 넘거나 다시 일어설 여유를 줄이면, 그 단계를 멈추거나 다시 설계하세요. 지킬 범위가 확인됐다면 그 안에서는 작게 확인하고 배우는 일을 이어 가도 됩니다. 그 범위가 아직 분명하지 않다면 그것부터 정하세요.`
+            : `Pause or redesign the step if it goes beyond the limit you set or reduces your room to recover. Small checks and learning can continue within the protection you have confirmed. If that protection is not yet clear, set it first.`)
+        : ko ? `근거가 생기기 전에 이 과정이 지켜야 할 여유를 줄이면 멈추거나 다시 설계하세요. 지켜야 할 여유: ${financialRoom}` : `Pause or redesign if this step eats into the room you are protecting before real evidence appears. Room to protect: ${financialRoom}`,
+      reassessAt: ko ? "각 확인 단계가 끝날 때와 투입을 늘리기 전에 현재 판단을 다시 봅니다." : "Revisit the current reading at the end of each stage and before committing more.",
       stages: input.plan,
     },
   };

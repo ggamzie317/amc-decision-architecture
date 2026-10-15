@@ -61,11 +61,11 @@ export default function V2JevAdvisory({
   const a = result.advisory;
   const fits = (text: string) => (ko ? /[가-힣]/.test(text) : !/[가-힣]/.test(text));
   const rows: [string, string, AdvisoryLevel][] = [
-    ["Safety Margin contribution", "안전 여유 기여", a.safetyMarginContribution],
-    ["Scenario sensitivity (switching)", "판단 민감도 (전환 가능성)", a.scenarioSensitivity],
-    ["Changing feasibility", "경로 조정 실현성", a.changingFeasibility],
-    ["Scenario plausibility", "시나리오 개연성", a.scenarioPlausibility],
-    ["Evidence support", "근거 뒷받침", a.evidenceSupport],
+    ["Effect on Safety Margin", "안전 여유에 주는 영향", a.safetyMarginContribution],
+    ["How easily the reading switches", "판단이 바뀌기 쉬운 정도", a.scenarioSensitivity],
+    ["How workable the path adjustment is", "경로 조정의 현실성", a.changingFeasibility],
+    ["How realistic the scenario is", "이 가정이 현실적인 정도", a.scenarioPlausibility],
+    ["Evidence support", "근거의 뒷받침", a.evidenceSupport],
   ];
   return (
     <aside className="v2-jev" aria-label={say("JEV 보조 판단", "JEV advisory")} data-testid="v2-jev-advisory">
@@ -85,10 +85,10 @@ export default function V2JevAdvisory({
       </ul>
       {/* Free text is shown only when it is in the interface language. */}
       {fits(a.conditionalReading) && <p>{a.conditionalReading}</p>}
-      {a.uncertainties.filter(fits).length > 0 && <small>{say("불확실성: ", "Uncertain: ")}{a.uncertainties.filter(fits).join(" · ")}</small>}
+      {a.uncertainties.filter(fits).length > 0 && <small>{say("아직 불확실한 점: ", "Still uncertain: ")}{a.uncertainties.filter(fits).join(" · ")}</small>}
       <small className="v2-jev-note">
-        {say("JEV는 바꾼 조건에 대한 정성적 보조 의견입니다. allofmycareer 구조 판단과 점수를 바꾸지 않습니다.",
-          "JEV gives a qualitative second opinion on the changed conditions. It does not change the allofmycareer reading or scores.")}
+        {say("JEV는 바꾼 조건을 말로 풀어 본 참고 의견입니다. allofmycareer의 판단과 점수는 바뀌지 않습니다.",
+          "JEV gives a descriptive second opinion on the changed conditions, for reference only. It does not change the allofmycareer reading or scores.")}
       </small>
     </aside>
   );

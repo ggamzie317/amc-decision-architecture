@@ -246,8 +246,8 @@ export default function V2Simulator({
             {overrideCount
               ? analysis.executiveSummary
               : say(
-                  "왼쪽 조건을 바꾸면 같은 구조 분석이 다시 실행됩니다. 개선된 부분과 여전히 남는 제약을 함께 확인하세요.",
-                  "Change the conditions to rerun the same analysis. Review both improvements and constraints that remain."
+                  "왼쪽 조건을 바꾸면 같은 방식으로 다시 계산합니다. 나아진 부분과 그대로 남는 제약을 함께 보세요.",
+                  "Change a condition on the left and the same analysis runs again. Look at what improves and what still holds you back."
                 )}
           </p>
           <ul>
@@ -268,17 +268,17 @@ export default function V2Simulator({
         baseline={baseline} scenario={scenario} overrides={activeOverrides} />
         {overrideCount > 0 && (
           // Benchmark: after a change, separate what moved, what held and what is still unknown.
-          <section className="v2-scenario-delta" data-testid="v2-scenario-delta" aria-label={say("바뀐 해석과 그대로인 해석", "What changed and what held")}>
+          <section className="v2-scenario-delta" data-testid="v2-scenario-delta" aria-label={say("달라진 것과 그대로인 것", "What changed and what held")}>
             <div>
-              <b>{say("바뀐 해석", "Changed")}</b>
+              <b>{say("달라진 것", "Changed")}</b>
               <p>{changedImpact.length ? changedImpact.map(([label]) => t(label)).join(" · ") : say("없음", "None")}</p>
             </div>
             <div>
-              <b>{say("그대로인 해석", "Unchanged")}</b>
+              <b>{say("그대로인 것", "Unchanged")}</b>
               <p>{compare.filter(([, before, after]) => before === after).map(([label]) => t(label)).join(" · ") || say("없음", "None")}</p>
             </div>
             <div>
-              <b>{say("여전히 미확인", "Still unconfirmed")}</b>
+              <b>{say("아직 확인 전", "Still unconfirmed")}</b>
               <p>{Object.entries(scenario.postureBasis).filter(([, signal]) => signal.band === "unknown").map(([key]) => t(({
                 externalValidation: "externalValidation", internalReadiness: "readinessBand", safetyMargin: "safety", reversibility: "reversibility",
                 optionBSupport: "supportBand", structuralRisk: "downside", constraintLoad: "constraint",
@@ -317,8 +317,8 @@ export default function V2Simulator({
             </p>
             <h2>
               {say(
-                "조건을 바꾼 뒤의 전체 해석",
-                "The full reading after changing conditions"
+                "조건을 바꿨을 때의 전체 판단",
+                "The full reading with the changed conditions"
               )}
             </h2>
           </div>
@@ -352,10 +352,10 @@ export default function V2Simulator({
               }}
             >
               {item === "reading"
-                ? say("해석과 안전마진", "Reading and safety")
+                ? say("판단과 안전 여유", "Reading and Safety Margin")
                 : item === "map"
                   ? "Decision Map"
-                  : say("Changing과 다음 실험", "Changing and next test")}
+                  : say("경로 조정과 다음 확인", "Changing and next check")}
             </button>
           ))}
         </div>
@@ -391,8 +391,8 @@ export default function V2Simulator({
       <details className="v2-sensitivity">
         <summary>
           {say(
-            "조건별 구조 변화표 자세히 보기",
-            "Inspect the condition-by-condition structure changes"
+            "조건 하나씩 바꿨을 때의 변화 자세히 보기",
+            "See what changes when each condition changes on its own"
           )}
         </summary>
         <div className="v2-section-top">

@@ -15,7 +15,7 @@ export function v2PostureCoverageNote(core: ProductApplicationV3, language: V2La
   const ko = language === "ko";
   const assumed = known < total
     ? ko
-      ? ` 확인되지 않은 ${total - known}개는 중간값으로 가정해 계산했으므로, 실제 상태가 확인되면 판단이 달라질 수 있습니다.`
+      ? ` 확인되지 않은 ${total - known}개는 중간값으로 가정했습니다. 실제 상태가 확인되면 판단이 달라질 수 있습니다.`
       : ` The ${total - known} unconfirmed inputs were treated as middle values, so the reading may change once they are confirmed.`
     : "";
   const fifwm = fifwmKnown
@@ -29,7 +29,7 @@ export function v2PostureCoverageNote(core: ProductApplicationV3, language: V2La
       ? ko ? "근거 일부 확인: " : "Partly established: "
       : ko ? "근거 비교적 충분: " : "Stronger basis: ";
   const body = ko
-    ? `이 판단은 구조 입력 ${total}개 중 ${known}개가 확인된 상태에서 계산되었습니다.`
+    ? `이 판단은 판단에 쓰는 조건 ${total}개 중 ${known}개를 확인한 상태에서 계산했습니다.`
     : `This reading rests on ${known} of ${total} confirmed structural inputs.`;
   return { level, known, total, text: `${lead}${body}${fifwm}${assumed}` };
 }

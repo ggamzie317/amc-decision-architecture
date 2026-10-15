@@ -69,7 +69,7 @@ describe("AMC interactive V2 experience", () => {
     expect(caseTypes).toHaveLength(9);
     const html = renderToStaticMarkup(React.createElement(AmcInteractiveV2));
     expect(html.match(/ required=""/g) || []).toHaveLength(2);
-    expect(html).toContain("Decision Setup");
+    expect(html).toContain("Set up your decision");
     expect(html).not.toContain("15 questions");
   });
   it("requires explicit clicks for exactly six structural anchors, including explicit unknown", () => {
@@ -92,10 +92,10 @@ describe("AMC interactive V2 experience", () => {
       state.bandSelections[key] = true;
     expect(v2AllBandsAnswered(state)).toBe(true);
     expect(v2t("en", "chooseCurrentState")).toBe(
-      "Choose the current state before continuing."
+      "Choose the option closest to where you are now."
     );
     expect(v2t("ko", "chooseCurrentState")).toBe(
-      "현재 상태를 선택한 뒤 계속해 주세요."
+      "지금 상황에 가장 가까운 것을 골라 주세요."
     );
   });
   it("uses established Missing Point concepts for all nine case families", () => {
@@ -108,7 +108,7 @@ describe("AMC interactive V2 experience", () => {
       "Real scope change",
       "Recovery before direction",
       "Family operating fit",
-      "The real decision condition",
+      "Proof that carries over to the new path",
     ];
     caseTypes.forEach((caseType, index) => {
       const state = initialV2State();
@@ -147,7 +147,7 @@ describe("AMC interactive V2 experience", () => {
         onReport: () => {},
       })
     );
-    expect(dashboard).toContain("Exposure / Risk");
+    expect(dashboard).toContain("Risk you take on");
     expect(dashboard).toContain(d.tradeoff.value);
   });
   it("keeps the optional-chip path analytically distinct with case-family fallback copy", () => {
@@ -185,9 +185,9 @@ describe("AMC interactive V2 experience", () => {
     );
     expect(visible.length).toBeGreaterThanOrEqual(3);
     expect(visible.length).toBeLessThanOrEqual(4);
-    expect(html).toContain("변화 표시");
+    expect(html).toContain("진한 칸: 이 조건만 바꾸면 달라지는 부분");
     expect(html).toContain("되돌릴 수 있는 여지");
-    expect(html).toContain(">P<");
+    expect(html).toContain(">판<");
   });
   it("prioritizes posture then safety then changing then next-test and diversifies variables", () => {
     const f = v2DemoFixture("industry", "en");
@@ -365,13 +365,13 @@ describe("AMC interactive V2 experience", () => {
       expect(values(simulator, "v2-decision-switch")).toEqual(selected);
       expect(values(report, "v2-sensitivity-row")).toEqual(selected);
       expect(values(report, "v2-report-switch")).toEqual(selected);
-      expect(simulator).toContain("allofmycareer has selected");
+      expect(simulator).toContain("These are the few conditions most likely to change the reading.");
       if (count === 0) {
         expect(simulator).toContain(
-          "No tested single condition materially changes"
+          "No single condition changes this reading much."
         );
         expect(report).toContain(
-          "No tested single condition materially changes"
+          "No single condition changes this reading much."
         );
       }
     }
@@ -461,7 +461,7 @@ describe("AMC interactive V2 experience", () => {
     const changed = v2Scenario(f.input, { financialRoom: "strong" });
     const comparison = v2ScenarioComparison(f.baseline, changed.result, "en");
     expect(comparison.find(([label]) => label === "safety")?.slice(1)).toEqual([
-      "Developing",
+      "Partly in place",
       "Strong",
     ]);
     expect(comparison.find(([label]) => label === "changing")?.[1]).not.toBe(
@@ -495,14 +495,14 @@ describe("AMC interactive V2 experience", () => {
         onPrint: () => {},
       })
     );
-    expect(report).toContain("<h1>Preserve and Validate</h1>");
-    expect(report).toContain("BASELINE STRUCTURAL READING");
+    expect(report).toContain("<h1>Keep the current plan for now</h1>");
+    expect(report).toContain("READING FROM YOUR ANSWERS");
     expect(report).toContain("HYPOTHETICAL SCENARIO");
     expect(report).toContain(
-      "Preserve and Validate → Stronger Transition Case"
+      "Keep the current plan for now → A stronger case for moving"
     );
     expect(report).toContain(
-      "This structural stress test does not establish new evidence."
+      "This shows a changed condition only. It is not new evidence."
     );
     expect(report).toContain("Current external evidence is not verified.");
     const switches = Array.from(
@@ -691,7 +691,7 @@ describe("AMC interactive V2 experience", () => {
     expect(normal.match(/class="v2-paper-page"/g) || []).toHaveLength(8);
     expect(normal).toContain("Transferable proof");
     expect(normal).toContain("Income · Network ↔ Growth · Learning");
-    expect(normal).toContain("Exposure / Risk");
+    expect(normal).toContain("Risk you take on");
     expect(normal).toContain("allofmycareer</div>");
     expect(normal.match(/data-testid="v2-sensitivity-row"/g)).toHaveLength(4);
     expect(demo.match(/class="v2-paper-page"/g) || []).toHaveLength(9);

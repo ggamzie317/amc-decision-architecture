@@ -53,30 +53,30 @@ export default function V2PathMap({
         <article className="v2-path-node now">
           <span className="v2-path-tag"><MapPin aria-hidden size={14} />{say("현재 위치", "Where you are")}</span>
           <strong>{current}</strong>
-          <small>{say("지키려는 것: ", "Protecting: ")}{state.protects.length ? state.protects.map(p => v2t(language, p)).join(" · ") : say("현재의 소득과 생활 기반", "current income and living base")}</small>
+          <small>{say("지키려는 것: ", "Protecting: ")}{state.protects.some(p => p !== "other") ? state.protects.filter(p => p !== "other").map(p => v2t(language, p)).join(" · ") : say("현재의 소득과 생활 기반", "current income and living base")}</small>
         </article>
         <ArrowRight aria-hidden className="v2-path-arrow" size={22} />
         <article className="v2-path-node next">
-          <span className="v2-path-tag"><Milestone aria-hidden size={14} />{say("다음 단계 · 가까움", "Next step · near")}</span>
-          <strong>{next ? next.title : say("작은 시험 1개", "One small test")}</strong>
+          <span className="v2-path-tag"><Milestone aria-hidden size={14} />{say("바로 다음 단계", "Next step")}</span>
+          <strong>{next ? next.title : say("작게 확인할 것 1개", "One small check")}</strong>
           <small>{next ? next.move : analysis.experiment.briefAction}</small>
         </article>
         <ArrowRight aria-hidden className="v2-path-arrow" size={22} />
         <article className="v2-path-node goal">
           <span className="v2-path-tag"><Flag aria-hidden size={14} />{say("고민하는 커리어 · 목표", "Considered career · goal")}</span>
           <strong>{target}</strong>
-          <small>{say("현재 구조 판단: ", "Current reading: ")}{analysis.posture}</small>
+          <small>{say("현재 판단: ", "Current reading: ")}{analysis.posture}</small>
           {requirement && <em>{say("핵심 요건: ", "Key requirement: ")}{text(requirement.headline)}</em>}
-          {gaps.length > 0 && <em className="gap">{say("아직 부족·미확인: ", "Still short or unconfirmed: ")}{gaps.slice(0, 3).join(" · ")}</em>}
+          {gaps.length > 0 && <em className="gap">{say("보강하거나 확인할 것: ", "To strengthen or confirm: ")}{gaps.slice(0, 3).join(" · ")}</em>}
         </article>
       </div>
       {next && (
         // Benchmark (Fuel50 / Phenom): the line between steps carries its conditions, not just an arrow.
-        <dl className="v2-path-terms" aria-label={say("다음 단계가 성립하는 조건", "What the next step depends on")}>
-          <div><dt>{say("성립 조건", "Holds if")}</dt><dd>{next.needs}</dd></div>
-          <div><dt>{say("확보할 증거", "Evidence to secure")}</dt><dd>{next.evidence}</dd></div>
-          <div><dt>{say("감수할 부담", "Burden to carry")}</dt><dd>{next.timeExposure || next.exposure}</dd></div>
-          <div><dt>{say("되돌아갈 여지", "Way back")}</dt><dd>{v2t(language, core.postureBasis.reversibility.band)}{reversibilityNote ? ` — ${reversibilityNote}` : ""}</dd></div>
+        <dl className="v2-path-terms" aria-label={say("다음 단계에 필요한 것", "What the next step needs")}>
+          <div><dt>{say("필요한 것", "What it needs")}</dt><dd>{next.needs}</dd></div>
+          <div><dt>{say("확인할 결과", "Result to check")}</dt><dd>{next.evidence}</dd></div>
+          <div><dt>{next.timeExposure ? say("확인 일정", "Check-in schedule") : say("감수할 부담", "The risk you take on")}</dt><dd>{next.timeExposure || next.exposure}</dd></div>
+          <div><dt>{say("돌아올 길", "Way back")}</dt><dd>{v2t(language, core.postureBasis.reversibility.band)}{reversibilityNote ? ` — ${reversibilityNote}` : ""}</dd></div>
         </dl>
       )}
       {alternatives.length > 0 && (
@@ -90,8 +90,8 @@ export default function V2PathMap({
         </div>
       )}
       <p className="v2-path-note">{say(
-        "경로는 allofmycareer 엔진이 도출한 실행 경로 조정과 공개 근거로 그렸습니다. 거리는 설명이며 점수가 아닙니다.",
-        "Routes come from the engine's Changing plays and public evidence. Distances are descriptive, not scores."
+        "경로는 allofmycareer가 계산한 경로 조정안과 공개 근거로 그렸습니다. 단계 사이의 간격은 배치일 뿐, 점수가 아닙니다.",
+        "Routes come from the path adjustments allofmycareer calculated and from public evidence. The spacing between steps is layout only, not a score."
       )}</p>
     </section>
   );

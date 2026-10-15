@@ -107,12 +107,21 @@ export function v2CustomerPosture(
   _optionA: string,
   optionB: string
 ): { label: string; sentence: string } {
-  if (language !== "ko") return { label, sentence };
+  // English customer names mirror the Korean ones; engine labels stay identifiers.
+  if (language !== "ko")
+    return {
+      label: ({
+        "Preserve and Validate": "Keep the current plan for now",
+        "Protect and Reconfigure": "Adjust the path while protecting your margin",
+        "Stronger Transition Case": "A stronger case for moving",
+      } as Record<string, string>)[label] ?? label,
+      sentence,
+    };
   if (label === "보존하며 검증")
     return {
       label: "현재 계획 유지",
-      sentence: sentence.includes("기반을 보존하면서")
-        ? `현재 계획을 유지하면서 ${optionB}에 필요한 외부 근거를 확인하세요. 지금 구조는 이 순서를 더 뒷받침합니다.`
+      sentence: sentence.includes("기반을 지키면서") || sentence.includes("기반을 보존하면서")
+        ? `현재 계획을 유지하면서 ${optionB}에 필요한 외부 근거를 먼저 확인하세요. 지금 조건에서는 이 순서가 더 잘 뒷받침됩니다.`
         : sentence
             .replaceAll("Safety Margin", "안전 여유")
             .replaceAll("현재 자세", "현재 판단"),
@@ -121,7 +130,9 @@ export function v2CustomerPosture(
     label:
       label === "기반을 보호하며 재구성"
         ? "안전 여유를 지키며 경로 조정"
-        : label,
+        : label === "더 강해진 전환 근거"
+          ? "옮겨 갈 근거가 더 강해짐"
+          : label,
     sentence: sentence
       .replaceAll("Safety Margin", "안전 여유")
       .replaceAll("현재 자세", "현재 판단"),
@@ -134,10 +145,10 @@ const koreanPlayText: Record<string, string> = {
   "병행 검증": "현재 계획을 유지하며 대안 확인",
   "시기 재구성": "실행 시기 조정",
   "자원 재구성": "자원과 안전 여유 조정",
-  "현재 여력 → 보호된 여력": "현재 여력에서 지켜야 할 여력을 먼저 확보합니다.",
-  "직접 전환 → 중간 경로": "한 번에 전환하지 않고 중간 경로를 시험합니다.",
-  "가정 → 관찰 가능한 검증":
-    "가정을 실제로 확인할 수 있는 작은 시험으로 바꿉니다.",
+  "현재 여유 → 지켜야 할 여유": "지금 가진 여유 가운데 지켜야 할 몫을 먼저 따로 떼어 둡니다.",
+  "직접 전환 → 중간 경로": "한 번에 옮기지 않고 중간 경로로 먼저 확인합니다.",
+  "가정 → 직접 확인":
+    "가정을 실제로 확인할 수 있는 작은 단계로 바꿉니다.",
   "시간, 자금 또는 지원": "시간·자금 또는 도움을 받을 수 있는 곳",
 };
 

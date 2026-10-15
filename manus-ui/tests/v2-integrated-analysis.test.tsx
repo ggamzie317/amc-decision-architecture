@@ -130,7 +130,7 @@ describe("V2 integrated customer analysis", () => {
     }));
     for (const html of [dashboard, report]) {
       expect(html).toContain("합성 포트폴리오 피드백");
-      expect(html).toContain("고객 자기보고 · 독립 검증 전");
+      expect(html).toContain("합성 포트폴리오 피드백 (외부 확인 전)");
     }
   });
   it("explains the interaction of recovery room, readiness and constraints instead of repeating the intake", () => {
@@ -159,7 +159,7 @@ describe("V2 integrated customer analysis", () => {
       "finance",
     ]);
     expect(a.findings.map(finding => finding.evidenceIds)).toEqual([[1], [0], []]);
-    expect(a.evidenceLinks[1].condition).toContain("재정 여력");
+    expect(a.evidenceLinks[1].condition).toContain("재정 여유");
     expect(a.evidenceLinks[1].interpretation).toContain("회복할 여유가 부족");
     expect(a.evidenceLinks[1].conditionGroup).toBe("finance");
     expect(a.evidenceLinks[1].sourceFact).toBe(evidence.evidenceBlocks[1].fact);
@@ -216,7 +216,7 @@ describe("V2 integrated customer analysis", () => {
     expect(changed.plays.map(p => p.move)).toEqual(f.core.changingPlays.map(p => p.move));
     expect(changed.evidenceLinks[1].unresolved).toContain("확인되지 않았습니다");
     expect(changed.experiment.continue).not.toBe(first.experiment.continue);
-    expect(changed.evidenceLinks[1].condition).toContain("재정 여력");
+    expect(changed.evidenceLinks[1].condition).toContain("재정 여유");
     expect(changed.evidenceLinks[1].test).not.toBe(first.evidenceLinks[1].test);
     const factOnly: ExternalIntelligenceV2 = structuredClone(evidence);
     factOnly.evidenceBlocks[1].fact = "서로 다른 합성 근거 사실입니다.";
@@ -235,10 +235,10 @@ describe("V2 integrated customer analysis", () => {
     const analysis = buildV2Analysis(f.state, core, f.none);
     const visible = analysis.plays.find(play => play.family === "timing");
     expect(visible?.move).toBe(timing?.move);
-    expect(visible?.move).toContain("회복 경로가 명확해질 때까지");
+    expect(visible?.move).toContain("돌아올 길이 분명해질 때까지");
     // Owner round 4: the engine still selects the play and its move; the
     // remaining fields are customer sentences built from this case.
-    expect(visible?.changes).toContain("되돌아올 경로(현재 제약됨)");
+    expect(visible?.changes).toContain("돌아올 길(지금 부족함)");
     expect(visible?.needs).toContain("휴직·복직");
     expect(visible?.protects).toContain("지금 지키려는 것");
     expect(visible?.timeExposure).toContain("30일");
@@ -416,7 +416,7 @@ describe("V2 integrated customer analysis", () => {
     );
     expect(dashboard).toContain("구조 초안");
     expect(dashboard).toMatch(/disabled=""/);
-    expect(report).toContain("외부 근거 미확인");
+    expect(report).toContain("공개 근거 확인 전");
     expect(report).toMatch(/disabled=""/);
   });
   it("does not retain the new interpretation or public target in Founder data", () => {

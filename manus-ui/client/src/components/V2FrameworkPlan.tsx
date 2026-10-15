@@ -91,7 +91,7 @@ export default function V2FrameworkPlan({
       aria-label={say("allofmycareer 프레임워크 실행 계획", "allofmycareer framework action plan")}>
       {analysis.situation.length > 0 && (
         <div className="v2-plan-situation">
-          <h3><ListChecks aria-hidden size={16} />{say("내 상황 기준 확인 사항", "Checks for your situation")}</h3>
+          <h3><ListChecks aria-hidden size={16} />{say("내 상황에서 확인할 것", "What to check in your situation")}</h3>
           <ul>
             {analysis.situation.map(item => (
               <li key={item.id}>
@@ -128,20 +128,20 @@ export default function V2FrameworkPlan({
             </ul>
           )}
           {(unknownKeys.length > 0 || uncovered.length > 0) && (
-            <small className="v2-plan-note">{say("미확인은 위험과 같지 않습니다. 확인 결과가 우려를 키울 수도, 해소할 수도 있습니다.",
-              "Unconfirmed is not the same as risky: checking may raise or remove the concern.")}</small>
+            <small className="v2-plan-note">{say("확인되지 않았다고 위험하다는 뜻은 아닙니다. 확인해 보면 걱정이 커질 수도, 사라질 수도 있습니다.",
+              "Unconfirmed does not mean risky. Checking may raise the concern or remove it.")}</small>
           )}
           <small>{text(core.missingPoint)}</small>
         </article>
 
         <article>
-          <h3><ShieldCheck aria-hidden size={16} />{say("안전 여유 · 버틸 수 있는가", "Safety Margin · can you sustain it")}</h3>
+          <h3><ShieldCheck aria-hidden size={16} />{say("안전 여유 (Safety Margin)", "Safety Margin")}</h3>
           <small className="v2-plan-plain">{v2PlainQuestion("safety", language)}</small>
           <strong>{say("내 재정 여유: ", "Your financial room: ")}{v2t(language, core.postureBasis.safetyMargin.band)}</strong>
           {(safety.absorbs.length > 0 || safety.exposed.length > 0) && (
             <dl className="v2-plan-absorb">
-              {safety.absorbs.length > 0 && <div><dt>{say("흡수할 수 있는 것", "Can absorb")}</dt><dd>{safety.absorbs.join(" · ")}</dd></div>}
-              {safety.exposed.length > 0 && <div><dt>{say("취약한 충격", "Exposed to")}</dt><dd>{safety.exposed.join(" · ")}</dd></div>}
+              {safety.absorbs.length > 0 && <div><dt>{say("버틸 수 있는 것", "You can absorb")}</dt><dd>{safety.absorbs.join(" · ")}</dd></div>}
+              {safety.exposed.length > 0 && <div><dt>{say("버티기 어려운 상황", "Hard to absorb")}</dt><dd>{safety.exposed.join(" · ")}</dd></div>}
             </dl>
           )}
           {money.length ? (
@@ -155,12 +155,12 @@ export default function V2FrameworkPlan({
               "No cost or income figures yet. Write down actual costs (tuition, living, dependants) and the income gap period.")}</p>
           )}
           <small className="v2-plan-certainty">{say(
-            `근거 확실성은 별도입니다: 금액 근거 ${money.length}건 확인 · 내 재정 단계는 자기보고${safety.unknownCount ? ` · 답하지 않은 항목 ${safety.unknownCount}개` : ""}`,
-            `Evidence certainty is separate: ${money.length} cost card(s) confirmed · your levels are self-reported${safety.unknownCount ? ` · ${safety.unknownCount} not answered` : ""}`
+            `근거가 얼마나 확실한지는 따로 봅니다. 금액 자료 ${money.length}건 · 재정 단계는 본인 응답${safety.unknownCount ? ` · 답하지 않은 항목 ${safety.unknownCount}개` : ""}`,
+            `How certain the evidence is, seen separately: ${money.length} cost source(s) · your financial level is your own answer${safety.unknownCount ? ` · ${safety.unknownCount} not answered` : ""}`
           )}</small>
           <small>{money.length
-            ? say("위 금액을 내 저축·소득으로 몇 개월 감당할 수 있는지 계산해 보세요. 감당 기간이 시험 기간보다 짧으면 범위를 줄이세요.",
-              "Work out how many months your savings and income cover these amounts. If shorter than the test period, reduce the scope.")
+            ? say("위 금액을 내 저축과 소득으로 몇 개월 감당할 수 있는지 계산해 보세요. 그 기간이 준비 기간보다 짧으면, 한 번에 옮기기보다 작은 단계로 먼저 확인하세요.",
+              "Work out how many months your savings and income can cover these amounts. If that is shorter than the preparation period, check in small steps before moving fully.")
             : text(core.safetyMargin.reading)}</small>
         </article>
 
@@ -174,12 +174,12 @@ export default function V2FrameworkPlan({
               ))}
             </ol>
           ) : (
-            <p>{say("지금 조건에서는 도출된 조정 경로가 없습니다. 미확인 조건을 확인하면 다시 도출됩니다.",
-              "No reconfiguration is derived under current conditions. It is re-derived once unknown conditions are confirmed.")}</p>
+            <p>{say("지금 조건으로는 제시할 조정안이 없습니다. 확인 전인 조건을 확인하면 다시 계산합니다.",
+              "No path adjustment comes out of the current conditions. It is recalculated once the unconfirmed conditions are checked.")}</p>
           )}
           {routeCards.length > 0 && (
             <ul className="v2-plan-open">
-              <li><b>{say("근거로 확인된 중간 경로: ", "Intermediate routes in the evidence: ")}</b>{routeCards.slice(0, 2).map(card => text(card.headline)).join(" · ")}</li>
+              <li><b>{say("자료에서 확인된 중간 단계: ", "In-between routes found in the evidence: ")}</b>{routeCards.slice(0, 2).map(card => text(card.headline)).join(" · ")}</li>
             </ul>
           )}
         </article>
@@ -192,25 +192,25 @@ export default function V2FrameworkPlan({
               {switches.map((item, i) => (
                 <li key={i}>
                   <b>{text(item.signal)}</b> → {text(item.direction)}
-                  {item.engine && <em className="v2-plan-engine">{say("엔진 계산", "engine")}</em>}
-                  <span className="v2-plan-recheck">{say("다시 볼 부분: ", "Re-check: ")}{v2RecheckPart(item.variable, language)}</span>
+                  {item.engine && <em className="v2-plan-engine">{say("자동 계산", "calculated")}</em>}
+                  <span className="v2-plan-recheck">{say("바뀌면 다시 볼 부분: ", "Then re-check: ")}{v2RecheckPart(item.variable, language)}</span>
                 </li>
               ))}
             </ol>
           ) : (
-            <p>{say("판단을 바꿀 조건이 아직 정해지지 않았습니다.", "No switching condition is set yet.")}</p>
+            <p>{say("판단을 바꿀 조건을 아직 정하지 않았습니다.", "No switching condition is set yet.")}</p>
           )}
         </article>
       </div>
 
       {/* Benchmark (Careershifters): the next step is tied to the uncertainty it reduces. */}
       <div className="v2-plan-experiment">
-        <h3><FlaskConical aria-hidden size={16} />{say("다음 실험", "Next experiment")}<small>{v2PlainQuestion("experiment", language)}</small></h3>
+        <h3><FlaskConical aria-hidden size={16} />{say("다음 30일, 작게 확인하기", "Next 30 days: a small check")}<small>{v2PlainQuestion("experiment", language)}</small></h3>
         <dl>
-          <div><dt>{say("검증할 가정", "Assumption to test")}</dt><dd>{say(`${withKoreanParticle(`‘${analysis.missingConcept}’`, "이/가")} 실제로 성립한다`, `That “${analysis.missingConcept}” actually holds`)}</dd></div>
-          <div><dt>{say("작은 행동", "Small action")}</dt><dd>{firstSentences(experiment.action, 2)}</dd></div>
-          <div><dt>{say("관찰할 결과", "What to observe")}</dt><dd>{experiment.output}</dd></div>
-          <div><dt>{say("재검토 조건", "When to re-think")}</dt><dd>{experiment.pause}</dd></div>
+          <div><dt>{say("확인할 가정", "Assumption to check")}</dt><dd>{say(`${withKoreanParticle(`‘${analysis.missingConcept}’`, "이/가")} 실제로 맞는지`, `Whether “${analysis.missingConcept}” actually holds`)}</dd></div>
+          <div><dt>{say("작게 해 볼 일", "Small step")}</dt><dd>{firstSentences(experiment.action, 2)}</dd></div>
+          <div><dt>{say("남길 기록", "What to record")}</dt><dd>{experiment.output}</dd></div>
+          <div><dt>{say("규모를 줄일 때", "When to scale back")}</dt><dd>{experiment.pause}</dd></div>
         </dl>
       </div>
 

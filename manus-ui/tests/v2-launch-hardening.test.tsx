@@ -51,7 +51,7 @@ describe("Korean particles on free-text labels", () => {
     const text = JSON.stringify(core);
     expect(text).not.toContain("생활 기반는");
     expect(text).toContain("새 직무로 완전히 전환하기 전에");
-    expect(text).toContain("현재 직무와 생활 기반은 현재 기반과 검증 시간을 보호합니다.");
+    expect(text).toContain("현재 직무와 생활 기반은 지금의 기반과 새 경로를 확인할 시간을 지켜 줍니다.");
   });
 });
 
@@ -231,7 +231,7 @@ describe("Role Upgrade / Downgrade is not framed as an exit", () => {
       expect(role).toContain("역할 변경을 확정하기 전에 현재 팀장 역할의 범위를");
     }
     const exit = plays("Corporate Stay vs Exit");
-    if (exit.includes("role-scope")) expect(exit).toContain("퇴사 결정 → 역할 재설계 검증");
+    if (exit.includes("role-scope")) expect(exit).toContain("퇴사 결정 → 역할 재설계 확인");
     expect(role.includes("role-scope") || exit.includes("role-scope")).toBe(true);
   });
 });
@@ -598,7 +598,7 @@ describe("issues A3-A5: framework elements filled from engine and evidence", () 
     const switches = v2EngineSwitches(input, core, "ko", 10);
     for (const item of switches) {
       const band = item.signal.split("→")[1].trim();
-      expect(item.direction).toContain("구조 판단이");
+      expect(item.direction).toContain("현재 판단이");
       expect(item.direction).not.toContain(core.currentStructuralPosture.label + "'");
       expect(band.length).toBeGreaterThan(0);
     }
@@ -622,10 +622,10 @@ describe("issues A3-A5: framework elements filled from engine and evidence", () 
     const html = renderToStaticMarkup(React.createElement(V2FrameworkPlan, { language: "ko", core, analysis, intelligence, input }));
     expect(html).toContain("확인 방법: ");
     expect(html).toContain("되돌릴 여지");
-    expect(html).toContain("근거로 확인된 중간 경로");
+    expect(html).toContain("자료에서 확인된 중간 단계");
     expect(html).toContain("원격 박사 경로가 공개됨");
     const { v2EngineSwitches } = await import("../client/src/data/v2EngineSwitches");
-    if (v2EngineSwitches(input, core, "ko").length) expect(html).toContain("엔진 계산");
+    if (v2EngineSwitches(input, core, "ko").length) expect(html).toContain("자동 계산");
   });
 });
 
@@ -645,10 +645,10 @@ describe("simulator explains a scenario in customer terms", () => {
     }));
     expect(html).toContain("이 시나리오 해석");
     expect(html).toContain("판단 위치");
-    expect(html).toContain("무엇인가요");
+    expect(html).toContain("이 조건은");
     expect(html).toContain("현실에서 이렇게 되려면");
     // Korean screen shows Korean explanations, not the English pair.
-    expect(html).toMatch(/무엇인가요: <\/b>[^<]*[가-힣]/);
+    expect(html).toMatch(/이 조건은: <\/b>[^<]*[가-힣]/);
     expect(html).not.toContain("Money and income to absorb");
     expect(html).toContain("연간 학비 £24,000");
     const none = renderToStaticMarkup(React.createElement(V2ScenarioExplain, { language: "ko", input, scenarioInput: input, overrides: {}, intelligence: fixture.intelligence }));
@@ -666,7 +666,7 @@ describe("executive brief shows the analysis in keywords", () => {
     const intelligence = { ...fixture.intelligence, evidenceBlocks: [{ ...fixture.intelligence.evidenceBlocks[0], headline: "박사 대출 최대 £31,122", fact: "총 최대 £31,122입니다.", action: "총 대출액을 학비와 비교하세요." }] };
     expect(v2AmountKeywords(intelligence.evidenceBlocks, "ko")[0].amount).toBe("£31,122");
     const html = renderToStaticMarkup(React.createElement(V2ExecutiveBrief, { language: "ko", core, analysis, intelligence, input }));
-    for (const label of ["핵심 숫자", "가장 큰 부족", "놓치기 쉬운 조건", "판단을 바꿀 조건", "다음 30일 할 일"]) expect(html).toContain(label);
+    for (const label of ["핵심 숫자", "가장 부족한 조건", "놓치기 쉬운 조건", "판단이 바뀌는 조건", "다음 30일 할 일"]) expect(html).toContain(label);
     expect(html).toContain("£31,122");
     expect(html).toContain("총 대출액을 학비와 비교하세요.");
     expect(html).toContain(analysis.posture);
@@ -702,7 +702,7 @@ describe("benchmark round: path map and indicator profile", () => {
     const html = renderToStaticMarkup(React.createElement(V2IndicatorProfile, { language: "ko", core: fixture.baseline, intelligence: fixture.intelligence }));
     expect((html.match(/<article/g) || []).length).toBe(7);
     expect(html).toContain("아직 확인할 것");
-    expect(html).toContain("기준선");
+    expect(html).toContain("전환 판단 기준");
     expect(html).toContain('data-baseline="true"');
     expect(html).not.toMatch(/\d+\s*%/);
   });
@@ -776,7 +776,7 @@ describe("round 6: EN toggle, automatic comparison wording", () => {
     const all = JSON.stringify(analysis);
     expect(all).not.toContain("아직 대조하지 않음");
     expect(all).not.toContain("아직 직접 대조되지 않았습니다");
-    expect(analysis.evidenceLinks[0].comparisonLabel).toMatch(/^자동 대조 · /);
+    expect(analysis.evidenceLinks[0].comparisonLabel).toMatch(/^자동 비교: /);
   });
 });
 
@@ -822,7 +822,7 @@ describe("competitor benchmark: reading layer (no new scores)", () => {
     const { default: V2IndicatorProfile } = await import("../client/src/components/V2IndicatorProfile");
     const fixture = v2DemoFixture("industry", "ko");
     const html = renderToStaticMarkup(<V2IndicatorProfile language="ko" core={fixture.baseline} intelligence={fixture.intelligence} bands={{ financialRoom: "developing" }} />);
-    for (const label of ["내가 답한 것", "공개 근거", "allofmycareer 해석", "아직 확인할 것", "활용되는 조건", "약해지는 조건"]) expect(html).toContain(label);
+    for (const label of ["내가 답한 것", "공개 근거", "allofmycareer 해석", "아직 확인할 것", "도움이 될 때", "약해질 때"]) expect(html).toContain(label);
     expect(html).toContain("소득 없이 3~6개월 생활할 수 있음");
     expect(html).not.toMatch(/\d+\s?%/);
   });
@@ -850,7 +850,7 @@ describe("competitor benchmark: reading layer (no new scores)", () => {
     const before = JSON.stringify(fixture.baseline.currentStructuralPosture);
     const analysis = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo");
     const html = renderToStaticMarkup(<V2FrameworkPlan language="ko" core={fixture.baseline} analysis={analysis} intelligence={fixture.intelligence} input={buildV2Input(fixture.state, fixture.intelligence)} />);
-    for (const label of ["예상과 다르게 흘러가도 선택을 이어갈 여지", "다시 볼 부분", "검증할 가정", "작은 행동", "관찰할 결과", "재검토 조건", "미확인은 위험과 같지 않습니다"]) expect(html).toContain(label);
+    for (const label of ["예상과 다르게 흘러가도 계속할 여유가 얼마나 있나요?", "다시 볼 부분", "확인할 가정", "작게 해 볼 일", "남길 기록", "규모를 줄일 때", "확인되지 않았다고 위험하다는 뜻은 아닙니다"]) expect(html).toContain(label);
     expect(JSON.stringify(fixture.baseline.currentStructuralPosture)).toBe(before);
   });
 
@@ -875,6 +875,6 @@ describe("launch blocker: domestic target without a place name", () => {
   it("defaults a Korean entry to Korea so the final search button is enabled", () => {
     const page = fs.readFileSync(pagePath, "utf8");
     expect(page).toContain('inferV2Geography(s, language) || (language === "ko" ? "한국" : "")');
-    expect(page).toContain("3단계에서 검색 대상·지역 입력하기");
+    expect(page).toContain("3단계로 가서 검색 대상과 지역 적기");
   });
 });

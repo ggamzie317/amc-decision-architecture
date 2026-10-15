@@ -35,8 +35,8 @@ export default function V2IndicatorProfile({
       <p className="v2-chart-question">{v2ChartQuestion("indicators", language)}</p>
       <header className="v2-indicators-head">
         <span>{say("지표", "Indicator")}</span>
-        <span>{say("내 상태와 전환 기준선", "Your state vs the transition baseline")}</span>
-        <span>{say("근거 구분과 조건부 해석", "Sources and conditional reading")}</span>
+        <span>{say("내 상태와 전환 판단 기준", "Your level and the level needed for a move")}</span>
+        <span>{say("근거와 해석", "Evidence and reading")}</span>
       </header>
       {v2Indicators.map((indicator, index) => {
         const band = core.postureBasis[indicator.key].band;
@@ -56,13 +56,13 @@ export default function V2IndicatorProfile({
             </div>
             <div className="v2-ind-meter">
               <div className="v2-ind-bar" role="img"
-                aria-label={say(`${v2t(language, band as V2CopyKey)}, 기준선 ${indicator.reference}단계`, `${v2t(language, band as V2CopyKey)}, baseline level ${indicator.reference}`)}>
+                aria-label={say(`${v2t(language, band as V2CopyKey)}, 전환 판단 기준 ${indicator.reference}단계`, `${v2t(language, band as V2CopyKey)}, level needed ${indicator.reference}`)}>
                 {[0, 1, 2].map(step => (
                   <i key={step} data-on={level !== null && step <= level} data-baseline={step === indicator.reference} />
                 ))}
               </div>
               <b>{indicator.key === "externalValidation" && band === "unknown" ? say("근거 확인 전", "Not yet established") : v2t(language, band as V2CopyKey)}</b>
-              <small>{state === "gap" ? say("기준선 미달", "Below baseline") : state === "met" ? say("기준선 충족", "Meets baseline") : say("미확인", "Unconfirmed")}</small>
+              <small>{state === "gap" ? say("기준에 못 미침", "Below the level needed") : state === "met" ? say("기준 충족", "Meets the level needed") : say("확인 전", "Not yet confirmed")}</small>
             </div>
             <div className="v2-ind-reading">
               {/* Benchmark (CareerLeader): what you said, what public sources show, our reading and what is open stay apart. */}
@@ -70,7 +70,7 @@ export default function V2IndicatorProfile({
                 <div data-source="you">
                   <dt>{say("내가 답한 것", "What you said")}</dt>
                   <dd>{indicator.variable === "externalValidation"
-                    ? say("직접 답하는 항목이 아닙니다 — 공개 근거로만 판단합니다.", "Not a self-reported item — read from public evidence only.")
+                    ? say("직접 답하는 항목이 아닙니다. 공개 근거로만 판단합니다.", "You do not answer this one. It is read from public evidence only.")
                     : answered
                       ? `${v2t(language, answered as V2CopyKey)}${anchor ? ` — ${anchor}` : ""}`
                       : say("답하지 않음", "Not answered")}</dd>
@@ -88,16 +88,16 @@ export default function V2IndicatorProfile({
                   <dd>{pick(indicator.question)}</dd>
                 </div>
               </dl>
-              <p className="v2-ind-cond"><b>{say("활용되는 조건", "Works when")}</b>{pick(indicator.worksWhen)}</p>
-              <p className="v2-ind-cond weak"><b>{say("약해지는 조건", "Weakens when")}</b>{pick(indicator.weakensWhen)}</p>
-              {state !== "met" && <p className="v2-ind-how"><b>{say("보강 방법", "Strengthen")}</b>{pick(indicator.how)}</p>}
+              <p className="v2-ind-cond"><b>{say("도움이 될 때", "Helps when")}</b>{pick(indicator.worksWhen)}</p>
+              <p className="v2-ind-cond weak"><b>{say("약해질 때", "Weakens when")}</b>{pick(indicator.weakensWhen)}</p>
+              {state !== "met" && <p className="v2-ind-how"><b>{say("보강 방법", "How to strengthen it")}</b>{pick(indicator.how)}</p>}
             </div>
           </article>
         );
       })}
       <p className="v2-ind-note">{say(
-        "막대는 입력한 상태의 단계(0~2)이며 확률이 아닙니다. 굵은 칸은 allofmycareer 판단 공식에서 '전환'이 나오는 최소 균형 수준입니다.",
-        "Bars show the level of your stated condition (0–2), not a probability. The marked step is the least balanced level the allofmycareer formula reads as transition."
+        "막대는 답한 상태를 0~2단계로 보여 줍니다. 확률이 아닙니다. 굵게 표시한 칸은 '전환' 판단에 필요한 최소 수준입니다.",
+        "Bars show your answered level on a 0–2 scale. They are not a probability. The bold step is the minimum level needed for a 'transition' reading."
       )}</p>
     </section>
   );

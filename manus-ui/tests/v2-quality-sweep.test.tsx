@@ -2,7 +2,10 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { v2DemoFixture } from "../client/src/data/amcV2Demos";
-import { buildV2Input } from "../client/src/data/amcV2Model";
+import { buildV2Input, buildV2Sensitivity } from "../client/src/data/amcV2Model";
+import { baselineBands } from "../client/src/data/amcScenario";
+import { selectV2SimulatorVariables } from "../client/src/data/amcV2SensitivityView";
+import V2Report from "../client/src/components/V2Report";
 import { buildProductApplicationV3 } from "../client/src/data/amcProductApplicationV3";
 import { buildV2Analysis } from "../client/src/data/amcV2Analysis";
 import V2ExecutiveBrief from "../client/src/components/V2ExecutiveBrief";
@@ -36,21 +39,29 @@ it("renders clean dashboard text for every decision type in Korean and English",
     const input = buildV2Input(state as any, intelligence as any);
     const core = buildProductApplicationV3(input);
     const analysis = buildV2Analysis(state as any, core, intelligence as any, "demo");
+    const sensitivity = buildV2Sensitivity(input, core);
     const bands = { financialRoom: "developing", reversibility: "unknown", constraintLoad: "heavy" };
     const html = [
       renderToStaticMarkup(<V2ExecutiveBrief language={language} core={core} analysis={analysis} intelligence={intelligence as any} input={input} />),
       renderToStaticMarkup(<V2PathMap language={language} state={state as any} core={core} analysis={analysis} intelligence={intelligence as any} />),
       renderToStaticMarkup(<V2IndicatorProfile language={language} core={core} intelligence={intelligence as any} bands={bands} />),
       renderToStaticMarkup(<V2InsightBoard language={language} core={core} analysis={analysis} intelligence={intelligence as any} mode="board" />),
+      renderToStaticMarkup(<V2Report state={state as any} input={input} core={core} sensitivity={sensitivity}
+        visibleVariables={selectV2SimulatorVariables(sensitivity, baselineBands(input))} intelligence={intelligence as any}
+        onClose={() => undefined} onPrint={() => undefined} />),
       renderToStaticMarkup(<V2FrameworkPlan language={language} core={core} analysis={analysis} intelligence={intelligence as any} input={input} bands={bands} />),
     ].join("\n");
     const text = html.replace(/<[^>]+>/g, "\n").replace(/&#x27;/g, "'").replace(/&amp;/g, "&").replace(/&quot;/g, '"');
     const tag = `${language}/${caseType}`;
-    const bad = (re: RegExp, why: string) => { const m = text.match(re); if (m) findings.push(`${tag} | ${why} | ${m.slice(0, 3).join(" ‖ ")}`); };
+    const bad = (re: RegExp, why: string, source = text) => { const m = source.match(re); if (m) findings.push(`${tag} | ${why} | ${m.slice(0, 3).join(" ‖ ")}`); };
     bad(/undefined|null|NaN|\[object/g, "raw value");
     bad(/\b[a-z]+[A-Z][a-zA-Z]+\b/g, "camelCase key");
-    if (language === "en") bad(/[가-힣]{2,}[^\n]{0,20}/g, "Korean in EN");
+    // The customer's own words are shown once, marked "(as entered: …)"; everything else must be English.
+    if (language === "en") bad(/[가-힣]{2,}[^\n]{0,20}/g, "Korean in EN", text.replace(/\(as entered: [^)]*\)/g, ""));
     if (language === "ko") bad(/(을를|를을|이가|가이|은는|는은|과와|와과|\(으\)로|\(이\)|을\/를|이\/가)/g, "particle");
+    // Style guide (docs/v2_copy_style_guide.md): words that do not fit a career decision.
+    if (language === "ko") bad(/시험|노출|몰입|자세를|기준선|대조|자기보고|여력|형성 중|제약됨|설명 가능해/g, "banned wording");
+    if (language === "en") bad(/\bexposure\b|\bposture\b|\bcommitment\b/gi, "banned wording");
   }
   expect(findings).toEqual([]);
 });

@@ -21,7 +21,7 @@ const contexts: Record<V2CaseType, Context> = {
     publicTarget: ["the target customers' problem and actual willingness to pay", "목표 고객의 문제와 실제 지불 반응"],
     goal: ["the business idea", "창업 계획"],
     cost: ["business spending", "사업 비용"],
-    evidence: ["customer interviews and paid trials", "고객 인터뷰와 유료 시험 결과"],
+    evidence: ["customer interviews and paid trials", "고객 인터뷰와 유료 시범 판매 결과"],
   },
   "Industry Transition": {
     publicTarget: ["the target industry's hiring and role requirements", "목표 산업의 채용·직무 요건"],
@@ -50,12 +50,12 @@ const contexts: Record<V2CaseType, Context> = {
   "Burnout-driven Decision": {
     publicTarget: ["the available workload or role alternatives", "업무량을 조정하거나 역할을 바꿀 수 있는 경로"],
     goal: ["a less burdensome path", "부담을 줄이는 경로"],
-    cost: ["income and time costs of a change", "변경에 따른 소득·시간 비용"],
+    cost: ["income and time costs of a change", "바꿀 때 드는 소득·시간 비용"],
     evidence: ["written role options and actual workload records", "역할 조정안과 실제 업무량 기록"],
   },
   "Family Constraint-heavy Decision": {
     publicTarget: ["the role's time and location requirements", "목표 경로의 시간·지역 조건"],
-    goal: ["a path compatible with family needs", "가족의 필요와 함께 실행할 경로"],
+    goal: ["a path compatible with family needs", "가족 사정과 함께 갈 수 있는 경로"],
     cost: ["care and income costs", "돌봄·소득 비용"],
     evidence: ["work schedules and available care arrangements", "근무 일정과 실제 가능한 돌봄 분담"],
   },
@@ -89,18 +89,18 @@ export function selfCheckCards(caseType: V2CaseType, language: V2Language): Self
   const i = language === "ko" ? 1 : 0;
   const goal = c.goal[i], cost = c.cost[i], target = c.publicTarget[i];
   if (language === "ko") return [
-    { id: "public", step: 2, title: "외부 요건·수요", question: `${objectWithParticle(target)} 직접 확인했나요? 관심이나 일반 자료와 본인에게 적용되는 조건을 구분해 보세요.`, example: `확인 근거 예: ${c.evidence[i]}`, bands: [] },
-    { id: "readiness", step: 3, title: "역량·부족한 자원", question: `${objectWithParticle(goal)} 위해 직접 할 수 있는 일은 무엇인가요? 부족한 역량과 필요한 도움을 구분했나요?`, example: "확인 근거 예: 수행한 일의 결과물과 부족한 역량 목록", bands: ["internalReadiness"] },
-    { id: "financial", step: 4, title: "재정·손실", question: `생활비를 포함해 ${cost}까지 구분해 보았나요? 재정 여유와 감당할 손실 위험을 각각 선택하세요.`, example: "확인 근거 예: 생활비·추가 지출·손실 시나리오", bands: ["financialRoom", "downsideExposure"] },
-    { id: "recovery", step: 4, title: "중단·복귀", question: `${objectWithParticle(goal)} 중단한다면 정리 비용과 현재 소득·경력으로 돌아갈 경로를 확인했나요?`, example: "확인 근거 예: 중단 시점, 계약 조건, 복귀 가능한 직무", bands: ["reversibility"] },
-    { id: "capacity", step: 5, title: "시간·지원", question: `${goal}에 실제로 쓸 수 있는 시간과 도움은 무엇인가요? 제약의 크기와 대안 실행 지원을 따로 선택하세요.`, example: "확인 근거 예: 주간 일정과 도움을 약속한 사람·조직", bands: ["constraintLoad", "optionBSupport"] },
+    { id: "public", step: 2, title: "공개 요건과 수요", question: `${objectWithParticle(target)} 직접 확인해 봤나요? 막연한 관심이나 일반 자료가 아니라, 내게 적용되는 조건을 확인했는지 떠올려 보세요.`, example: `확인한 자료 예: ${c.evidence[i]}`, bands: [] },
+    { id: "readiness", step: 3, title: "역량과 부족한 것", question: `${objectWithParticle(goal)} 위해 지금 바로 할 수 있는 일은 무엇인가요? 부족한 역량과 필요한 도움을 나눠 보았나요?`, example: "확인한 자료 예: 해 본 일의 결과물, 부족한 역량 목록", bands: ["internalReadiness"] },
+    { id: "financial", step: 4, title: "돈과 손실", question: `생활비와 ${objectWithParticle(cost)} 나눠서 계산해 봤나요? 아래에서 재정 여유와 손실 위험을 각각 골라 주세요.`, example: "확인한 자료 예: 생활비, 추가 지출, 잘 안됐을 때의 손실", bands: ["financialRoom", "downsideExposure"] },
+    { id: "recovery", step: 4, title: "중단과 복귀", question: `${objectWithParticle(goal)} 중간에 그만둔다면, 정리 비용과 지금의 소득·경력으로 돌아갈 길을 확인해 봤나요?`, example: "확인한 자료 예: 그만둘 시점, 계약 조건, 돌아갈 수 있는 직무", bands: ["reversibility"] },
+    { id: "capacity", step: 5, title: "시간과 도움", question: `${goal}에 실제로 쓸 수 있는 시간과 도움은 얼마나 되나요? 아래에서 받을 수 있는 도움과 생활 속 제약을 각각 골라 주세요.`, example: "확인한 자료 예: 일주일 일정, 도와주기로 한 사람이나 기관", bands: ["constraintLoad", "optionBSupport"] },
   ];
   return [
-    { id: "public", step: 2, title: "Public requirements and demand", question: `Have you directly checked ${target}? Separate general interest or broad data from conditions that apply to your case.`, example: `Basis to review: ${c.evidence[i]}`, bands: [] },
-    { id: "readiness", step: 3, title: "Capabilities and gaps", question: `What can you do directly for ${goal}, and what skills or help are still missing?`, example: "Basis to review: completed work and a list of missing capabilities", bands: ["internalReadiness"] },
-    { id: "financial", step: 4, title: "Finances and loss", question: `Have you separated living expenses from ${cost}? Select financial room and downside exposure independently.`, example: "Basis to review: living costs, extra spending and loss scenarios", bands: ["financialRoom", "downsideExposure"] },
-    { id: "recovery", step: 4, title: "Stopping and re-entry", question: `If ${goal} stops, have you checked the exit costs and a route back to income and career continuity?`, example: "Basis to review: stopping point, contract terms and viable return roles", bands: ["reversibility"] },
-    { id: "capacity", step: 5, title: "Time and support", question: `What time and help are actually available for ${goal}? Select constraint load and Option B support independently.`, example: "Basis to review: a weekly schedule and specific support commitments", bands: ["constraintLoad", "optionBSupport"] },
+    { id: "public", step: 2, title: "Requirements and demand", question: `Have you checked ${target} yourself? Think about the conditions that apply to you, not general interest or broad data.`, example: `What you might have checked: ${c.evidence[i]}`, bands: [] },
+    { id: "readiness", step: 3, title: "Skills and gaps", question: `What can you do right now toward ${goal}? Have you separated the skills you lack from the help you need?`, example: "What you might have checked: results of work you have done, and a list of skills you lack", bands: ["internalReadiness"] },
+    { id: "financial", step: 4, title: "Money and possible loss", question: `Have you worked out your living costs separately from ${cost}? Below, rate your financial room and your downside risk separately.`, example: "What you might have checked: living costs, extra spending, and what you would lose if it does not work out", bands: ["financialRoom", "downsideExposure"] },
+    { id: "recovery", step: 4, title: "Stopping and going back", question: `If you stop ${goal} partway, have you checked what it would cost and how you would get back to your income and career?`, example: "What you might have checked: when you would stop, contract terms, and roles you could return to", bands: ["reversibility"] },
+    { id: "capacity", step: 5, title: "Time and help", question: `How much time and help do you actually have for ${goal}? Below, rate the help available and the limits in your life separately.`, example: "What you might have checked: your weekly schedule, and people or organisations that agreed to help", bands: ["constraintLoad", "optionBSupport"] },
   ];
 }
 

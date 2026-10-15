@@ -238,7 +238,7 @@ describe("V2 live External Intelligence boundary", () => {
       v2CustomerEvidenceText("ko", "IT, AI, MBA, transferable proofing")
     ).toBe("IT, AI, MBA, transferable proofing");
     expect(v2t("ko", "tradeoff")).toBe("핵심 득실");
-    expect(v2t("ko", "material")).toBe("무시하기 어려움");
+    expect(v2t("ko", "material")).toBe("보통");
     expect(v2t("ko", "unknown")).toBe("잘 모름");
   });
   it("accepts only the five bounded public-search fields and canonical case areas", () => {
@@ -554,7 +554,7 @@ describe("V2 live External Intelligence boundary", () => {
     for (const html of [dashboard, report]) {
       expect(html).toContain("Public demand context");
       expect(html).toContain(sourceRows[0].url);
-      expect(html).toContain("Some cards were excluded, so dependent summaries are omitted.");
+      expect(html).toContain("Some sources were excluded, so the combined summary is");
       expect(html).not.toContain("Pricing context");
       expect(html).not.toContain(sourceRows[1].url);
       expect(html).not.toContain(providerContent("en").implication);
@@ -1038,7 +1038,7 @@ describe("V2 live External Intelligence boundary", () => {
       })
     );
     expect(failedReport).toContain(
-      "No source-backed evidence could be established."
+      "No evidence with a usable source was found."
     );
     expect(failedReport).not.toContain("Search has not run.");
     for (const [intelligence, count] of [

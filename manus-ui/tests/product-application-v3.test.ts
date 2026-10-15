@@ -179,7 +179,7 @@ describe("AMC Product Application Layer V3 correction", () => {
         },
         triggers: ["weak-safety-margin", "weak-reversibility", "high-structural-risk"],
         expectedSupport: 10,
-        reason: /weak Safety Margin, weak reversibility, and high downside exposure/,
+        reason: /a limited safety margin, a hard way back, and a high potential loss/,
       },
       {
         structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), reversibility: signal("weak") },
@@ -190,7 +190,7 @@ describe("AMC Product Application Layer V3 correction", () => {
         },
         triggers: ["weak-safety-margin", "weak-reversibility"],
         expectedSupport: 12,
-        reason: /weak Safety Margin and weak reversibility/,
+        reason: /a limited safety margin and a hard way back/,
       },
       {
         structuralSignals: { ...transitionSignals, safetyMargin: signal("weak"), structuralRisk: signal("high") },
@@ -201,7 +201,7 @@ describe("AMC Product Application Layer V3 correction", () => {
         },
         triggers: ["weak-safety-margin", "high-structural-risk"],
         expectedSupport: 12,
-        reason: /weak Safety Margin and high downside exposure/,
+        reason: /a limited safety margin and a high potential loss/,
       },
     ] as const;
 
@@ -220,7 +220,7 @@ describe("AMC Product Application Layer V3 correction", () => {
       expect(assessment.guardrailApplied).toBe(true);
       expect(assessment.guardrailTriggers).toEqual(guardedCase.triggers);
       expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
-      expect(result.currentStructuralPosture.sentence).toContain("Opportunity evidence for advisory practice remains present");
+      expect(result.currentStructuralPosture.sentence).toContain("There is evidence of opportunity in advisory practice");
       expect(result.currentStructuralPosture.sentence).toMatch(guardedCase.reason);
       expect(result.why.topDrivers[0]).toBe(result.currentStructuralPosture.sentence);
     }
@@ -371,24 +371,24 @@ describe("AMC Product Application Layer V3 correction", () => {
       guardrailTriggers: ["weak-safety-margin", "weak-reversibility", "high-structural-risk"],
     });
     expect(korean.currentStructuralPosture.label).toBe("보존하며 검증");
-    expect(korean.currentStructuralPosture.sentence).toContain("약한 Safety Margin, 약한 가역성 및 높은 하방 노출");
+    expect(korean.currentStructuralPosture.sentence).toContain("부족한 안전 여유, 돌아가기 어려운 상황 및 큰 손실 위험");
     expect(derivePostureAssessment({ ...guardedInput, language: "ko" }).effectivePosture).toBe(derivePostureAssessment(guardedInput).effectivePosture);
     expect(first.decisionSwitches.map((item) => item.signal)).toEqual(guardedInput.decisionConditions);
-    expect(first.decisionSwitches.every((item) => item.direction.includes("calls for reassessing the opportunity evidence for advisory practice and downside exposure together"))).toBe(true);
-    expect(first.decisionSwitches.every((item) => item.direction.includes("protection around weak Safety Margin, weak reversibility, and high downside exposure is confirmed"))).toBe(true);
+    expect(first.decisionSwitches.every((item) => item.direction.includes("look again at the opportunity evidence for advisory practice and the potential loss together"))).toBe(true);
+    expect(first.decisionSwitches.every((item) => item.direction.includes("a way to cover a limited safety margin, a hard way back, and a high potential loss is confirmed"))).toBe(true);
     const worseningSwitch = first.decisionSwitches.find((item) => item.signal.includes("stops providing sufficient runway"));
     expect(worseningSwitch?.direction).not.toMatch(/strengthens? the opportunity/i);
-    expect(worseningSwitch?.direction).toContain("reassessing the opportunity evidence");
+    expect(worseningSwitch?.direction).toContain("look again at the opportunity evidence");
     expect(korean.decisionSwitches[1].direction).not.toContain("기회 근거를 강화");
-    expect(korean.decisionSwitches[1].direction).toContain("기회 근거와 하방 노출을 함께 재평가");
-    expect(first.nextStepExperiment.continueCondition).toContain("Increasing commitment also requires weak Safety Margin, weak reversibility, and high downside exposure to be reassessed");
-    expect(first.nextStepExperiment.pauseCondition).toContain("exceeds the established exposure boundary or weakens recovery capacity");
-    expect(first.nextStepExperiment.pauseCondition).toContain("Bounded validation and learning can continue within confirmed protection");
-    expect(first.nextStepExperiment.pauseCondition).toContain("if that protection is not yet established, clarify it first");
+    expect(korean.decisionSwitches[1].direction).toContain("기회 근거와 손실 위험을 함께 다시 봅니다");
+    expect(first.nextStepExperiment.continueCondition).toContain("Moving further also requires a limited safety margin, a hard way back, and a high potential loss to be rechecked");
+    expect(first.nextStepExperiment.pauseCondition).toContain("goes beyond the limit you set or reduces your room to recover");
+    expect(first.nextStepExperiment.pauseCondition).toContain("Small checks and learning can continue within the protection you have confirmed");
+    expect(first.nextStepExperiment.pauseCondition).toContain("If that protection is not yet clear, set it first");
     expect(first.nextStepExperiment.pauseCondition).not.toMatch(/pause (all )?validation/i);
-    expect(korean.nextStepExperiment.pauseCondition).toContain("해당 실험 또는 실행 노출을 중단하거나 재설계");
-    expect(korean.nextStepExperiment.pauseCondition).toContain("제한된 검증과 학습을 계속할 수 있으며");
-    expect(korean.nextStepExperiment.pauseCondition).toContain("보호 범위가 아직 확인되지 않았다면 먼저 명확히");
+    expect(korean.nextStepExperiment.pauseCondition).toContain("그 단계를 멈추거나 다시 설계하세요");
+    expect(korean.nextStepExperiment.pauseCondition).toContain("작게 확인하고 배우는 일을 이어 가도 됩니다");
+    expect(korean.nextStepExperiment.pauseCondition).toContain("그 범위가 아직 분명하지 않다면 그것부터 정하세요");
     expect(first.changingPlays.map((play) => play.family)).toEqual(["resource", "timing"]);
     const props = { intelligence: first, translate: (en: string) => en, externalEvidenceUsed: true };
     const dashboard = renderToStaticMarkup(React.createElement(ProductApplicationDashboard, props));
@@ -398,12 +398,12 @@ describe("AMC Product Application Layer V3 correction", () => {
     const koreanReport = renderToStaticMarkup(React.createElement(ProductApplicationReport, koreanProps));
     expect(dashboard).toContain("Preserve and Validate");
     expect(report).toContain("Preserve and Validate");
-    expect(dashboard).toContain("Opportunity evidence for advisory practice remains present");
-    expect(report).toContain("Opportunity evidence for advisory practice remains present");
-    expect(dashboard).toContain("A change in this condition calls for reassessing");
-    expect(report).toContain("A change in this condition calls for reassessing");
-    expect(koreanDashboard).toContain("기회 근거와 하방 노출을 함께 재평가");
-    expect(koreanReport).toContain("기회 근거와 하방 노출을 함께 재평가");
+    expect(dashboard).toContain("There is evidence of opportunity in advisory practice");
+    expect(report).toContain("There is evidence of opportunity in advisory practice");
+    expect(dashboard).toContain("If this condition changes, look again at");
+    expect(report).toContain("If this condition changes, look again at");
+    expect(koreanDashboard).toContain("기회 근거와 손실 위험을 함께 다시 봅니다");
+    expect(koreanReport).toContain("기회 근거와 손실 위험을 함께 다시 봅니다");
     expect(first.changingPlays.length).toBeLessThanOrEqual(3);
   });
 
@@ -491,7 +491,7 @@ describe("AMC Product Application Layer V3 correction", () => {
     }));
     expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
     expect(result.safetyMargin.reading).toContain("not yet established");
-    expect(result.safetyMargin.reading).toContain("before increasing exposure");
+    expect(result.safetyMargin.reading).toContain("Before committing more");
     expect(result.decisionStructure.fifwmSource).toBe("unavailable");
     expect(Object.values(result.postureBasis).every((item) => item.source === "unavailable")).toBe(true);
   });
@@ -514,7 +514,7 @@ describe("AMC Product Application Layer V3 correction", () => {
 
   it("allows strong Safety Margin to enable bounded experimentation", () => {
     const result = buildProductApplicationV3(input());
-    expect(result.safetyMargin.reading).toContain("enables bounded experimentation");
+    expect(result.safetyMargin.reading).toContain("you have room to try in small steps");
     expect(result.safetyMargin.roomToBeWrong).toBeTruthy();
   });
 
@@ -528,7 +528,7 @@ describe("AMC Product Application Layer V3 correction", () => {
       structuralSignals: { ...baseSignals, safetyMargin: signal("weak") },
     }));
     expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
-    expect(result.safetyMargin.reading).toContain("constrains exposure");
+    expect(result.safetyMargin.reading).toContain("keep the risk you take on at any one time small");
   });
 
   it("derives zero, one, and two-to-three plays from the actual web-runtime availability shape", () => {
@@ -659,6 +659,6 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(result.currentStructuralPosture.sentence).not.toMatch(/\b(should|choose|recommend|wins?)\b/i);
     expect(result.nextStepExperiment.continueCondition).toBe(result.decisionSwitches[0].signal);
     expect(result.nextStepExperiment.pauseCondition).toContain("Pause or redesign");
-    expect(result.nextStepExperiment.reassessAt).toContain("Current Structural Posture");
+    expect(result.nextStepExperiment.reassessAt).toContain("Revisit the current reading");
   });
 });

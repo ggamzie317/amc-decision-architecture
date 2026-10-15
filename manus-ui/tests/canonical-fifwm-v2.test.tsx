@@ -79,7 +79,7 @@ describe("canonical Python FIFWM in the private browser intake", () => {
       intelligence: fixture.intelligence, evidencePhase: "demo", onClose: () => {}, onPrint: () => {},
     }));
     for (const html of [dashboard, report]) {
-      expect(html).toContain("환경–준비 적합도");
+      expect(html).toContain(html === dashboard ? "목표 쪽 조직·직무 여건" : "갈 수 있는 경로와 목표 쪽 여건");
       for (const name of ["기회의 조건", "연결 가능성", "구조 적합성", "실행 현실성", "버틸 수 있는가"]) {
         expect(html).toContain(name);
       }

@@ -131,8 +131,8 @@ export default function V2Report({
         : t("evidenceRetryHint");
   const partialEvidenceNote = intelligence.sourceCoverage === "partial"
     ? say(
-        "일부 카드가 제외되어 종합 요약은 표시하지 않습니다. 남은 주장도 원문과 대조해야 합니다.",
-        "Some cards were excluded, so dependent summaries are omitted. Compare each remaining claim with its source text."
+        "일부 자료를 제외해 종합 요약은 싣지 않았습니다. 남은 자료도 원문과 비교해 보세요.",
+        "Some sources were excluded, so the combined summary is left out. Compare the remaining sources with their original text too."
       )
     : null;
   useEffect(() => {
@@ -201,8 +201,8 @@ export default function V2Report({
               <p>
                 <b>
                   {say(
-                    "현재 조건과의 연결",
-                    "Connection to current conditions"
+                    "내 조건과의 관계",
+                    "How it relates to your conditions"
                   )}
                 </b>{" "}
                 {analysis.evidenceLinks[id]?.condition}
@@ -264,8 +264,8 @@ export default function V2Report({
         <span>
           {draft
             ? say(
-                "구조 초안 / 외부 근거 미확인",
-                "Structural draft / external evidence unresolved"
+                "구조 초안 / 공개 근거 확인 전",
+                "Structural draft / public evidence not yet checked"
               )
             : t("report")}
         </span>
@@ -283,8 +283,8 @@ export default function V2Report({
               <p>
                 {draft
                   ? say(
-                      "구조 초안 · 외부 근거 미확인",
-                      "Structural draft · external evidence unresolved"
+                      "구조 초안 · 공개 근거 확인 전",
+                      "Structural draft · public evidence not yet checked"
                     )
                   : evidenceLabel}
               </p>
@@ -313,15 +313,15 @@ export default function V2Report({
               <p>{analysis.boundary}</p>
             </article>
             <article>
-              <span>03 / {say("다음 확인", "Next test")}</span>
+              <span>03 / {say("다음 확인", "Next check")}</span>
               <h3>{analysis.experiment.output}</h3>
-              <p>{say("구체적인 조건 대조는 3번 섹션, 실행 범위는 6번 섹션에서 확인하세요.", "See section 3 for the condition comparison and section 6 for the bounded test.")}</p>
+              <p>{say("자료와 내 조건의 비교는 3번 섹션, 첫 단계의 범위는 6번 섹션에 있습니다.", "Section 3 compares the evidence with your conditions; section 6 sets the size of the first step.")}</p>
             </article>
           </div>
           <p className="v2-paper-caption">
             {say(
-              "이 분석은 선택을 대신 결정하지 않습니다. 현재 조건에서 무엇을 지키고, 어떤 근거가 확보되면 다음 범위를 검토할 수 있는지 보여 줍니다.",
-              "This brief does not decide for you. It shows what to protect and which evidence would make the next scope worth reviewing."
+              "이 분석은 결정을 대신하지 않습니다. 지금 무엇을 지켜야 하는지, 어떤 근거가 생기면 다음 단계를 검토할 수 있는지 보여 줍니다.",
+              "This brief does not decide for you. It shows what to protect now and which evidence would make the next step worth reviewing."
             )}
           </p>
         </>
@@ -329,7 +329,7 @@ export default function V2Report({
       {page(
         2,
         "Structural Reading",
-        say("현재 구조 판단의 이유", "Why the current structure leads here"),
+        say("지금 이렇게 판단한 이유", "Why this is the current reading"),
         <>
           <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={answeredBands} printed />
           <V2Reasoning
@@ -340,15 +340,15 @@ export default function V2Report({
           <div className="v2-paper-note">
             <strong>
               {say(
-                "판단을 다시 검토할 근거",
-                "What would warrant reassessment"
+                "다음 단계를 검토할 수 있는 때",
+                "When the next step is worth reviewing"
               )}
             </strong>
             <p>{analysis.experiment.continue}</p>
             <p>
               {say(
-                "한 조건의 개선이 남은 제약을 해결하는지는 7·8번 섹션의 조건 변화 분석에서 확인하세요.",
-                "Check sections 7–8 to see whether improving one condition resolves the remaining constraints."
+                "조건 하나가 나아질 때 남은 제약도 풀리는지는 7·8번 섹션에서 확인하세요.",
+                "Sections 7–8 show whether improving one condition also resolves the others."
               )}
             </p>
           </div>
@@ -358,8 +358,8 @@ export default function V2Report({
         3,
         "External Evidence × Current Conditions",
         say(
-          "공개 근거를 현재 조건에 대조",
-          "Public evidence in the current decision"
+          "공개 자료와 내 조건 비교",
+          "Public evidence compared with your conditions"
         ),
         <>
           <div className="v2-paper-band">
@@ -380,16 +380,16 @@ export default function V2Report({
             <div className="v2-paper-note">
               <strong>
                 {say(
-                  "외부 조건이 확인되지 않았습니다",
-                  "External conditions remain unresolved"
+                  "공개 근거를 아직 확인하지 않았습니다",
+                  "Public evidence not yet checked"
                 )}
               </strong>
               <p>{analysis.question}</p>
               <p>{analysis.experiment.action}</p>
               <p>
                 {say(
-                  "대시보드에서 공개 근거를 확인한 뒤, 같은 스냅샷을 사용해 이 보고서를 다시 열 수 있습니다.",
-                  "Check public evidence on the dashboard, then reopen this report using the same snapshot."
+                  "대시보드에서 공개 근거를 확인한 뒤 이 리포트를 다시 열면, 같은 답변으로 다시 만들어집니다.",
+                  "Check public evidence on the dashboard, then reopen this report. It is rebuilt from the same answers."
                 )}
               </p>
             </div>
@@ -399,7 +399,7 @@ export default function V2Report({
       {page(
         4,
         "Decision Map / Decision Structure",
-        say("경로의 관계와 환경–준비 적합도", "Path relationships and environment–readiness fit"),
+        say("갈 수 있는 경로와 목표 쪽 여건", "Possible paths and conditions on the target side"),
         <>
           <V2PathMap language={state.language} state={state} core={core} analysis={analysis} intelligence={intelligence} />
           <V2DecisionMap
@@ -415,8 +415,8 @@ export default function V2Report({
         5,
         "Safety Margin",
         say(
-          "계획이 틀려도 회복할 수 있는가",
-          "Can you recover if the plan is wrong?"
+          "계획대로 되지 않아도 버틸 수 있나요?",
+          "Could you absorb it if the plan does not work out?"
         ),
         <>
           <V2SafetyView analysis={analysis} band={core.safetyMargin.band} />
@@ -434,8 +434,8 @@ export default function V2Report({
         6,
         "Changing / Next Experiment",
         say(
-          "목표를 유지하며 실행 구조 조정",
-          "Reconfigure the path while keeping the goal"
+          "목표는 그대로 두고 방법 바꾸기",
+          "Keep the goal, change how you get there"
         ),
         <>
           <V2ChangingView analysis={analysis} />
@@ -469,7 +469,7 @@ export default function V2Report({
               )}
               <p>{scenarioAnalysis.summary}</p>
               <p>
-                <b>{say("달라진 실행 범위", "Revised execution boundary")}</b>{" "}
+                <b>{say("이 가정에서 움직일 범위", "How far to go under this assumption")}</b>{" "}
                 {scenarioAnalysis.boundary}
               </p>
             </div>
@@ -481,8 +481,8 @@ export default function V2Report({
           />
           <p className="v2-paper-caption">
             {say(
-              "각 행은 한 조건만 바꿔 같은 엔진을 실행한 결과입니다. 모든 선택지를 비교한 순위나 성공 확률이 아닙니다. 여러 조건을 함께 바꾸는 분석은 대시보드 시뮬레이터에서 확인할 수 있습니다.",
-              "Each row changes one condition and reruns the same engine. It is not a ranking or success probability. Use the dashboard simulator to explore combined changes."
+              "각 행은 조건 하나만 바꿔 같은 방식으로 다시 계산한 결과입니다. 선택지의 순위나 성공 확률이 아닙니다. 여러 조건을 함께 바꿔 보려면 대시보드의 시뮬레이터를 쓰세요.",
+              "Each row changes one condition and recalculates the same way. It is not a ranking or a chance of success. To change several conditions at once, use the simulator on the dashboard."
             )}
           </p>
         </>
@@ -491,8 +491,8 @@ export default function V2Report({
         8,
         "Switching / 30–60–90-Day Validation",
         say(
-          "전환 조건과 검증 계획",
-          "Switching conditions and validation plan"
+          "판단이 바뀌는 조건과 30·60·90일 확인 계획",
+          "What would change the reading, and a 30–60–90-day check plan"
         ),
         <>
           <V2SwitchList
@@ -531,22 +531,22 @@ export default function V2Report({
               {evidenceNote.replace(/\.$/, "")}.{" "}
               {evidencePhase === "demo"
                 ? say(
-                    "이 페이지는 합성 예시입니다. 실제 출처와 주장 검증을 대신하지 않습니다.",
-                    "This is a synthetic example, not a check of actual sources or claims."
+                    "이 페이지는 예시로 만든 자료입니다. 실제 출처를 확인한 결과가 아닙니다.",
+                    "This page uses made-up example data. It is not a check of real sources."
                   )
                 : say(
-                    "접근 가능한 출처라는 사실만으로 주장이 검증된 것은 아닙니다. 표본·시점·지역의 제한을 실제 목표 조건과 대조해야 합니다.",
-                    "Source accessibility does not prove a claim. Check sample, timing and geography against the actual target conditions."
+                    "출처에 접속할 수 있다고 해서 내용이 검증된 것은 아닙니다. 자료의 표본·시점·지역이 내 목표와 맞는지 비교해 보세요.",
+                    "A reachable source is not a verified claim. Check whether its sample, timing and region match your target."
                   )}
             </p>
             {partialEvidenceNote && <p className="v2-paper-caption">{partialEvidenceNote}</p>}
             {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p className="v2-paper-caption">{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
             <h3 className="v2-reference-title">{say("allofmycareer 프레임워크 실행 계획", "allofmycareer framework action plan")}</h3>
             <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} bands={answeredBands} printed />
-            <h3 className="v2-reference-title">{say("출처 레퍼런스 (원문)", "Source references (original)")}</h3>
+            <h3 className="v2-reference-title">{say("출처 원문", "Original sources")}</h3>
             <p className="v2-paper-caption">
               {say("본문의 근거 문장은 화면 언어로 옮겨 적었습니다. 정확한 표현과 범위는 아래 원문에서 확인하세요.",
-                "Evidence wording in the report is in the interface language. Check exact wording and scope in the originals below.")}
+                "Evidence in the report is written in the interface language. Check the exact wording and scope in the originals below.")}
             </p>
             <ol className="v2-source-references">
               {intelligence.evidenceBlocks.map((b, id) => (
@@ -573,7 +573,7 @@ export default function V2Report({
             )}
             <div className="v2-paper-context">
               <strong>
-                {say("고객 입력 맥락", "Customer decision context")}
+                {say("입력한 상황", "Your decision context")}
               </strong>
               <p>{v2DecisionText(state.language, state)}</p>
               <p>{t("optionA")}: {roles.current.text}{v2AsEntered(state.language, roles.current.original)}</p>

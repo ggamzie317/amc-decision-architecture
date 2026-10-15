@@ -83,15 +83,15 @@ export default function V2SwitchList({
               <small>
                 {row.variable === "externalValidation"
                   ? ko
-                    ? "이 조건은 본인의 적합성·수요를 실제로 확인했다는 가정입니다. 공개 자료를 읽는 것만으로 충족되지 않습니다."
-                    : "This assumes actual personal fit or demand has been validated. Reading a public source does not meet this condition."
+                    ? "내가 목표에 맞는지, 실제 수요가 있는지 확인했다고 가정한 결과입니다. 공개 자료를 읽는 것만으로는 이 조건이 채워지지 않습니다."
+                    : "This assumes you have actually confirmed your fit and real demand. Reading public sources alone does not meet it."
                   : postureSame
                     ? ko
-                      ? "이 조건만 바꿔서는 현재 구조 판단이 바뀌지 않습니다. 남은 준비·제약·회복 조건을 함께 확인해야 합니다."
-                      : "This condition alone does not change the current posture. Remaining readiness, constraints and recovery conditions still matter."
+                      ? "이 조건 하나만 바뀌어서는 현재 판단이 달라지지 않습니다. 준비도, 제약, 되돌아올 여유도 함께 확인하세요."
+                      : "This condition alone does not change the current reading. Check readiness, constraints and room to absorb a setback as well."
                     : ko
-                      ? "이 결과는 조건이 달라졌다는 가정하에 기존 구조 분석을 다시 실행한 것입니다. 실제 변경 전에 해당 조건을 확인해야 합니다."
-                      : "This reruns the existing structure under a changed assumption. Verify the condition before acting on the change."}
+                      ? "이 조건이 달라진다면 판단이 이렇게 바뀐다는 계산입니다. 실제로 움직이기 전에 이 조건이 사실인지 확인하세요."
+                      : "This shows how the reading would change if this condition were different. Before acting, check that the condition is real."}
               </small>
             </li>
           );
