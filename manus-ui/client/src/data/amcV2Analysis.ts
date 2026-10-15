@@ -355,7 +355,10 @@ export type V2Analysis = {
  * otherwise the headline, otherwise the fact's first clause clipped at a word
  * boundary without cutting through a figure.
  */
-function v2BriefQuote(headline: string, fact: string, ko: boolean): string {
+function v2BriefQuote(rawHeadline: string, rawFact: string, ko: boolean): string {
+  // The result is wrapped in quotes by the caller, so drop quotes inside it (no nested ‘…‘…’…’).
+  const unquote = (value: string) => value.replace(/[‘’“”"']/g, "");
+  const headline = unquote(rawHeadline), fact = unquote(rawFact);
   const max = ko ? 50 : 80;
   const firstSentence = (value: string) => value.trim().split(/(?<=[.!?。])\s|[;；]\s?/)[0].replace(/[.。]$/, "").trim();
   const sentence = firstSentence(fact);
