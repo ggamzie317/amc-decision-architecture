@@ -132,8 +132,8 @@ export function buildV2CaseFifwm(
     fifwm[question.factor] = {
       score,
       reading: ko
-        ? `본인 응답 (외부 확인 전): ${label}.`
-        : `Your answer (not externally checked): ${label}.`,
+        ? `이 사례에 맞춘 질문 · 본인 응답 (외부 확인 전): ${label}.`
+        : `Question adapted to this case · your answer (not externally checked): ${label}.`,
     };
     answered++;
   }

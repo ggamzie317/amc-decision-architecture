@@ -360,8 +360,8 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
   const missingValidation = answer(input.answers, 14, input.validationFocus);
   const internalReadiness = answer(input.answers, 17, ko ? "필요한 역량과 그것을 보여 줄 근거가 얼마나 준비됐는지 확인합니다." : "The required skills, and the evidence that shows them, still need to be made visible.");
   const constraint = answer(input.answers, 25, answer(input.answers, 3, input.primaryRiskMeaning));
-  const optionAProtection = answer(input.answers, 6, ko ? `${withKoreanParticle(input.optionA.trim(), "은/는")} 지금의 기반과 새 경로를 확인할 시간을 지켜 줍니다.` : `${input.optionA} protects your current base and the time to check the new path.`);
-  const optionBUpside = answer(input.answers, 9, ko ? `${withKoreanParticle(input.optionB.trim(), "은/는")} 새로운 커리어 가치를 열 수 있습니다.` : `${input.optionB} may open a new source of career value.`);
+  const optionAProtection = answer(input.answers, 6, ko ? `${withKoreanParticle(input.optionA.trim(), "은/는")} 지금의 기반과 새 경로를 확인할 시간을 지켜 줍니다.` : `Your current role protects your base and the time to check the new path.`);
+  const optionBUpside = answer(input.answers, 9, ko ? `${withKoreanParticle(input.optionB.trim(), "은/는")} 새로운 커리어 가치를 열 수 있습니다.` : `The new path may open a new source of career value.`);
   const concise = casePresentation(input);
 
   // Structure is assembled first. Posture reads only canonical FIFWM and explicit
@@ -381,23 +381,23 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
   const guardrailExplanation = postureAssessment.guardrailApplied
     ? (ko
         ? `${optionB} 쪽 기회를 뒷받침하는 근거는 있습니다. 다만 ${guardrailConstraintText} 때문에 한 번에 크게 옮기기는 어렵습니다. 지금 판단은 본격적으로 옮기기 전에, 배우고 다시 시도할 여유부터 지키는 쪽입니다.`
-        : `There is evidence of opportunity in ${optionB}. But ${guardrailConstraintText} limit how far you can move at once. The current reading is to protect room to learn and try again before moving further.`)
+        : `There is evidence of opportunity on the new path. But ${guardrailConstraintText} limit how far you can move at once. The current reading is to protect room to learn and try again before moving further.`)
     : "";
   const currentStructuralPosture = postureFamily === "transition"
     ? {
         label: ko ? "더 강해진 전환 근거" : "Stronger Transition Case",
-        sentence: ko ? `지금 조건에서는 ${optionB} 쪽 근거가 더 강해졌습니다. 다만 한 번에 옮기기보다 단계적으로 옮겨 가는 편이 가장 잘 뒷받침됩니다.` : `Current conditions give stronger support for ${optionB}. Moving in stages, rather than all at once, is the best-supported way.`,
+        sentence: ko ? `지금 조건에서는 ${optionB} 쪽 근거가 더 강해졌습니다. 다만 한 번에 옮기기보다 단계적으로 옮겨 가는 편이 가장 잘 뒷받침됩니다.` : `Current conditions give stronger support for the new path. Moving in stages, rather than all at once, is the best-supported way.`,
       }
     : postureFamily === "reconfigure"
       ? {
           label: ko ? "기반을 보호하며 재구성" : "Protect and Reconfigure",
-          sentence: ko ? `지금 조건에서는 다시 일어설 여유와 현재 선택지를 지키면서, 작은 변화로 ${optionB}의 핵심 가능성을 확인하도록 경로를 조정하는 편이 더 잘 뒷받침됩니다.` : `Current conditions better support protecting your room to recover and your current options, while adjusting the path to check what matters most in ${optionB} through small changes.`,
+          sentence: ko ? `지금 조건에서는 다시 일어설 여유와 현재 선택지를 지키면서, 작은 변화로 ${optionB}의 핵심 가능성을 확인하도록 경로를 조정하는 편이 더 잘 뒷받침됩니다.` : `Current conditions better support protecting your room to recover and your current options, while adjusting the path to check what matters most on the new path through small changes.`,
         }
       : {
           label: ko ? "보존하며 검증" : "Preserve and Validate",
           sentence: postureAssessment.guardrailApplied
             ? guardrailExplanation
-            : ko ? `지금 조건에서는 ${optionA}의 기반을 지키면서 ${optionB}의 외부 근거를 확인하는 방향이 더 잘 뒷받침됩니다.` : `Current conditions better support keeping ${optionA} while checking the outside evidence for ${optionB}.`,
+            : ko ? `지금 조건에서는 ${optionA}의 기반을 지키면서 ${optionB}의 외부 근거를 확인하는 방향이 더 잘 뒷받침됩니다.` : `Current conditions better support keeping your current role while checking the outside evidence for the new path.`,
         };
 
   const decisionSwitches = input.decisionConditions.slice(0, 3).map((signal, index) => ({
@@ -405,7 +405,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     direction: postureAssessment.guardrailApplied
       ? (ko
           ? `이 조건이 달라지면 ${optionB} 쪽 기회 근거와 손실 위험을 함께 다시 봅니다. 더 본격적으로 옮기는 것은 근거가 뒷받침하고 ${withKoreanParticle(guardrailConstraintText, "을/를")} 보완할 방법이 확인될 때만 검토하세요.`
-          : `If this condition changes, look again at the opportunity evidence for ${optionB} and the potential loss together. Consider moving further only when the evidence supports it and a way to cover ${guardrailConstraintText} is confirmed.`)
+          : `If this condition changes, look again at the opportunity evidence for the new path and the potential loss together. Consider moving further only when the evidence supports it and a way to cover ${guardrailConstraintText} is confirmed.`)
       : postureFamily === "transition"
       ? (ko ? `${optionB} 쪽 근거가 유지되면 단계적으로 계속 옮겨 가고, 약해지면 투입을 줄여 현재 기반을 다시 지킵니다.` : `If it holds, keep moving in stages; if it weakens, scale back and protect your current base again.`)
       : index < 2

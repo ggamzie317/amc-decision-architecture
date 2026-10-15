@@ -297,7 +297,7 @@ describe("case-adapted structure assessment", () => {
     expect(built.fifwm.framework.score).toBeNull();
     expect(built.fifwm.workflow.score).toBeNull();
     expect(built.fifwm.marketPolicy.score).toBeNull();
-    expect(built.fifwm.formal.reading).toContain("본인 응답 (외부 확인 전)");
+    expect(built.fifwm.formal.reading).toContain("이 사례에 맞춘 질문 · 본인 응답 (외부 확인 전)");
     expect(buildV2CaseFifwm("MBA / EMBA / PhD Decision", "ko", { targetRoleStatus: "unsure", answers: { case_formal: "2" } })).toBeNull();
     expect(v2CaseFifwmSet("Industry Transition")).toBeNull();
     expect(v2CaseFifwmSet("General Career Reconfiguration")).toBeNull();
