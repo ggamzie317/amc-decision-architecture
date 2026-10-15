@@ -1,4 +1,6 @@
 import V2IndicatorProfile from "./V2IndicatorProfile";
+import V2ReadingGuide, { V2LeadAndReasons } from "./V2ReadingGuide";
+import { v2EvidencePeriod } from "../data/v2Readings";
 import { v2AsEntered, v2DecisionText, v2RoleFields } from "../data/v2InputGlossary";
 import V2PathMap from "./V2PathMap";
 import V2ExecutiveBrief from "./V2ExecutiveBrief";
@@ -300,7 +302,8 @@ export default function V2Report({
           <p className="v2-paper-caption">
             {t("context")}: {v2DecisionText(state.language, state)}
           </p>
-          <p className="v2-paper-lead">{analysis.executiveSummary}</p>
+          <V2ReadingGuide language={state.language} printed />
+          <V2LeadAndReasons className="v2-paper-lead" text={analysis.executiveSummary} language={state.language} />
           <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} printed cardsOnly />
           <div className="v2-paper-priorities">
             <article>
@@ -556,6 +559,7 @@ export default function V2Report({
                     <strong>{b.sourceLabel}</strong>
                     <small>
                       {v2EvidenceDimensionLabel(state.language, b.dimension)}
+                      {b.period ? ` · ${v2EvidencePeriod(b, state.language)}` : ""}
                       {b.sourceDate && b.sourceDateKind
                         ? ` · ${t(b.sourceDateKind === "published" ? "sourcePublished" : "sourceUpdated")}: ${b.sourceDate}`
                         : ""}

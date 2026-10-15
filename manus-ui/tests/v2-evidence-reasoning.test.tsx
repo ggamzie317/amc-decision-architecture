@@ -132,12 +132,15 @@ describe("V2 real input routing and non-scored evidence reasoning", () => {
       .not.toContain("private-gap-marker");
   });
 
-  it("does not reuse a private match after the claim changes or the language changes", () => {
+  // Comparisons are keyed by source page and research area so a language toggle keeps them
+  // (audit M7). A changed claim can only arrive through a new evidence run, which clears all
+  // saved comparisons (see tests/v2-evidence-flow.test.tsx); a different source never reuses them.
+  it("does not reuse a private match for a different source or research area", () => {
     const { state, evidence } = fixture();
     const key = v2ComparisonKey(evidence.evidenceBlocks[0], state.language);
     const comparisons: EvidenceComparisons = { [key]: { status: "matches", detail: "prior-private-proof" } };
     const changed = structuredClone(evidence);
-    changed.evidenceBlocks[0].fact = "다른 업무 범위가 요구됩니다.";
+    changed.evidenceBlocks[0].sourceUrl = "https://example.org/another-source";
     const core = buildProductApplicationV3(buildV2Input(state, changed));
     for (const nextState of [state, { ...state, language: "en" as const }]) {
       const a = buildV2Analysis(nextState, core, changed, "live", undefined, comparisons);

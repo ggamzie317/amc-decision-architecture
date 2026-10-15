@@ -64,6 +64,40 @@ export function v2EvidenceAreas(request: Pick<V2EvidenceRequest, "caseType" | "e
   return allowedV2ExternalAreas(request.caseType).slice(0, 3);
 }
 
+const domesticGeography = /^(?:한국|대한민국|서울|부산|판교|인천|대구|대전|광주|south korea|korea|seoul|busan|pangyo)$/i;
+
+/** A degree whose stated geography is outside Korea also needs mobility facts (issue B2). */
+export function v2DegreeAbroad(caseType: V2EvidenceRequest["caseType"], targetGeography: string): boolean {
+  const geography = targetGeography.trim();
+  return caseType === "MBA / EMBA / PhD Decision" && !!geography && !domesticGeography.test(geography);
+}
+
+/**
+ * Areas that must stay researched whatever the customer ticks: visa/residency
+ * for an overseas move, mobility for a degree abroad.
+ */
+export function v2MandatoryAreas(caseType: V2EvidenceRequest["caseType"], targetGeography: string): string[] {
+  if (caseType === "Overseas Relocation") return ["visaMobility"];
+  return v2DegreeAbroad(caseType, targetGeography) ? ["geographyMobility"] : [];
+}
+
+/** The case's standard research areas: defaults plus situational areas. */
+export function v2CaseResearchAreas(caseType: V2EvidenceRequest["caseType"], targetGeography: string): string[] {
+  return [...v2EvidenceAreas({ caseType, externalAreas: [] }), ...v2MandatoryAreas(caseType, targetGeography)]
+    .filter((area, i, all) => all.indexOf(area) === i);
+}
+
+/**
+ * True when this request researches only part of the decision: the browser
+ * sends one request per topic, so a request that leaves out any of the case's
+ * standard areas is one slice of a larger search (audit M1).
+ */
+export function v2IsPartialSearch(request: Pick<V2EvidenceRequest, "caseType" | "externalAreas" | "targetGeography">): boolean {
+  if (!request.externalAreas.length) return false;
+  return v2CaseResearchAreas(request.caseType, request.targetGeography)
+    .some(area => !request.externalAreas.includes(area));
+}
+
 /** Exact, bounded public-search context. Unknown fields cannot be forwarded. */
 export function parseV2EvidenceRequest(raw: unknown): V2EvidenceRequest | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;

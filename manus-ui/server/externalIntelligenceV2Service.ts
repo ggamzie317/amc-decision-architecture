@@ -6,6 +6,7 @@ import {
 import { v2t, type V2CopyKey } from "../client/src/data/v2Language.js";
 import {
   v2EvidenceAreas,
+  v2IsPartialSearch,
   type V2EvidenceRequest,
 } from "../shared/externalIntelligenceV2Request.js";
 import {
@@ -83,9 +84,11 @@ function evidenceSchema(dimensions: string[], maxBlocks: number = limit.blocks) 
   const cardText = {
     type: "object",
     additionalProperties: false,
-    required: ["headline", "fact", "whyItMatters", "action"],
+    required: ["headline", "fact", "whyItMatters", "action", "period"],
     properties: {
       headline: { type: "string", minLength: 1, maxLength: limit.headline },
+      // Reference period stated on the page ("2025년 11월", "2021 data"); empty when the page states none.
+      period: { type: "string", minLength: 0, maxLength: 40 },
       fact: { type: "string", minLength: 1, maxLength: limit.fact },
       whyItMatters: { type: "string", minLength: 1, maxLength: limit.whyItMatters },
       action: { type: "string", minLength: 1, maxLength: limit.signal },
@@ -169,20 +172,24 @@ const v2DimensionScope: Record<string, string> = {
  * timelines, market and pay figures, costs) so evidence is useful, not generic.
  */
 const v2ResearchBrief: Record<V2EvidenceRequest["caseType"], string> = {
-  "Corporate Stay vs Exit": "For a stay-or-leave decision, keep the named role or field and geography together. Cover: the current hiring market for that role (official vacancy or employment statistics, dated); pay levels for that role or industry (official wage statistics); typical notice, severance or unemployment-insurance rules from the labour authority; and the time it typically takes to move, where an official source reports it.",
-  "Industry Transition": "For an industry transition, keep the named target industry, role and geography together. Cover: hiring demand for the target role (official statistics or original employer pages, dated); required skills or qualifications for entry (official occupational profiles or original role pages); pay ranges for the target role versus the current field (official wage statistics); and public retraining or certification routes. A listing is only a dated example unless its current status and requirements are visible.",
-  "Role Upgrade / Downgrade": "For a role upgrade or step back, keep the named role level, field and geography together. Cover: what the target role level typically requires (official occupational profiles or original employer pages); pay difference between levels (official wage statistics); and demand for that level in the market, where officially reported.",
-  Entrepreneurship: "For a startup, keep the named customer group, product or service and geography together. Cover: market size or demand indicators from official or original research sources; competitors or substitutes that are publicly documented; licences, registrations and regulations required to operate and their published costs and timelines; typical pricing where publicly documented; and public support programmes (grants, loans, incubators). Do not call category interest proven paid demand.",
-  "MBA / EMBA / PhD Decision": "For a degree decision, keep the named institution or program and geography together. Prefer the institution's own program, admissions, tuition and career/outcome pages, and official statistics bodies. Cover: format, schedule, length and published tuition (amount, currency, per year or term); admission and completion requirements and the skills or prior study they assume; published career or employment outcomes (state when none are published rather than returning nothing); and funding routes. If the program is abroad or requires residence, also cover the official living-cost figure the institution or visa authority publishes, the student-visa conditions, and dependants' visa conditions and costs. If only a degree type is named, use official program pages in that geography and say the facts are not specific to one program.",
-  "Overseas Relocation": "For an overseas relocation, keep the named destination together with the route the person names (work visa, residency or permanent residence, family move). Cover what a person in this position would need to know: (1) the official visa or residency routes, their published eligibility conditions, required steps, processing times and fees, and how permanent residence is reached, from the immigration authority; (2) the current hiring market, from official vacancy or employment statistics; (3) pay levels by industry or occupation, from official wage surveys or statistics; (4) official cost-of-living or housing figures; (5) whether family members can accompany (dependant visa conditions and published costs) and preparation steps commonly required before moving (document attestation, qualification recognition, tax or pension registration). State categories and conditions as published; never assess this person's eligibility or give immigration advice.",
-  "Burnout-driven Decision": "For a burnout-driven decision, keep the named role or field and geography together. Cover: statutory leave, sick-leave or reduced-hours rights from the labour authority; demand for less intensive roles in the same field (official statistics or original employer pages); and pay implications of reduced hours or a role change (official wage statistics). Do not give medical advice.",
-  "Family Constraint-heavy Decision": "For a family-constrained decision, keep the named role or field and geography together. Cover: statutory parental, care or flexible-work rights from the labour authority; availability and published cost of childcare or care services in that geography; demand for flexible or remote roles in the field (official statistics or original employer pages); and pay implications of part-time or flexible work.",
-  "General Career Reconfiguration": "Keep the named public target and geography together. Cover: hiring demand for the target (official statistics or original employer pages, dated); entry requirements or qualifications; pay levels from official statistics; and the main published procedures or costs involved in moving.",
+  "Corporate Stay vs Exit": "For a stay-or-leave decision, keep the named role or field and geography together. Each item names the dimension it belongs to. Cover: (Hiring demand) the current hiring market for that role in the geography, from official vacancy or employment statistics, dated; (Role demand) demand for the named role or occupation and, where an official source reports it, the time it typically takes to move into a comparable role; (Compensation) pay levels for that role or industry, from official wage statistics, and the statutory severance-pay rule where the labour authority publishes one.",
+  "Industry Transition": "For an industry transition, keep the named target industry, role and geography together. Each item names the dimension it belongs to. Cover: (Hiring demand) hiring demand for the target role, from official statistics or original employer pages, dated; (Role demand) demand for the named target occupation; (Required skills) skills or qualifications required for entry, from official occupational profiles or original role pages, and the public retraining or certification routes that lead to them; (Compensation) pay ranges for the target role versus the current field, from official wage statistics; (Industry direction) the published outlook for the target industry, dated. A listing is only a dated example unless its current status and requirements are visible.",
+  "Role Upgrade / Downgrade": "For a role upgrade or step back, keep the named role level, field and geography together. Each item names the dimension it belongs to. Cover: (Required skills) what the target role level typically requires, from official occupational profiles or original employer pages; (Compensation) the pay difference between levels, from official wage statistics; (Role demand) demand for that level in the market, where officially reported; (Hiring demand) current hiring conditions for that level, dated.",
+  Entrepreneurship: "For a startup, keep the named customer group, product or service and geography together. Each item names the dimension it belongs to. Cover: (Customer demand) demand indicators for the named customer group from official or original research sources; (Market growth) market size or growth figures, dated; (Competing alternatives) competitors or substitutes that are publicly documented; (Pricing) typical pricing where publicly documented, with currency and date; (Distribution / acquisition) documented channels through which comparable offers reach the customers; (Regulation) licences, registrations and regulations required to operate, with their published costs and timelines; (Entry and operating barriers) capital needs and the public support programmes (grants, loans, incubators) that lower them. Do not call category interest proven paid demand.",
+  "MBA / EMBA / PhD Decision": "For a degree decision, keep the named institution or program and geography together. Prefer the institution's own program, admissions, tuition and career/outcome pages, and official statistics bodies. Each item names the dimension it belongs to. Cover: (Program outcomes) format, schedule and length, admission and completion requirements and the skills or prior study they assume, and published career or employment outcomes (state when none are published rather than returning nothing); (Cost / opportunity cost) published tuition (amount, currency, per year or term) and the time commitment; (Funding) published funding routes such as scholarships, employer sponsorship, assistantships, loans or government support; (Employment relevance) stated career paths, career services or employer partnerships; (Research relevance) published faculty research areas or research requirements related to the target; (Geography / mobility) if the program is abroad or requires residence, the official living-cost figure the institution or visa authority publishes, the student-visa conditions, and dependants' visa conditions and costs. If only a degree type is named, use official program pages in that geography and say the facts are not specific to one program.",
+  "Overseas Relocation": "For an overseas relocation, keep the named destination together with the route the person names (work visa, residency or permanent residence, family move). Each item names the dimension it belongs to. Cover: (Visa / mobility) the official visa or residency routes, their published eligibility conditions, required steps, processing times and fees, how permanent residence is reached, whether family members can accompany (dependant visa conditions and published costs) and required document attestation, from the immigration authority; (Hiring demand) the current hiring market, from official vacancy or employment statistics; (Compensation) pay levels by industry or occupation, from official wage surveys or statistics; (Geography) official cost-of-living or housing figures and published tax or pension registration steps for new residents; (Required skills) published qualification-recognition steps for the field. State categories and conditions as published; never assess this person's eligibility or give immigration advice.",
+  "Burnout-driven Decision": "For a burnout-driven decision, keep the named role or field and geography together. Each item names the dimension it belongs to. Cover: (Role demand) demand for less intensive, part-time or flexible roles in the same field, from official statistics or original employer pages; (Compensation) pay implications of reduced hours or a role change, from official wage statistics; (Hiring demand) current hiring conditions in the field, dated; (Geography) official cost-of-living indicators that bound a lower income in that geography. Do not give medical advice.",
+  "Family Constraint-heavy Decision": "For a family-constrained decision, keep the named role or field and geography together. Each item names the dimension it belongs to. Cover: (Geography) availability and published cost of childcare or care services in that geography; (Role demand) demand for flexible-work, part-time or remote roles in the field, from official statistics or original employer pages; (Compensation) pay implications of part-time or flexible work, from official wage statistics; (Hiring demand) current hiring conditions in the field, dated.",
+  "General Career Reconfiguration": "Keep the named public target and geography together. Each item names the dimension it belongs to. Cover: (Hiring demand) hiring demand for the target, from official statistics or original employer pages, dated; (Role demand) demand for the named role or occupation; (Required skills) entry requirements or qualifications; (Compensation) pay levels from official statistics; (Visa / mobility) if the move crosses a border, the published procedures and fees involved.",
 };
 
 function messages(request: V2EvidenceRequest, dimensions: string[], split = false) {
   const missing = v2MissingPoint(request.caseType, "en").point;
   const targetSearch = v2ResearchBrief[request.caseType];
+  // Only hints relevant to this search's areas (audit L3).
+  const situation = request.keyFacts?.length
+    ? v2KeyFactHints(request.caseType, request.keyFacts, v2EvidenceAreas(request))
+    : [];
   return [
     {
       type: "message",
@@ -193,6 +200,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[], split = fals
         "Use the web_search tool to research the explicit public target and geography. Prioritize directly accessible original pages from official institutions, employers, universities, regulators, and original research publishers. Avoid SEO blogs, marketplace listings, paywalls, login-gated pages, and pages that block public automated access when a direct original source is available.",
         "Cite the exact public HTTPS result page that supports each bounded claim. If no suitable accessible original source is found, preserve uncertainty; do not substitute a broad unrelated statistic.",
         "For public procurements, cite the issuing institution's original solicitation rather than an aggregator's summary. If that original is login-gated or inaccessible, do not present the aggregator summary as verified original evidence.",
+        "For each card, `period` is the reference period or date the page itself states for that fact (for example \"November 2025\", \"2021 data\", \"2027 admissions\"), written in the card's language; leave it empty when the page states none. Never guess a date. ",
         "When a dimension concerns money (tuition, fees, living costs, rent, dependants' costs, salaries), state amounts with currency and period so the person can compare them with their own budget. When it concerns skills or qualifications, name the specific skills and where they can be prepared (official courses, certifications, programmes) as published. For each card, `action` gives one concrete thing the person should prepare or check because of this fact (for example: compare this yearly cost with your savings; check whether your degree meets this requirement). It is a preparation step, not a recommendation of a path.",
         "Do not include citation markers such as [1] or [web:1] in any text field.",
         "Aim to answer every requested dimension with at least one card when an official or original public source exists. Prefer concrete, checkable facts: procedures and steps, eligibility conditions, processing times, fees and costs, dated market statistics, and pay figures with currency, period and whether they are median or average. A precise figure or step with its scope is more useful than a general statement.",
@@ -202,8 +210,9 @@ function messages(request: V2EvidenceRequest, dimensions: string[], split = fals
         "If a listing only shows example roles, do not infer that vacancies remain open, that detailed qualifications are met, or that its range represents the whole market. Describe policy targets as plans, not completed hiring demand.",
         "Keep research specific to the bounded target label and geography. A general statistic about a case family must not substitute for the target role, institution, product or qualification requirements.",
         targetSearch,
-        ...(request.keyFacts?.length ? ["The person's situation is given as fixed-choice facts in `personSituation`. Use them only to choose which official procedures, conditions and costs are relevant (for example dependant passes when family moves). Do not assess the person's eligibility from them."] : []),
-        ...(split ? [`This search covers only these dimensions: ${dimensions.join(", ")}. Other dimensions of the same decision are researched in separate searches; do not cover them here.`] : []),
+        "Brief items labelled with a dimension that is not in publicEvidenceDimensions are out of scope for this search.",
+        ...(situation.length ? ["The person's situation is given as fixed-choice facts in `personSituation`. Use them only to choose which official procedures, conditions and costs are relevant (for example dependant passes when family moves). Do not assess the person's eligibility from them."] : []),
+        ...(split ? [`This search covers only these dimensions: ${dimensions.join(", ")}. Other dimensions of the same decision are researched in separate searches; do not cover them here. A fact that belongs to another dimension (for example living costs when only visa routes are requested) must be left out, not relabelled under one of these dimensions.`] : []),
         "Explain what each fact establishes for this public target and what it does not establish. If qualifications or appointment requirements are relevant, separate formal eligibility from evidence of research, teaching or job performance.",
         "Distinguish source facts from inference and preserve uncertainty.",
         "contextConfidence describes confidence in the bounded public external context, as in AMC's existing external snapshot. It is not confidence in personal eligibility, purchase demand, a prediction or a recommendation. Preserve uncertainty when evidence is narrow; do not rate confidence from link accessibility or manufacture stronger evidence.",
@@ -230,7 +239,7 @@ function messages(request: V2EvidenceRequest, dimensions: string[], split = fals
         ),
         targetGeography: request.targetGeography || undefined,
         boundedOptionBTargetLabel: request.targetLabel || undefined,
-        personSituation: request.keyFacts?.length ? v2KeyFactHints(request.caseType, request.keyFacts) : undefined,
+        personSituation: situation.length ? situation : undefined,
       }),
     },
   ];
@@ -346,6 +355,9 @@ export async function resolveV2ExternalIntelligence(
     stage = "provider";
     // Topic fan-out: each group is one narrower search, run in parallel.
     const groups = v2EvidenceGroups(request);
+    // The browser sends one request per topic, so a single group is still a
+    // split search when it leaves out some of the case's areas (audit M1).
+    const split = groups.length > 1 || v2IsPartialSearch(request);
     const cap = Math.max(2, Math.ceil(limit.blocks / groups.length));
     const outcomes = await Promise.all(groups.map(async (areas, index) => {
       const groupRequest = { ...request, externalAreas: areas };
@@ -364,7 +376,7 @@ export async function resolveV2ExternalIntelligence(
             signal: controller.signal,
             body: JSON.stringify({
               preset,
-              input: messages(groupRequest, dimensions, groups.length > 1),
+              input: messages(groupRequest, dimensions, split),
               tools: [{ type: "web_search" }],
               max_output_tokens: 8000,
               stream: false,
@@ -395,7 +407,7 @@ export async function resolveV2ExternalIntelligence(
           () => ({ ok: false as const })
         );
         if (!parsed.ok) return { status: response.status, diagnostic: { category: "response_json" } as V2ResponseDiagnostic };
-        // The request is the full request so dimension checks accept every group label.
+        // Checked against this group's request: only its own dimension labels are accepted.
         const normalized = inspectV2AgentResponse(parsed.value, groupRequest, dimensions);
         return { status: response.status, normalized };
       } catch {
@@ -696,6 +708,9 @@ function validateV2Evidence(
     const whyItMatters = bounded(block.whyItMatters, limit.whyItMatters)!;
     // Optional preparation tip; an over-long tip is dropped, never truncated.
     const action = bounded(typeof block.action === "string" ? stripCitations(block.action) : undefined, limit.signal) ?? undefined;
+    // Reference period as printed on the page; dropped when empty or over-long, never invented.
+    const period = typeof block.period === "string" && block.period.trim() && block.period.trim().length <= 40
+      ? stripCitations(block.period.trim()) : undefined;
     const url =
       typeof block.sourceUrl === "string"
         ? safeSourceUrl(block.sourceUrl)
@@ -728,6 +743,7 @@ function validateV2Evidence(
       fact,
       whyItMatters,
       ...(action ? { action } : {}),
+      ...(period ? { period } : {}),
       sourceLabel: source.label,
       sourceUrl: source.url,
       ...(source.date && source.dateKind

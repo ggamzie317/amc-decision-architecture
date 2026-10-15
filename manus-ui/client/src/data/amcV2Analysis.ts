@@ -294,7 +294,8 @@ export type V2Analysis = {
   findings: V2Finding[];
   evidenceLinks: V2EvidenceLink[];
   target: string;
-  researchCoverage: Array<{ area: string; title: string; evidenceIds: number[] }>;
+  /** status: found / none (searched, nothing usable) / pending (still collecting) / not_searched. */
+  researchCoverage: Array<{ area: string; title: string; evidenceIds: number[]; status: "found" | "none" | "pending" | "not_searched" }>;
   externalContextReading: string;
   factorScopeNote: string;
   switching: Array<{ signal: string; direction: string }>;
@@ -514,7 +515,7 @@ export function buildV2Analysis(
     const comparisonStatus = comparison?.status ?? "unreviewed";
     const axisKey = v2GroupAxis[conditionGroup];
     const axisBand = b[axisKey].band;
-    const autoComparison = v2AutoComparison(block.direction, axisBand);
+    const autoComparison = v2AutoComparison(block.direction, axisBand, conditionGroup);
     const axisLabel = t(({ safetyMargin: "safety", constraintLoad: "constraint", internalReadiness: "readinessBand" } as const)[axisKey]);
     const comparisonLabel = comparisonStatus === "unreviewed"
       ? v2AutoComparisonLabel(autoComparison, axisLabel, t(axisBand as V2CopyKey), ko)
@@ -597,6 +598,11 @@ export function buildV2Analysis(
               `이 공개 조건이 목표(${target})에 적용되지 않는다고 답했으므로, 이 자료로는 적합성을 판단하지 않습니다.`,
               `You said this source does not apply to ${target}, so it is not used to judge your fit.`
             )
+          : autoComparison === "context"
+            ? say(
+                "시장 전체의 흐름을 보여 주는 참고 자료입니다. 내 준비 상태와 직접 비교하지 않았습니다.",
+                "Market context that shows the overall trend. It was not compared with your own readiness."
+              )
           : autoComparison === "open"
             ? say(
                 `자동 비교: 내 ${axisLabel} 단계를 입력하지 않아 자료의 방향만 표시합니다.`,
@@ -670,9 +676,15 @@ export function buildV2Analysis(
       link.conditionGroup === ({ recovery: "finance", fit: "readiness", capacity: "capacity" } as const)[finding])
       .map(link => link.id);
   const applicableLinks = evidenceLinks.filter(link => link.comparisonStatus !== "not_applicable");
+  // First item to look at: the customer's own gap, then a caution that touches their own
+  // conditions, then a topic they picked; a general market statistic comes last (audit M6).
+  const personal = applicableLinks.filter(link => link.conditionGroup !== "public");
+  const picked = (link: V2EvidenceLink) => state.externalAreas.includes(v2EvidenceArea(blocks[link.id], state) as never);
   const priorityLink = applicableLinks.find(link => link.comparisonStatus === "gap") ??
-    applicableLinks.find(link => link.comparisonStatus === "unreviewed" && link.autoComparison === "watch") ??
-    applicableLinks.find(link => blocks[link.id].direction === "caution") ?? applicableLinks[0];
+    personal.find(link => link.comparisonStatus === "unreviewed" && link.autoComparison === "watch") ??
+    personal.find(link => blocks[link.id].direction === "caution" && picked(link)) ??
+    personal.find(link => blocks[link.id].direction === "caution") ??
+    applicableLinks.find(picked) ?? personal[0] ?? applicableLinks[0];
   const priorityEvidence = priorityLink
     ? {
         headline: v2CustomerEvidenceText(
@@ -752,13 +764,24 @@ export function buildV2Analysis(
     }
   }
   // Every topic actually researched: the customer's picks plus the case's standard topics.
-  const researchCoverage = v2SituationalAreas(state).map(area => ({
-    area,
-    title: t(area as V2CopyKey),
-    evidenceIds: blocks.flatMap((block, id) => v2EvidenceArea(block, state) === area ? [id] : []),
-  }));
-  const uncovered = researchCoverage.filter(item => !item.evidenceIds.length).map(item => item.title);
-  const coverageReading = uncovered.length ? say(
+  // A topic still loading, or never searched, is not "no evidence" (audit M5).
+  const pendingAreas = new Set((intelligence as { pendingAreas?: string[] }).pendingAreas ?? []);
+  const searched = live || demo;
+  const researchCoverage = v2SituationalAreas(state).map(area => {
+    const evidenceIds = blocks.flatMap((block, id) => v2EvidenceArea(block, state) === area ? [id] : []);
+    const status: "found" | "none" | "pending" | "not_searched" = evidenceIds.length ? "found"
+      : pendingAreas.has(area) ? "pending" : searched ? "none" : "not_searched";
+    return { area, title: t(area as V2CopyKey), evidenceIds, status };
+  });
+  const uncovered = researchCoverage.filter(item => item.status === "none").map(item => item.title);
+  const pendingTitles = researchCoverage.filter(item => item.status === "pending").map(item => item.title);
+  const coverageReading = !searched ? say(
+    "아직 공개 자료를 찾지 않았습니다. 지금 판단은 답한 내용만으로 계산했습니다.",
+    "Public sources have not been searched yet. This reading uses your answers only."
+  ) : pendingTitles.length && !uncovered.length ? say(
+    `${pendingTitles.join(" · ")} 자료는 아직 찾는 중입니다. 도착하면 이 내용도 바뀝니다.`,
+    `Still collecting: ${pendingTitles.join(", ")}. This will update when they arrive.`
+  ) : uncovered.length ? say(
     `검색한 항목 중 ${uncovered.join(" · ")}에 대응하는 공개 근거는 없습니다. 이 조건은 아직 확인되지 않은 것으로 보세요.`,
     `No public material was found for: ${uncovered.join(", ")}. Treat these conditions as not yet established.`
   ) : say("선택한 검색 항목마다 공개 자료를 찾았습니다. 다만 그 내용이 내 목표와 내 조건에도 맞는지는 따로 비교해야 합니다.",

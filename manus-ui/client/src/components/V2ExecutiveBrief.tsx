@@ -1,4 +1,6 @@
 import { CalendarCheck, CircleDollarSign, GitBranch, Search, TriangleAlert, type LucideIcon } from "lucide-react";
+import { v2AmountPattern } from "../data/v2Amounts";
+import { v2ConditionLevel } from "../data/v2Indicators";
 import type { ProductApplicationBuildInput, ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2Analysis } from "../data/amcV2Analysis";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
@@ -14,10 +16,8 @@ import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
  * structural signal, the missing point, a decision switch and the first
  * preparation step. Nothing new is scored.
  */
-// Numbers keep thousands separators but never a trailing comma or period.
-const number = String.raw`\d{1,3}(?:[,.]\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?`;
-// Korean amounts keep the 억 part ("1억 2,000만 원"), never just the tail.
-const amountPattern = new RegExp(String.raw`(?:HK\$|US\$|A\$|S\$|£|€|\$|₩)\s?(?:${number})(?:\s?(?:만|억|천))?|\d+\s?억(?:\s?(?:${number})\s?만)?\s?원|(?:${number})\s?(?:만 ?원|억 ?원|원|파운드|달러|유로)`);
+// One shared amount pattern (audit L1): whole Korean amounts, ISO codes, no "2025 원격".
+const amountPattern = v2AmountPattern;
 
 export function v2AmountKeywords(blocks: ExternalIntelligenceV2["evidenceBlocks"], language: V2Language, max = 3) {
   const out: { amount: string; label: string }[] = [];
@@ -70,9 +70,9 @@ export default function V2ExecutiveBrief({
   const weakest = gaps.length ? signalOrder.find(([key]) => key === gaps[0].key) : undefined;
   const weakestBand = weakest ? core.postureBasis[weakest[0]].band : null;
   // Market evidence is not self-reported: its unknown reads "not yet established", not "not sure".
-  const weakestLabel = weakest?.[0] === "externalValidation" && weakestBand === "unknown"
-    ? say("근거 확인 전", "not yet established")
-    : weakestBand ? v2t(language, weakestBand as V2CopyKey) : "";
+  const weakestLabel = weakest && weakestBand
+    ? v2ConditionLevel(weakest[0], weakestBand, language, b => v2t(language, b as V2CopyKey))
+    : "";
   const customerSwitch = analysis.switching[0];
   const engineSwitch = !customerSwitch && input ? v2EngineSwitches(input, core, language, 1)[0] : undefined;
   const switchItem = customerSwitch ?? engineSwitch;

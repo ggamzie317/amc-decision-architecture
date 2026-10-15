@@ -1,4 +1,5 @@
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
+import { v2ConditionLevel } from "../data/v2Indicators";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import { v2BandAnchor } from "../data/v2BandAnchors";
 import { v2ChartQuestion } from "../data/v2Readings";
@@ -61,7 +62,7 @@ export default function V2IndicatorProfile({
                   <i key={step} data-on={level !== null && step <= level} data-baseline={step === indicator.reference} />
                 ))}
               </div>
-              <b>{indicator.key === "externalValidation" && band === "unknown" ? say("근거 확인 전", "Not yet established") : v2t(language, band as V2CopyKey)}</b>
+              <b>{v2ConditionLevel(indicator.key, band, language, b => v2t(language, b as V2CopyKey))}</b>
               <small>{state === "gap" ? say("기준에 못 미침", "Below the level needed") : state === "met" ? say("기준 충족", "Meets the level needed") : say("확인 전", "Not yet confirmed")}</small>
             </div>
             <div className="v2-ind-reading">
@@ -98,6 +99,15 @@ export default function V2IndicatorProfile({
       <p className="v2-ind-note">{say(
         "막대는 답한 상태를 0~2단계로 보여 줍니다. 확률이 아닙니다. 굵게 표시한 칸은 '전환' 판단에 필요한 최소 수준입니다.",
         "Bars show your answered level on a 0–2 scale. They are not a probability. The bold step is the minimum level needed for a 'transition' reading."
+      )}</p>
+      {/* Benchmark (CareerLeader): a worked reading example, and self-ratings checked with others. */}
+      <p className="v2-ind-note">{say(
+        "읽는 법: 막대가 '일부 갖춤'까지 차 있고 굵은 칸이 '충분함'에 있다면, 전환 판단에는 그 조건이 한 단계 더 필요하다는 뜻입니다.",
+        "How to read it: if the bar reaches 'Partly in place' and the bold step is at 'Strong', that condition needs one more step for a move."
+      )}</p>
+      <p className="v2-ind-note">{say(
+        "단계는 본인이 고른 것입니다. 가능하면 목표 분야에서 일하는 사람 한 명에게 같은 질문을 해 보고, 답이 다르면 그 차이부터 확인하세요.",
+        "These levels are your own ratings. If you can, ask one person who works in the target field the same questions; where their answer differs, check that gap first."
       )}</p>
     </section>
   );

@@ -152,3 +152,10 @@ export function v2PostureBasisSplit(core: ProductApplicationV3, labels: Record<s
   }
   return { supports, limits, unknown };
 }
+
+/** Reference period of a fact (Lightcast: every figure states its date), or that the page states none. */
+export function v2EvidencePeriod(block: Pick<Block, "period" | "sourceDate">, language: V2Language): string {
+  const ko = language === "ko";
+  const value = block.period?.trim() || block.sourceDate;
+  return value ? (ko ? `기준: ${value}` : `As of: ${value}`) : ko ? "기준 시점 표시 없음" : "No reference date stated";
+}

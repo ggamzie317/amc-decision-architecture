@@ -100,8 +100,9 @@ function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", 
     uncertainties: pick("uncertainties", limit.uncertainties),
     implication: fitSentences(lives.map(live => live.implication), limit.implication),
   };
-  // Every topic keeps at least its first card before any topic adds more,
-  // so a later topic is never pushed out by the cap (issue B4).
+  // Every (topic, area) keeps its first card before any topic adds more, so
+  // neither a later topic nor one area of a two-area topic is pushed out by
+  // the cap and then shown as "no evidence" (issues B4, audit M3).
   const seen = new Set<string>();
   const add = (block: ExternalIntelligenceV2["evidenceBlocks"][number]) => {
     const key = citationKey(block);
@@ -109,6 +110,15 @@ function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", 
     seen.add(key);
     merged.evidenceBlocks.push(block);
   };
+  for (const live of lives) {
+    const areas = new Set<string>();
+    for (const block of live.evidenceBlocks) {
+      const area = block.area ?? block.dimension;
+      if (areas.has(area)) continue;
+      areas.add(area);
+      add(block);
+    }
+  }
   // Then fill round-robin so no single topic takes most of the remaining slots.
   const depth = Math.max(0, ...lives.map(live => live.evidenceBlocks.length));
   for (let i = 0; i < depth; i++) for (const live of lives) if (live.evidenceBlocks[i]) add(live.evidenceBlocks[i]);

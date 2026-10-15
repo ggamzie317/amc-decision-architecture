@@ -1,5 +1,5 @@
 import type { V2Analysis } from "../data/amcV2Analysis";
-import { v2EvidenceLimit, v2EvidenceNature, v2EvidenceNatureLabel } from "../data/v2Readings";
+import { v2EvidenceLimit, v2EvidenceNature, v2EvidenceNatureLabel, v2EvidencePeriod } from "../data/v2Readings";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import { v2EvidenceDimensionLabel } from "../data/v2Language";
@@ -21,7 +21,10 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
     <p className="v2-analysis-note">{analysis.externalContextReading}</p>
     <ul className="v2-research-coverage" aria-label={say("검색 항목별 근거 범위", "Evidence by research topic")}>
       {analysis.researchCoverage.map(item => <li key={item.area} data-covered={!!item.evidenceIds.length}>
-        <span>{item.title}</span><strong>{item.evidenceIds.length ? say("공개 자료 있음", "Public material found") : say("근거 없음", "No evidence")}</strong>
+        <span>{item.title}</span><strong>{item.status === "found" ? say("공개 자료 있음", "Public material found")
+          : item.status === "pending" ? say("찾는 중", "Collecting")
+            : item.status === "not_searched" ? say("아직 찾지 않음", "Not searched yet")
+              : say("찾은 자료 없음", "Nothing usable found")}</strong>
       </li>)}
     </ul>
     {analysis.evidenceLinks.length > 0 ? <>
@@ -35,7 +38,7 @@ export function V2EvidenceComparisonView({ analysis, intelligence, onChange, com
           <td data-label={labels[0]}>
             <span className="v2-comparison-reference">{say("근거", "Evidence")} {link.id + 1} / {v2EvidenceDimensionLabel(analysis.language, block.dimension)}</span>
             <p>{v2CustomerEvidenceText(analysis.language, link.sourceFact)}</p>
-            <p className="v2-evidence-scope"><b>{v2EvidenceNatureLabel(v2EvidenceNature(block), analysis.language)}</b>{block.sourceDate ? ` · ${block.sourceDate}` : ""} · {v2EvidenceLimit(block.area, analysis.language)}</p>
+            <p className="v2-evidence-scope"><b>{v2EvidenceNatureLabel(v2EvidenceNature(block), analysis.language)}</b>{` · ${v2EvidencePeriod(block, analysis.language)}`} · {v2EvidenceLimit(block.area, analysis.language)}</p>
             {block.sourceUrl && <a href={block.sourceUrl} target="_blank" rel="noreferrer">{block.sourceLabel} ↗</a>}
           </td>
           <td data-label={labels[1]}>

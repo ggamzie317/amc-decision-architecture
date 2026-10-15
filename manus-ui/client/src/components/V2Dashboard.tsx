@@ -1,4 +1,5 @@
 import V2IndicatorProfile from "./V2IndicatorProfile";
+import V2ReadingGuide, { V2LeadAndReasons } from "./V2ReadingGuide";
 import { v2AsEntered, v2DecisionText, v2RoleFields } from "../data/v2InputGlossary";
 import V2PathMap from "./V2PathMap";
 import V2ExecutiveBrief from "./V2ExecutiveBrief";
@@ -294,9 +295,10 @@ export default function V2Dashboard({
         {draft && ` · ${say("구조 초안", "Structural draft")}`}
       </div>
       <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
+      <V2ReadingGuide language={state.language} />
       <details className="v2-overview-detail">
         <summary>{say("판단 이유와 공개 자료의 한계 자세히 보기", "See the reasoning and the limits of public evidence")}</summary>
-        <p>{analysis.summary}</p>
+        <V2LeadAndReasons text={analysis.summary} language={state.language} />
       </details>
       <section className="v2-analysis-section" id="v2-path">
         {head("A", "Career Path", say("지금 자리에서 고민하는 커리어까지", "From where you are to the career you are considering"))}

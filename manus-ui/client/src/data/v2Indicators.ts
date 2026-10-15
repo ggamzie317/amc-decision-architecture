@@ -1,4 +1,5 @@
 import type { ProductApplicationV3 } from "./amcProductApplicationV3";
+import { v2AmountPattern } from "./v2Amounts";
 import type { V2CopyKey } from "./v2Language";
 
 /**
@@ -52,7 +53,7 @@ export const v2Indicators: V2Indicator[] = [
     how: ["준비 기간에 필요한 생활비와 비용을 계산하고, 그만큼을 따로 떼어 둡니다.", "Work out living costs and expenses for the preparation period and set that amount aside."],
     worksWhen: ["계산해 둔 비용과 소득 공백 안에서 움직이면 실제 여유가 됩니다.", "It is real room when you move within the costs and income gap you have worked out."],
     weakensWhen: ["준비 기간이 길어지거나 고정 지출이 늘면 같은 금액도 빠르게 줄어듭니다.", "A longer preparation period or higher fixed costs shrink the same amount quickly."],
-    evidence: /(?:HK\$|US\$|S\$|£|€|\$|₩)\s?\d|\d[\d,.]*\s?(?:원|만 ?원|파운드|달러|유로)/,
+    evidence: v2AmountPattern,
   },
   {
     key: "reversibility", variable: "reversibility", label: "reversibility", reference: 1,
@@ -61,7 +62,8 @@ export const v2Indicators: V2Indicator[] = [
     how: ["휴직·복직 제도, 재지원, 계약 조건 등 돌아올 길을 문서로 확인합니다.", "Confirm a way back in writing: leave and return, re-application, contract terms."],
     worksWhen: ["돌아갈 자리와 조건이 문서로 남아 있으면, 잘 안 됐을 때 잃는 것이 줄어듭니다.", "When the way back and its terms are in writing, you lose less if it does not work."],
     weakensWhen: ["구두 약속이거나 시간이 지나면 사라지는 자리라면 복귀 여지는 생각보다 작습니다.", "If it rests on a verbal promise or a position that lapses, the way back is smaller than it looks."],
-    evidence: /원격|시간제|파트타임|병행|휴직|part-time|remote|leave/i,
+    // Ways back or part-way routes; plain "leave"/"remote" matched unrelated text (audit L2).
+    evidence: /시간제|파트타임|병행|휴직|복직|재입사|part-time|leave of absence|return to work|rehire/i,
   },
   {
     key: "optionBSupport", variable: "optionBSupport", label: "supportBand", reference: 1,
@@ -70,7 +72,8 @@ export const v2Indicators: V2Indicator[] = [
     how: ["도와줄 사람과 제도를 이름과 역할까지 구체적으로 확보합니다.", "Secure named people and programmes with specific roles."],
     worksWhen: ["도와줄 사람이 시간과 역할을 구체적으로 약속했다면 실행이 빨라집니다.", "It speeds execution when helpers have committed specific time and roles."],
     weakensWhen: ["호의적인 반응만 있고 역할이 정해지지 않았다면 실제 지원으로 계산하지 않습니다.", "Friendly interest without a defined role is not counted as real support."],
-    evidence: /장학|지원|후원|scholar|fund|support|sponsor/i,
+    // "지원" alone also means "application" (지원서·지원 요건), so only funding words count (audit L2).
+    evidence: /장학|지원금|보조금|후원|멘토|scholar|grant|bursary|sponsor|mentor/i,
   },
   {
     key: "structuralRisk", variable: "downsideExposure", label: "downside", reference: 1,
@@ -109,4 +112,19 @@ export function v2IndicatorReading(level: number | null, reference: number, ko: 
   return level === 0
     ? ko ? "판단을 가장 크게 제한하는 조건입니다. 이것부터 보강하세요." : "This limits the reading most. Strengthen it first."
     : ko ? "일부 갖췄지만 전환 판단 기준에는 못 미칩니다." : "Partly in place, but below the level needed for a move.";
+}
+
+/**
+ * Level name for a condition. Market evidence is not something the customer
+ * has: its level describes how well public sources support the target, so it
+ * reads "일부 확인됨 / 근거가 약함" rather than "일부 갖춤 / 부족함".
+ */
+const evidenceLevel: Record<string, readonly [string, string]> = {
+  strong: ["충분히 확인됨", "Well supported"],
+  developing: ["일부 확인됨", "Partly supported"],
+  weak: ["근거가 약함", "Weakly supported"],
+  unknown: ["근거 확인 전", "Not yet established"],
+};
+export function v2ConditionLevel(key: string, band: string, language: "ko" | "en", fallback: (band: string) => string): string {
+  return key === "externalValidation" && evidenceLevel[band] ? evidenceLevel[band][language === "ko" ? 0 : 1] : fallback(band);
 }
