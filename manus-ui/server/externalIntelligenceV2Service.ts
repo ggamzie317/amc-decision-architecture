@@ -88,7 +88,7 @@ function evidenceSchema(dimensions: string[], maxBlocks: number = limit.blocks) 
     properties: {
       headline: { type: "string", minLength: 1, maxLength: limit.headline },
       // Reference period stated on the page ("2025년 11월", "2021 data"); empty when the page states none.
-      period: { type: "string", minLength: 0, maxLength: 40 },
+      period: { type: "string", minLength: 0, maxLength: 24 },
       fact: { type: "string", minLength: 1, maxLength: limit.fact },
       whyItMatters: { type: "string", minLength: 1, maxLength: limit.whyItMatters },
       action: { type: "string", minLength: 1, maxLength: limit.signal },
@@ -200,7 +200,8 @@ function messages(request: V2EvidenceRequest, dimensions: string[], split = fals
         "Use the web_search tool to research the explicit public target and geography. Prioritize directly accessible original pages from official institutions, employers, universities, regulators, and original research publishers. Avoid SEO blogs, marketplace listings, paywalls, login-gated pages, and pages that block public automated access when a direct original source is available.",
         "Cite the exact public HTTPS result page that supports each bounded claim. If no suitable accessible original source is found, preserve uncertainty; do not substitute a broad unrelated statistic.",
         "For public procurements, cite the issuing institution's original solicitation rather than an aggregator's summary. If that original is login-gated or inaccessible, do not present the aggregator summary as verified original evidence.",
-        "For each card, `period` is the reference period or date the page itself states for that fact (for example \"November 2025\", \"2021 data\", \"2027 admissions\"), written in the card's language; leave it empty when the page states none. Never guess a date. ",
+        "For each card, `period` is a short label (at most 24 characters, no sentence) for the reference period or date the page itself states for that fact (for example \"November 2025\", \"2021 data\", \"2027 admissions\"), written in the card's language; leave it empty when the page states none. Never guess a date. ",
+        "Korean text must read as natural Korean career guidance in polite form (~합니다/~하세요), short sentences, no translationese. In Korean use 비교 rather than 대조, 확인 or 검토 rather than 검증, and avoid 시험, 노출 and 몰입 for career steps. ",
         "When a dimension concerns money (tuition, fees, living costs, rent, dependants' costs, salaries), state amounts with currency and period so the person can compare them with their own budget. When it concerns skills or qualifications, name the specific skills and where they can be prepared (official courses, certifications, programmes) as published. For each card, `action` gives one concrete thing the person should prepare or check because of this fact (for example: compare this yearly cost with your savings; check whether your degree meets this requirement). It is a preparation step, not a recommendation of a path.",
         "Do not include citation markers such as [1] or [web:1] in any text field.",
         "Aim to answer every requested dimension with at least one card when an official or original public source exists. Prefer concrete, checkable facts: procedures and steps, eligibility conditions, processing times, fees and costs, dated market statistics, and pay figures with currency, period and whether they are median or average. A precise figure or step with its scope is more useful than a general statement.",
@@ -709,7 +710,7 @@ function validateV2Evidence(
     // Optional preparation tip; an over-long tip is dropped, never truncated.
     const action = bounded(typeof block.action === "string" ? stripCitations(block.action) : undefined, limit.signal) ?? undefined;
     // Reference period as printed on the page; dropped when empty or over-long, never invented.
-    const period = typeof block.period === "string" && block.period.trim() && block.period.trim().length <= 40
+    const period = typeof block.period === "string" && block.period.trim() && block.period.trim().length <= 24
       ? stripCitations(block.period.trim()) : undefined;
     const url =
       typeof block.sourceUrl === "string"

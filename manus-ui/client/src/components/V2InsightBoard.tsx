@@ -261,7 +261,7 @@ export default function V2InsightBoard({
                     <span className="v2-versus-market"><Dir aria-hidden size={15} />{v2CustomerEvidenceText(language, block.headline)}</span>
                     <span className="v2-versus-you">{link?.condition ?? "—"}</span>
                     <span className="v2-versus-status" data-auto={status === "unreviewed" ? auto : undefined}>
-                      {status === "unreviewed" ? `${say("자동 비교", "Auto comparison")} · ${v2AutoComparisonWord(auto, ko)}` : statusLabel[status][ko ? 1 : 0]}
+                      {status === "unreviewed" ? (auto === "context" ? v2AutoComparisonWord(auto, ko) : `${say("자동 비교", "Auto comparison")} · ${v2AutoComparisonWord(auto, ko)}`) : statusLabel[status][ko ? 1 : 0]}
                     </span>
                     {(printed || focus === i) && (
                       <p className="v2-versus-detail">

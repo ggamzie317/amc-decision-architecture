@@ -895,7 +895,7 @@ describe("round 8: evidence dates, evidence-strength labels, competitor reading 
 
   it("asks the provider for a stated period and never invents one", () => {
     const service = fs.readFileSync(path.resolve(__dirname, "../server/externalIntelligenceV2Service.ts"), "utf8");
-    expect(service).toContain('period: { type: "string", minLength: 0, maxLength: 40 }');
+    expect(service).toContain('period: { type: "string", minLength: 0, maxLength: 24 }');
     expect(service).toContain("Never guess a date.");
   });
 
