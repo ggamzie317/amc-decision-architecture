@@ -860,3 +860,13 @@ describe("competitor benchmark: reading layer (no new scores)", () => {
     expect(v2ChartQuestion("path", "en")).not.toMatch(/[가-힣]/);
   });
 });
+
+describe("launch test feedback", () => {
+  it("opens an email to the product inbox with only the record ID pre-filled", async () => {
+    const { v2FeedbackMailto } = await import("../client/src/data/v2Feedback");
+    const url = v2FeedbackMailto("ko", "AMC-20261015-ABCDEF12");
+    expect(url.startsWith("mailto:report@allofmycareer.com?subject=")).toBe(true);
+    expect(decodeURIComponent(url)).toContain("기록 ID: AMC-20261015-ABCDEF12");
+    expect(decodeURIComponent(v2FeedbackMailto("en", "not-an-id"))).not.toContain("not-an-id");
+  });
+});

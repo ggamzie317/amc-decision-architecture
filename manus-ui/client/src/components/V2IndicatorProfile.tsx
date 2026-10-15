@@ -77,7 +77,7 @@ export default function V2IndicatorProfile({
                 </div>
                 <div data-source="public">
                   <dt>{say("공개 근거", "Public evidence")}</dt>
-                  <dd>{card ? v2CustomerEvidenceText(language, card.headline) : say("이 조건에 직접 연결된 공개 근거 없음", "No public evidence tied to this condition")}</dd>
+                  <dd>{card ? v2CustomerEvidenceText(language, card.headline) : "—"}</dd>
                 </div>
                 <div data-source="reading">
                   <dt>{say("allofmycareer 해석", "allofmycareer reading")}</dt>

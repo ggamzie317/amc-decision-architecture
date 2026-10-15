@@ -101,7 +101,8 @@ export default function V2ExecutiveBrief({
       icon: Search,
       label: say("놓치기 쉬운 조건", "Easy to miss"),
       keyword: analysis.missingConcept,
-      detail: analysis.question,
+      // The key question is already in the brief's aside; say why this is easy to miss instead.
+      detail: text(core.missingPoint) !== analysis.missingConcept ? text(core.missingPoint) : analysis.question,
     },
     {
       icon: GitBranch,

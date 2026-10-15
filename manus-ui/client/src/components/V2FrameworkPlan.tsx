@@ -6,6 +6,7 @@ import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
 import { v2Indicators } from "../data/v2Indicators";
+import { withKoreanParticle } from "../data/koreanParticle";
 import { v2PlainQuestion, v2RecheckPart, v2SafetyProfile } from "../data/v2Readings";
 
 /**
@@ -206,7 +207,7 @@ export default function V2FrameworkPlan({
       <div className="v2-plan-experiment">
         <h3><FlaskConical aria-hidden size={16} />{say("다음 실험", "Next experiment")}<small>{v2PlainQuestion("experiment", language)}</small></h3>
         <dl>
-          <div><dt>{say("검증할 가정", "Assumption to test")}</dt><dd>{analysis.question}</dd></div>
+          <div><dt>{say("검증할 가정", "Assumption to test")}</dt><dd>{say(`${withKoreanParticle(`‘${analysis.missingConcept}’`, "이/가")} 실제로 성립한다`, `That “${analysis.missingConcept}” actually holds`)}</dd></div>
           <div><dt>{say("작은 행동", "Small action")}</dt><dd>{firstSentences(experiment.action, 2)}</dd></div>
           <div><dt>{say("관찰할 결과", "What to observe")}</dt><dd>{experiment.output}</dd></div>
           <div><dt>{say("재검토 조건", "When to re-think")}</dt><dd>{experiment.pause}</dd></div>
