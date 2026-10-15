@@ -870,3 +870,11 @@ describe("launch test feedback", () => {
     expect(decodeURIComponent(v2FeedbackMailto("en", "not-an-id"))).not.toContain("not-an-id");
   });
 });
+
+describe("launch blocker: domestic target without a place name", () => {
+  it("defaults a Korean entry to Korea so the final search button is enabled", () => {
+    const page = fs.readFileSync(pagePath, "utf8");
+    expect(page).toContain('inferV2Geography(s, language) || (language === "ko" ? "한국" : "")');
+    expect(page).toContain("3단계에서 검색 대상·지역 입력하기");
+  });
+});
