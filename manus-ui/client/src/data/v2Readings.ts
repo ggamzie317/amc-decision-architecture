@@ -35,9 +35,9 @@ export function v2PlainQuestion(part: V2FrameworkPart, language: V2Language): st
 
 /** What each chart answers, so no chart is decoration. */
 const chartQuestions = {
-  radar: ["'전환' 판단에 필요한 수준과 비교하면, 내 조건은 어디가 부족한가요?", "Compared with the level needed for a move, where do your conditions fall short?"],
-  pentagon: ["다섯 구조 요소 중 어디가 약하고, 어디가 튼튼한가요?", "Which of the five factors are weak, and which are solid?"],
-  versus: ["공개 자료와 내 조건은 어디서 맞고, 어디서 어긋나나요?", "Where does public evidence match your conditions, and where does it not?"],
+  radar: ["‘전환’ 판단에 필요한 수준과 비교하면, 내 조건은 어디가 부족한가요?", "Compared with the level needed for a move, where do your conditions fall short?"],
+  pentagon: ["다섯 가지 관점 중 어디가 약하고, 어디가 튼튼한가요?", "Which of the five lenses are weak, and which are solid?"],
+  versus: ["공개 자료와 내 조건은 어디서 맞고, 어디서 어긋나나요?", "Where do public sources match your conditions, and where do they not?"],
   path: ["무엇을 갖추면 다음 단계로 갈 수 있나요?", "What do you need in place to take the next step?"],
   indicators: ["무엇이 확인되었고, 무엇이 아직 확인되지 않았나요?", "What is confirmed so far, and what is not?"],
 } as const satisfies Record<string, Pair>;
@@ -52,7 +52,7 @@ const natureLabel: Record<V2EvidenceNature, Pair> = {
   statistics: ["공식 통계", "Official statistics"],
   institution: ["기관·학교 공식 자료", "Institution's own published material"],
   listing: ["채용 공고·목록 예시", "Job listing or directory example"],
-  other: ["기타 공개 자료", "Other public material"],
+  other: ["기타 공개 자료", "Other public source"],
 };
 /** Kind of source, from its address only (never from customer text). */
 export function v2EvidenceNature(block: Pick<Block, "sourceUrl">): V2EvidenceNature {
@@ -78,10 +78,10 @@ const limits: Record<string, Pair> = {
   geography: ["평균 비용을 보여 줍니다. 내 가구의 실제 비용은 따로 계산하세요.", "Shows average costs; work out your household's actual costs separately."],
   visaMobility: ["공식 요건을 보여 줍니다. 내가 자격을 갖췄는지는 판단하지 않았습니다.", "Shows the official requirements; your eligibility was not assessed."],
   geographyMobility: ["공식 요건과 비용을 보여 줍니다. 내가 자격을 갖췄는지는 판단하지 않았습니다.", "Shows the official requirements and costs; your eligibility was not assessed."],
-  programOutcomes: ["과정 전체의 성과를 보여 줍니다. 내 결과로 쓰지 않았습니다.", "Shows programme-wide outcomes; not used as your result."],
-  employmentRelevance: ["과정과 직무의 연결을 보여 줍니다. 내 취업 결과로 쓰지 않았습니다.", "Shows how the programme links to roles; not used as your employment result."],
+  programOutcomes: ["과정 전체의 성과를 보여 줍니다. 내 결과로 쓰지 않았습니다.", "Shows program-wide outcomes; not used as your result."],
+  employmentRelevance: ["과정과 직무의 연결을 보여 줍니다. 내 취업 결과로 쓰지 않았습니다.", "Shows how the program links to roles; not used as your employment result."],
   researchRelevance: ["연구 분야 정보를 보여 줍니다. 내 연구와 맞는지 판단하는 데 쓰지 않았습니다.", "Shows information about the field; not used to judge your research fit."],
-  funding: ["제도가 있다는 것을 보여 줍니다. 내가 선정될지는 판단하지 않았습니다.", "Shows that a programme exists; whether you would be selected was not assessed."],
+  funding: ["제도가 있다는 것을 보여 줍니다. 내가 선정될지는 판단하지 않았습니다.", "Shows that a program exists; whether you would be selected was not assessed."],
   opportunityCost: ["공시된 비용을 보여 줍니다. 내 소득 공백은 따로 계산하세요.", "Shows published costs; work out your income gap separately."],
   customerDemand: ["관심도나 시장 규모를 보여 줍니다. 실제로 돈을 낼 수요가 있다는 뜻으로 쓰지 않았습니다.", "Shows interest or market size; not treated as proof that people will pay."],
   competition: ["경쟁 현황을 보여 줍니다. 내 제안이 얼마나 다른지는 판단하지 않았습니다.", "Shows the competitive landscape; how your offer differs was not assessed."],
@@ -91,7 +91,7 @@ const limits: Record<string, Pair> = {
   barriers: ["진입 요건을 보여 줍니다. 내가 충족하는지는 판단하지 않았습니다.", "Shows entry requirements; whether you meet them was not assessed."],
   regulation: ["규제 요건을 보여 줍니다. 내가 충족하는지는 판단하지 않았습니다.", "Shows regulatory requirements; whether you meet them was not assessed."],
 };
-const genericLimit: Pair = ["공개 자료입니다. 이것만으로 나와 맞는지 판단하지 않았습니다.", "Public material; not used on its own to judge whether it fits you."];
+const genericLimit: Pair = ["공개 자료입니다. 이것만으로 나와 맞는지 판단하지 않았습니다.", "A public source; not used on its own to judge whether it fits you."];
 export function v2EvidenceLimit(area: string | null | undefined, language: V2Language): string {
   return pick((area && limits[area]) || genericLimit, language);
 }
@@ -127,8 +127,8 @@ const recheck: Record<string, Pair> = {
   externalValidation: ["현재 판단과 공개 자료 비교", "The current reading and the evidence comparison"],
   internalReadiness: ["실행 준비도와 경로 조정", "Readiness and the path adjustment"],
   financialRoom: ["안전 여유와 첫 단계의 규모", "Safety Margin and the size of the first step"],
-  reversibility: ["안전 여유와 복귀 조건", "Safety Margin and the way back"],
-  downsideExposure: ["손실 위험과 되돌릴 수 없는 결정의 순서", "Downside and the order of irreversible decisions"],
+  reversibility: ["안전 여유와 돌아올 길", "Safety Margin and the way back"],
+  downsideExposure: ["손실 위험과 되돌릴 수 없는 결정의 순서", "Downside risk and the order of irreversible decisions"],
   optionBSupport: ["실행 계획과 지원 역할", "The execution plan and support roles"],
   constraintLoad: ["일정과 첫 단계의 규모", "Schedule and the size of the first step"],
 };

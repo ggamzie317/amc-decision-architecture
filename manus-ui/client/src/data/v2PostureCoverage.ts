@@ -20,13 +20,13 @@ export function v2PostureCoverageNote(core: ProductApplicationV3, language: V2La
     : "";
   const fifwm = fifwmKnown
     ? core.decisionStructure.fifwmSource === "case-adapted"
-      ? ko ? ` 사례 맞춤 구조 평가는 ${fifwmKnown}개 항목이 반영되었습니다.` : ` ${fifwmKnown} case-adapted structure assessment items are included.`
-      : ko ? ` 기존 조직·직무 평가는 ${fifwmKnown}개 항목이 반영되었습니다.` : ` ${fifwmKnown} existing organization and role assessment items are included.`
+      ? ko ? ` 다섯 가지 관점 중 ${fifwmKnown}개는 이 사례에 맞춘 질문의 답을 반영했습니다.` : ` ${fifwmKnown} of the five lenses use your answers to questions adapted to this case.`
+      : ko ? ` 다섯 가지 관점 중 ${fifwmKnown}개는 옮겨 갈 회사·직무 질문의 답을 반영했습니다.` : ` ${fifwmKnown} of the five lenses use your answers about the company and role you would move to.`
     : "";
   const lead = level === "limited"
     ? ko ? "근거 제한적: " : "Limited basis: "
     : level === "partial"
-      ? ko ? "근거 일부 확인: " : "Partly established: "
+      ? ko ? "근거 일부 확인: " : "Partly confirmed: "
       : ko ? "근거 비교적 충분: " : "Stronger basis: ";
   const body = ko
     ? `이 판단은 판단에 쓰는 조건 ${total}개 중 ${known}개를 확인한 상태에서 계산했습니다.`

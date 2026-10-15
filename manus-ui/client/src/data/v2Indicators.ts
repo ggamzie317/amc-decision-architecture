@@ -42,7 +42,7 @@ export const v2Indicators: V2Indicator[] = [
     definition: ["새 경로가 요구하는 역량과 결과물을 이미 갖춘 정도", "How far you already have the skills and work the new path needs"],
     question: ["요구 역량 중 지금 보여 줄 수 있는 것과 아직 없는 것은 무엇인가요?", "Which required skills can you prove now, and which are missing?"],
     how: ["부족한 요건을 하나 골라 과제, 자격, 포트폴리오 같은 결과물로 만듭니다.", "Pick one missing requirement and turn it into a work sample, credential or portfolio piece."],
-    worksWhen: ["목표 분야 사람들이 인정하는 결과물로 보여 줄 수 있으면 강점이 됩니다.", "It counts as a strength when you can show it through work the target field recognises."],
+    worksWhen: ["목표 분야 사람들이 인정하는 결과물로 보여 줄 수 있으면 강점이 됩니다.", "It counts as a strength when you can show it through work the target field recognizes."],
     weakensWhen: ["지금 회사의 이름·팀·시스템 덕분에 낸 성과라면, 밖에서도 같은 결과가 나오는지 따로 확인하세요.", "If the results relied on your current employer's brand, team or systems, check separately that they repeat outside."],
     evidence: /역량|자격|요건|요구|skill|qualif|requirement/i,
   },
@@ -61,15 +61,15 @@ export const v2Indicators: V2Indicator[] = [
     question: ["휴직 후 복직, 재지원 같은 돌아올 길이 문서로 확인되나요?", "Is a way back, such as leave and return or re-application, confirmed in writing?"],
     how: ["휴직·복직 제도, 재지원, 계약 조건 등 돌아올 길을 문서로 확인합니다.", "Confirm a way back in writing: leave and return, re-application, contract terms."],
     worksWhen: ["돌아갈 자리와 조건이 문서로 남아 있으면, 잘 안 됐을 때 잃는 것이 줄어듭니다.", "When the way back and its terms are in writing, you lose less if it does not work."],
-    weakensWhen: ["구두 약속이거나 시간이 지나면 사라지는 자리라면 복귀 여지는 생각보다 작습니다.", "If it rests on a verbal promise or a position that lapses, the way back is smaller than it looks."],
+    weakensWhen: ["구두 약속이거나 시간이 지나면 사라지는 자리라면 돌아올 길은 생각보다 좁습니다.", "If it rests on a verbal promise or a position that lapses, the way back is smaller than it looks."],
     // Ways back or part-way routes; plain "leave"/"remote" matched unrelated text (audit L2).
     evidence: /시간제|파트타임|병행|휴직|복직|재입사|part-time|leave of absence|return to work|rehire/i,
   },
   {
     key: "optionBSupport", variable: "optionBSupport", label: "supportBand", reference: 1,
-    definition: ["새 경로를 실제로 도와줄 사람·제도·시간", "People, programmes and time that will actually help the new path"],
-    question: ["이름과 역할까지 말할 수 있는 지원자나 제도가 있나요?", "Can you name the people or programmes that will help, and their roles?"],
-    how: ["도와줄 사람과 제도를 이름과 역할까지 구체적으로 확보합니다.", "Secure named people and programmes with specific roles."],
+    definition: ["새 경로를 실제로 도와줄 사람·제도·시간", "People, programs and time that will actually help the new path"],
+    question: ["이름과 역할까지 말할 수 있는 지원자나 제도가 있나요?", "Can you name the people or programs that will help, and their roles?"],
+    how: ["도와줄 사람과 제도를 이름과 역할까지 구체적으로 확보합니다.", "Secure named people and programs with specific roles."],
     worksWhen: ["도와줄 사람이 시간과 역할을 구체적으로 약속했다면 실행이 빨라집니다.", "It speeds execution when helpers have committed specific time and roles."],
     weakensWhen: ["호의적인 반응만 있고 역할이 정해지지 않았다면 실제 지원으로 계산하지 않습니다.", "Friendly interest without a defined role is not counted as real support."],
     // "지원" alone also means "application" (지원서·지원 요건), so only funding words count (audit L2).

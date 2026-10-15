@@ -8,7 +8,7 @@ import type { V2Language } from "./v2Language";
  * word is not recognised the phrase is not guessed: callers get null and show
  * a neutral label with the original marked "as entered".
  */
-type Kind = "place" | "org" | "industry" | "title" | "degree" | "field" | "move" | "skip";
+type Kind = "place" | "org" | "industry" | "function" | "title" | "degree" | "field" | "move" | "skip";
 type Entry = [kind: Kind, en: string];
 
 const terms: Record<string, Entry> = {
@@ -39,11 +39,13 @@ const terms: Record<string, Entry> = {
   보험: ["industry", "insurance"], 핀테크: ["industry", "fintech"], 소프트웨어: ["industry", "software"], 플랫폼: ["industry", "platform"],
   호텔: ["industry", "hospitality"], 항공: ["industry", "aviation"], 식품: ["industry", "food"], 패션: ["industry", "fashion"],
   뷰티: ["industry", "beauty"], 콘텐츠: ["industry", "content"], 엔터테인먼트: ["industry", "entertainment"], 통신: ["industry", "telecom"],
-  영업: ["industry", "sales"], 마케팅: ["industry", "marketing"], 기획: ["industry", "planning"], 전략: ["industry", "strategy"],
-  재무: ["industry", "finance"], 회계: ["industry", "accounting"], 인사: ["industry", "HR"], 개발: ["industry", "development"],
-  연구: ["industry", "research"], 운영: ["industry", "operations"], 생산: ["industry", "production"], 품질: ["industry", "quality"],
-  구매: ["industry", "procurement"], 법무: ["industry", "legal"], 홍보: ["industry", "PR"], 사업개발: ["industry", "business development"],
-  데이터: ["industry", "data"], 인공지능: ["industry", "AI"], 디자인: ["industry", "design"], 해외영업: ["industry", "overseas sales"],
+  인공지능: ["industry", "AI"],
+  // Job functions attach to the title, not to the organisation ("재무 차장" → finance)
+  영업: ["function", "sales"], 마케팅: ["function", "marketing"], 기획: ["function", "planning"], 전략: ["function", "strategy"],
+  재무: ["function", "finance"], 회계: ["function", "accounting"], 인사: ["function", "HR"], 개발: ["function", "development"],
+  연구: ["function", "research"], 운영: ["function", "operations"], 생산: ["function", "production"], 품질: ["function", "quality"],
+  구매: ["function", "procurement"], 법무: ["function", "legal"], 홍보: ["function", "PR"], 사업개발: ["function", "business development"],
+  데이터: ["function", "data"], 디자인: ["function", "design"], 해외영업: ["function", "overseas sales"],
   // Titles
   사원: ["title", "staff member"], 주임: ["title", "senior staff member"], 대리: ["title", "assistant manager"], 과장: ["title", "manager"],
   차장: ["title", "deputy general manager"], 부장: ["title", "general manager"], 팀장: ["title", "team lead"], 파트장: ["title", "part lead"],
@@ -56,14 +58,14 @@ const terms: Record<string, Entry> = {
   프리랜서: ["title", "freelancer"], 주재원: ["title", "expatriate employee"], 리더: ["title", "lead"],
   // Degrees and academic fields
   박사: ["degree", "PhD"], 석사: ["degree", "master's degree"], 학사: ["degree", "bachelor's degree"], MBA: ["degree", "MBA"],
-  EMBA: ["degree", "EMBA"], PhD: ["degree", "PhD"], 학위: ["degree", "degree"], 과정: ["degree", "programme"],
+  EMBA: ["degree", "EMBA"], PhD: ["degree", "PhD"], 학위: ["degree", "degree"], 과정: ["degree", "program"],
   철학: ["field", "philosophy"], 경영학: ["field", "business"], 경제학: ["field", "economics"], 심리학: ["field", "psychology"],
   법학: ["field", "law"], 공학: ["field", "engineering"], 컴퓨터공학: ["field", "computer science"], 교육학: ["field", "education"],
   사회학: ["field", "sociology"], 정치학: ["field", "political science"], 통계학: ["field", "statistics"], 경영: ["field", "business"],
   서울대: ["org", "Seoul National University"], 카이스트: ["org", "KAIST"], 고려대: ["org", "Korea University"], 연세대: ["org", "Yonsei University"],
   // Moves
   이직: ["move", "Move to"], 취업: ["move", "Join"], 전직: ["move", "Switch to"], 전환: ["move", "Switch to"], 창업: ["move", "Start"],
-  유학: ["move", "Study in"], 진학: ["move", "Enrol in"], 이주: ["move", "Relocate to"], 이민: ["move", "Relocate to"],
+  유학: ["move", "Study in"], 진학: ["move", "Enroll in"], 이주: ["move", "Relocate to"], 이민: ["move", "Relocate to"],
   승진: ["move", "Promotion to"], 복직: ["move", "Return to"], 독립: ["move", "Go independent as"],
   // Filler words that carry no role meaning
   도전: ["skip", ""], 추진: ["skip", ""], 고민: ["skip", ""], 준비: ["skip", ""], 희망: ["skip", ""], 계획: ["skip", ""], 현재: ["skip", ""],
@@ -107,9 +109,9 @@ export function v2EnglishRole(value: string): string | null {
     entries.push(...parts);
   }
   const of = (kind: Kind) => entries.filter(([k]) => k === kind).map(([, en]) => en);
-  const [places, orgs, industries, titles, degrees, fields, moves] =
-    (["place", "org", "industry", "title", "degree", "field", "move"] as Kind[]).map(of);
-  if (!places.length && !orgs.length && !industries.length && !titles.length && !degrees.length && !fields.length && !moves.length) return null;
+  const [places, orgs, industries, functions, titles, degrees, fields, moves] =
+    (["place", "org", "industry", "function", "title", "degree", "field", "move"] as Kind[]).map(of);
+  if (!places.length && !orgs.length && !industries.length && !functions.length && !titles.length && !degrees.length && !fields.length && !moves.length) return null;
 
   // "large company" + "consulting firm" → "large consulting firm"; adjectives go first.
   const adjective = /^(large|mid-sized|small|global|multinational) company$/;
@@ -117,15 +119,21 @@ export function v2EnglishRole(value: string): string | null {
   const heads = orgs.filter(o => !adjective.test(o));
   const head = heads[heads.length - 1] ?? (orgs.length ? "company" : "");
   const orgPhrase = head ? [...adjectives, ...industries, head].join(" ") : "";
-  const domain = industries.join(" ");
+  const domain = [...industries, ...functions].join(" ");
+  const fn = functions.join(" and ");
+  // "마케팅 과장" → "marketing manager"; long titles take the function after a comma.
+  const titleText = titles.join(" ");
+  const titlePhrase = !fn ? titleText : titleText.split(" ").length <= 2 ? `${fn} ${titleText}` : `${titleText}, ${fn}${head ? "," : ""}`;
   const degreePhrase = degrees.length
     ? `${degrees.join(" ")}${fields.length ? ` in ${fields.join(" and ")}` : ""}`
     : fields.join(" and ");
   let noun = titles.length
-    ? `${!head && domain ? `${domain} ` : ""}${titles.join(" ")}${head ? ` at ${withArticle(orgPhrase)}` : ""}`
+    ? `${!head && industries.length ? `${industries.join(" ")} ` : ""}${titlePhrase}${head ? ` at ${withArticle(orgPhrase)}` : ""}`
     : degreePhrase
       ? `${degreePhrase}${head ? ` at ${orgPhrase}` : ""}`
-      : orgPhrase ? withArticle(orgPhrase) : domain ? `${domain} role` : "";
+      : orgPhrase
+        ? fn ? withArticle(`${fn} role at ${withArticle(orgPhrase)}`) : withArticle(orgPhrase)
+        : domain ? withArticle(`${domain} role`) : "";
   const place = places.join(", ");
   const move = moves[moves.length - 1];
   let text: string;
@@ -135,7 +143,9 @@ export function v2EnglishRole(value: string): string | null {
     if (place) noun = noun ? `${noun} in ${place}` : place;
     // "컨설턴트 이직" → "Move to a consultant role", not "Move to consultant".
     const roleOnly = titles.length > 0 && !head && !place;
-    text = move ? (noun ? `${move} ${roleOnly && move !== "Promotion to" ? withArticle(`${noun} role`) : noun}` : move) : noun;
+    const article = move !== "Promotion to" && move !== "Return to";
+    const object = roleOnly && article ? withArticle(`${noun} role`) : titles.length && article ? `a role as ${noun}` : degrees.length && article ? withArticle(noun) : noun;
+    text = move ? (noun ? `${move} ${object}` : move) : noun;
   }
   if (!text) return null;
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -156,9 +166,13 @@ export function v2CustomerInput(language: V2Language, value: string, fallback: s
 
 /** Current role / considered career in the interface language. */
 export function v2RoleFields(language: V2Language, fields: { optionA: string; optionB: string }) {
+  // Empty field: the neutral label. Entered but not renderable in English: say
+  // it is the customer's own entry, so "Considering: …" never repeats its label.
+  const fallback = (value: string, ko: string, empty: string, entered: string) =>
+    language === "ko" ? ko : value.trim() ? entered : empty;
   return {
-    current: v2CustomerInput(language, fields.optionA, language === "ko" ? "현재 직무" : "Your current role"),
-    target: v2CustomerInput(language, fields.optionB, language === "ko" ? "고민하는 커리어" : "The career you are considering"),
+    current: v2CustomerInput(language, fields.optionA, fallback(fields.optionA, "현재 직무", "Your current role", "The role you entered")),
+    target: v2CustomerInput(language, fields.optionB, fallback(fields.optionB, "고민하는 커리어", "The career you are considering", "The path you entered")),
   };
 }
 

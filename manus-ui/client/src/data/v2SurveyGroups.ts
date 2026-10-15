@@ -76,7 +76,7 @@ export const v2SurveyGroups: Record<V2SurveyField, V2SurveyGroup[]> = {
   exposes: [
     g(["돈과 경력", "Money and career"], [
       ["incomeRisk", "옮기는 동안 소득이 줄거나 끊김", "My income drops or stops during the move"],
-      ["recoveryRisk", "잘 안되면 지금 수준으로 돌아오기 어려움", "If it does not work out, it is hard to get back to where I am now"],
+      ["recoveryRisk", "잘 안 되면 지금 수준으로 돌아오기 어려움", "If it does not work out, it is hard to get back to where I am now"],
       ["credibilityRisk", "경력에 공백이 생기거나 평판이 떨어짐", "A gap in my career or harm to my reputation"],
     ]),
     g(["시간과 부담", "Time and strain"], [
@@ -95,7 +95,7 @@ export const v2SurveyGroups: Record<V2SurveyField, V2SurveyGroup[]> = {
   missingAssets: [
     g(["보여 줄 수 있는 것", "What you can show"], [
       ["skills", "목표 직무에 필요한 핵심 역량", "The core skills the target role needs"],
-      ["credential", "필요한 자격증·학위·면허", "A required certificate, degree or licence"],
+      ["credential", "필요한 자격증·학위·면허", "A required certificate, degree or license"],
       ["trackRecord", "목표 분야에서 보여 줄 실적이나 포트폴리오", "Results or a portfolio to show in the target field"],
       ["marketProof", "채용 담당자나 고객에게서 받은 실제 반응", "Real responses from employers or customers"],
     ]),
@@ -145,7 +145,7 @@ export const v2SurveyGroups: Record<V2SurveyField, V2SurveyGroup[]> = {
       ["financialConstraint", "대출이나 고정 지출이 커서 소득 공백을 견디기 어려움", "Loans or fixed costs make an income gap hard to absorb"],
     ]),
     g(["그 밖의 제약", "Something else"], [
-      ["other", "위에 없는 다른 제약", "A limit not listed above"],
+      ["other", "위에 없는 다른 제약", "A constraint not listed above"],
     ]),
   ],
 };

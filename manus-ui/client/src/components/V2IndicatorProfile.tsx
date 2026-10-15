@@ -71,13 +71,13 @@ export default function V2IndicatorProfile({
                 <div data-source="you">
                   <dt>{say("내가 답한 것", "What you said")}</dt>
                   <dd>{indicator.variable === "externalValidation"
-                    ? say("직접 답하는 항목이 아닙니다. 공개 근거로만 판단합니다.", "You do not answer this one. It is read from public evidence only.")
+                    ? say("직접 답하는 항목이 아닙니다. 공개 자료로만 판단합니다.", "You do not answer this one. It is read from public sources only.")
                     : answered
                       ? `${v2t(language, answered as V2CopyKey)}${anchor ? ` — ${anchor}` : ""}`
                       : say("답하지 않음", "Not answered")}</dd>
                 </div>
                 <div data-source="public">
-                  <dt>{say("공개 근거", "Public evidence")}</dt>
+                  <dt>{say("공개 자료", "Public sources")}</dt>
                   <dd>{card ? v2CustomerEvidenceText(language, card.headline) : "—"}</dd>
                 </div>
                 <div data-source="reading">
@@ -97,13 +97,13 @@ export default function V2IndicatorProfile({
         );
       })}
       <p className="v2-ind-note">{say(
-        "막대는 답한 상태를 0~2단계로 보여 줍니다. 확률이 아닙니다. 굵게 표시한 칸은 '전환' 판단에 필요한 최소 수준입니다.",
-        "Bars show your answered level on a 0–2 scale. They are not a probability. The bold step is the minimum level needed for a 'transition' reading."
+        "막대는 답한 상태를 0~2단계로 보여 줍니다. 확률이 아닙니다. 굵게 표시한 칸은 ‘전환’ 판단에 필요한 최소 수준입니다.",
+        "Bars show your answered level on a 0–2 scale. They are not a probability. The bold step is the minimum level needed for a move."
       )}</p>
       {/* Benchmark (CareerLeader): a worked reading example, and self-ratings checked with others. */}
       <p className="v2-ind-note">{say(
-        "읽는 법: 막대가 '일부 갖춤'까지 차 있고 굵은 칸이 '충분함'에 있다면, 전환 판단에는 그 조건이 한 단계 더 필요하다는 뜻입니다.",
-        "How to read it: if the bar reaches 'Partly in place' and the bold step is at 'Strong', that condition needs one more step for a move."
+        "읽는 법: 막대가 ‘일부 갖춤’까지 차 있고 굵은 칸이 ‘충분함’에 있다면, 전환 판단에는 그 조건이 한 단계 더 필요하다는 뜻입니다.",
+        "How to read it: if the bar reaches ‘Partly in place’ and the bold step is at ‘Strong’, that condition needs one more step for a move."
       )}</p>
       <p className="v2-ind-note">{say(
         "단계는 본인이 고른 것입니다. 가능하면 목표 분야에서 일하는 사람 한 명에게 같은 질문을 해 보고, 답이 다르면 그 차이부터 확인하세요.",

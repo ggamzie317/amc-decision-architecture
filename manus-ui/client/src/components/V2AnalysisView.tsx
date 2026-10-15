@@ -42,13 +42,13 @@ export function V2DecisionMap({
       : phase === "demo"
         ? say("예시용 근거", "Example evidence")
         : phase === "loading"
-          ? say("공개 근거 확인 중", "Checking public evidence")
+          ? say("공개 자료 확인 중", "Checking public sources")
           : say("목표 요건 확인 전", "Target requirements not yet checked");
   const nodes = [
     {
       x: 320,
       y: 14,
-      title: say("공개 근거", "Public evidence"),
+      title: say("공개 자료", "Public sources"),
       value: analysis.priorityEvidence?.headline ?? evidence,
       tone: "evidence",
     },
@@ -62,7 +62,7 @@ export function V2DecisionMap({
     {
       x: 320,
       y: 145,
-      title: "Changing",
+      title: say("경로 조정 (Changing)", "Path options (Changing)"),
       value: cut(play, ko ? 24 : 35),
       tone: "changing",
     },
@@ -76,7 +76,7 @@ export function V2DecisionMap({
     {
       x: 320,
       y: 276,
-      title: "Safety Margin → Switching",
+      title: say("안전 여유 → 판단이 바뀌는 조건", "Safety Margin → Switching"),
       value: say(
         `안전 여유: ${v2t(state.language, safetyBand as V2CopyKey)}`,
         `Safety: ${v2t(state.language, safetyBand as V2CopyKey)}`
@@ -94,8 +94,8 @@ export function V2DecisionMap({
       >
         <title id={`${id}-title`}>
           {say(
-            "현재 기반, 공개 근거, 작은 검증, 판단 전환 조건의 관계",
-            "How your current base, public evidence, small checks and switching conditions connect"
+            "현재 기반, 공개 자료, 작은 확인, 판단이 바뀌는 조건의 관계",
+            "How your current base, public sources, small checks and switching conditions connect"
           )}
         </title>
         <desc id={`${id}-desc`}>
@@ -185,7 +185,7 @@ export function V2DecisionMap({
         </div>
         <strong>{analysis.question}</strong>
         <p>{analysis.tradeoff}</p>
-        {analysis.switching[0] && <p><b>Switching / </b>{analysis.switching[0].signal}</p>}
+        {analysis.switching[0] && <p><b>{say("판단이 바뀌는 조건 (Switching) / ", "Switching / ")}</b>{analysis.switching[0].signal}</p>}
         <dl className="v2-map-context">
           <div>
             <dt>{v2t(state.language, "missing")}</dt>
@@ -288,11 +288,11 @@ export function V2FactorMap({
             : "There are no answers for the five items, so they were not assessed. Readiness and safety are not used in their place."
           : analysis.fifwmSource === "case-adapted"
             ? ko
-              ? "답한 항목만 같은 0·1·2 기준으로 평가했습니다. 질문은 이 상황에 맞춘 것으로, 원래 조직 평가와 다릅니다. 공개 근거는 점수를 바꾸지 않습니다."
-              : "Only answered items are scored, on the same 0/1/2 scale. The questions are adapted to this situation and differ from the original organisation assessment. Public evidence does not change the scores."
+              ? "답한 항목만 같은 0·1·2 기준으로 평가했습니다. 질문은 이 상황에 맞춘 것으로, 원래 조직 평가와 다릅니다. 공개 자료는 점수를 바꾸지 않습니다."
+              : "Only answered items are scored, on the same 0/1/2 scale. The questions are adapted to this situation and differ from the original organization assessment. Public sources do not change the scores."
             : ko
-              ? "답한 항목만 기존 규칙으로 평가했습니다. 답하지 않았거나 '모름'·'해당 없음'을 고른 항목은 평가하지 않았습니다. 공개 근거는 점수를 바꾸지 않습니다."
-              : "Only answered items were assessed, using the existing rules. Items left blank or marked unsure or not applicable were not assessed. Public evidence does not change the scores."}
+              ? "답한 항목만 기존 규칙으로 평가했습니다. 답하지 않았거나 ‘잘 모름’·‘해당 없음’을 고른 항목은 평가하지 않았습니다. 공개 자료는 점수를 바꾸지 않습니다."
+              : "Only answered items were assessed, using the existing rules. Items left blank or marked not sure or not applicable were not assessed. Public sources do not change the scores."}
       </p>
       {analysis.factors.map((f, i) => (
         <article key={f.id} data-factor={f.id}>
@@ -310,10 +310,10 @@ export function V2FactorMap({
             <strong>{f.status}</strong>
             <small>
               {f.evidenceIds.length
-                ? `${ko ? "관련 공개 근거" : "Related public evidence"} ${f.evidenceIds.map(id => id + 1).join(", ")}`
+                ? `${ko ? "관련 공개 자료" : "Related public sources"} ${f.evidenceIds.map(id => id + 1).join(", ")}`
                 : ko
-                  ? "이 항목과 연결된 공개 근거는 없습니다"
-                  : "No public evidence linked to this item"}
+                  ? "이 항목과 연결된 공개 자료는 없습니다"
+                  : "No public sources linked to this item"}
             </small>
           </div>
         </article>
@@ -333,7 +333,7 @@ export function V2SafetyView({
     <div className="v2-safety-analysis" data-testid="v2-safety-analysis">
       <div className="v2-safety-reading">
         <strong>
-          Safety Margin / {v2t(analysis.language, band as V2CopyKey)}
+          {ko ? "안전 여유 (Safety Margin)" : "Safety Margin"} / {v2t(analysis.language, band as V2CopyKey)}
         </strong>
         <p>{analysis.boundary}</p>
       </div>

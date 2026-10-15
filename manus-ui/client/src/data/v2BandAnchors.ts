@@ -9,7 +9,7 @@ import type { V2State } from "./amcV2Model";
 type Pair = readonly [ko: string, en: string];
 type Field = keyof V2State["bands"];
 
-const unknown: Pair = ["아직 확인하지 않음. 중간 수준으로 계산합니다", "Not checked yet. Counted as the middle level"];
+const unknown: Pair = ["아직 확인하지 않음. 중간 수준으로 계산합니다", "not checked yet; counted as the middle level"];
 
 export const v2BandAnchors: Record<Field, Record<string, Pair>> = {
   internalReadiness: {
@@ -25,7 +25,7 @@ export const v2BandAnchors: Record<Field, Record<string, Pair>> = {
     unknown,
   },
   downsideExposure: {
-    low: ["잘 안되어도 잃는 것이 적고 금방 회복할 수 있음", "If it fails, I lose little and recover quickly"],
+    low: ["잘 안 되어도 잃는 것이 적고 금방 회복할 수 있음", "If it fails, I lose little and recover quickly"],
     moderate: ["소득이나 경력에 손해가 있지만 1년 안에 회복할 수 있음", "I would lose some income or career ground but recover within a year"],
     high: ["큰 지출·퇴사·이주처럼 되돌리기 어려운 일이 포함됨", "It involves hard-to-undo steps such as big spending, resigning or relocating"],
     unknown,
@@ -37,7 +37,7 @@ export const v2BandAnchors: Record<Field, Record<string, Pair>> = {
     unknown,
   },
   optionBSupport: {
-    strong: ["누가 어떻게 도울지 구체적으로 정해져 있음", "Specific people or programmes have agreed how they will help"],
+    strong: ["누가 어떻게 도울지 구체적으로 정해져 있음", "Specific people or programs have agreed how they will help"],
     developing: ["도와줄 사람은 있지만 아직 약속받지는 않음", "People could help, but nobody has promised yet"],
     weak: ["실제로 도움받을 곳이 거의 없음", "I have almost no real help"],
     unknown,

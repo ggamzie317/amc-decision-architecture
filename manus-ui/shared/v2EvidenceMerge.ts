@@ -16,6 +16,11 @@ export function limitedEvidence(
   return {
     ...live,
     sourceCoverage: "partial",
+    // The provider's confidence for this topic, kept apart from contextConfidence
+    // (which requires complete coverage) so one excluded card does not discard it.
+    ...(live.contextConfidence || (live as Confidence).topicConfidence
+      ? { topicConfidence: live.contextConfidence ?? (live as Confidence).topicConfidence }
+      : {}),
     contextConfidence: undefined,
     evidenceBlocks,
     metrics: [],
@@ -29,6 +34,9 @@ export function limitedEvidence(
       : "Only facts from distinct remaining sources are shown. Provider summaries that may depend on excluded cards are omitted.",
   };
 }
+
+type Confidence = { topicConfidence?: "low" | "medium" | "high" };
+const topicConfidenceOf = (live: ExternalIntelligenceV2) => live.contextConfidence ?? (live as Confidence).topicConfidence;
 
 export const citationKey = (block: { sourceUrl?: string; dimension: string }) => `${block.sourceUrl}\n${block.dimension}`;
 
@@ -130,31 +138,54 @@ function mergeSummaries(lives: ExternalIntelligenceV2[], language: "en" | "ko", 
     : merged;
 }
 
-/** Combine topic results into one snapshot; the translation is merged the same way. */
+/**
+ * Combine topic results into one snapshot; the translation is merged the same way.
+ *
+ * Owner rule (2026-10-15, audit H1/H2/M9): market evidence reaches the engine
+ * (sourceCoverage "complete" + contextConfidence) only when every requested
+ * research area has at least one confirmed card. A topic that lost a single
+ * card still counts (its provider confidence is kept as topicConfidence); a
+ * missing or still-loading topic leaves the snapshot "partial", so the
+ * reading does not move on part of the evidence.
+ */
 export function mergeV2Evidence(lives: ExternalIntelligenceV2[], request: V2EvidenceRequest): ExternalIntelligenceV2 {
-  if (lives.length === 1) return lives[0];
-  const confidences = lives.map(live => live.contextConfidence);
-  const contextConfidence = confidences.every(Boolean)
-    ? confidences.reduce((a, b) => (confidenceRank[a!] <= confidenceRank[b!] ? a : b))
+  const known = lives.map(topicConfidenceOf).filter((c): c is "low" | "medium" | "high" => !!c);
+  const contextConfidence = known.length
+    ? known.reduce((a, b) => (confidenceRank[a] <= confidenceRank[b] ? a : b))
     : undefined;
-  const base = { ...lives[0], contextConfidence, sourceCoverage: undefined, translation: undefined };
-  const primary = mergeSummaries(lives, request.language, base);
-  if (!contextConfidence) delete primary.contextConfidence;
+  let primary: ExternalIntelligenceV2;
   const other = request.language === "ko" ? "en" : "ko";
-  if (lives.every(live => live.translation)) {
-    const translations = lives.map(live => live.translation!);
-    const translated = mergeSummaries(translations, other, { ...translations[0], contextConfidence, sourceCoverage: undefined, translation: undefined });
-    const aligned = alignTranslation(primary, translated, other);
-    if (aligned) primary.translation = aligned;
+  if (lives.length === 1) {
+    primary = { ...lives[0], ...(lives[0].translation ? { translation: { ...lives[0].translation } } : {}) };
+  } else {
+    const base = { ...lives[0], contextConfidence, sourceCoverage: undefined, translation: undefined };
+    primary = mergeSummaries(lives, request.language, base);
+    if (lives.every(live => live.translation)) {
+      const translations = lives.map(live => live.translation!);
+      const translated = mergeSummaries(translations, other, { ...translations[0], contextConfidence, sourceCoverage: undefined, translation: undefined });
+      const aligned = alignTranslation(primary, translated, other);
+      if (aligned) primary.translation = aligned;
+    }
   }
-  // Coverage carries over only when every topic's sources were checked
-  // complete. Without it the engine reads the evidence as unverified and the
-  // market-evidence signal never reaches the structural analysis (issue A1).
-  if (primary.sourceCoverage !== "partial" && lives.every(live => live.sourceCoverage === "complete")) {
-    primary.sourceCoverage = "complete";
-    if (primary.translation) primary.translation.sourceCoverage = "complete";
-  }
-  if (!primary.translation) delete primary.translation;
-  if (primary.sourceCoverage === undefined) delete primary.sourceCoverage;
+  const expected = v2EvidenceAreas(request);
+  const covered = new Set(primary.evidenceBlocks.map(block => block.area).filter(Boolean));
+  // Unset coverage = sources not probed yet (server merges before its link check, which then
+  // downgrades to partial if any source fails). The browser only merges checked results.
+  const usable = lives.every(live => live.sourceCoverage === undefined || live.sourceCoverage === "complete" || (live.sourceCoverage === "partial" && live.evidenceBlocks.length > 0));
+  const complete = !!contextConfidence && usable && expected.length > 0 && expected.every(area => covered.has(area));
+  const settle = (snapshot: ExternalIntelligenceV2) => {
+    delete (snapshot as Confidence).topicConfidence;
+    if (complete) {
+      snapshot.sourceCoverage = "complete";
+      snapshot.contextConfidence = contextConfidence;
+    } else {
+      snapshot.sourceCoverage = "partial";
+      delete snapshot.contextConfidence;
+      if (contextConfidence) (snapshot as Confidence).topicConfidence = contextConfidence;
+    }
+  };
+  settle(primary);
+  if (primary.translation) settle(primary.translation);
+  else delete primary.translation;
   return primary;
 }

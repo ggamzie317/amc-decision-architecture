@@ -167,7 +167,7 @@ describe("V2 integrated customer analysis", () => {
     expect(a.evidenceLinks[1].sourceUrl).toBe(evidence.evidenceBlocks[1].sourceUrl);
     expect(a.evidenceLinks[1].conditionProvenance).toEqual(["USER_STRUCTURED", "DERIVED_CORE_RULE"]);
     expect(a.factors.every(factor => factor.evidenceIds.length === 0)).toBe(true);
-    expect(a.factors.map(f => f.status)).toEqual(Array(5).fill("미확인"));
+    expect(a.factors.map(f => f.status)).toEqual(Array(5).fill("확인 전"));
     expect(a.factors.every(f => !f.reading.includes("준비 상태"))).toBe(true);
     expect(core.postureBasis.externalValidation.band).toBe("unknown");
     expect(core.currentStructuralPosture.label).toBe(
@@ -190,7 +190,7 @@ describe("V2 integrated customer analysis", () => {
     expect(analysis.factors.find(factor => factor.id === "workflow")).toMatchObject({
       status: "■□□", reading: "실행 일정이 제약됩니다."
     });
-    expect(buildV2Analysis(f.state, f.core, f.none).factors.every(factor => factor.status === "미확인")).toBe(true);
+    expect(buildV2Analysis(f.state, f.core, f.none).factors.every(factor => factor.status === "확인 전")).toBe(true);
   });
   it("changes source applicability and next checks for opposing synthetic claims while preserving core Changing and posture", () => {
     const f = fixture();
@@ -261,8 +261,8 @@ describe("V2 integrated customer analysis", () => {
       demo.intelligence,
       "demo"
     );
-    expect(a.summary).toContain("synthetic evidence");
-    expect(a.summary).not.toContain("public evidence items");
+    expect(a.summary).toContain("example evidence items");
+    expect(a.summary).not.toContain("items from public sources");
     expect(a.evidenceLinks[1].conditionGroup).toBe("public");
     expect(a.findings.find(f => f.id === "recovery")?.evidenceIds).toEqual([]);
   });
@@ -414,9 +414,9 @@ describe("V2 integrated customer analysis", () => {
         onPrint={() => {}}
       />
     );
-    expect(dashboard).toContain("구조 초안");
+    expect(dashboard).toContain("검색 없이 본 초안");
     expect(dashboard).toMatch(/disabled=""/);
-    expect(report).toContain("공개 근거 확인 전");
+    expect(report).toContain("공개 자료 확인 전");
     expect(report).toMatch(/disabled=""/);
   });
   it("does not retain the new interpretation or public target in Founder data", () => {

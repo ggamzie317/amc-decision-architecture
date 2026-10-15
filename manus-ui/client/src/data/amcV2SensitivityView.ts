@@ -141,8 +141,17 @@ export function v2ScenarioComparison(
   language: V2Language
 ): [V2CopyKey, string, string][] {
   const t = (key: V2CopyKey) => v2t(language, key);
-  const changing = (result: ProductApplicationV3) =>
-    `${result.changingPlays.length} · ${result.changingPlays.map(play => v2FamilyLabel(language, play.family)).join(" · ") || t("noneYet")}`;
+  // "2개(역할 범위·시기)" / "2 (role scope, timing)": a count and its names, readable on either side of an arrow.
+  const changing = (result: ProductApplicationV3) => {
+    const names = result.changingPlays.map(play => {
+      const label = v2FamilyLabel(language, play.family);
+      return language === "ko" ? label.replace(/ 조정$/, "") : label.charAt(0).toLowerCase() + label.slice(1);
+    });
+    if (!names.length) return t("noneYet");
+    return language === "ko"
+      ? `${names.length}개(${names.join("·")})`
+      : `${names.length} (${names.join(", ")})`;
+  };
   return [
     [
       "posture",

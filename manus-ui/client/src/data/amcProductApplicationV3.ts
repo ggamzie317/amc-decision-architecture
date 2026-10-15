@@ -260,7 +260,7 @@ type CasePresentation = {
 
 const casePresentations: Record<string, CasePresentation> = {
   "Corporate Stay vs Exit": {
-    missing: ["Unused internal value", "활용하지 않은 내부 가치"], protects: ["Income and position", "소득과 현재 위치"],
+    missing: ["Skills your current role is not using yet", "현재 직무에서 아직 활용하지 못한 역량"], protects: ["Income and position", "소득과 현재 위치"],
     opens: ["Renewed career value", "새로운 커리어 가치"], tension: ["Internal redesign ↔ exit", "내부 재설계 ↔ 퇴사"],
     constraint: ["Role redesign access", "역할 재설계 가능성"], nextTest: ["Test role redesign", "역할 재설계 검증"],
   },
@@ -270,17 +270,17 @@ const casePresentations: Record<string, CasePresentation> = {
     constraint: ["Time and total cost", "시간과 총비용"], nextTest: ["Validate program advantage", "프로그램 차별성 검증"],
   },
   "Overseas Relocation": {
-    missing: ["Destination operating fit", "현지 생활 적합성"], protects: ["Current operating base", "현재 생활 기반"],
+    missing: ["Whether life and work there fit", "현지에서의 일과 생활"], protects: ["Current operating base", "현재 생활 기반"],
     opens: ["Global career options", "글로벌 커리어 선택지"], tension: ["Career upside ↔ relocation load", "커리어 기회 ↔ 이동 부담"],
     constraint: ["Visa and family fit", "비자와 가족 적합성"], nextTest: ["Validate destination fit", "현지 적합성 검증"],
   },
   Entrepreneurship: {
-    missing: ["Repeatable paid demand", "반복 가능한 지불 수요"], protects: ["Income continuity", "소득 연속성"],
+    missing: ["Customers who pay again", "다시 돈을 내는 고객"], protects: ["Income continuity", "소득 연속성"],
     opens: ["Founder-led value", "창업가 주도 가치"], tension: ["Market upside ↔ income continuity", "시장 기회 ↔ 소득 연속성"],
     constraint: ["Runway and delivery load", "소득 여유와 제공 부담"], nextTest: ["Run a small paid pilot", "작은 유료 시범 운영"],
   },
   "Industry Transition": {
-    missing: ["Transferable proof", "전환 가능한 성과 근거"], protects: ["Established career capital", "기존 커리어 자산"],
+    missing: ["Results that carry over", "새 산업에서도 통하는 기존 성과"], protects: ["Established career capital", "기존 커리어 자산"],
     opens: ["New-market relevance", "새 시장에서의 가치"], tension: ["Proven capital ↔ new access", "검증된 자산 ↔ 새 시장 접근"],
     constraint: ["Recognition in new market", "새 시장의 인정"], nextTest: ["Test market recognition", "시장 인정 가능성 검증"],
   },
@@ -295,12 +295,12 @@ const casePresentations: Record<string, CasePresentation> = {
     constraint: ["Energy and recovery", "에너지와 회복"], nextTest: ["Separate recovery from fit", "회복과 적합성 분리"],
   },
   "Family Constraint-heavy Decision": {
-    missing: ["Family operating fit", "가족 생활 적합성"], protects: ["Family stability", "가족의 안정성"],
+    missing: ["Whether it fits your family's routine", "가족의 일상과 맞는 실행 방법"], protects: ["Family stability", "가족의 안정성"],
     opens: ["Preferred career path", "선호하는 커리어 경로"], tension: ["Career upside ↔ family fit", "커리어 기회 ↔ 가족 적합성"],
     constraint: ["Location and support", "지역과 지원 체계"], nextTest: ["Test family-compatible path", "가족 적합 경로 검증"],
   },
   "General Career Reconfiguration": {
-    missing: ["Proof that carries over to the new path", "새 경로에서도 통할 나의 증거"], protects: ["Current stability", "현재의 안정성"],
+    missing: ["Experience the new field will recognize", "새 분야에서도 인정받을 내 경력"], protects: ["Current stability", "현재의 안정성"],
     opens: ["Future career value", "미래 커리어 가치"], tension: ["Stability ↔ future value", "안정성 ↔ 미래 가치"],
     constraint: ["Evidence before commitment", "확정 전 근거"], nextTest: ["Test the key assumption", "핵심 가정 검증"],
   },
@@ -335,18 +335,18 @@ function deriveChangingPlays(input: ProductApplicationBuildInput, presentation: 
 
   // Role Upgrade / Downgrade is a role-level change, not an exit decision.
   const roleChange = input.caseType === "Role Upgrade / Downgrade";
-  if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Role / Scope Reconfiguration", "역할 / 범위 재구성"],
+  if (roleScopeEligible && hasKnownTrigger) add("role-scope", ["Adjust your current role", "역할 / 범위 재구성"],
     roleChange
-      ? [`Check whether the scope of ${optionA} can be adjusted before fully accepting the role change.`, `역할 변경을 확정하기 전에 ${optionA}의 범위를 조정할 수 있는지 먼저 확인합니다.`]
-      : [`Check whether ${optionA} can be redesigned before deciding you have to leave.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서 역할과 범위를 다시 짤 수 있는지 먼저 확인합니다.`],
+      ? [`Before fully accepting the role change, check whether its scope and authority can be adjusted.`, `역할 변경을 확정하기 전에 ${optionA}의 범위를 조정할 수 있는지 먼저 확인합니다.`]
+      : [`Before deciding you have to leave, check whether your current role can be redesigned.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서 역할과 범위를 다시 짤 수 있는지 먼저 확인합니다.`],
     roleChange
       ? ["Full role change → scope adjustment check", "역할 전면 변경 → 범위 조정 확인"]
       : ["Exit decision → role redesign check", "퇴사 결정 → 역할 재설계 확인"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
-  else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Pathway Reconfiguration", "경로 재구성"], [`Try an intermediate route that builds evidence for ${optionB} before moving fully.`, `${withKoreanParticle(optionB, "으로/로")} 완전히 전환하기 전에, 근거를 만들 수 있는 중간 경로를 먼저 확인합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One intermediate step only", "중간 경로 한 번만 확인"]);
-  else if (externalNeedsValidation) add("parallel-validation", ["Parallel Validation", "병행 검증"], [`Keep ${optionA} as your base while checking ${optionB} against real evidence.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서, ${withKoreanParticle(optionB, "이/가")} 맞는지 실제 근거로 확인합니다.`], ["Assumption → direct check", "가정 → 직접 확인"], presentation.protects, ["External proof", "외부 근거"], ["One short checking period", "한 번의 짧은 확인 기간"]);
+  else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Try an intermediate route", "경로 재구성"], [`Before moving fully, try an intermediate route that builds evidence for the new path.`, `${withKoreanParticle(optionB, "으로/로")} 완전히 전환하기 전에, 근거를 만들 수 있는 중간 경로를 먼저 확인합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One intermediate step only", "중간 경로 한 번만 확인"]);
+  else if (externalNeedsValidation) add("parallel-validation", ["Test it alongside your current job", "병행 검증"], [`Keep your current role as your base while checking the new path against real evidence.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서, ${withKoreanParticle(optionB, "이/가")} 맞는지 실제 근거로 확인합니다.`], ["Assumption → direct check", "가정 → 직접 확인"], presentation.protects, ["External proof", "외부 근거"], ["One short checking period", "한 번의 짧은 확인 기간"]);
 
-  if (safetyNeedsProtection || downsideNeedsProtection) add("resource", ["Resource Reconfiguration", "자원 재구성"], ["Build up the room you need to protect before committing more.", "투입을 늘리기 전에 지켜야 할 여유부터 늘립니다."], ["Current room → protected room", "현재 여유 → 지켜야 할 여유"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible decisions yet", "되돌릴 수 없는 결정은 아직 하지 않음"]);
-  if (reversibilityNeedsProtection) add("timing", ["Timing Reconfiguration", "시기 재구성"], ["Hold off on a fixed move date until the way back is clearer.", "돌아올 길이 분명해질 때까지 옮기는 시점을 늦춥니다."], ["Fixed date → timing set by evidence", "정해 둔 날짜 → 근거를 보고 정하는 시점"], presentation.protects, ["A clear way back", "분명한 복귀 경로"], ["Review before deciding", "확정하기 전에 다시 보기"]);
+  if (safetyNeedsProtection || downsideNeedsProtection) add("resource", ["Build up your safety margin first", "자원 재구성"], ["Build up the room you need to protect before committing more.", "투입을 늘리기 전에 지켜야 할 여유부터 늘립니다."], ["Current room → protected room", "현재 여유 → 지켜야 할 여유"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible decisions yet", "되돌릴 수 없는 결정은 아직 하지 않음"]);
+  if (reversibilityNeedsProtection) add("timing", ["Adjust the timing", "시기 재구성"], ["Hold off on a fixed move date until the way back is clearer.", "돌아올 길이 분명해질 때까지 옮기는 시점을 늦춥니다."], ["Fixed date → timing set by evidence", "정해 둔 날짜 → 근거를 보고 정하는 시점"], presentation.protects, ["A clear way back", "분명하게 확인한 돌아올 길"], ["Review before deciding", "확정하기 전에 다시 보기"]);
   return plays;
 }
 
@@ -407,10 +407,10 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
           ? `이 조건이 달라지면 ${optionB} 쪽 기회 근거와 손실 위험을 함께 다시 봅니다. 더 본격적으로 옮기는 것은 근거가 뒷받침하고 ${withKoreanParticle(guardrailConstraintText, "을/를")} 보완할 방법이 확인될 때만 검토하세요.`
           : `If this condition changes, look again at the opportunity evidence for ${optionB} and the potential loss together. Consider moving further only when the evidence supports it and a way to cover ${guardrailConstraintText} is confirmed.`)
       : postureFamily === "transition"
-      ? (ko ? `${optionB} 쪽 근거가 유지되면 단계적으로 계속 옮겨 가고, 약해지면 투입을 줄여 현재 기반을 다시 지킵니다.` : `If it holds, keep moving toward ${optionB} in stages; if it weakens, scale back and protect your current base again.`)
+      ? (ko ? `${optionB} 쪽 근거가 유지되면 단계적으로 계속 옮겨 가고, 약해지면 투입을 줄여 현재 기반을 다시 지킵니다.` : `If it holds, keep moving in stages; if it weakens, scale back and protect your current base again.`)
       : index < 2
-        ? (ko ? `이 조건이 맞으면 ${optionB} 쪽으로 단계적으로 옮겨 가는 데 힘이 실립니다.` : `If this holds, a staged move toward ${optionB} becomes better supported.`)
-        : (ko ? `약해지면 현재 판단을 다시 보고, ${optionA} 쪽 기반을 더 단단히 지킵니다.` : `If it weakens, revisit the current reading and protect more of ${optionA}.`),
+        ? (ko ? `이 조건이 맞으면 ${optionB} 쪽으로 단계적으로 옮겨 가는 데 힘이 실립니다.` : `If this holds, moving in stages becomes better supported.`)
+        : (ko ? `약해지면 현재 판단을 다시 보고, ${optionA} 쪽 기반을 더 단단히 지킵니다.` : `If it weakens, revisit the current reading and keep more of your footing in your current role.`),
   }));
 
   const changingPlays = deriveChangingPlays(input, concise, missingValidation, optionAProtection);

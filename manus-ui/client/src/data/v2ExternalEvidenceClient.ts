@@ -111,6 +111,8 @@ export function acceptV2Evidence(
   const blocks = value.evidenceBlocks;
   if (value.sourceCoverage !== undefined && !["complete", "partial"].includes(String(value.sourceCoverage)))
     return null;
+  if (value.topicConfidence !== undefined && !["low", "medium", "high"].includes(String(value.topicConfidence)))
+    return null;
   if (value.contextConfidence !== undefined &&
       (value.sourceCoverage !== "complete" || !["low", "medium", "high"].includes(String(value.contextConfidence))))
     return null;

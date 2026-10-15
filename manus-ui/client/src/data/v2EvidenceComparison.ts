@@ -64,7 +64,7 @@ export function v2AutoComparison(direction: string, band: string, group?: string
 }
 const autoWords: Record<V2AutoComparison, [string, string]> = {
   watch: ["주의", "Watch"],
-  fits: ["부합 가능", "Likely fits"],
+  fits: ["근거와 맞는 편", "Consistent with your condition"],
   conditional: ["조건부", "Conditional"],
   open: ["내 조건을 입력하면 판단", "Needs your condition"],
   context: ["시장 참고 자료", "Market context"],

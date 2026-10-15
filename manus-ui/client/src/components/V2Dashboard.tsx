@@ -69,7 +69,7 @@ export function V2ExternalBoard({
     <section className="v2-external" aria-label={t("externalBoard")}>
       <div className="v2-section-top">
         <div>
-          <p className="v2-kicker">Sources / {t("evidence")}</p>
+          <p className="v2-kicker">{state.language === "ko" ? "출처 / 공개 자료" : "Sources / public sources"}</p>
           <h2>{t("externalBoard")}</h2>
         </div>
         <span className={demo ? "v2-demo-label" : "v2-status-label"}>
@@ -292,20 +292,20 @@ export default function V2Dashboard({
     >
       <div className={`v2-analysis-status ${draft ? "draft" : ""}`}>
         {t(v2EvidenceStatusLabel(evidencePhase))}
-        {draft && ` · ${say("구조 초안", "Structural draft")}`}
+        {draft && ` · ${say("검색 없이 본 초안", "Draft without public search")}`}
       </div>
       <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
       <V2ReadingGuide language={state.language} />
       <details className="v2-overview-detail">
-        <summary>{say("판단 이유와 공개 자료의 한계 자세히 보기", "See the reasoning and the limits of public evidence")}</summary>
+        <summary>{say("판단 이유와 공개 자료의 한계 자세히 보기", "See the reasoning and the limits of public sources")}</summary>
         <V2LeadAndReasons text={analysis.summary} language={state.language} />
       </details>
       <section className="v2-analysis-section" id="v2-path">
-        {head("A", "Career Path", say("지금 자리에서 고민하는 커리어까지", "From where you are to the career you are considering"))}
+        {head("A", say("경로", "Path"), say("지금 자리에서 고민하는 커리어까지", "From where you are to the career you are considering"))}
         <V2PathMap language={state.language} state={state} core={core} analysis={analysis} intelligence={intelligence} />
       </section>
       <section className="v2-analysis-section" id="v2-indicators">
-        {head("B", "Structural Indicators", say("일곱 가지 구조 지표", "Seven structural indicators"))}
+        {head("B", say("일곱 가지 조건", "Seven conditions"), say("일곱 가지 구조 지표", "Seven structural indicators"))}
         <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={answeredBands} />
       </section>
       <V2InsightBoard language={state.language} core={core} analysis={analysis} intelligence={intelligence} mode="board" />
@@ -315,15 +315,15 @@ export default function V2Dashboard({
         aria-label={say("분석 바로가기", "Analysis navigation")}
       >
         <a href="#v2-reasons">{say("판단 이유", "Reasoning")}</a>
-        <a href="#v2-map">Decision Map</a>
-        <a href="#v2-safety">Safety Margin</a>
-        <a href="#v2-changing">Changing</a>
+        <a href="#v2-map">{say("결정 지도", "Decision map")}</a>
+        <a href="#v2-safety">{say("안전 여유 (Safety Margin)", "Safety Margin")}</a>
+        <a href="#v2-changing">{say("경로 조정 (Changing)", "Path options (Changing)")}</a>
         <a href="#v2-simulator">{t("simulator")}</a>
       </nav>
       <section className="v2-analysis-section" id="v2-reasons">
         {head(
           "01",
-          "Structural Reading",
+          say("판단 이유", "Why this reading"),
           say(
             "지금 이렇게 판단한 이유",
             "Why this is the current reading"
@@ -332,13 +332,13 @@ export default function V2Dashboard({
         <V2Reasoning analysis={analysis} intelligence={intelligence} />
       </section>
       <section className="v2-analysis-section" id="v2-conditions">
-        {head("01A", "External Conditions × Customer Evidence", say("공개 자료와 내 근거 비교", "Public evidence compared with yours"))}
+        {head("01A", say("공개 자료와 내 근거", "Public sources and your evidence"), say("공개 자료와 내 근거 비교", "Public sources compared with yours"))}
         <V2EvidenceComparisonView analysis={analysis} intelligence={intelligence} onChange={onComparisonChange} />
       </section>
       <section className="v2-analysis-section" id="v2-map">
         {head(
           "02",
-          "Decision Map",
+          say("결정 지도", "Decision map"),
           say(
             "지킬 기반과 알아볼 경로",
             "What to keep, and the path to explore"
@@ -370,10 +370,10 @@ export default function V2Dashboard({
       <section className="v2-analysis-section">
         {head(
           "03",
-          "Decision Structure",
+          say("목표 쪽 여건", "Target-side conditions"),
           say(
             "목표 쪽 조직·직무 여건",
-            "Organisation and role conditions on the target side"
+            "Organization and role conditions on the target side"
           )
         )}
         <V2FactorMap analysis={analysis} />
@@ -381,7 +381,7 @@ export default function V2Dashboard({
       <section className="v2-analysis-section" id="v2-safety">
         {head(
           "04",
-          "Safety Margin",
+          say("안전 여유 (Safety Margin)", "Safety Margin"),
           say(
             "계획대로 되지 않아도 버틸 수 있는 여유",
             "Room to absorb it if the plan does not work out"
@@ -392,7 +392,7 @@ export default function V2Dashboard({
       <section className="v2-analysis-section" id="v2-changing">
         {head(
           "05",
-          "Changing",
+          say("경로 조정 (Changing)", "Path options (Changing)"),
           say(
             "목표는 그대로 두고 방법을 바꾸는 길",
             "Keep the goal, change how you get there"
@@ -410,7 +410,7 @@ export default function V2Dashboard({
       <section className="v2-analysis-section">
         {head(
           "06",
-          "Next Experiment",
+          say("다음 확인", "Next check"),
           say(
             "다음 결정 전에 작게 확인하기",
             "A small check before the next decision"
@@ -420,12 +420,12 @@ export default function V2Dashboard({
       </section>
       <div className="v2-report-cta">
         <div>
-          <p className="v2-kicker">Decision Brief</p>
+          <p className="v2-kicker">{say("결정 보고서", "Decision report")}</p>
           <h2>
             {draft
               ? say(
-                  "공개 근거를 확인하면 분석이 완성됩니다",
-                  "Check public evidence to complete the analysis"
+                  "공개 자료를 확인하면 분석이 완성됩니다",
+                  "Check public sources to complete the analysis"
                 )
               : t("reportInvite")}
           </h2>
@@ -438,7 +438,7 @@ export default function V2Dashboard({
           {evidencePhase === "loading"
             ? t("evidenceChecking")
             : draft
-              ? say("구조 초안 보기", "View structural draft")
+              ? say("검색 없이 본 초안 보기", "View draft without public search")
               : t("openReport")}{" "}
           ↗
         </button>

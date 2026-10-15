@@ -53,3 +53,39 @@
 - **설문**: 질문은 고객이 스스로에게 묻는 말투로 쓴다("결정을 6~12개월 미루면 어떻게 될 것 같나요?"). 보기는 서로 겹치지 않는 하나의 상황으로 쓴다. 그룹 제목은 명사형 짧은 구로 쓴다("새 기회 때문에", "지금 자리의 한계 때문에").
 - **대시보드**: 결론 한 줄 → 이유 한두 개 → 할 일 하나 순서로 쓴다. 긴 단락을 쓰지 않는다.
 - **리포트**: 같은 판단을 더 길게 설명하되, 섹션마다 '무엇을 확인했고, 무엇을 아직 모르며, 무엇을 하면 되는가'를 지킨다.
+
+
+## 5. 한 개념 한 용어 (2026-10-15 언어 검수 반영)
+
+화면과 리포트에서 같은 개념은 아래 이름만 쓴다. 영어는 미국식 철자와 문장형 대소문자(sentence case)를 쓴다. 프레임워크 이름(Safety Margin, Changing, Switching, FIFWM, Missing Point)만 대문자로 쓴다.
+
+| 개념 | 한국어 | English |
+|---|---|---|
+| 돈의 여유 (지표) | 재정 여유 | Financial room |
+| 안전 여유 (프레임워크 섹션) | 안전 여유 (Safety Margin) | Safety Margin |
+| 공개 자료가 뒷받침하는 정도 (지표) | 시장 근거 | Market evidence |
+| 검색으로 찾은 자료 | 공개 자료 | public sources |
+| 지금의 판단 | 현재 판단 (프레임워크 단계 이름에서만 '현재 구조 판단') | Current reading |
+| 놓치기 쉬운 것 | 놓치기 쉬운 조건 | Missing point |
+| 돌아올 수 있는 정도 (지표) | 되돌릴 수 있는 여지 (문장에서는 '돌아올 길') | Reversibility (in sentences: way back) |
+| 새 경로를 돕는 사람·제도 | 새 경로 지원 | Support for the new path |
+| 함께 감당할 부담 | 생활 속 제약 | Life constraints |
+| 준비 정도 | 실행 준비도 | Readiness |
+| 잃을 수 있는 것 | 손실 위험 | Downside risk |
+| 확인되지 않은 상태 | 확인 전 (고객이 고른 답은 '잘 모름') | Not yet confirmed (the customer's answer: Not sure) |
+| 전환에 필요한 수준 | 전환 판단 기준 | level needed for a move |
+| Switching | 판단이 바뀌는 조건 (Switching) | What would change the reading (Switching) |
+| Changing | 경로 조정 (Changing) | Path options (Changing) |
+| 다음 단계 | 다음 확인 | Next check |
+| 30·60·90일 | 다음 30일, 30·60·90일 확인 | Next 30 days, 30/60/90-day check |
+| 리포트 | 결정 보고서 (첫 카드: 핵심 요약) | Decision report (top card: Summary) |
+| 검색 없는 결과 | 검색 없이 본 초안 | Draft without public search |
+| 자동 비교 | 자동 비교 | Automatic comparison |
+| FIFWM | 다섯 가지 관점 (FIFWM) | Five lenses (FIFWM) |
+| 시장 통계 | 시장 참고 자료 | Market context |
+
+추가 규칙:
+- 한국어 화면에 영어 섹션 이름을 쓰지 않는다(위 프레임워크 이름 제외).
+- 내부 이름(Corporate Stay vs Exit, V2, fixture, External Intelligence)을 화면에 쓰지 않는다.
+- '부합 가능 / Likely fits'처럼 가능성을 말하는 표현 대신 '근거와 맞는 편 / Consistent with your condition'을 쓴다.
+- 따옴표는 ‘ ’로 통일하고, 이중 공백을 쓰지 않는다. 영어 복수형은 'item(s)'처럼 쓰지 않고 실제 복수형으로 쓴다.

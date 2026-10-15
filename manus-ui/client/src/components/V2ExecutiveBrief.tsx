@@ -100,7 +100,7 @@ export default function V2ExecutiveBrief({
     },
     {
       icon: Search,
-      label: say("놓치기 쉬운 조건", "Easy to miss"),
+      label: say("놓치기 쉬운 조건", "Missing point"),
       keyword: analysis.missingConcept,
       // The key question is already in the brief's aside; say why this is easy to miss instead.
       detail: text(core.missingPoint) !== analysis.missingConcept ? text(core.missingPoint) : analysis.question,
@@ -132,10 +132,10 @@ export default function V2ExecutiveBrief({
   ) : null;
 
   return (
-    <section className={`v2-brief${printed ? " printed" : ""}`} data-testid="v2-executive-brief" aria-label={say("핵심 요약", "Executive brief")}>
+    <section className={`v2-brief${printed ? " printed" : ""}`} data-testid="v2-executive-brief" aria-label={say("핵심 요약", "Summary")}>
       {!cardsOnly && <div className="v2-brief-head">
         <div>
-          <p className="v2-kicker">{say("핵심 요약", "Executive brief")} / {analysis.topic}</p>
+          <p className="v2-kicker">{say("핵심 요약", "Summary")} / {analysis.topic}</p>
           <h1>{analysis.posture}</h1>
           <p className="v2-brief-plain">{v2PlainQuestion("posture", language)}</p>
           {basisList}

@@ -1,4 +1,4 @@
-import type { V2Language } from "./v2Language";
+import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
 export type V2Provenance =
   | "USER_STRUCTURED"
   | "EXTERNAL_EVIDENCE"
@@ -73,28 +73,28 @@ const demoText = {
       [
         "Customer demand",
         "Pilot interest appears uneven",
-        "In this synthetic scenario, a small pilot generated initial conversations, but repeat purchases have not been established.",
-        "Interview interest is a prompt for a bounded sales test, not proof of durable demand.",
+        "In this example, a small pilot led to first conversations, but repeat purchases are not yet confirmed.",
+        "Interest in interviews is a starting point for selling on a small scale, not proof of lasting demand.",
       ],
       [
         "Alternatives",
         "Substitutes remain easy to overlook",
-        "The illustrative buyers describe at least two ways to solve the same task without a new service.",
+        "The example buyers describe at least two ways to solve the same task without a new service.",
         "A pilot should compare the proposed offer with the buyers' existing workaround.",
       ],
       [
         "Distribution",
-        "Access to first buyers is a condition",
-        "The synthetic plan assumes introductions through a professional network; acquisition beyond that circle is untested.",
-        "A repeatable route to buyers must be tested before scaling exposure.",
+        "You need a way to reach first buyers",
+        "The example plan assumes introductions through a professional network; reaching customers beyond that circle is not yet checked.",
+        "Before investing more, find a route that reaches customers repeatedly and check it on a small scale.",
       ],
     ],
     ko: [
       [
         "고객 수요",
         "시범 관심에는 편차가 있습니다",
-        "이 합성 사례에서는 초기 대화가 있었지만 반복 구매 여부는 확인되지 않았습니다.",
-        "대화의 관심은 수요의 증명이 아니라 작은 판매 실험의 출발점입니다.",
+        "이 예시에서는 초기 대화가 있었지만 반복 구매 여부는 아직 확인 전입니다.",
+        "대화에서 보인 관심은 수요의 증명이 아니라 작게 팔아 보며 확인할 출발점입니다.",
       ],
       [
         "대안",
@@ -105,8 +105,8 @@ const demoText = {
       [
         "고객 확보",
         "첫 구매자에게 닿는 경로가 필요합니다",
-        "합성 계획은 지인 소개를 가정하며, 그 밖의 고객 확보 경로는 검증되지 않았습니다.",
-        "노출을 늘리기 전에 반복 가능한 접근 경로를 시험해야 합니다.",
+        "예시 계획은 지인 소개를 가정하며, 그 밖에 고객을 만날 경로는 아직 확인 전입니다.",
+        "투입을 늘리기 전에 고객에게 반복해서 닿을 경로를 작게 확인하세요.",
       ],
     ],
   },
@@ -114,41 +114,41 @@ const demoText = {
     en: [
       [
         "Role demand",
-        "Transferable skills need proof",
-        "The synthetic role sample mentions adjacent skills, but does not establish employer willingness to hire this candidate.",
-        "Translate experience into role-specific proof before treating fit as validated.",
+        "Skills that carry over need evidence",
+        "The example role listing mentions related skills, but does not show that an employer would hire you.",
+        "Before treating the fit as confirmed, turn your experience into evidence for this specific role.",
       ],
       [
         "Compensation",
-        "The move may alter income continuity",
-        "The illustrative case has no verified offer or compensation benchmark for the target role.",
-        "Protect income while gathering real offer and compensation evidence.",
+        "The move may interrupt your income",
+        "This example has no confirmed offer or pay benchmark for the target role.",
+        "Keep your income steady while you collect real offers and pay information.",
       ],
       [
         "Geography",
         "Access differs by location",
-        "The mock search set spans several locations with different requirements.",
+        "The example search results cover several locations with different requirements.",
         "Narrow the geography before drawing a market conclusion.",
       ],
     ],
     ko: [
       [
         "직무 수요",
-        "전환 가능한 역량을 입증해야 합니다",
-        "합성 직무 표본에는 인접 역량이 나오지만, 실제 채용 가능성을 입증하지는 않습니다.",
-        "적합성이 검증됐다고 판단하기 전에 직무에 맞는 경험 근거를 정리해야 합니다.",
+        "옮겨 갈 수 있는 역량을 보여 줘야 합니다",
+        "예시 직무 공고에는 비슷한 역량이 나오지만, 실제로 채용될지는 보여 주지 않습니다.",
+        "맞는다고 판단하기 전에, 이 직무에 맞는 경험 근거부터 정리하세요.",
       ],
       [
         "보상",
-        "전환 시 소득 연속성이 달라질 수 있습니다",
-        "이 예시에는 대상 직무의 확인된 제안이나 보상 기준이 없습니다.",
-        "실제 제안과 보상 근거를 확인하는 동안 소득 기반을 보호해야 합니다.",
+        "옮기면 소득이 끊길 수 있습니다",
+        "이 예시에는 목표 직무의 확인된 제안이나 보상 기준이 없습니다.",
+        "실제 제안과 보상 수준을 확인하는 동안 지금 소득을 지키세요.",
       ],
       [
         "지역",
         "지역마다 접근 조건이 다릅니다",
-        "가상 검색 표본에는 요구 사항이 다른 여러 지역이 포함됩니다.",
-        "시장 판단에 앞서 목표 지역을 좁혀야 합니다.",
+        "예시 검색 결과에는 요구 사항이 다른 여러 지역이 섞여 있습니다.",
+        "시장을 판단하기 전에 목표 지역을 좁히세요.",
       ],
     ],
   },
@@ -159,43 +159,47 @@ export function demoIntelligence(
   caseType: string
 ): ExternalIntelligenceV2 {
   const rows = demoText[kind][language];
+  // Fixed research area per row, so KO and EN map the same card to the same condition
+  // and the label always matches the current label table (language audit P1).
+  const areas = kind === "entrepreneurship" ? ["customerDemand", "competition", "distribution"] : ["roleDemand", "compensation", "geography"];
   return {
     status: "demo",
     generatedAt: "2026-10-09",
     caseType,
     evidenceBlocks: rows.map(
-      ([dimension, headline, fact, whyItMatters], i) => ({
-        dimension,
+      ([, headline, fact, whyItMatters], i) => ({
+        area: areas[i],
+        dimension: v2t(language, areas[i] as V2CopyKey),
         headline,
         direction: (i === 1 ? "caution" : "mixed") as "caution" | "mixed",
         fact,
         whyItMatters,
         sourceLabel:
           language === "ko"
-            ? "합성 시나리오 자료"
-            : "Synthetic scenario fixture",
+            ? "예시 자료"
+            : "Example data",
         provenance: "EXTERNAL_EVIDENCE" as const,
       })
     ),
     metrics: [],
     opportunitySignals:
       language === "ko"
-        ? ["검증할 수 있는 작은 실험"]
-        : ["A bounded test is possible"],
+        ? ["작게 확인해 볼 수 있음"]
+        : ["A small check is possible"],
     frictionSignals:
       language === "ko"
-        ? ["실제 시장 근거 미확인"]
-        : ["Real market evidence is not established"],
+        ? ["실제 시장 근거는 확인 전"]
+        : ["Real market evidence is not yet confirmed"],
     uncertainties:
       language === "ko"
-        ? ["합성 자료는 실제 수요나 채용 가능성을 증명하지 않습니다."]
+        ? ["예시 자료는 실제 수요나 채용 가능성을 보여 주지 않습니다."]
         : [
-            "Synthetic material cannot establish real demand or hiring outcomes.",
+            "Example data cannot show real demand or hiring outcomes.",
           ],
     implication:
       language === "ko"
-        ? "이 자료는 화면 검토용입니다. 실제 판단에는 출처를 확인한 외부 근거가 필요합니다."
-        : "This material is for visual review. Real decisions require verified external sources.",
+        ? "실제 판단에는 출처를 확인한 공개 자료가 필요합니다."
+        : "Real decisions need public sources you have checked.",
   };
 }
 export function customerEvidence(

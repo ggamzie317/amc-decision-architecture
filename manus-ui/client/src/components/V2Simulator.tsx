@@ -278,7 +278,7 @@ export default function V2Simulator({
               <p>{compare.filter(([, before, after]) => before === after).map(([label]) => t(label)).join(" · ") || say("없음", "None")}</p>
             </div>
             <div>
-              <b>{say("아직 확인 전", "Still unconfirmed")}</b>
+              <b>{say("확인 전", "Not yet confirmed")}</b>
               <p>{Object.entries(scenario.postureBasis).filter(([, signal]) => signal.band === "unknown").map(([key]) => t(({
                 externalValidation: "externalValidation", internalReadiness: "readinessBand", safetyMargin: "safety", reversibility: "reversibility",
                 optionBSupport: "supportBand", structuralRisk: "downside", constraintLoad: "constraint",
@@ -354,8 +354,8 @@ export default function V2Simulator({
               {item === "reading"
                 ? say("판단과 안전 여유", "Reading and Safety Margin")
                 : item === "map"
-                  ? "Decision Map"
-                  : say("경로 조정과 다음 확인", "Changing and next check")}
+                  ? say("결정 지도", "Decision map")
+                  : say("경로 조정과 다음 확인", "Path options and next check")}
             </button>
           ))}
         </div>

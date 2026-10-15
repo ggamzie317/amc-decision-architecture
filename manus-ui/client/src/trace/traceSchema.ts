@@ -105,7 +105,7 @@ export const v2TraceStages: TraceStage[] = [
   },
   {
     id: "Live External Evidence",
-    term: ["공개 근거", "Public evidence"],
+    term: ["공개 자료", "Public sources"],
     question: ["공개 자료로 무엇이 확인됐고, 무엇이 아직인가요?", "What do public sources confirm, and what is still open?"],
     reads: ["analysis.researchCoverage", "intelligence.evidenceBlocks", "core.postureBasis.externalValidation"],
     feeds: ["FIFWM / Decision Structure", "Current Structural Posture", "Safety Margin"],
@@ -114,12 +114,16 @@ export const v2TraceStages: TraceStage[] = [
       const found = s.analysis.researchCoverage.filter(row => row.status === "found").length;
       const total = s.analysis.researchCoverage.length;
       const cards = s.intelligence.status === "live" || s.intelligence.status === "demo" ? s.intelligence.evidenceBlocks.length : 0;
-      return say(s, `조사한 주제 ${total}개 중 ${found}개에서 공개 자료 ${cards}건을 찾았습니다.`, `Public material found for ${found} of ${total} topics (${cards} items).`);
+      const items = (n: number) => `${n} ${n === 1 ? "item" : "items"}`;
+      // State the topic count only when it agrees with the cards (older or demo cards carry no topic).
+      if (cards === 0) return say(s, "아직 찾은 공개 자료가 없습니다.", "No public sources found yet.");
+      if (found === 0 || total === 0) return say(s, `공개 자료 ${cards}건을 찾았습니다.`, `Found ${items(cards)} in public sources.`);
+      return say(s, `조사한 주제 ${total}개 중 ${found}개에서 공개 자료 ${cards}건을 찾았습니다.`, `Public sources found for ${found} of ${total} topics (${items(cards)}).`);
     },
     reasons: s => [
       ...s.analysis.researchCoverage.map(row => ({
         label: row.title,
-        value: row.status === "found" ? say(s, `자료 ${row.evidenceIds.length}건`, `${row.evidenceIds.length} item(s)`)
+        value: row.status === "found" ? say(s, `자료 ${row.evidenceIds.length}건`, `${row.evidenceIds.length} ${row.evidenceIds.length === 1 ? "item" : "items"}`)
           : row.status === "pending" ? say(s, "찾는 중", "Collecting")
             : row.status === "not_searched" ? say(s, "아직 찾지 않음", "Not searched yet")
               : say(s, "찾은 자료 없음", "Nothing usable found"),
@@ -130,19 +134,19 @@ export const v2TraceStages: TraceStage[] = [
         label: say(s, "판단에 들어간 방식", "How it enters the reading"),
         value: v2ConditionLevel("externalValidation", s.core.postureBasis.externalValidation.band, s.language, b => label(s, b)),
         source: traceSource(s.core.postureBasis.externalValidation.source),
-        note: say(s, "공개 자료는 점수로 바뀌지 않고, '시장 근거' 한 항목으로만 판단에 반영됩니다.", "Public material never becomes a score; it enters the reading only as the single 'market evidence' condition."),
+        note: say(s, "공개 자료는 점수로 바뀌지 않고, ‘시장 근거’ 한 항목으로만 판단에 반영됩니다.", "Public sources never become a score; they enter the reading only as the single ‘Market evidence’ condition."),
       },
     ],
   },
   {
     id: "FIFWM / Decision Structure",
-    term: ["다섯 구조 요소 (FIFWM)", "Five structural factors (FIFWM)"],
+    term: ["다섯 가지 관점 (FIFWM)", "Five lenses (FIFWM)"],
     question: ["기회·연결·구조·실행·지속은 각각 어떤 상태인가요?", "Where do opportunity, connection, structure, execution and staying power stand?"],
     reads: ["analysis.factors", "core.decisionStructure"],
     feeds: ["What You May Be Missing", "Current Structural Posture"],
     conclusion: s => s.analysis.factors.some(f => f.assessed)
       ? say(s, `다섯 요소 중 ${s.analysis.factors.filter(f => f.assessed).length}개를 평가했습니다.`, `${s.analysis.factors.filter(f => f.assessed).length} of five factors assessed.`)
-      : say(s, "구체적인 목표가 없어 다섯 요소는 평가하지 않았습니다.", "No specific target, so the five factors were not assessed."),
+      : say(s, "다섯 가지 질문에 답한 내용이 없어 평가하지 않았습니다.", "The five questions were not answered, so they were not assessed."),
     reasons: s => s.analysis.factors.map(factor => ({
       label: factor.title,
       value: factor.status,
@@ -164,19 +168,19 @@ export const v2TraceStages: TraceStage[] = [
         .filter(indicator => s.core.postureBasis[indicator.key].band === "unknown")
         .map(indicator => ({
           label: label(s, signalLabels[indicator.key]),
-          value: say(s, "확인 전", "Not confirmed"),
+          value: say(s, "확인 전", "Not yet confirmed"),
           source: "open" as const,
           note: pick(indicator.question, s.language),
         })),
       ...s.analysis.researchCoverage.filter(row => row.status === "none").map(row => ({
-        label: row.title, value: say(s, "공개 자료를 찾지 못함", "No public material found"), source: "open" as const,
+        label: row.title, value: say(s, "공개 자료를 찾지 못함", "No public sources found"), source: "open" as const,
       })),
     ],
   },
   {
     id: "Current Structural Posture",
-    term: ["현재 구조 판단", "Current structural reading"],
-    question: ["지금 조건에서 가장 설명력 있는 움직임은?", "Which move does the current structure explain best?"],
+    term: ["현재 구조 판단", "Current reading"],
+    question: ["지금 조건에 가장 잘 맞는 움직임은 무엇인가요?", "Which move fits your current conditions best?"],
     reads: ["analysis.posture", "core.currentStructuralPosture", "core.postureBasis", "core.why", "sensitivity"],
     feeds: ["Changing", "Safety Margin", "Decision Switches"],
     conclusion: s => s.analysis.posture,
@@ -193,7 +197,7 @@ export const v2TraceStages: TraceStage[] = [
   },
   {
     id: "Changing",
-    term: ["경로 조정 (Changing)", "Changing"],
+    term: ["경로 조정 (Changing)", "Path options (Changing)"],
     question: ["지금 가진 자산을 다르게 조합하면 어떤 선택지가 생기나요?", "What options appear if you recombine what you have?"],
     reads: ["analysis.plays"],
     feeds: ["Next Experiment"],
@@ -229,7 +233,7 @@ export const v2TraceStages: TraceStage[] = [
   },
   {
     id: "Decision Switches",
-    term: ["판단 전환 조건 (Switching)", "Decision switches"],
+    term: ["판단이 바뀌는 조건 (Switching)", "What would change the reading (Switching)"],
     question: ["어떤 사실이 바뀌면 판단을 다시 해야 하나요?", "Which facts, if they change, call for a new reading?"],
     reads: ["analysis.switching", "engineSwitches"],
     feeds: ["Next Experiment"],
@@ -244,8 +248,8 @@ export const v2TraceStages: TraceStage[] = [
   },
   {
     id: "Next Experiment",
-    term: ["다음 실험", "Next experiment"],
-    question: ["다음 30일 동안 어떤 불확실성을 줄일 것인가요?", "Which uncertainty will the next 30 days reduce?"],
+    term: ["다음 확인", "Next check"],
+    question: ["다음 30일 동안 무엇을 확인해 불확실성을 줄일까요?", "What will you check in the next 30 days to reduce uncertainty?"],
     reads: ["analysis.experiment", "core.nextStepExperiment"],
     feeds: [],
     conclusion: s => s.analysis.experiment.briefAction,
@@ -262,7 +266,7 @@ export function v2TraceTerm(stage: TraceStage, language: V2Language) { return pi
 export function v2TraceQuestion(stage: TraceStage, language: V2Language) { return pick(stage.question, language); }
 export const v2TraceSourceLabel: Record<TraceSource, Pair> = {
   you: ["내 답변", "Your answer"],
-  public: ["공개 근거", "Public evidence"],
+  public: ["공개 자료", "Public sources"],
   engine: ["allofmycareer 계산", "allofmycareer calculation"],
-  open: ["아직 확인 전", "Not yet confirmed"],
+  open: ["확인 전", "Not yet confirmed"],
 };

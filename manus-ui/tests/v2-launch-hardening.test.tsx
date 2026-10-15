@@ -111,7 +111,7 @@ describe("results do not open before the explicit evidence analysis settles", ()
     expect(html).toContain("○○대학교 EMBA");
     expect(html).toContain("경과 시간 12초");
     expect(html).not.toMatch(/%|progress/i);
-    expect(html).not.toContain("구조 초안 보기");
+    expect(html).not.toContain("본 초안 보기");
   });
 
   it("offers retry, target edit and an explicit structural draft after a failure", () => {
@@ -126,7 +126,7 @@ describe("results do not open before the explicit evidence analysis settles", ()
     expect(html).toContain('data-failure-kind="no_evidence"');
     expect(html).toContain("다시 검색");
     expect(html).toContain("검색 대상 수정");
-    expect(html).toContain("외부 근거 없는 구조 초안 보기");
+    expect(html).toContain("검색 없이 본 초안 보기");
     expect(html).toContain("일반론으로 대신 채우지 않았습니다");
   });
 
@@ -275,7 +275,7 @@ describe("waiting screen shows only real step states", () => {
   });
   it("introduces the framework and brand philosophy without progress percentages", () => {
     const html = render(true);
-    expect(html).toContain("Structure First");
+    expect(html).toContain("구조부터 보는 커리어 결정 분석");
     expect(html).toContain("기회의 조건");
     expect(html).toContain("버틸 수 있는가");
     expect(html).not.toMatch(/\d+\s*%/);
@@ -297,7 +297,7 @@ describe("case-adapted structure assessment", () => {
     expect(built.fifwm.framework.score).toBeNull();
     expect(built.fifwm.workflow.score).toBeNull();
     expect(built.fifwm.marketPolicy.score).toBeNull();
-    expect(built.fifwm.formal.reading).toContain("사례 맞춤 구조 평가");
+    expect(built.fifwm.formal.reading).toContain("본인 응답 (외부 확인 전)");
     expect(buildV2CaseFifwm("MBA / EMBA / PhD Decision", "ko", { targetRoleStatus: "unsure", answers: { case_formal: "2" } })).toBeNull();
     expect(v2CaseFifwmSet("Industry Transition")).toBeNull();
     expect(v2CaseFifwmSet("General Career Reconfiguration")).toBeNull();
@@ -312,9 +312,9 @@ describe("case-adapted structure assessment", () => {
       targetRoleStatus: "known", answers: { case_formal: "2", case_workflow: "1" },
     }));
     expect(core.decisionStructure.fifwmSource).toBe("case-adapted");
-    expect(v2PostureCoverageNote(core, "ko").text).toContain("사례 맞춤 구조 평가는 2개 항목");
+    expect(v2PostureCoverageNote(core, "ko").text).toContain("다섯 가지 관점 중 2개는 이 사례에 맞춘 질문의 답을 반영했습니다");
     const analysis = buildV2Analysis(state, core, v2DemoFixture("industry", "ko").intelligence, "demo");
-    expect(analysis.factorScopeNote).toContain("사례 맞춤 구조 평가");
+    expect(analysis.factorScopeNote).toContain("이 결정에 맞춘 다섯 가지 질문");
   });
 });
 
@@ -435,7 +435,9 @@ describe("topic fan-out", () => {
     expect(merged.evidenceBlocks.map(b => b.headline)).toEqual(["근거 1", "근거 2", "근거 3"]);
     expect(merged.implication).toBe("비자 경로가 공개되어 있습니다. 구인과 임금 통계가 있습니다.");
     expect(merged.opportunitySignals).toEqual(["기회 신호입니다."]);
-    expect(merged.contextConfidence).toBe("medium");
+    // Owner rule (H2): the geography topic has not arrived, so the reading must not use this yet.
+    expect(merged.sourceCoverage).toBe("partial");
+    expect(merged.contextConfidence).toBeUndefined();
   });
 });
 
@@ -508,7 +510,7 @@ describe("round 3: framework plan, auto comparison, citation markers", () => {
     expect(html).toContain("통계 역량 요구");
     expect(html).toContain("통계 기초 과목 이수 여부를 확인하세요.");
     expect(html).toContain("놓치기 쉬운 조건");
-    expect(html).toContain("판단 전환 조건");
+    expect(html).toContain("판단이 바뀌는 조건");
   });
 
   it("labels a first-pass comparison as automatic", async () => {
@@ -528,13 +530,14 @@ describe("round 3: framework plan, auto comparison, citation markers", () => {
 });
 
 describe("issue A1: merged evidence reaches the structural analysis", () => {
-  const card = (n: number, dimension: string) => ({ dimension, headline: `근거 ${n}`, direction: "mixed" as const, fact: `사실 ${n}입니다.`, whyItMatters: `범위 ${n}입니다.`, sourceLabel: `출처 ${n}`, sourceUrl: `https://example.org/${n}`, provenance: "EXTERNAL_EVIDENCE" as const });
+  const areaOf: Record<string, string> = { Funding: "funding", "Program outcomes": "programOutcomes" };
+  const card = (n: number, dimension: string) => ({ area: areaOf[dimension], dimension, headline: `근거 ${n}`, direction: "mixed" as const, fact: `사실 ${n}입니다.`, whyItMatters: `범위 ${n}입니다.`, sourceLabel: `출처 ${n}`, sourceUrl: `https://example.org/${n}`, provenance: "EXTERNAL_EVIDENCE" as const });
   const live = (cards: ReturnType<typeof card>[], coverage?: "complete" | "partial") => ({
     status: "live" as const, generatedAt: "2026-10-14T00:00:00.000Z", caseType: "MBA / EMBA / PhD Decision",
     contextConfidence: "medium" as const, ...(coverage ? { sourceCoverage: coverage } : {}),
     evidenceBlocks: cards, metrics: [], opportunitySignals: [], frictionSignals: [], uncertainties: ["불확실성입니다."], implication: "함의입니다.",
   });
-  const request = { caseType: "MBA / EMBA / PhD Decision" as const, externalAreas: [], targetGeography: "영국", targetLabel: "t", language: "ko" as const };
+  const request = { caseType: "MBA / EMBA / PhD Decision" as const, externalAreas: ["funding", "programOutcomes"], targetGeography: "영국", targetLabel: "t", language: "ko" as const };
 
   it("keeps complete coverage so the engine reads market evidence", async () => {
     const { mergeV2Evidence } = await import("../shared/v2EvidenceMerge");
@@ -551,10 +554,22 @@ describe("issue A1: merged evidence reaches the structural analysis", () => {
     expect(core.postureBasis.externalValidation.source).toBe("live-external-evidence");
   });
 
-  it("stays partial when any topic had an excluded source, and unset before source checks", async () => {
+  // Owner rule 2026-10-15 (H1/H2): every requested area needs one confirmed card; one excluded card does not matter.
+  it("still counts a topic that lost one card, as long as every area has a confirmed card (H1)", async () => {
+    const { mergeV2Evidence, limitedEvidence } = await import("../shared/v2EvidenceMerge");
+    const trimmed = limitedEvidence(live([card(2, "Program outcomes")], "complete") as never, [card(2, "Program outcomes")] as never, "ko");
+    const merged = mergeV2Evidence([live([card(1, "Funding")], "complete") as never, trimmed], request);
+    expect(merged.sourceCoverage).toBe("complete");
+    expect(merged.contextConfidence).toBe("medium");
+  });
+
+  it("stays partial while an area has no card or sources are not yet checked (H2)", async () => {
     const { mergeV2Evidence } = await import("../shared/v2EvidenceMerge");
-    expect(mergeV2Evidence([live([card(1, "Funding")], "complete"), live([card(2, "Program outcomes")], "partial")], request).sourceCoverage).toBe("partial");
-    expect(mergeV2Evidence([live([card(1, "Funding")]), live([card(2, "Program outcomes")])], request).sourceCoverage).toBeUndefined();
+    const onlyFunding = mergeV2Evidence([live([card(1, "Funding")], "complete")], request);
+    expect(onlyFunding.sourceCoverage).toBe("partial");
+    expect(onlyFunding.contextConfidence).toBeUndefined();
+    // Not-yet-probed topics (server merges before its source check) are not held back by the merge itself.
+    expect(mergeV2Evidence([live([card(1, "Funding")]), live([card(2, "Program outcomes")])], request).sourceCoverage).toBe("complete");
   });
 });
 
@@ -621,7 +636,7 @@ describe("issues A3-A5: framework elements filled from engine and evidence", () 
     const intelligence = { ...fixture.intelligence, evidenceBlocks: [{ ...fixture.intelligence.evidenceBlocks[0], headline: "원격 박사 경로가 공개됨", fact: "이 대학은 원격 연구 경로를 안내합니다." }] };
     const html = renderToStaticMarkup(React.createElement(V2FrameworkPlan, { language: "ko", core, analysis, intelligence, input }));
     expect(html).toContain("확인 방법: ");
-    expect(html).toContain("되돌릴 여지");
+    expect(html).toContain("되돌릴 수 있는 여지");
     expect(html).toContain("자료에서 확인된 중간 단계");
     expect(html).toContain("원격 박사 경로가 공개됨");
     const { v2EngineSwitches } = await import("../client/src/data/v2EngineSwitches");
@@ -747,7 +762,7 @@ describe("round 6: EN toggle, automatic comparison wording", () => {
     // Unrecognised words are never guessed.
     expect(v2EnglishRole("홍콩 영주권 취득하여 가족과 생활")).toBeNull();
     const fields = { decision: "현재: 한국 대기업 차장 → 고민: 홍콩 영주권 취득하여 가족과 생활", optionA: "한국 대기업 차장", optionB: "홍콩 영주권 취득하여 가족과 생활" };
-    expect(v2DecisionText("en", fields)).toBe("Current: Deputy general manager at a large company in Korea → Considering: The career you are considering");
+    expect(v2DecisionText("en", fields)).toBe("Current: Deputy general manager at a large company in Korea → Considering: The path you entered");
     expect(v2DecisionText("ko", fields)).toBe(fields.decision);
   });
 
@@ -828,7 +843,7 @@ describe("competitor benchmark: reading layer (no new scores)", () => {
     const { default: V2IndicatorProfile } = await import("../client/src/components/V2IndicatorProfile");
     const fixture = v2DemoFixture("industry", "ko");
     const html = renderToStaticMarkup(<V2IndicatorProfile language="ko" core={fixture.baseline} intelligence={fixture.intelligence} bands={{ financialRoom: "developing" }} />);
-    for (const label of ["내가 답한 것", "공개 근거", "allofmycareer 해석", "아직 확인할 것", "도움이 될 때", "약해질 때"]) expect(html).toContain(label);
+    for (const label of ["내가 답한 것", "공개 자료", "allofmycareer 해석", "아직 확인할 것", "도움이 될 때", "약해질 때"]) expect(html).toContain(label);
     expect(html).toContain("소득 없이 3~6개월 생활할 수 있음");
     expect(html).not.toMatch(/\d+\s?%/);
   });
@@ -942,5 +957,18 @@ describe("audit fixes: amounts, evidence matching, market context", () => {
     expect(v2ConditionGroup("hiringDemand")).toBe("public");
     expect(v2AutoComparison("caution", "developing", "public")).toBe("context");
     expect(v2AutoComparison("caution", "developing", "finance")).toBe("watch");
+  });
+});
+
+describe("language audit: KO/EN parity", () => {
+  it("maps the same evidence to the same conditions in Korean and English", () => {
+    for (const kind of ["industry", "entrepreneurship"] as const) {
+      const read = (language: "ko" | "en") => {
+        const f = v2DemoFixture(kind, language);
+        const analysis = buildV2Analysis(f.state, f.baseline, f.intelligence, "demo");
+        return JSON.stringify([analysis.evidenceLinks.map(l => [l.conditionGroup, l.autoComparison]), analysis.researchCoverage.map(c => c.status)]);
+      };
+      expect(read("ko")).toBe(read("en"));
+    }
   });
 });

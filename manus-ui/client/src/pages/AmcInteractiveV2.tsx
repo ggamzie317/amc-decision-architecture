@@ -582,16 +582,16 @@ export default function AmcInteractiveV2() {
                   : state.caseType === "Industry Transition"
                     ? "What to search for: the industry and role you are moving to"
                     : state.caseType === "MBA / EMBA / PhD Decision"
-                      ? "What to search for: the school and programme name"
+                      ? "What to search for: the school and program name"
                     : state.caseType === "Overseas Relocation"
                       ? "What to search for: the work you would do there and how you would stay, e.g. work visa or permanent residence"
-                      : "What to search for: a specific role, organisation or programme"}
+                      : "What to search for: a specific role, organization or program"}
               <input
                 value={v2PublicSearchTarget(state)}
                 maxLength={120}
                 placeholder={language === "ko"
                   ? state.caseType === "Entrepreneurship" ? "예: 서울 소형 식당을 위한 재고관리 서비스" : state.caseType === "Industry Transition" ? "예: 반도체 제조업의 공정 엔지니어" : state.caseType === "MBA / EMBA / PhD Decision" ? "예: ○○대학교 경영전문대학원 EMBA 주말 과정" : "구체적인 직무나 기관 이름을 적어 주세요"
-                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : state.caseType === "MBA / EMBA / PhD Decision" ? "e.g. [University] Executive MBA, weekend format" : "Enter a specific role or organisation"}
+                  : state.caseType === "Entrepreneurship" ? "e.g. inventory service for small restaurants" : state.caseType === "Industry Transition" ? "e.g. semiconductor process engineer" : state.caseType === "MBA / EMBA / PhD Decision" ? "e.g. [University] Executive MBA, weekend format" : "Enter a specific role or organization"}
                 onChange={e => update({ publicSearchTarget: e.target.value })}
               />
             </label>
@@ -605,7 +605,7 @@ export default function AmcInteractiveV2() {
             </label>
             <p className="v2-guidance">
               {language === "ko"
-                ? "위에서 고른 주제를 먼저 찾고, 이 결정 유형에서 기본으로 보는 주제도 함께 찾습니다. 예를 들어 해외 이주라면 비자, 채용 수요, 급여, 생활비를 봅니다. 검색 대상과 지역은 처음에 적은 '고민하는 커리어'로 미리 채워 두었습니다. 마지막 단계에서 이 내용으로 공개 자료를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 있으면 지워 주세요. 점검 메모와 재정 정보는 검색에 쓰지 않습니다."
+                ? "위에서 고른 주제를 먼저 찾고, 이 결정 유형에서 기본으로 보는 주제도 함께 찾습니다. 예를 들어 해외 이주라면 비자, 채용 수요, 급여, 생활비를 봅니다. 검색 대상과 지역은 처음에 적은 ‘고민하는 커리어’로 미리 채워 두었습니다. 마지막 단계에서 이 내용으로 공개 자료를 찾습니다. 다르면 고쳐 주시고, 회사 기밀이나 개인정보가 있으면 지워 주세요. 점검 메모와 재정 정보는 검색에 쓰지 않습니다."
                 : "We look up the topics you picked first, plus the standard topics for this kind of decision. For a move abroad, that means visas, hiring demand, pay and living costs. The search target and place were filled in from the career you are considering. The final step searches public sources with them. Edit them if needed, and remove any confidential or personal details. Your check notes and financial answers are never used in the search."}
             </p>
             </>)}
@@ -627,7 +627,7 @@ export default function AmcInteractiveV2() {
                 <div className="v2-self-card-head"><h3>{language === "ko" ? "목표 회사와 직무 살펴보기" : "Your target company and role"}</h3></div>
                 <p>{language === "ko"
                   ? "옮겨 갈 회사·부서와 직무·팀이 구체적일 때만 답해 주세요. 창업 계획이나 학위 과정은 여기서 평가하지 않습니다. 답하지 않은 항목은 평가하지 않습니다."
-                  : "Answer only if you have a specific target company or team and role. Business plans and degree programmes are not assessed here. Questions you skip are not assessed."}</p>
+                  : "Answer only if you have a specific target company or team and role. Business plans and degree programs are not assessed here. Questions you skip are not assessed."}</p>
                 <fieldset className="v2-field">
                   <legend>{language === "ko" ? "옮겨 갈 회사와 직무가 정해져 있나요?" : "Do you have a specific company and role in mind?"}</legend>
                   <div className="v2-band-choices">
@@ -1073,9 +1073,9 @@ export default function AmcInteractiveV2() {
             <p>{t("startIntro")}</p>
             <ul className="v2-method-points" aria-label={language === "ko" ? "분석 방법" : "How the analysis works"}>
               {([
-                [Compass, "Structure First", "정답을 대신 고르지 않습니다. 무엇을 지키고 무엇을 얻는지, 위험이 어디에 있는지 보여 줍니다.", "We do not choose for you. We show what the choice keeps, what it opens and where the risk sits."],
+                [Compass, language === "ko" ? "구조부터 보는 커리어 결정 분석" : "Structure First", "정답을 대신 고르지 않습니다. 무엇을 지키고 무엇을 얻는지, 위험이 어디에 있는지 보여 줍니다.", "We do not choose for you. We show what the choice keeps, what it opens and where the risk sits."],
                 [Layers, language === "ko" ? "다섯 가지 관점" : "Five lenses", "기회의 조건 · 연결 가능성 · 구조 적합성 · 실행 현실성 · 버틸 수 있는가", "Opportunity conditions · connection · structural fit · execution reality · staying power"],
-                [FileSearch, language === "ko" ? "확인할 수 있는 공개 근거" : "Public evidence you can check", "인용한 페이지가 실제로 열리는 공개 자료만 근거로 씁니다.", "We only use public sources whose cited pages actually open."],
+                [FileSearch, language === "ko" ? "확인할 수 있는 공개 자료" : "Public sources you can check", "인용한 페이지가 실제로 열리는 공개 자료만 근거로 씁니다.", "We only use public sources whose cited pages actually open."],
                 [Lock, language === "ko" ? "답변 원문은 저장하지 않음" : "Your words stay private", "작성한 답변 원문은 저장하지 않습니다. 검색에는 검색 대상만 씁니다.", "Your written answers are not stored. Only the search target is used to search."],
               ] as const).map(([Icon, title, ko, en]) => (
                 <li key={en}>
@@ -1275,8 +1275,8 @@ export default function AmcInteractiveV2() {
                       ? "아래 버튼을 누르면 위 대상과 지역으로 공개 자료를 검색합니다."
                       : "The button below searches public sources for the target and place above."
                     : language === "ko"
-                      ? "공개 자료를 검색하려면 3단계에서 검색 대상과 지역을 적어 주세요. 구조 초안은 지금 바로 볼 수 있습니다."
-                      : "To search, enter a target and place in step 3. You can view a structural draft now."}
+                      ? "공개 자료를 검색하려면 3단계에서 검색 대상과 지역을 적어 주세요. 검색 없이 본 초안은 지금 바로 볼 수 있습니다."
+                      : "To search, enter a target and place in step 3. You can see a draft without public search now."}
                 </small>
                 {!buildV2EvidenceRequest(state) && (
                   <button type="button" className="v2-primary v2-jump-step" onClick={() => { setStep(2); window.scrollTo(0, 0); }}>
@@ -1289,8 +1289,8 @@ export default function AmcInteractiveV2() {
                   onClick={() => finish(false)}
                 >
                   {language === "ko"
-                    ? "외부 검색 없이 구조 초안 먼저 보기"
-                    : "View a structural draft first, without searching"}
+                    ? "검색 없이 본 초안 먼저 보기"
+                    : "See a draft without public search first"}
                 </button>
               </div>
             )}
@@ -1363,7 +1363,7 @@ export default function AmcInteractiveV2() {
         <div className="v2-collecting" role="status" aria-live="polite">
           <strong>{language === "ko" ? "근거 추가 수집 중" : "Still collecting evidence"}</strong>
           <span>
-            {topicLabels.map(topic => `${topic.label} ${topic.state === "running" ? (language === "ko" ? "· 수집 중" : "· collecting") : topic.state === "done" ? "✓" : (language === "ko" ? "· 근거 없음" : "· none")}`).join("   ")}
+            {topicLabels.map(topic => `${topic.label} ${topic.state === "running" ? (language === "ko" ? "· 수집 중" : "· collecting") : topic.state === "done" ? "✓" : (language === "ko" ? "· 근거 없음" : "· none")}`).join(" / ")}
           </span>
           <small>{language === "ko" ? "도착하는 근거는 이 화면과 보고서에 자동으로 반영됩니다. 검색을 다시 실행하지 않습니다." : "Arriving evidence is added to this view and the report automatically, without a new search."}</small>
         </div>
@@ -1457,11 +1457,11 @@ export default function AmcInteractiveV2() {
         <footer className="v2-site-footer">
           <div>
             <strong>allofmycareer</strong>
-            <span>{language === "ko" ? "Structure First 커리어 의사결정 리서치" : "Structure First career decision research"}</span>
+            <span>{language === "ko" ? "구조부터 보는 커리어 결정 분석" : "Structure First career decision research"}</span>
           </div>
           <p>
             {language === "ko"
-              ? "allofmycareer는 결정을 대신하거나 특정 진로를 권하지 않습니다. 결과는 입력한 조건과 확인된 공개 근거에 따른 구조적 해석이며, 법률·세무·의료·이민·재무 자문이 아닙니다."
+              ? "allofmycareer는 결정을 대신하거나 특정 진로를 권하지 않습니다. 결과는 입력한 조건과 확인된 공개 자료에 따른 구조적 해석이며, 법률·세무·의료·이민·재무 자문이 아닙니다."
               : "allofmycareer does not decide for you or recommend a path. Results are a structural reading of your inputs and verified public evidence, not legal, tax, medical, immigration or financial advice."}
           </p>
         </footer>

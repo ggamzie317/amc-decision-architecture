@@ -132,7 +132,7 @@ export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2Tr
             </li>
           ))}
         </ol>
-        <small>{say("숨기기·별표·메모는 이 브라우저에만 저장되며 분석 결과를 바꾸지 않습니다.", "Hiding, stars and notes are saved in this browser only and never change the analysis.")}</small>
+        <small>{say("메모·별표·숨기기는 이 기기의 브라우저에만 저장되며 서버로 보내지 않습니다. 공용 컴퓨터라면 ‘메모 모두 지우기’를 눌러 주세요.", "Notes, stars and hidden steps are saved only in this device's browser and never sent to a server. On a shared computer, use ‘Clear my notes’.")}</small>
       </nav>
 
       {visible.map(({ stage, index, conclusion, reasons }) => {

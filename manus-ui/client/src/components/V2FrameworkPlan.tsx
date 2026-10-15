@@ -20,7 +20,7 @@ const skillAreas = new Set(["requiredSkills", "roleDemand", "employmentRelevance
 
 function firstSentences(text: string, count: number) {
   const parts = text.match(/[^.!?。]+[.!?。]+(?=\s|$)/g);
-  return parts ? parts.slice(0, count).join(" ").trim() : text;
+  return parts ? parts.slice(0, count).map(part => part.trim()).join(" ") : text;
 }
 
 function firstSentence(text: string) {
@@ -74,9 +74,9 @@ export default function V2FrameworkPlan({
   ].slice(0, 4);
   // Customer-specific open items for the Missing point (A4).
   const unknownLabels: Record<string, [string, string]> = {
-    externalValidation: ["market evidence", "시장 근거"], internalReadiness: ["readiness", "실행 준비도"],
-    safetyMargin: ["safety margin", "안전 여유"], reversibility: ["reversibility", "되돌릴 여지"],
-    optionBSupport: ["support", "실행 지원"], structuralRisk: ["downside", "손실 위험"], constraintLoad: ["constraints", "제약"],
+    externalValidation: ["Market evidence", "시장 근거"], internalReadiness: ["Readiness", "실행 준비도"],
+    safetyMargin: ["Financial room", "재정 여유"], reversibility: ["Reversibility", "되돌릴 수 있는 여지"],
+    optionBSupport: ["Support for the new path", "새 경로 지원"], structuralRisk: ["Downside risk", "손실 위험"], constraintLoad: ["Life constraints", "생활 속 제약"],
   };
   const unknownKeys = Object.entries(core.postureBasis)
     .filter(([key, signal]) => unknownLabels[key] && signal.band === "unknown")
@@ -125,7 +125,7 @@ export default function V2FrameworkPlan({
           )}
           {uncovered.length > 0 && (
             <ul className="v2-plan-open">
-              <li><b>{say("공개 근거를 못 찾은 주제: ", "Topics without public evidence: ")}</b>{uncovered.join(" · ")}</li>
+              <li><b>{say("공개 자료를 못 찾은 주제: ", "Topics without public sources: ")}</b>{uncovered.join(" · ")}</li>
             </ul>
           )}
           {(unknownKeys.length > 0 || uncovered.length > 0) && (
@@ -153,11 +153,11 @@ export default function V2FrameworkPlan({
             </ul>
           ) : (
             <p>{say("비용·소득 금액 근거는 아직 없습니다. 실제 비용(학비·생활비·가족 부양비)과 소득 공백 기간을 직접 적어 보세요.",
-              "No cost or income figures yet. Write down actual costs (tuition, living, dependants) and the income gap period.")}</p>
+              "No cost or income figures yet. Write down actual costs (tuition, living, dependents) and the income gap period.")}</p>
           )}
           <small className="v2-plan-certainty">{say(
             `근거가 얼마나 확실한지는 따로 봅니다. 금액 자료 ${money.length}건 · 재정 단계는 본인 응답${safety.unknownCount ? ` · 답하지 않은 항목 ${safety.unknownCount}개` : ""}`,
-            `How certain the evidence is, seen separately: ${money.length} cost source(s) · your financial level is your own answer${safety.unknownCount ? ` · ${safety.unknownCount} not answered` : ""}`
+            `How certain the evidence is, seen separately: ${money.length} cost ${money.length === 1 ? "source" : "sources"} · your financial level is your own answer${safety.unknownCount ? ` · ${safety.unknownCount} not answered` : ""}`
           )}</small>
           <small>{money.length
             ? say("위 금액을 내 저축과 소득으로 몇 개월 감당할 수 있는지 계산해 보세요. 그 기간이 준비 기간보다 짧으면, 한 번에 옮기기보다 작은 단계로 먼저 확인하세요.",
@@ -166,7 +166,7 @@ export default function V2FrameworkPlan({
         </article>
 
         <article>
-          <h3><Shuffle aria-hidden size={16} />{say("경로 조정 (Changing)", "Changing")}</h3>
+          <h3><Shuffle aria-hidden size={16} />{say("경로 조정 (Changing)", "Path options (Changing)")}</h3>
           <small className="v2-plan-plain">{v2PlainQuestion("changing", language)}</small>
           {analysis.plays.length ? (
             <ol>
@@ -180,13 +180,13 @@ export default function V2FrameworkPlan({
           )}
           {routeCards.length > 0 && (
             <ul className="v2-plan-open">
-              <li><b>{say("자료에서 확인된 중간 단계: ", "In-between routes found in the evidence: ")}</b>{routeCards.slice(0, 2).map(card => text(card.headline)).join(" · ")}</li>
+              <li><b>{say("자료에서 확인된 중간 단계: ", "In-between routes found in public sources: ")}</b>{routeCards.slice(0, 2).map(card => text(card.headline)).join(" · ")}</li>
             </ul>
           )}
         </article>
 
         <article>
-          <h3><GitBranch aria-hidden size={16} />{say("판단 전환 조건 (Switching)", "Decision switches")}</h3>
+          <h3><GitBranch aria-hidden size={16} />{say("판단이 바뀌는 조건 (Switching)", "What would change the reading (Switching)")}</h3>
           <small className="v2-plan-plain">{v2PlainQuestion("switching", language)}</small>
           {switches.length ? (
             <ol>
