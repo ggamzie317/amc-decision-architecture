@@ -1,6 +1,8 @@
+import fs from "node:fs";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { handleExternalSnapshot } from "../api/amc/external-snapshot";
+import { EXTERNAL_SNAPSHOT_RETIRED, handleExternalSnapshot } from "../api/amc/external-snapshot";
 import {
   resolveWebExternalSnapshot,
   type WebExternalSnapshotRequest,
@@ -16,81 +18,48 @@ const validRequest: WebExternalSnapshotRequest = {
   language: "en",
 };
 
+const root = path.resolve(import.meta.dirname, "..");
+
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
-describe("external snapshot Vercel route", () => {
-  it("keeps GET and OPTIONS independent from service loading", async () => {
-    const failingLoader = async () => {
-      throw new Error("load failed");
-    };
-    const getResponse = responseRecorder();
-    const optionsResponse = responseRecorder();
-
-    await handleExternalSnapshot({ method: "GET" }, getResponse.response, failingLoader);
-    await handleExternalSnapshot({ method: "OPTIONS" }, optionsResponse.response, failingLoader);
-
-    expect(getResponse.statusCode).toBe(405);
-    expect(getResponse.body).toEqual({ error: "Method not allowed." });
-    expect(optionsResponse.statusCode).toBe(204);
-    expect(optionsResponse.ended).toBe(true);
-  });
-
-  it("returns malformed_request before attempting to load the service", async () => {
-    const failingLoader = async () => {
-      throw new Error("load failed");
-    };
+// Owner decision 2026-10-16: the legacy route is retired and refuses every call.
+describe("retired external snapshot route", () => {
+  it.each([
+    ["POST with a valid request", { method: "POST", body: validRequest }],
+    ["POST with a malformed request", { method: "POST", body: { language: "en" } }],
+    ["GET", { method: "GET" }],
+  ])("refuses %s with 410 and makes no provider request", async (_label, request) => {
+    vi.stubEnv("PERPLEXITY_API_KEY", "non-secret-test-placeholder");
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
     const recorder = responseRecorder();
 
-    await handleExternalSnapshot(
-      { method: "POST", body: { language: "en" } },
-      recorder.response,
-      failingLoader,
-    );
+    await handleExternalSnapshot(request, recorder.response);
 
-    expect(recorder.statusCode).toBe(400);
-    expect(recorder.body).toMatchObject({
-      status: "fallback",
-      confidence: "low",
-      reasonCode: "malformed_request",
-    });
+    expect(recorder.statusCode).toBe(410);
+    expect(recorder.body).toEqual(EXTERNAL_SNAPSHOT_RETIRED);
+    expect(recorder.headers["Cache-Control"]).toBe("no-store");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("returns service_load_error for a valid request when the service cannot load", async () => {
-    const recorder = responseRecorder();
-
-    await handleExternalSnapshot(
-      { method: "POST", body: validRequest },
-      recorder.response,
-      async () => {
-        throw new Error("load failed");
-      },
-    );
-
-    expect(recorder.statusCode).toBe(200);
-    expect(recorder.body).toMatchObject({
-      status: "fallback",
-      confidence: "low",
-      reasonCode: "service_load_error",
-    });
+  it("does not load the search service or echo the request", () => {
+    const source = fs.readFileSync(path.join(root, "api/amc/external-snapshot.ts"), "utf8");
+    expect(source).not.toContain("externalSnapshotService");
+    expect(source).not.toContain("req.body");
   });
 
-  it("returns provider_not_configured when no provider key is available", async () => {
-    vi.stubEnv("PERPLEXITY_API_KEY", "");
-    vi.stubEnv("PPLX_API_KEY", "");
-    const recorder = responseRecorder();
-
-    await handleExternalSnapshot({ method: "POST", body: validRequest }, recorder.response);
-
-    expect(recorder.statusCode).toBe(200);
-    expect(recorder.body).toMatchObject({
-      status: "fallback",
-      confidence: "low",
-      reasonCode: "provider_not_configured",
-    });
+  it("the Express route uses the same refusal", () => {
+    const source = fs.readFileSync(path.join(root, "server/index.ts"), "utf8");
+    expect(source).toContain('app.all("/api/amc/external-snapshot"');
+    expect(source).not.toContain("resolveWebExternalSnapshot");
   });
+});
 
+// The service module itself is unchanged (still used by local QA scripts).
+describe("external snapshot service", () => {
   it("returns provider_failure when the provider request fails", async () => {
     const snapshot = await resolveWebExternalSnapshot(validRequest, {
       apiKey: "non-secret-test-placeholder",
@@ -102,6 +71,28 @@ describe("external snapshot Vercel route", () => {
       confidence: "low",
       reasonCode: "provider_failure",
     });
+  });
+});
+
+describe("retired legacy pages", () => {
+  it("redirects /amc-web-mvp and its old aliases to V2 on the server", () => {
+    const config = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8")) as {
+      redirects: Array<{ source: string; destination: string; permanent: boolean }>;
+    };
+    const sources = config.redirects
+      .filter(r => r.destination === "/amc-interactive-v2" && r.permanent === false)
+      .map(r => r.source);
+    expect(sources).toEqual(
+      expect.arrayContaining(["/amc-web-mvp", "/intake", "/format-handoff", "/payment-handoff", "/payment-success"]),
+    );
+  });
+
+  it("redirects the same paths to V2 in the client router", () => {
+    const app = fs.readFileSync(path.join(root, "client/src/App.tsx"), "utf8");
+    expect(app).toContain('<Route path={"/amc-web-mvp"} component={LegacyProductRedirect} />');
+    expect(app).not.toContain("component={AmcWebMvp}");
+    expect(app).toContain("<Redirect to={`/amc-interactive-v2${");
+    expect(app).not.toContain('<Redirect to="/amc-web-mvp"');
   });
 });
 
