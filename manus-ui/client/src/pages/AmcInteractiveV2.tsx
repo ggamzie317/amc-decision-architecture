@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import V2DecisionTracePanel from "../trace/V2DecisionTracePanel";
 import { v2BandAnchor } from "../data/v2BandAnchors";
 import { v2KeyFactQuestions } from "../../../shared/v2KeyFacts";
 import { v2SurveyGroups, v2SurveyGroupsFor, type V2SurveyField } from "../data/v2SurveyGroups";
@@ -122,6 +123,7 @@ export default function AmcInteractiveV2() {
   );
   const [phase, setPhase] = useState<Phase>(demoMode ? "dashboard" : "setup");
   const [step, setStep] = useState(0);
+  const [resultView, setResultView] = useState<"dashboard" | "trace">("dashboard");
   const [casePinned, setCasePinned] = useState(false);
   const [showAllCases, setShowAllCases] = useState(false);
   const [showContext, setShowContext] = useState(false);
@@ -1367,6 +1369,32 @@ export default function AmcInteractiveV2() {
         </div>
       )}
       {phase === "dashboard" && (
+        // Results view switch: the existing dashboard or the read-only decision trace.
+        <div className="v2-view-tabs" role="tablist" aria-label={language === "ko" ? "결과 보기 방식" : "Result view"}>
+          {(["dashboard", "trace"] as const).map(view => (
+            <button key={view} type="button" role="tab" aria-selected={resultView === view} onClick={() => setResultView(view)}>
+              {view === "dashboard"
+                ? (language === "ko" ? "결과 요약" : "Summary")
+                : (language === "ko" ? "결론 추적" : "Decision trace")}
+            </button>
+          ))}
+        </div>
+      )}
+      {phase === "dashboard" && resultView === "trace" && (
+        <V2DecisionTracePanel
+          state={state}
+          input={input}
+          core={core}
+          intelligence={intelligence}
+          sensitivity={sensitivity}
+          selfChecks={selfChecks}
+          comparisons={evidenceComparisons}
+          evidencePhase={evidencePhase}
+          evidenceLanguage={evidenceTextLanguage}
+          recordId={activeAmcSubmissionId("interactive-v2")}
+        />
+      )}
+      {phase === "dashboard" && resultView === "dashboard" && (
         <>
           <V2Dashboard
             state={state}
