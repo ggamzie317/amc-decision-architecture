@@ -266,6 +266,26 @@ export default function V2Simulator({
           overrides={activeOverrides} intelligence={intelligence} />
         <V2JevAdvisory language={state.language} input={input} scenarioInput={scenarioInput}
         baseline={baseline} scenario={scenario} overrides={activeOverrides} />
+        {overrideCount > 0 && (
+          // Benchmark: after a change, separate what moved, what held and what is still unknown.
+          <section className="v2-scenario-delta" data-testid="v2-scenario-delta" aria-label={say("바뀐 해석과 그대로인 해석", "What changed and what held")}>
+            <div>
+              <b>{say("바뀐 해석", "Changed")}</b>
+              <p>{changedImpact.length ? changedImpact.map(([label]) => t(label)).join(" · ") : say("없음", "None")}</p>
+            </div>
+            <div>
+              <b>{say("그대로인 해석", "Unchanged")}</b>
+              <p>{compare.filter(([, before, after]) => before === after).map(([label]) => t(label)).join(" · ") || say("없음", "None")}</p>
+            </div>
+            <div>
+              <b>{say("여전히 미확인", "Still unconfirmed")}</b>
+              <p>{Object.entries(scenario.postureBasis).filter(([, signal]) => signal.band === "unknown").map(([key]) => t(({
+                externalValidation: "externalValidation", internalReadiness: "readinessBand", safetyMargin: "safety", reversibility: "reversibility",
+                optionBSupport: "supportBand", structuralRisk: "downside", constraintLoad: "constraint",
+              } as Record<string, V2CopyKey>)[key] ?? "noneYet")).join(" · ") || say("없음", "None")}</p>
+            </div>
+          </section>
+        )}
         <section className="v2-lab-comparison">
           <h3>
             {t("baseline")} <span aria-hidden="true">↔</span> {t("scenario")}

@@ -86,6 +86,8 @@ export default function V2Report({
   const evidenceText = (s: string) => v2CustomerEvidenceText(state.language, s);
   const analysis = buildV2Analysis(state, core, intelligence, evidencePhase, selfChecks, comparisons, evidenceLanguage);
   const roles = v2RoleFields(state.language, state);
+  // Only the levels the customer actually chose.
+  const answeredBands: Record<string, string> = Object.fromEntries(Object.entries(state.bands).filter(([k]) => state.bandSelections[k as keyof typeof state.bands]));
   const activeOverrides = limitV2Overrides(
     input,
     visibleVariables,
@@ -329,7 +331,7 @@ export default function V2Report({
         "Structural Reading",
         say("현재 구조 판단의 이유", "Why the current structure leads here"),
         <>
-          <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={Object.fromEntries(Object.entries(state.bands).filter(([k]) => state.bandSelections[k as keyof typeof state.bands]))} printed />
+          <V2IndicatorProfile language={state.language} core={core} intelligence={intelligence} bands={answeredBands} printed />
           <V2Reasoning
             analysis={analysis}
             intelligence={intelligence}
@@ -540,7 +542,7 @@ export default function V2Report({
             {partialEvidenceNote && <p className="v2-paper-caption">{partialEvidenceNote}</p>}
             {evidencePhase === "live" && v2EvidenceLanguageNote(state.language, evidenceLanguage) && <p className="v2-paper-caption">{v2EvidenceLanguageNote(state.language, evidenceLanguage)}</p>}
             <h3 className="v2-reference-title">{say("allofmycareer 프레임워크 실행 계획", "allofmycareer framework action plan")}</h3>
-            <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} printed />
+            <V2FrameworkPlan language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} bands={answeredBands} printed />
             <h3 className="v2-reference-title">{say("출처 레퍼런스 (원문)", "Source references (original)")}</h3>
             <p className="v2-paper-caption">
               {say("본문의 근거 문장은 화면 언어로 옮겨 적었습니다. 정확한 표현과 범위는 아래 원문에서 확인하세요.",

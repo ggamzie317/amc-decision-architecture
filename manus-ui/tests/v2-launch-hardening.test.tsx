@@ -620,7 +620,7 @@ describe("issues A3-A5: framework elements filled from engine and evidence", () 
     const analysis = buildV2Analysis(unknownState, core, fixture.intelligence, "demo");
     const intelligence = { ...fixture.intelligence, evidenceBlocks: [{ ...fixture.intelligence.evidenceBlocks[0], headline: "원격 박사 경로가 공개됨", fact: "이 대학은 원격 연구 경로를 안내합니다." }] };
     const html = renderToStaticMarkup(React.createElement(V2FrameworkPlan, { language: "ko", core, analysis, intelligence, input }));
-    expect(html).toContain("아직 미확인인 내 조건");
+    expect(html).toContain("확인 방법: ");
     expect(html).toContain("되돌릴 여지");
     expect(html).toContain("근거로 확인된 중간 경로");
     expect(html).toContain("원격 박사 경로가 공개됨");
@@ -701,7 +701,7 @@ describe("benchmark round: path map and indicator profile", () => {
     const fixture = v2DemoFixture("industry", "ko");
     const html = renderToStaticMarkup(React.createElement(V2IndicatorProfile, { language: "ko", core: fixture.baseline, intelligence: fixture.intelligence }));
     expect((html.match(/<article/g) || []).length).toBe(7);
-    expect(html).toContain("확인 질문");
+    expect(html).toContain("아직 확인할 것");
     expect(html).toContain("기준선");
     expect(html).toContain('data-baseline="true"');
     expect(html).not.toMatch(/\d+\s*%/);
@@ -814,5 +814,49 @@ describe("round 7: key facts (A) and level examples (B)", () => {
     const { v2BandAnchor } = await import("../client/src/data/v2BandAnchors");
     expect(v2BandAnchor("financialRoom", "developing", true)).toBe("소득 없이 3~6개월 생활할 수 있음");
     expect(v2BandAnchor("constraintLoad", "heavy", false)).toMatch(/Under 3 hours/);
+  });
+});
+
+describe("competitor benchmark: reading layer (no new scores)", () => {
+  it("separates what you said, public evidence, the reading and what is open, with two-sided conditions", async () => {
+    const { default: V2IndicatorProfile } = await import("../client/src/components/V2IndicatorProfile");
+    const fixture = v2DemoFixture("industry", "ko");
+    const html = renderToStaticMarkup(<V2IndicatorProfile language="ko" core={fixture.baseline} intelligence={fixture.intelligence} bands={{ financialRoom: "developing" }} />);
+    for (const label of ["내가 답한 것", "공개 근거", "allofmycareer 해석", "아직 확인할 것", "활용되는 조건", "약해지는 조건"]) expect(html).toContain(label);
+    expect(html).toContain("소득 없이 3~6개월 생활할 수 있음");
+    expect(html).not.toMatch(/\d+\s?%/);
+  });
+
+  it("labels evidence by kind and states what it was not used to decide", async () => {
+    const { v2EvidenceNature, v2EvidenceLimit } = await import("../client/src/data/v2Readings");
+    expect(v2EvidenceNature({ sourceUrl: "https://www.mom.gov.sg/passes-and-permits" })).toBe("official");
+    expect(v2EvidenceNature({ sourceUrl: "https://stats.mom.gov.sg/x.xlsx" })).toBe("statistics");
+    expect(v2EvidenceNature({ sourceUrl: "https://www.snu.ac.kr/emba" })).toBe("institution");
+    expect(v2EvidenceLimit("hiringDemand", "ko")).toContain("채용 가능성으로 쓰지 않았습니다");
+    expect(v2EvidenceLimit("requiredSkills", "en")).toMatch(/not used to conclude you lack/);
+  });
+
+  it("keeps Safety Margin (absorb/exposed) apart from evidence certainty", async () => {
+    const { v2SafetyProfile } = await import("../client/src/data/v2Readings");
+    const profile = v2SafetyProfile({ financialRoom: "developing", reversibility: "weak", downsideExposure: "high" }, "ko");
+    expect(profile.absorbs).toContain("3~6개월의 소득 공백");
+    expect(profile.exposed).toEqual(expect.arrayContaining(["돌아갈 길이 없는 상태에서의 실패", "되돌리기 어려운 지출·퇴사를 먼저 하는 경우"]));
+    expect(profile.unknownCount).toBe(1);
+  });
+
+  it("shows plain questions, re-check parts and a four-part experiment in the plan without changing the posture", async () => {
+    const { default: V2FrameworkPlan } = await import("../client/src/components/V2FrameworkPlan");
+    const fixture = v2DemoFixture("industry", "ko");
+    const before = JSON.stringify(fixture.baseline.currentStructuralPosture);
+    const analysis = buildV2Analysis(fixture.state, fixture.baseline, fixture.intelligence, "demo");
+    const html = renderToStaticMarkup(<V2FrameworkPlan language="ko" core={fixture.baseline} analysis={analysis} intelligence={fixture.intelligence} input={buildV2Input(fixture.state, fixture.intelligence)} />);
+    for (const label of ["예상과 다르게 흘러가도 선택을 이어갈 여지", "다시 볼 부분", "검증할 가정", "작은 행동", "관찰할 결과", "재검토 조건", "미확인은 위험과 같지 않습니다"]) expect(html).toContain(label);
+    expect(JSON.stringify(fixture.baseline.currentStructuralPosture)).toBe(before);
+  });
+
+  it("adds the same readings in English", async () => {
+    const { v2PlainQuestion, v2ChartQuestion } = await import("../client/src/data/v2Readings");
+    expect(v2PlainQuestion("safety", "en")).toMatch(/room is left/);
+    expect(v2ChartQuestion("path", "en")).not.toMatch(/[가-힣]/);
   });
 });

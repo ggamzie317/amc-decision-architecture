@@ -17,6 +17,7 @@ import type { V2Analysis } from "../data/amcV2Analysis";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import { v2AutoComparison, v2AutoComparisonWord, v2GroupAxis } from "../data/v2EvidenceComparison";
+import { v2ChartQuestion, v2EvidenceLimit, v2EvidenceNature, v2EvidenceNatureLabel } from "../data/v2Readings";
 import { v2EvidenceDimensionLabel, v2t, type V2Language } from "../data/v2Language";
 
 /**
@@ -214,6 +215,7 @@ export default function V2InsightBoard({
         <figure className="v2-insight-panel">
           <figcaption>
             <strong>{say("구조 프로필", "Structure profile")}</strong>
+            <em className="v2-chart-question">{v2ChartQuestion("radar", language)}</em>
             <span>{say(`입력 ${values.length}개 중 ${known}개 확인 · 바깥일수록 유리 · 점선은 allofmycareer 판단 공식에서 '전환'이 나오는 최소 균형 수준`, `${known} of ${values.length} confirmed · outer is more favourable · the dashed line is the least balanced profile the allofmycareer formula reads as transition`)}</span>
           </figcaption>
           <GapSummary ko={ko} rows={gapRows(values, axes.map(a => a.reference), axes.map(a => a.label[ko ? 1 : 0]))} />
@@ -229,6 +231,7 @@ export default function V2InsightBoard({
           {fifwmAssessed && (
             <div className="v2-insight-fifwm">
               <strong>{analysis.fifwmSource === "case-adapted" ? say("사례 맞춤 구조 평가", "Case-adapted structure assessment") : say("조직·직무 구조 평가", "Organization and role assessment")}</strong>
+              <em className="v2-chart-question">{v2ChartQuestion("pentagon", language)}</em>
               <GapSummary ko={ko} rows={gapRows(fifwmScores, fifwmScores.map(() => 1), analysis.factors.map(f => f.title))} />
               <Radar values={fifwmScores} labels={analysis.factors.map(f => f.title)} ko={ko}
                 reference={fifwmScores.map(() => 1)}
@@ -241,6 +244,7 @@ export default function V2InsightBoard({
         <div className="v2-insight-panel">
           <div className="v2-insight-panel-head">
             <strong>{say("시장 대 고객", "Market vs you")}</strong>
+            <em className="v2-chart-question">{v2ChartQuestion("versus", language)}</em>
             <span>{say("공개 근거의 핵심과 내 조건의 대조 상태", "Key public fact against your condition")}</span>
           </div>
           {rows.length ? (
@@ -262,6 +266,7 @@ export default function V2InsightBoard({
                     {(printed || focus === i) && (
                       <p className="v2-versus-detail">
                         {v2CustomerEvidenceText(language, block.fact)}
+                        <br /><span className="v2-evidence-scope"><b>{v2EvidenceNatureLabel(v2EvidenceNature(block), language)}</b>{block.sourceDate ? ` · ${block.sourceDate}` : ""} · {v2EvidenceLimit(block.area, language)}</span>
                         {block.action && <><br /><b>{say("할 일: ", "To do: ")}</b>{v2CustomerEvidenceText(language, block.action)}</>}
                         {link?.test && <><br /><b>{say("다음 확인: ", "Next check: ")}</b>{link.test}</>}
                       </p>

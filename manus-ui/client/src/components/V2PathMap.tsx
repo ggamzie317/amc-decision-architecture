@@ -1,5 +1,7 @@
 import { ArrowRight, Flag, GitFork, MapPin, Milestone } from "lucide-react";
 import { v2RoleFields } from "../data/v2InputGlossary";
+import { v2BandAnchor } from "../data/v2BandAnchors";
+import { v2ChartQuestion } from "../data/v2Readings";
 import type { ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import type { V2Analysis } from "../data/amcV2Analysis";
 import type { V2State } from "../data/amcV2Model";
@@ -40,11 +42,13 @@ export default function V2PathMap({
     .map(indicator => v2t(language, indicator.label));
   const requirement = blocks.find(block => /요건|자격|비자|요구|requirement|eligib|visa|qualif/i.test(`${block.headline} ${block.fact}`));
   const roles = v2RoleFields(language, state);
+  const reversibilityNote = state.bandSelections.reversibility ? v2BandAnchor("reversibility", state.bands.reversibility, ko) : undefined;
   const current = roles.current.text;
   const target = roles.target.text;
 
   return (
     <section className="v2-pathmap" data-testid="v2-path-map" aria-label={say("커리어 경로 지도", "Career path map")}>
+      <p className="v2-chart-question">{v2ChartQuestion("path", language)}</p>
       <div className="v2-path-lane">
         <article className="v2-path-node now">
           <span className="v2-path-tag"><MapPin aria-hidden size={14} />{say("현재 위치", "Where you are")}</span>
@@ -56,7 +60,6 @@ export default function V2PathMap({
           <span className="v2-path-tag"><Milestone aria-hidden size={14} />{say("다음 단계 · 가까움", "Next step · near")}</span>
           <strong>{next ? next.title : say("작은 시험 1개", "One small test")}</strong>
           <small>{next ? next.move : analysis.experiment.briefAction}</small>
-          {next && <em>{say("필요: ", "Needs: ")}{next.needs}</em>}
         </article>
         <ArrowRight aria-hidden className="v2-path-arrow" size={22} />
         <article className="v2-path-node goal">
@@ -67,12 +70,21 @@ export default function V2PathMap({
           {gaps.length > 0 && <em className="gap">{say("아직 부족·미확인: ", "Still short or unconfirmed: ")}{gaps.slice(0, 3).join(" · ")}</em>}
         </article>
       </div>
+      {next && (
+        // Benchmark (Fuel50 / Phenom): the line between steps carries its conditions, not just an arrow.
+        <dl className="v2-path-terms" aria-label={say("다음 단계가 성립하는 조건", "What the next step depends on")}>
+          <div><dt>{say("성립 조건", "Holds if")}</dt><dd>{next.needs}</dd></div>
+          <div><dt>{say("확보할 증거", "Evidence to secure")}</dt><dd>{next.evidence}</dd></div>
+          <div><dt>{say("감수할 부담", "Burden to carry")}</dt><dd>{next.timeExposure || next.exposure}</dd></div>
+          <div><dt>{say("되돌아갈 여지", "Way back")}</dt><dd>{v2t(language, core.postureBasis.reversibility.band)}{reversibilityNote ? ` — ${reversibilityNote}` : ""}</dd></div>
+        </dl>
+      )}
       {alternatives.length > 0 && (
         <div className="v2-path-alt">
           <span className="v2-path-tag"><GitFork aria-hidden size={14} />{say("대안 경로", "Alternative routes")}</span>
           <ul>
             {alternatives.map(play => (
-              <li key={play.family}><b>{play.title}</b>{play.move}</li>
+              <li key={play.family}><b>{play.title}</b>{play.move}{play.needs && <small>{say("필요: ", "Needs: ")}{play.needs}</small>}</li>
             ))}
           </ul>
         </div>
