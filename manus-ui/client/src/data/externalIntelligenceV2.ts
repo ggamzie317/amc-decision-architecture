@@ -1,4 +1,4 @@
-import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
+import { v2t, type V2CopyKey, type V2Language } from "./v2Language.js";
 export type V2Provenance =
   | "USER_STRUCTURED"
   | "EXTERNAL_EVIDENCE"
