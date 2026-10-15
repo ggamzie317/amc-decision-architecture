@@ -68,6 +68,10 @@ export default function V2ExecutiveBrief({
     .sort((a, b) => b.gap - a.gap);
   const weakest = gaps.length ? signalOrder.find(([key]) => key === gaps[0].key) : undefined;
   const weakestBand = weakest ? core.postureBasis[weakest[0]].band : null;
+  // Market evidence is not self-reported: its unknown reads "not yet established", not "not sure".
+  const weakestLabel = weakest?.[0] === "externalValidation" && weakestBand === "unknown"
+    ? say("근거 확인 전", "not yet established")
+    : weakestBand ? v2t(language, weakestBand as V2CopyKey) : "";
   const customerSwitch = analysis.switching[0];
   const engineSwitch = !customerSwitch && input ? v2EngineSwitches(input, core, language, 1)[0] : undefined;
   const switchItem = customerSwitch ?? engineSwitch;
@@ -88,8 +92,8 @@ export default function V2ExecutiveBrief({
       label: say("가장 큰 부족", "Biggest gap"),
       keyword: weakest ? v2t(language, weakest[1]) : say("기준선 충족", "Baseline met"),
       detail: weakest && weakestBand
-        ? say(`현재 ${v2t(language, weakestBand as V2CopyKey)}${gaps.length > 1 ? ` · 함께 부족: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — 전환 기준선에 가장 못 미치는 조건입니다.`,
-          `Now ${v2t(language, weakestBand as V2CopyKey)}${gaps.length > 1 ? ` · also short: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — furthest below the transition baseline.`)
+        ? say(`현재 ${weakestLabel}${gaps.length > 1 ? ` · 함께 부족: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — 전환 기준선에 가장 못 미치는 조건입니다.`,
+          `Now ${weakestLabel}${gaps.length > 1 ? ` · also short: ${gaps.slice(1, 3).map(g => v2t(language, g.label)).join(", ")}` : ""} — furthest below the transition baseline.`)
         : say("모든 조건이 전환 기준선을 충족합니다.", "Every condition meets the transition baseline."),
       tone: weakest ? "warn" : undefined,
     },
