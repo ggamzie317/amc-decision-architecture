@@ -15,6 +15,11 @@ export type ExternalIntelligenceV2 = {
   contextConfidence?: "low" | "medium" | "high";
   /** Same search and cards in the other UI language (en/ko); never a new search. */
   translation?: ExternalIntelligenceV2;
+  /** Client-only, set by the browser while a progressive search runs: research
+   * area IDs whose topic search is still in flight, so their absence must read
+   * as "still collecting", not "no evidence". Removed when every topic has
+   * finished. Never sent to or accepted from the server. */
+  pendingAreas?: string[];
   evidenceBlocks: Array<{
     /** Existing public-research ID; presentation routing only, never a score. */
     area?: string;
@@ -29,6 +34,8 @@ export type ExternalIntelligenceV2 = {
     sourceUrl?: string;
     sourceDate?: string;
     sourceDateKind?: "published" | "updated";
+    /** Reference period stated on the source page, in the card language; optional. */
+    period?: string;
     provenance: "EXTERNAL_EVIDENCE";
   }>;
   metrics: Array<{

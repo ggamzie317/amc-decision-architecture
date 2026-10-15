@@ -17,7 +17,7 @@ import type { V2Analysis } from "../data/amcV2Analysis";
 import type { ExternalIntelligenceV2 } from "../data/externalIntelligenceV2";
 import { v2CustomerEvidenceText } from "../data/amcV2Presentation";
 import { v2AutoComparison, v2AutoComparisonWord, v2GroupAxis } from "../data/v2EvidenceComparison";
-import { v2ChartQuestion, v2EvidenceLimit, v2EvidenceNature, v2EvidenceNatureLabel } from "../data/v2Readings";
+import { v2ChartQuestion, v2EvidenceLimit, v2EvidenceNature, v2EvidenceNatureLabel, v2EvidencePeriod } from "../data/v2Readings";
 import { v2EvidenceDimensionLabel, v2t, type V2Language } from "../data/v2Language";
 
 /**
@@ -253,7 +253,7 @@ export default function V2InsightBoard({
                 const link = analysis.evidenceLinks[i];
                 const Dir = directionIcon[block.direction] ?? Minus;
                 const status = link?.comparisonStatus ?? "unreviewed";
-                const auto = v2AutoComparison(block.direction, core.postureBasis[v2GroupAxis[link?.conditionGroup ?? "public"]].band);
+                const auto = v2AutoComparison(block.direction, core.postureBasis[v2GroupAxis[link?.conditionGroup ?? "public"]].band, link?.conditionGroup ?? "public");
                 return (
                   <li key={i} data-direction={block.direction} data-status={status}
                     aria-expanded={printed || focus === i} onClick={() => !printed && setFocus(focus === i ? null : i)}>
@@ -266,7 +266,7 @@ export default function V2InsightBoard({
                     {(printed || focus === i) && (
                       <p className="v2-versus-detail">
                         {v2CustomerEvidenceText(language, block.fact)}
-                        <br /><span className="v2-evidence-scope"><b>{v2EvidenceNatureLabel(v2EvidenceNature(block), language)}</b>{block.sourceDate ? ` · ${block.sourceDate}` : ""} · {v2EvidenceLimit(block.area, language)}</span>
+                        <br /><span className="v2-evidence-scope"><b>{v2EvidenceNatureLabel(v2EvidenceNature(block), language)}</b>{` · ${v2EvidencePeriod(block, language)}`} · {v2EvidenceLimit(block.area, language)}</span>
                         {block.action && <><br /><b>{say("할 일: ", "To do: ")}</b>{v2CustomerEvidenceText(language, block.action)}</>}
                         {link?.test && <><br /><b>{say("다음 확인: ", "Next check: ")}</b>{link.test}</>}
                       </p>

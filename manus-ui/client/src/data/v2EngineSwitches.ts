@@ -1,4 +1,5 @@
 import { withKoreanParticle } from "./koreanParticle";
+import { v2ConditionLevel } from "./v2Indicators";
 import type { ProductApplicationBuildInput, ProductApplicationV3 } from "./amcProductApplicationV3";
 import { baselineBands, evaluateScenario, type ScenarioOverrides } from "./amcScenario";
 import { v2t, type V2CopyKey, type V2Language } from "./v2Language";
@@ -41,6 +42,7 @@ export function v2EngineSwitches(
   max = 3
 ): V2EngineSwitch[] {
   const ko = language === "ko";
+  const level = (variable: string, band: string) => v2ConditionLevel(variable, band, language, b => v2t(language, b as V2CopyKey));
   const bands = baselineBands(input) as Record<string, string>;
   const found: V2EngineSwitch[] = [];
   for (const variable of Object.keys(ladders)) {
@@ -63,9 +65,7 @@ export function v2EngineSwitches(
         variable,
         labels: [label],
         improves: move.improves,
-        signal: ko
-          ? `${label}: ${v2t(language, current as V2CopyKey)} → ${v2t(language, move.band as V2CopyKey)}`
-          : `${label}: ${v2t(language, current as V2CopyKey)} → ${v2t(language, move.band as V2CopyKey)}`,
+        signal: `${label}: ${level(variable, current)} → ${level(variable, move.band)}`,
         direction: ko
           ? `현재 판단이 ${withKoreanParticle(`‘${readingName(language, scenario.currentStructuralPosture.label)}’`, "으로/로")} 바뀝니다`
           : `The current reading becomes “${readingName(language, scenario.currentStructuralPosture.label)}”`,
@@ -105,7 +105,7 @@ function pairSwitches(
         if (!bandA || !bandB) continue;
         const scenario = evaluateScenario(input, { [a]: bandA, [b]: bandB } as ScenarioOverrides);
         if (scenario.currentStructuralPosture.label === core.currentStructuralPosture.label) continue;
-        const part = (v: string, band: string) => `${v2t(language, labelKey[v])} ${v2t(language, bands[v] as V2CopyKey)} → ${v2t(language, band as V2CopyKey)}`;
+        const part = (v: string, band: string) => `${v2t(language, labelKey[v])} ${v2ConditionLevel(v, bands[v], language, b => v2t(language, b as V2CopyKey))} → ${v2ConditionLevel(v, band, language, b => v2t(language, b as V2CopyKey))}`;
         out.push({
           variable: `${a}+${b}`,
           labels: [v2t(language, labelKey[a]), v2t(language, labelKey[b])],

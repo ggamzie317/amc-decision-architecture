@@ -9,6 +9,7 @@ import {
 import {
   parseV2EvidenceRequest,
   v2EvidenceAreas,
+  v2MandatoryAreas,
   type V2EvidenceRequest,
 } from "../../../shared/externalIntelligenceV2Request";
 import {
@@ -132,6 +133,7 @@ export function acceptV2Evidence(
         v2BoundedText(item.fact, limit.fact) &&
         v2BoundedText(item.whyItMatters, limit.whyItMatters) &&
         (item.action === undefined || v2BoundedText(item.action, limit.signal)) &&
+        (item.period === undefined || v2BoundedText(item.period, 40)) &&
         v2BoundedText(item.sourceLabel, limit.headline) &&
         v2BoundedText(item.sourceUrl, limit.sourceUrl) &&
         /^https:\/\//.test(item.sourceUrl) &&
@@ -176,22 +178,19 @@ export function acceptV2Evidence(
     : primary) as ExternalIntelligenceV2;
 }
 
-const domestic = /^(?:한국|대한민국|서울|부산|판교|인천|대구|대전|광주|south korea|korea|seoul|busan|pangyo)$/i;
 /**
- * Default topics plus the ones the customer's situation implies (issue B2):
- * a degree abroad also needs living, family and mobility facts. Explicit
- * customer choices are kept as chosen.
- */
-/**
- * Topics to research: the customer's picks first, then the case's standard
- * topics, so a framework section never stays empty because a topic was not
- * ticked (owner feedback 2026-10-14). At most 5 topics (3 parallel groups).
+ * Topics to research (audit M4): the customer's picks first, then the case's
+ * standard topics, so a framework section never stays empty because a topic
+ * was not ticked (owner feedback 2026-10-14). At most 5 topics, plus a
+ * mandatory one the picks would otherwise push out: visa/residency for an
+ * overseas move and mobility for a degree abroad are always kept.
  */
 export function v2SituationalAreas(state: Pick<V2State, "caseType" | "externalAreas" | "targetGeography">): V2State["externalAreas"] {
-  const defaults = [...v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] })];
-  const geography = state.targetGeography.trim();
-  if (state.caseType === "MBA / EMBA / PhD Decision" && geography && !domestic.test(geography) && !defaults.includes("geographyMobility"))
-    defaults.push("geographyMobility");
-  const areas = [...state.externalAreas, ...defaults].filter((area, i, all) => all.indexOf(area) === i).slice(0, Math.max(5, state.externalAreas.length));
+  const mandatory = v2MandatoryAreas(state.caseType, state.targetGeography);
+  const defaults = v2EvidenceAreas({ caseType: state.caseType, externalAreas: [] });
+  const areas = [...state.externalAreas, ...mandatory, ...defaults]
+    .filter((area, i, all) => all.indexOf(area) === i)
+    .slice(0, 5);
+  for (const area of mandatory) if (!areas.includes(area)) areas.push(area);
   return areas as V2State["externalAreas"];
 }

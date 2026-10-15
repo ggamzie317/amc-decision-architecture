@@ -1,4 +1,5 @@
 import { CheckSquare, FlaskConical, GitBranch, ListChecks, GraduationCap, Search, ShieldCheck, Shuffle, Wallet } from "lucide-react";
+import { v2HasAmount } from "../data/v2Amounts";
 import type { ProductApplicationBuildInput, ProductApplicationV3 } from "../data/amcProductApplicationV3";
 import { v2EngineSwitches } from "../data/v2EngineSwitches";
 import type { V2Analysis } from "../data/amcV2Analysis";
@@ -51,7 +52,7 @@ export default function V2FrameworkPlan({
   const text = (value: string) => v2CustomerEvidenceText(language, value);
   const cards = intelligence.status === "live" || intelligence.status === "demo" ? intelligence.evidenceBlocks : [];
   // Any card stating an amount informs Safety Margin (fees, loans, wages, costs).
-  const hasAmount = (value: string) => /(?:HK\$|US\$|A\$|S\$|£|€|\$|₩|¥)\s?\d|\d[\d,.]*\s?(?:원|만 ?원|억 ?원|파운드|달러|유로|엔)/.test(value);
+  const hasAmount = v2HasAmount;
   const money = cards.filter(card => (card.area && moneyAreas.has(card.area)) || hasAmount(`${card.headline} ${card.fact}`));
   const skills = cards.filter(card => card.area && skillAreas.has(card.area));
   const actions = Array.from(new Set(cards.map(card => card.action).filter((a): a is string => !!a)));
@@ -82,7 +83,7 @@ export default function V2FrameworkPlan({
     .map(([key]) => key);
   const safety = v2SafetyProfile(bands, language);
   const experiment = analysis.experiment;
-  const uncovered = analysis.researchCoverage.filter(row => !row.evidenceIds.length).map(row => row.title);
+  const uncovered = analysis.researchCoverage.filter(row => row.status === "none").map(row => row.title);
   // Intermediate routes the evidence itself shows, for Changing (A5).
   const routeCards = cards.filter(card => /원격|시간제|파트타임|병행|주말|온라인|단계적|remote|part-time|online|weekend|distance|phased/i.test(`${card.headline} ${card.fact}`));
 

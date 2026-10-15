@@ -9,9 +9,12 @@ export type EvidenceComparison = { status: EvidenceComparisonStatus; detail: str
 export type EvidenceComparisons = Record<string, EvidenceComparison>;
 type Block = ExternalIntelligenceV2["evidenceBlocks"][number];
 
-/** Identity uses the research language. An interface toggle is not a new claim. */
-export function v2ComparisonKey(block: Block, language: V2State["language"]): string {
-  return JSON.stringify([language, block.sourceUrl ?? "demo", block.dimension, block.fact]);
+/** Language-independent identity: the cited source plus the controlled area ID
+ * (dimension labels and fact wording differ by language; area IDs do not), so a
+ * saved comparison survives a language toggle. The language parameter is kept
+ * for caller compatibility only. */
+export function v2ComparisonKey(block: Block, _language?: V2State["language"]): string {
+  return JSON.stringify([block.sourceUrl ?? "demo", block.area ?? block.dimension]);
 }
 export function v2ComparisonLabel(status: EvidenceComparisonStatus, ko: boolean): string {
   const labels: Record<EvidenceComparisonStatus, [string, string]> = {
@@ -31,8 +34,9 @@ export function v2EvidenceArea(block: Block, state: V2State): string | null {
     .includes(block.dimension)) ?? null;
 }
 export function v2ConditionGroup(area: string | null): "finance" | "capacity" | "readiness" | "public" {
-  if (["compensation", "pricing", "funding", "opportunityCost"].includes(area ?? "")) return "finance";
-  if (["geography", "visaMobility", "geographyMobility"].includes(area ?? "")) return "capacity";
+  // Geography research returns living costs and rent, so it is read against money (audit M6).
+  if (["compensation", "pricing", "funding", "opportunityCost", "geography"].includes(area ?? "")) return "finance";
+  if (["visaMobility", "geographyMobility"].includes(area ?? "")) return "capacity";
   if (["requiredSkills", "programOutcomes", "employmentRelevance", "researchRelevance"].includes(area ?? "")) return "readiness";
   return "public";
 }
@@ -43,12 +47,15 @@ export function v2ConditionGroup(area: string | null): "finance" | "capacity" | 
  * condition. Descriptive only — it never scores, stores or replaces a
  * customer comparison.
  */
-export type V2AutoComparison = "watch" | "fits" | "conditional" | "open";
+export type V2AutoComparison = "watch" | "fits" | "conditional" | "open" | "context";
 const favourable: Record<string, number> = { strong: 2, developing: 1, weak: 0, low: 2, moderate: 1, high: 0, light: 2, material: 1, heavy: 0 };
 export const v2GroupAxis = {
   finance: "safetyMargin", capacity: "constraintLoad", readiness: "internalReadiness", public: "internalReadiness",
 } as const;
-export function v2AutoComparison(direction: string, band: string): V2AutoComparison {
+export function v2AutoComparison(direction: string, band: string, group?: string): V2AutoComparison {
+  // A market statistic (demand, industry direction, competition) is context, never a
+  // reading of the person's own readiness (audit M6).
+  if (group === "public") return "context";
   const v = favourable[band];
   if (v === undefined) return "open";
   if (direction === "caution" && v <= 1) return "watch";
@@ -60,6 +67,7 @@ const autoWords: Record<V2AutoComparison, [string, string]> = {
   fits: ["부합 가능", "Likely fits"],
   conditional: ["조건부", "Conditional"],
   open: ["내 조건을 입력하면 판단", "Needs your condition"],
+  context: ["시장 참고 자료", "Market context"],
 };
 export function v2AutoComparisonWord(kind: V2AutoComparison, ko: boolean): string {
   return autoWords[kind][ko ? 0 : 1];
@@ -68,5 +76,6 @@ export function v2AutoComparisonWord(kind: V2AutoComparison, ko: boolean): strin
 export function v2AutoComparisonLabel(kind: V2AutoComparison, conditionLabel: string, bandLabel: string, ko: boolean): string {
   const word = v2AutoComparisonWord(kind, ko);
   if (kind === "open") return ko ? `자동 비교: ${word}` : `Automatic comparison: ${word}`;
+  if (kind === "context") return ko ? `${word} · 내 조건과 직접 비교하지 않음` : `${word} · not compared with your own conditions`;
   return ko ? `자동 비교: ${word} — 내 ${conditionLabel} ${bandLabel}` : `Automatic comparison: ${word} — your ${conditionLabel}: ${bandLabel}`;
 }

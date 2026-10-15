@@ -69,6 +69,16 @@ import {
   v2CanAskCanonicalFifwm,
 } from "../data/v2CanonicalFifwm";
 import { mergeV2Evidence, v2EvidenceGroups } from "../../../shared/v2EvidenceMerge";
+import type { V2EvidenceRequest } from "../../../shared/externalIntelligenceV2Request";
+import {
+  v2AreasForCase,
+  v2MissingGroups,
+  v2PickEvidence,
+  v2ShouldRetryTopic,
+  v2StoreEvidence,
+  v2WithCaseType,
+  v2WithoutPending,
+} from "../data/v2EvidenceFlow";
 import V2Processing from "../components/V2Processing";
 import { v2CaseFifwmSet } from "../data/v2CaseFifwm";
 import {
@@ -132,6 +142,14 @@ export default function AmcInteractiveV2() {
   const [evidenceLoadingLanguage, setEvidenceLoadingLanguage] =
     useState<V2Language | null>(null);
   const evidencePending = useRef(false);
+  // Per-topic results of the last search, so "search again" re-requests only
+  // the topics that are missing or failed and merges them into what exists.
+  const topicRun = useRef<{
+    key: string;
+    request: V2EvidenceRequest;
+    groups: string[][];
+    lives: (ExternalIntelligenceV2 | undefined)[];
+  } | null>(null);
   const languagePinned = useRef(params.has("lang"));
   const simOpened = useRef(false);
   const restorePrintTitle = useRef<(() => void) | null>(null);
@@ -164,7 +182,7 @@ export default function AmcInteractiveV2() {
   const withInferredCase = (next: V2State): V2State => {
     if (casePinned) return next;
     const caseType = inferV2CaseType(next);
-    return caseType === next.caseType ? next : { ...next, caseType, publicSearchTarget: undefined };
+    return caseType === next.caseType ? next : v2WithCaseType(next, caseType);
   };
   const selfCards = useMemo(
     () => selfCheckCards(state.caseType, language),
@@ -249,6 +267,11 @@ export default function AmcInteractiveV2() {
     setSelfChecks(initialSelfChecks());
     setEvidenceComparisons({});
     setFifwmAssessment(initialCanonicalFifwmAssessment());
+    // Topic picks from another case family would make the search request invalid.
+    setState(s => {
+      const externalAreas = v2AreasForCase(s.externalAreas, s.caseType);
+      return externalAreas.length === s.externalAreas.length ? s : { ...s, externalAreas };
+    });
   }, [state.caseType]);
   useEffect(() => {
     if (phase !== "report") {
@@ -272,13 +295,14 @@ export default function AmcInteractiveV2() {
     () =>
       demoMode
         ? v2DemoFixture(kind, language).intelligence
-        : (evidenceByLanguage[language] ??
-          evidenceByLanguage[researchLanguage] ??
+        : (v2PickEvidence(evidenceByLanguage, language, researchLanguage) ??
           unavailableIntelligence(state.caseType, language)),
     [demoMode, kind, language, researchLanguage, state.caseType, evidenceByLanguage]
   );
   // Language the evidence wording is actually in (translation when available).
-  const evidenceTextLanguage: V2Language = demoMode || evidenceByLanguage[language] ? language : researchLanguage;
+  const pickedEvidence = v2PickEvidence(evidenceByLanguage, language, researchLanguage);
+  const evidenceTextLanguage: V2Language =
+    demoMode || (pickedEvidence !== null && pickedEvidence === evidenceByLanguage[language]) ? language : researchLanguage;
   const evidencePhase = demoMode
     ? "demo"
     : evidenceLoadingLanguage !== null && evidenceByLanguage[researchLanguage]?.status !== "live"
@@ -862,64 +886,92 @@ export default function AmcInteractiveV2() {
   // fill in as topics arrive; results open after the first usable topic.
   const checkCurrentEvidence = async (onFirstLive?: (outcome: EvidenceOutcome) => void): Promise<EvidenceOutcome | null> => {
     if (demoMode || evidencePending.current) return null;
-    const existing = evidenceByLanguage[language];
-    if (existing?.status === "live")
-      return { result: existing, input, core };
-    const request = buildV2EvidenceRequest({ ...state, language });
-    if (!request) {
+    const fresh = buildV2EvidenceRequest({ ...state, language });
+    if (!fresh) {
       setStep(2);
       setPhase("modules");
       window.scrollTo(0, 0);
       return null;
     }
+    // Same search inputs (interface language aside) continue the last run:
+    // only topics that are missing or failed are searched again (audit M8).
+    const runKey = (r: V2EvidenceRequest) => JSON.stringify({ ...r, language: undefined });
+    const previousRun = topicRun.current?.key === runKey(fresh) ? topicRun.current : null;
+    const missing = previousRun ? v2MissingGroups(previousRun.lives) : [];
+    const resume = !!previousRun && missing.length > 0 && previousRun.lives.some(Boolean);
+    const existing = evidenceByLanguage[language];
+    if (existing?.status === "live" && !resume)
+      return { result: existing, input, core };
+    const request = resume ? previousRun!.request : fresh;
+    const groups = resume ? previousRun!.groups : v2EvidenceGroups(request);
+    const lives: (ExternalIntelligenceV2 | undefined)[] = resume ? [...previousRun!.lives] : groups.map(() => undefined);
+    const toRun = resume ? missing : groups.map((_, i) => i);
+    topicRun.current = { key: runKey(request), request, groups, lives };
     evidencePending.current = true;
     setResearchLanguage(request.language);
     setEvidenceLoadingLanguage(language);
-    const groups = v2EvidenceGroups(request);
-    setTopicStates(groups.map(areas => ({ areas, state: "running" })));
+    setTopicStates(groups.map((areas, i) => ({ areas, state: toRun.includes(i) ? "running" : "done" })));
+    // A new run never shows an older snapshot or translation (audit H3).
+    // Comparisons are keyed by source and area (language-independent), so a
+    // new search that may bring different claims starts without them.
+    if (!resume) {
+      setEvidenceByLanguage({ en: null, ko: null });
+      setEvidenceComparisons({});
+    }
     track(
       "external_evidence_requested",
       {},
       { externalEvidenceMode: "checking" }
     );
     const other: V2Language = request.language === "ko" ? "en" : "ko";
-    const lives: (ExternalIntelligenceV2 | undefined)[] = groups.map(() => undefined);
+    const running = new Set(toRun);
     let lastResult: ExternalIntelligenceV2 | null = null;
-    let first = true;
     const merged = () => mergeV2Evidence(lives.filter((l): l is ExternalIntelligenceV2 => !!l), request);
+    // Topics still in flight are marked pending so they never read as "no evidence" (audit M5).
+    const publish = () => setEvidenceByLanguage(previous =>
+      v2StoreEvidence(previous, request.language, merged(), Array.from(running).flatMap(i => groups[i])));
     const outcomeFor = (result: ExternalIntelligenceV2): EvidenceOutcome => {
       const updatedInput = buildV2Input({ ...state, language: request.language }, result, fifwmAssessment);
       return { result, input: updatedInput, core: buildProductApplicationV3(updatedInput) };
     };
-    await Promise.all(groups.map(async (areas, index) => {
+    let first = true;
+    if (resume) {
+      publish();
+      first = false;
+      onFirstLive?.(outcomeFor(merged()));
+    }
+    await Promise.all(toRun.map(async (index, order) => {
+      const areas = groups[index];
       // Stagger starts so parallel topics do not hit the provider at once.
-      if (index) await new Promise(resolve => setTimeout(resolve, index * 700));
-      const ask = (topicAreas: string[]) => requestV2Evidence({ ...request, externalAreas: topicAreas }, fetch, observation => {
-        setEvidenceHttpByLanguage(previous => ({ ...previous, [request.language]: observation }));
-      });
-      let result = await ask(areas);
+      if (order) await new Promise(resolve => setTimeout(resolve, order * 700));
+      const ask = async (topicAreas: string[]) => {
+        const seen: { observation: V2EvidenceHttpObservation | null } = { observation: null };
+        const result = await requestV2Evidence({ ...request, externalAreas: topicAreas }, fetch, observation => {
+          seen.observation = observation;
+          setEvidenceHttpByLanguage(previous => ({ ...previous, [request.language]: observation }));
+        });
+        // pendingAreas is client-only; never take it from a response.
+        return { result: v2WithoutPending(result), observation: seen.observation };
+      };
+      const firstTry = await ask(areas);
+      let result = firstTry.result;
       // A topic with no usable evidence is retried once, narrower: each item
-      // on its own (issue B1). Two items become two focused searches.
-      if (result.status !== "live") {
+      // on its own (issue B1). Permanent failures are not retried (audit L4).
+      if (v2ShouldRetryTopic(firstTry.observation, result)) {
         const retries = await Promise.all((areas.length > 1 ? areas.map(area => [area]) : [areas]).map(ask));
-        const found = retries.filter(retry => retry.status === "live");
+        const found = retries.map(retry => retry.result).filter(retry => retry.status === "live");
         if (found.length) result = mergeV2Evidence(found, { ...request, externalAreas: areas });
       }
       lastResult = result;
+      running.delete(index);
+      if (result.status === "live") lives[index] = result;
       setTopicStates(previous => previous.map((topic, i) => i === index
         ? { ...topic, state: result.status === "live" ? "done" : "empty" }
         : topic));
-      if (result.status !== "live") return;
-      lives[index] = result;
       // One search may return both languages; store each so the toggle
       // switches wording without searching again.
-      const { translation, ...primary } = merged();
-      setEvidenceByLanguage(previous => ({
-        ...previous,
-        [request.language]: primary,
-        ...(translation ? { [other]: translation } : {}),
-      }));
-      if (first) {
+      if (lives.some(Boolean)) publish();
+      if (result.status === "live" && first) {
         first = false;
         onFirstLive?.(outcomeFor(merged()));
       }
@@ -927,8 +979,8 @@ export default function AmcInteractiveV2() {
     const final = lives.some(Boolean)
       ? merged()
       : (lastResult ?? unavailableIntelligence(request.caseType, request.language));
-    if (!lives.some(Boolean))
-      setEvidenceByLanguage(previous => ({ ...previous, [request.language]: final }));
+    if (lives.some(Boolean)) publish();
+    else setEvidenceByLanguage(previous => ({ ...previous, [request.language]: final, [other]: null }));
     const outcome = outcomeFor(final);
     track(
       final.status === "live"
@@ -1089,7 +1141,7 @@ export default function AmcInteractiveV2() {
                   : Array.from(new Set([state.caseType, ...caseRanking.filter(r => r.score > 0).map(r => r.caseType), "General Career Reconfiguration" as V2CaseType])).slice(0, 3)
                 ).map(c => (
                   <button key={c} type="button" role="radio" aria-checked={state.caseType === c}
-                    onClick={() => { update({ caseType: c, publicSearchTarget: undefined }); setCasePinned(true); }}>
+                    onClick={() => { setState(s => v2WithCaseType(s, c)); setCasePinned(true); }}>
                     <b>{v2CaseLabel(language, c)}</b>
                     <span>{v2CaseDescription(language, c)}</span>
                   </button>

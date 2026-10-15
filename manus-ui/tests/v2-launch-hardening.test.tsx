@@ -776,7 +776,13 @@ describe("round 6: EN toggle, automatic comparison wording", () => {
     const all = JSON.stringify(analysis);
     expect(all).not.toContain("아직 대조하지 않음");
     expect(all).not.toContain("아직 직접 대조되지 않았습니다");
-    expect(analysis.evidenceLinks[0].comparisonLabel).toMatch(/^자동 비교: /);
+    const personal = analysis.evidenceLinks.filter(link => link.conditionGroup !== "public");
+    const market = analysis.evidenceLinks.filter(link => link.conditionGroup === "public");
+    expect(personal.length).toBeGreaterThan(0);
+    for (const link of personal) expect(link.comparisonLabel).toMatch(/^자동 비교: /);
+    // Market statistics are context, never read against personal readiness (audit M6).
+    expect(market.length).toBeGreaterThan(0);
+    for (const link of market) expect(link.comparisonLabel).toMatch(/^시장 참고 자료/);
   });
 });
 
@@ -876,5 +882,65 @@ describe("launch blocker: domestic target without a place name", () => {
     const page = fs.readFileSync(pagePath, "utf8");
     expect(page).toContain('inferV2Geography(s, language) || (language === "ko" ? "한국" : "")');
     expect(page).toContain("3단계로 가서 검색 대상과 지역 적기");
+  });
+});
+
+describe("round 8: evidence dates, evidence-strength labels, competitor reading patterns", () => {
+  it("shows the reference period a page states, and says so when none is stated", async () => {
+    const { v2EvidencePeriod } = await import("../client/src/data/v2Readings");
+    expect(v2EvidencePeriod({ period: "2025년 11월" }, "ko")).toBe("기준: 2025년 11월");
+    expect(v2EvidencePeriod({}, "ko")).toBe("기준 시점 표시 없음");
+    expect(v2EvidencePeriod({ sourceDate: "2026-01-02" }, "en")).toBe("As of: 2026-01-02");
+  });
+
+  it("asks the provider for a stated period and never invents one", () => {
+    const service = fs.readFileSync(path.resolve(__dirname, "../server/externalIntelligenceV2Service.ts"), "utf8");
+    expect(service).toContain('period: { type: "string", minLength: 0, maxLength: 40 }');
+    expect(service).toContain("Never guess a date.");
+  });
+
+  it("names market-evidence levels as evidence strength, not as something the customer lacks", async () => {
+    const { v2ConditionLevel } = await import("../client/src/data/v2Indicators");
+    const fallback = (b: string) => `generic:${b}`;
+    expect(v2ConditionLevel("externalValidation", "weak", "ko", fallback)).toBe("근거가 약함");
+    expect(v2ConditionLevel("externalValidation", "developing", "en", fallback)).toBe("Partly supported");
+    expect(v2ConditionLevel("internalReadiness", "weak", "ko", fallback)).toBe("generic:weak");
+  });
+
+  it("opens with a reading guide and turns a long summary into a lead plus reasons", async () => {
+    const { default: V2ReadingGuide, V2LeadAndReasons } = await import("../client/src/components/V2ReadingGuide");
+    expect(renderToStaticMarkup(<V2ReadingGuide language="ko" />)).toContain("이 결과를 읽는 방법");
+    const html = renderToStaticMarkup(<V2LeadAndReasons language="ko" text="첫 문장입니다. 둘째 이유입니다. 셋째 이유입니다." />);
+    expect(html).toContain("<b>첫 문장입니다.</b>");
+    expect(html).toContain("이렇게 본 이유");
+    expect((html.match(/<li>/g) ?? []).length).toBe(2);
+  });
+});
+
+describe("audit fixes: amounts, evidence matching, market context", () => {
+  it("recognises amounts the same way everywhere and ignores years before Korean words", async () => {
+    const { v2AmountPattern } = await import("../client/src/data/v2Amounts");
+    const hit = (s: string) => s.match(v2AmountPattern)?.[0] ?? null;
+    expect(hit("연간 임금 중앙값: 1억 2,000만 원")).toBe("1억 2,000만 원");
+    expect(hit("1억 2천만 원")).toBe("1억 2천만 원");
+    expect(hit("USD 5,000 per month")).toBe("USD 5,000");
+    expect(hit("5,000 dollars")).toBe("5,000 dollars");
+    expect(hit("2025 원격근무 비율")).toBeNull();
+    expect(hit("2025 엔지니어 채용")).toBeNull();
+  });
+
+  it("does not read an application (지원서) as support evidence", async () => {
+    const { v2Indicators } = await import("../client/src/data/v2Indicators");
+    const support = v2Indicators.find(i => i.key === "optionBSupport")!.evidence!;
+    expect(support.test("EP 지원서 제출 절차")).toBe(false);
+    expect(support.test("정부 지원금 최대 500만 원")).toBe(true);
+  });
+
+  it("treats cost-of-living research as money and market statistics as context", async () => {
+    const { v2ConditionGroup, v2AutoComparison } = await import("../client/src/data/v2EvidenceComparison");
+    expect(v2ConditionGroup("geography")).toBe("finance");
+    expect(v2ConditionGroup("hiringDemand")).toBe("public");
+    expect(v2AutoComparison("caution", "developing", "public")).toBe("context");
+    expect(v2AutoComparison("caution", "developing", "finance")).toBe("watch");
   });
 });
