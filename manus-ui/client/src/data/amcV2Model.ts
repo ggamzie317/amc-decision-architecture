@@ -365,12 +365,11 @@ export function buildV2Input(
   });
   const missing = v2MissingPoint(s.caseType, language);
   const externalArea = selected(s, s.externalAreas);
-  const conditionNames = v2SwitchCandidates(
+  const chosenSwitches = v2SwitchCandidates(
     s,
     unavailableIntelligence(s.caseType, language)
-  )
-    .filter(c => s.switchIds.includes(c.id))
-    .map(c => c.text);
+  ).filter(c => s.switchIds.includes(c.id));
+  const conditionNames = chosenSwitches.map(c => c.text);
   const answers: Record<number, string> = {
     1: decision,
     5: optionA,
@@ -404,6 +403,11 @@ export function buildV2Input(
     decisionConditions: [
       ...conditionNames,
       ...(s.customCondition.trim() ? [s.customCondition.trim()] : []),
+    ].slice(0, 3),
+    // A free-text condition has no known side; it keeps the older wording.
+    decisionConditionSides: [
+      ...chosenSwitches.map(c => c.side),
+      ...(s.customCondition.trim() ? [null] : []),
     ].slice(0, 3),
     validationFocus: externalArea || missing.point,
     externalImplication:
