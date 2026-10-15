@@ -972,3 +972,15 @@ describe("language audit: KO/EN parity", () => {
     }
   });
 });
+
+describe("launch review: joining a startup is not starting a business", () => {
+  it("needs founding words for Entrepreneurship", async () => {
+    const { inferV2CaseType } = await import("../client/src/data/v2CaseInference");
+    const infer = (optionA: string, optionB: string) => inferV2CaseType({ decision: "", optionA, optionB });
+    expect(infer("Product manager at a retail bank", "Product lead at a fintech startup in London")).toBe("Overseas Relocation");
+    expect(infer("개발자", "스타트업 이직")).toBe("Industry Transition");
+    expect(infer("Consultant", "Join a startup as head of growth")).toBe("Industry Transition");
+    expect(infer("IT 기업 기획자", "IT 스타트업 창업")).toBe("Entrepreneurship");
+    expect(infer("Engineer", "Start my own company")).toBe("Entrepreneurship");
+  });
+});

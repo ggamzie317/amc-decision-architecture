@@ -16,7 +16,9 @@ const cues: Record<V2CaseType, Cue[]> = {
     { pattern: /\b(e?mba|phd|ph\.d|master'?s|doctorate)\b|박사|석사|대학원|학위|유학/i, weight: 4, label: "degree" },
   ],
   Entrepreneurship: [
-    { pattern: /창업|스타트업|사업을|개인\s?사업|법인\s?설립|프리랜서|startup|start-up|my own business|found(?:er|ing)|entrepreneur|freelanc/i, weight: 4, label: "venture" },
+    // Founding words decide it. "startup" alone is weak: joining a startup is a job move, not a venture.
+    { pattern: /창업|사업을\s?(?:시작|차리|하)|개인\s?사업|법인\s?설립|프리랜서|자영업|my own (?:business|company)|start(?:ing)? (?:a|my own) (?:business|company|startup)|found(?:er|ing)|co-?found|entrepreneur|freelanc|self-employ/i, weight: 4, label: "venture" },
+    { pattern: /스타트업|startup|start-up/i, weight: 0.5, label: "startup" },
   ],
   "Burnout-driven Decision": [
     { pattern: /번아웃|소진|탈진|휴직|쉬고|지쳐|건강|burn-?out|exhaust|sabbatical|time off/i, weight: 4, label: "burnout" },
@@ -30,7 +32,7 @@ const cues: Record<V2CaseType, Cue[]> = {
   ],
   "Industry Transition": [
     { pattern: /업종|산업|분야를?\s?바|직무\s?전환|커리어\s?전환|다른\s?분야|industry|sector|career (?:change|switch|pivot)/i, weight: 3, label: "industry" },
-    { pattern: /이직|채용|job (?:search|offer)|new job/i, weight: 1, label: "job move" },
+    { pattern: /이직|채용|입사|합류|job (?:search|offer)|new job|join(?:ing)?\b|move to\b/i, weight: 1, label: "job move" },
   ],
   "Corporate Stay vs Exit": [
     { pattern: /퇴사|잔류|그만두|남을지|떠날지|stay or (?:leave|go)|quit|resign|leave (?:my|the) (?:job|company)/i, weight: 3, label: "stay or exit" },
