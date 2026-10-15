@@ -220,7 +220,7 @@ describe("AMC Product Application Layer V3 correction", () => {
       expect(assessment.guardrailApplied).toBe(true);
       expect(assessment.guardrailTriggers).toEqual(guardedCase.triggers);
       expect(result.currentStructuralPosture.label).toBe("Preserve and Validate");
-      expect(result.currentStructuralPosture.sentence).toContain("There is evidence of opportunity in advisory practice");
+      expect(result.currentStructuralPosture.sentence).toContain("There is evidence of opportunity on the new path");
       expect(result.currentStructuralPosture.sentence).toMatch(guardedCase.reason);
       expect(result.why.topDrivers[0]).toBe(result.currentStructuralPosture.sentence);
     }
@@ -374,7 +374,7 @@ describe("AMC Product Application Layer V3 correction", () => {
     expect(korean.currentStructuralPosture.sentence).toContain("부족한 안전 여유, 돌아가기 어려운 상황 및 큰 손실 위험");
     expect(derivePostureAssessment({ ...guardedInput, language: "ko" }).effectivePosture).toBe(derivePostureAssessment(guardedInput).effectivePosture);
     expect(first.decisionSwitches.map((item) => item.signal)).toEqual(guardedInput.decisionConditions);
-    expect(first.decisionSwitches.every((item) => item.direction.includes("look again at the opportunity evidence for advisory practice and the potential loss together"))).toBe(true);
+    expect(first.decisionSwitches.every((item) => item.direction.includes("look again at the opportunity evidence for the new path and the potential loss together"))).toBe(true);
     expect(first.decisionSwitches.every((item) => item.direction.includes("a way to cover a limited safety margin, a hard way back, and a high potential loss is confirmed"))).toBe(true);
     const worseningSwitch = first.decisionSwitches.find((item) => item.signal.includes("stops providing sufficient runway"));
     expect(worseningSwitch?.direction).not.toMatch(/strengthens? the opportunity/i);
@@ -398,8 +398,8 @@ describe("AMC Product Application Layer V3 correction", () => {
     const koreanReport = renderToStaticMarkup(React.createElement(ProductApplicationReport, koreanProps));
     expect(dashboard).toContain("Preserve and Validate");
     expect(report).toContain("Preserve and Validate");
-    expect(dashboard).toContain("There is evidence of opportunity in advisory practice");
-    expect(report).toContain("There is evidence of opportunity in advisory practice");
+    expect(dashboard).toContain("There is evidence of opportunity on the new path");
+    expect(report).toContain("There is evidence of opportunity on the new path");
     expect(dashboard).toContain("If this condition changes, look again at");
     expect(report).toContain("If this condition changes, look again at");
     expect(koreanDashboard).toContain("기회 근거와 손실 위험을 함께 다시 봅니다");
