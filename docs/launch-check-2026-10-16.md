@@ -427,3 +427,11 @@ Format: location / current KO / current EN / problem / proposed KO / proposed EN
 - 통합 실검색 1회(2호출, 이번 묶음 누적 10회): 수집 중 인쇄 버튼 비활성 "근거 수집 중" + 인쇄용 미완성 표시 → 약 90초 후 해제, 근거 6건·4주제, 핵심 숫자 "2,220만 원", 판단 전환 방향 정상, 표시 넘침 0/24, EN 전환 시 추가 검색 0 — PASS.
 - 새로 확인된 문제(수정 안 함): EN 핵심 숫자가 "KRW 22.2 million"을 "KRW 22.2"로 표시. 금액 패턴의 ISO 코드 분기가 million/billion을 포함하지 않음(`client/src/data/v2Amounts.ts`). 릴리스 이전부터 있던 문제. 지금 고치면 릴리스 검증을 다시 해야 하므로 다음 묶음으로 제안.
 - 지인 공유 조건 1(릴리스 Preview 실검색) 완료. 남은 조건: Production 배포 승인(#122, SHA `b32ef79`, 위 Preview), 문구 결정(W1·W3·W4, 고지 4건), 지인 안내, 콘솔 확인.
+
+### Production 배포 (2026-10-16, 소유자 승인)
+
+- 승인 내용: PR #122, 커밋 `b32ef7947e3bc53e14e16f6bbc693e8f9ece694d`, 검증 Preview `amc-decision-architecture-fhjo1o8xl`. 문구(W1·W3·W4, 고지 4건)는 그대로 두고 문구 검토로 넘김.
+- 병합 커밋 `2f0bf48` → Production 배포 성공(GitHub 배포 기록 SHA 일치).
+- 운영 확인(유료 호출 없음): `/amc-web-mvp`·`/amc-interactive-v1`·`/intake`·`/payment-success` → 307 `/amc-interactive-v2`(쿼리 유지), V2 200, `external-snapshot` 410, ops/track 원문 400·식별 없음 400(저장 전 거부), 새 번들에 미완성 표시 문구 포함, 초안 경로 대시보드·보고서까지 정상(오류 문자열 0, 가로 넘침 없음, 판단 전환 방향 정상, 검색 호출 0).
+- 운영 테스트 기록: `AMC-20261016-4F0934D5` (합성 입력, 연구 동의 해제, 초안 경로).
+- 되돌리기: Vercel에서 직전 배포(`2df6d9a`) 승격, 또는 `git revert -m 1 2f0bf48`.
