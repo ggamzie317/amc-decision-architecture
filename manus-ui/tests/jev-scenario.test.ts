@@ -324,7 +324,7 @@ describe("approved JEV boundary", () => {
   });
 });
 describe("interactive privacy", () => {
-  it("projects all narrative locations out at client and server, with persistent schema downgrade protection", async () => {
+  it("refuses raw-text columns, projects all other narrative locations out at client and server, with persistent schema downgrade protection", async () => {
     const { store, id } = await setup();
     const secret = "PRIVATE_CUSTOMER_SENTINEL";
     const malicious = {
@@ -352,23 +352,75 @@ describe("interactive privacy", () => {
     expect(JSON.stringify(projectInteractivePatch(malicious))).not.toContain(
       secret
     );
+    const untouched = await store.getSubmission(id);
+    expect(
+      await trackFounderOps(
+        {
+          submissionId: id,
+          serviceStorageConsent: true,
+          eventType: "dashboard_generated",
+          patch: malicious,
+          metadata: { raw: secret, requestId: secret },
+        },
+        store
+      )
+    ).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(await store.getSubmission(id)).toEqual(untouched);
+    // Narrative inside allowlisted structural columns is projected away.
     await trackFounderOps(
       {
         submissionId: id,
         serviceStorageConsent: true,
         eventType: "dashboard_generated",
-        patch: malicious,
+        patch: { structuralOutputJson: malicious.structuralOutputJson },
         metadata: { raw: secret, requestId: secret },
       },
       store
     );
+    expect(
+      await trackFounderOps(
+        {
+          submissionId: id,
+          serviceStorageConsent: true,
+          eventType: "detailed_report_opened",
+          patch: {
+            answersJson: { 1: secret },
+            structuralOutputJson: {
+              experienceVersion: "legacy",
+              intakeSchemaVersion: "29",
+              why: secret,
+            },
+          },
+        },
+        store
+      )
+    ).toMatchObject({ stored: false, reason: "raw_text_not_accepted" });
+    // A schema downgrade without any interactive marker is refused...
+    expect(
+      await trackFounderOps(
+        {
+          submissionId: id,
+          serviceStorageConsent: true,
+          eventType: "detailed_report_opened",
+          patch: {
+            structuralOutputJson: {
+              experienceVersion: "legacy",
+              intakeSchemaVersion: "29",
+              why: secret,
+            },
+          },
+        },
+        store
+      )
+    ).toMatchObject({ stored: false, reason: "unsupported_client" });
+    // ...and with one, the stored interactive identity persists.
     await trackFounderOps(
       {
         submissionId: id,
         serviceStorageConsent: true,
         eventType: "detailed_report_opened",
+        metadata: identity,
         patch: {
-          answersJson: { 1: secret },
           structuralOutputJson: {
             experienceVersion: "legacy",
             intakeSchemaVersion: "29",
@@ -395,7 +447,7 @@ describe("interactive privacy", () => {
         .completedAnswerCountMismatch
     ).toBe(0);
   });
-  it("does not consider missing session completion valid and retains legacy answer behavior", async () => {
+  it("does not consider missing session completion valid and refuses legacy written answers without touching stored legacy data", async () => {
     const { store, id } = await setup();
     const row = store.submissions.get(id)!;
     row.answersJson = Object.fromEntries(
@@ -406,17 +458,36 @@ describe("interactive privacy", () => {
     delete row.structuralOutputJson.completedIntakeQuestionCount;
     expect(buildDataQuality([row]).completeFullIntake).toBe(0);
     const legacy = await store.createSubmission("ko", true);
-    await trackFounderOps(
-      {
-        submissionId: legacy.submissionId,
-        serviceStorageConsent: true,
-        eventType: "full_intake_completed",
-        patch: { answersJson: { 1: "legacy written answer" } },
-      },
-      store
-    );
-    expect(store.submissions.get(legacy.submissionId)?.answersJson[1]).toBe(
-      "legacy written answer"
+    expect(
+      await trackFounderOps(
+        {
+          submissionId: legacy.submissionId,
+          serviceStorageConsent: true,
+          eventType: "full_intake_completed",
+          patch: { answersJson: { 1: "legacy written answer" } },
+        },
+        store
+      )
+    ).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(store.submissions.get(legacy.submissionId)?.answersJson).toEqual({});
+    await store.updateSubmission(legacy.submissionId, {
+      answersJson: { 1: "historical legacy answer" },
+    });
+    const legacySnapshot = await store.getSubmission(legacy.submissionId);
+    expect(
+      await trackFounderOps(
+        {
+          submissionId: legacy.submissionId,
+          serviceStorageConsent: true,
+          eventType: "full_intake_completed",
+          metadata: identity,
+          patch: { structuralOutputJson: identity },
+        },
+        store
+      )
+    ).toEqual({ ok: false, stored: false, reason: "legacy_record" });
+    expect(await store.getSubmission(legacy.submissionId)).toEqual(
+      legacySnapshot
     );
     expect(
       projectInteractiveMetadata({ optionA: "PRIVATE", probability: 0.7 })

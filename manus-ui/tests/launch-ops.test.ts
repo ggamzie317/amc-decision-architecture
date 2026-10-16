@@ -6,6 +6,7 @@ import {
 import { MemoryFounderOpsStore } from "../server/founderOpsStore";
 import { buildResearchSummary } from "../server/founderOpsAnalytics";
 import { trackFounderOps } from "../server/founderOpsApi";
+import { v2Identity } from "../shared/interactivePrivacy";
 import {
   ADMIN_COOKIE_NAME,
   createAdminSession,
@@ -446,12 +447,17 @@ describe("Launch Ops privacy and provider event persistence", () => {
         serviceStorageConsent: true,
         eventType: "external_evidence_requested",
         metadata: {
-          requestId: "test",
+          ...v2Identity,
+          requestId: "0f8b6c1e-6d1a-4f43-9c1b-2a7e5d3c9b10",
           providerObservation: { status: "live" },
         },
       },
       store
     );
-    expect(store.events[0].metadataJson).toEqual({ requestId: "test" });
+    expect(store.events[0].metadataJson).toEqual({
+      ...v2Identity,
+      requestId: "0f8b6c1e-6d1a-4f43-9c1b-2a7e5d3c9b10",
+    });
+    expect(store.events[0].metadataJson).not.toHaveProperty("providerObservation");
   });
 });

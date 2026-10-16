@@ -24,6 +24,10 @@ import {
   handleTrack,
   type ApiResponse,
 } from "../server/vercelFounderOps";
+import { v2Identity } from "../shared/interactivePrivacy";
+
+// The public route stores only interactive-client (allowlisted) payloads.
+const v2Request = { metadata: { ...v2Identity } };
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -37,6 +41,7 @@ describe("founder operations storage", () => {
         language: "en",
         serviceStorageConsent: true,
         eventType: "preview_started",
+        ...v2Request,
         patch: { currentStage: "preview_started" },
       },
       store
@@ -50,6 +55,7 @@ describe("founder operations storage", () => {
         language: "en",
         serviceStorageConsent: true,
         eventType: "full_intake_started",
+        ...v2Request,
         patch: { currentStage: "full_intake_started" },
       },
       store
@@ -72,6 +78,7 @@ describe("founder operations storage", () => {
         language: "en",
         serviceStorageConsent: true,
         eventType: "preview_started",
+        ...v2Request,
       },
       getFounderOpsStore()
     );
@@ -113,6 +120,7 @@ describe("founder operations storage", () => {
           language: "en",
           serviceStorageConsent: true,
           eventType: "preview_started",
+          ...v2Request,
         },
       },
       response.response,
