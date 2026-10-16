@@ -75,7 +75,7 @@ describe("external snapshot service", () => {
 });
 
 describe("retired legacy pages", () => {
-  it("redirects /amc-web-mvp and its old aliases to V2 on the server", () => {
+  it("redirects /amc-web-mvp, /amc-interactive-v1 and the old aliases to V2 on the server", () => {
     const config = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8")) as {
       redirects: Array<{ source: string; destination: string; permanent: boolean }>;
     };
@@ -83,14 +83,15 @@ describe("retired legacy pages", () => {
       .filter(r => r.destination === "/amc-interactive-v2" && r.permanent === false)
       .map(r => r.source);
     expect(sources).toEqual(
-      expect.arrayContaining(["/amc-web-mvp", "/intake", "/format-handoff", "/payment-handoff", "/payment-success"]),
+      expect.arrayContaining(["/amc-web-mvp", "/amc-interactive-v1", "/intake", "/format-handoff", "/payment-handoff", "/payment-success"]),
     );
   });
 
   it("redirects the same paths to V2 in the client router", () => {
     const app = fs.readFileSync(path.join(root, "client/src/App.tsx"), "utf8");
     expect(app).toContain('<Route path={"/amc-web-mvp"} component={LegacyProductRedirect} />');
-    expect(app).not.toContain("component={AmcWebMvp}");
+    expect(app).toContain('<Route path="/amc-interactive-v1" component={LegacyProductRedirect} />');
+    expect(app).not.toContain("AmcWebMvp");
     expect(app).toContain("<Redirect to={`/amc-interactive-v2${");
     expect(app).not.toContain('<Redirect to="/amc-web-mvp"');
   });
