@@ -10,6 +10,8 @@
  * rendered with the real React (renderToStaticMarkup) to check their output.
  * fetch and the ops tracker are mocked: no network call is made.
  */
+import fs from "node:fs";
+import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -263,6 +265,10 @@ describe("dashboard_generated waits for every topic", () => {
     const blocked = reportPrint();
     expect(blocked.disabled).toBe(true);
     expect(blocked.print).toContain("Collecting evidence");
+    // A keyboard print cannot be blocked: page 1 carries a print-only notice.
+    const blockedHtml = renderToStaticMarkup(React.createElement(V2Report, one(V2Report).props));
+    expect(blockedHtml).toContain('<p class="v2-print-incomplete" role="note">Evidence still loading · Incomplete report</p>');
+    expect(blockedHtml.indexOf("v2-print-incomplete")).toBeLessThan(blockedHtml.indexOf("v2-cover"));
     one(V2Report).props.onPrint();
     expect((window as any).print).not.toHaveBeenCalled();
     expect(events("print_save_clicked")).toHaveLength(0);
@@ -284,6 +290,7 @@ describe("dashboard_generated waits for every topic", () => {
     const open = reportPrint();
     expect(open.disabled).toBe(false);
     expect(open.print).toContain("Print / save PDF");
+    expect(renderToStaticMarkup(React.createElement(V2Report, one(V2Report).props))).not.toContain("v2-print-incomplete");
     one(V2Report).props.onPrint();
     expect((window as any).print).toHaveBeenCalledTimes(1);
     // Nothing failed, so no retry button.
@@ -306,9 +313,22 @@ describe("dashboard_generated waits for every topic", () => {
     expect(trace.props.printBlocked).toBe(true);
     const html = renderToStaticMarkup(React.createElement(V2DecisionTracePanel, trace.props));
     expect(html).toMatch(/<button type="button" disabled="">[\s\S]*?Collecting evidence<\/button>/);
+    // "Save as file" waits for the same condition, and print shows the notice.
+    expect(html).toMatch(/<button type="button" disabled="">[\s\S]*?Save as file<\/button>/);
+    expect(html).toContain('<p class="v2-print-incomplete" role="note">Evidence still loading · Incomplete report</p>');
     for (const call of calls.slice(1)) call.resolve(liveResponse(bodyOf(call)));
     await waitFor(() => events("dashboard_generated").length === 1);
     expect(one(V2DecisionTracePanel).props.printBlocked).toBe(false);
+    const done = renderToStaticMarkup(React.createElement(V2DecisionTracePanel, one(V2DecisionTracePanel).props));
+    expect(done).not.toContain("v2-print-incomplete");
+    expect(done).not.toMatch(/<button type="button" disabled="">[\s\S]*?Save as file<\/button>/);
+  });
+
+  it("the incomplete-report notice is hidden on screen and shown in print", () => {
+    const css = fs.readFileSync(path.join(import.meta.dirname, "../client/src/styles/v2-analysis.css"), "utf8");
+    expect(css).toMatch(/\.v2-print-incomplete \{\s*display: none;/);
+    expect(css).toMatch(/@media print \{\s*\.v2-print-incomplete \{\s*display: block;/);
+    expect(v2t("ko", "evidenceIncomplete")).toBe("근거 수집 중 · 미완성 보고서");
   });
 });
 

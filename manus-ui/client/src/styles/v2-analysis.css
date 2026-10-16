@@ -1690,3 +1690,21 @@ figcaption .v2-chart-question, .v2-insight-panel-head .v2-chart-question, .v2-in
 .v2-ind-reading .v2-ind-cond, .v2-ind-reading .v2-ind-how { display: grid; grid-template-columns: 84px 1fr; gap: 6px; align-items: start; }
 .v2-ind-reading .v2-ind-cond b, .v2-ind-reading .v2-ind-how b { min-width: 0; margin: 0; }
 @media print { .v2-ind-reading .v2-ind-cond, .v2-ind-reading .v2-ind-how { grid-template-columns: 70px 1fr; } }
+
+/* Incomplete-report notice: print only, while a topic is still collecting
+   (owner decision 2026-10-16). The on-screen buttons already say so. */
+.v2-print-incomplete {
+  display: none;
+}
+@media print {
+  .v2-print-incomplete {
+    display: block;
+    margin: 0 0 4mm;
+    padding: 2.5mm 4mm;
+    border: 1.5px solid #9a3412;
+    color: #7c2d12;
+    font-size: 11pt;
+    font-weight: 700;
+    break-inside: avoid;
+  }
+}

@@ -283,6 +283,8 @@ export default function V2Report({
         say("핵심 요약", "Summary"),
         analysis.topic,
         <>
+          {/* Shown only in print: a keyboard print (Cmd/Ctrl+P) cannot be blocked. */}
+          {printBlocked && <p className="v2-print-incomplete" role="note">{t("evidenceIncomplete")}</p>}
           <div className="v2-cover">
             <div>
               <p>
