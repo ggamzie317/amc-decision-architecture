@@ -66,6 +66,7 @@ export default function V2Report({
   evidenceLanguage = state.language,
   onClose,
   onPrint,
+  printBlocked = false,
 }: {
   state: V2State;
   input: ProductApplicationBuildInput;
@@ -80,6 +81,8 @@ export default function V2Report({
   evidenceLanguage?: V2State["language"];
   onClose: () => void;
   onPrint: () => void;
+  /** True while a topic is still collecting: a printout would be incomplete. */
+  printBlocked?: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const t = (k: V2CopyKey) => v2t(state.language, k),
@@ -271,8 +274,8 @@ export default function V2Report({
               )
             : t("report")}
         </span>
-        <button onClick={onPrint} disabled={evidencePhase === "loading"}>
-          {t("print")}
+        <button onClick={onPrint} disabled={evidencePhase === "loading" || printBlocked}>
+          {printBlocked ? t("evidenceCollecting") : t("print")}
         </button>
       </div>
       {page(
@@ -280,6 +283,8 @@ export default function V2Report({
         say("핵심 요약", "Summary"),
         analysis.topic,
         <>
+          {/* Shown only in print: a keyboard print (Cmd/Ctrl+P) cannot be blocked. */}
+          {printBlocked && <p className="v2-print-incomplete" role="note">{t("evidenceIncomplete")}</p>}
           <div className="v2-cover">
             <div>
               <p>
