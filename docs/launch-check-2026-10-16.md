@@ -419,3 +419,11 @@ Format: location / current KO / current EN / problem / proposed KO / proposed EN
 5. 소유자 콘솔 확인: Perplexity 잔액·자동 충전(검색 API에 요청 제한이 없으므로 링크가 퍼질 때 비용 상한 역할), Vercel Hobby 비상업 조건.
 
 지인 시험에서 알려진 채로 둘 수 있는 것(공유 시 안내 권장): 일부 사례 유형 자동 추정 오류(고객이 바꿀 수 있음, 예: "burned out", "핀테크 스타트업 PM", "프리랜서"), Corporate Stay "놓치기 쉬운 조건" 문장 반복, PDF 9장 제목만 페이지 끝에 남는 경우, 모바일 비교표가 좁음, 부분 실패 시 대시보드에 실패 주제 표시 없음, 머무름 쪽 전환 문장 어색함(W6), 알 수 없는 주소의 영문 404.
+
+### 릴리스 검증 (2026-10-16, PR #122)
+
+- 릴리스 브랜치 `release/2026-10-16` = `b32ef79` (#116~#121, CSS 충돌 1건 해결). Preview `https://amc-decision-architecture-fhjo1o8xl-allofmycareer.vercel.app`.
+- 유료 호출 없는 확인: 레거시 경로 6개 서버 리디렉트, `external-snapshot` 410, ops/track 원문 400·식별 없음 400·정상 200 — PASS.
+- 통합 실검색 1회(2호출, 이번 묶음 누적 10회): 수집 중 인쇄 버튼 비활성 "근거 수집 중" + 인쇄용 미완성 표시 → 약 90초 후 해제, 근거 6건·4주제, 핵심 숫자 "2,220만 원", 판단 전환 방향 정상, 표시 넘침 0/24, EN 전환 시 추가 검색 0 — PASS.
+- 새로 확인된 문제(수정 안 함): EN 핵심 숫자가 "KRW 22.2 million"을 "KRW 22.2"로 표시. 금액 패턴의 ISO 코드 분기가 million/billion을 포함하지 않음(`client/src/data/v2Amounts.ts`). 릴리스 이전부터 있던 문제. 지금 고치면 릴리스 검증을 다시 해야 하므로 다음 묶음으로 제안.
+- 지인 공유 조건 1(릴리스 Preview 실검색) 완료. 남은 조건: Production 배포 승인(#122, SHA `b32ef79`, 위 Preview), 문구 결정(W1·W3·W4, 고지 4건), 지인 안내, 콘솔 확인.
