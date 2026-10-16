@@ -20,6 +20,7 @@ import {
 import type { ExternalSnapshot } from "../client/src/data/customerLanguageFirewall";
 import { trackFounderOps } from "../server/founderOpsApi";
 import { MemoryFounderOpsStore } from "../server/founderOpsStore";
+import { projectInteractivePatch, v2Identity } from "../shared/interactivePrivacy";
 
 const root = path.basename(process.cwd()) === "manus-ui" ? path.resolve(process.cwd(), "..") : path.resolve(process.cwd());
 
@@ -241,7 +242,7 @@ describe("AMC current-web structural signal runtime", () => {
     expect(productViews).not.toContain('translate("Developing", "Developing")');
   });
 
-  it("persists structured posture basis separately from raw answers without a schema change", async () => {
+  it("persists the structured posture basis as bands only and refuses raw answers, without a schema change", async () => {
     const snapshot = externalSnapshot("strong");
     const runtime = buildCurrentCaseStructuralSignals({
       externalSnapshot: snapshot,
@@ -267,23 +268,42 @@ describe("AMC current-web structural signal runtime", () => {
       serviceStorageConsent: true,
       eventType: "preview_started",
       newSubmission: true,
+      metadata: { ...v2Identity },
     }, store);
+    expect(created).toMatchObject({ ok: true, stored: true });
+    const before = await store.getSubmission(created.submissionId!);
+
+    // Raw answers (and the derived patch's raw-text columns) are refused outright.
+    const refused = await trackFounderOps({
+      submissionId: created.submissionId,
+      language: "en",
+      serviceStorageConsent: true,
+      eventType: "dashboard_generated",
+      metadata: { ...v2Identity },
+      patch: { ...derivedPatch, structuralOutputJson: { ...derivedPatch.structuralOutputJson, ...v2Identity }, answersJson: rawAnswers },
+    }, store);
+    expect(refused).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(await store.getSubmission(created.submissionId!)).toEqual(before);
+
+    // The structural posture basis alone is stored as allowlisted bands.
     await trackFounderOps({
       submissionId: created.submissionId,
       language: "en",
       serviceStorageConsent: true,
       eventType: "dashboard_generated",
-      patch: { ...derivedPatch, answersJson: rawAnswers },
+      metadata: { ...v2Identity },
+      patch: projectInteractivePatch({ ...derivedPatch, structuralOutputJson: { ...derivedPatch.structuralOutputJson, ...v2Identity } }),
     }, store);
 
     const persisted = await store.getSubmission(created.submissionId!);
-    expect(persisted?.submission.answersJson).toEqual(rawAnswers);
-    expect(persisted?.submission.structuralOutputJson.postureBasis).toMatchObject({
-      internalReadiness: { band: "strong", source: "current-user-structured" },
-      optionBSupport: { band: "developing", source: "current-user-structured" },
-      constraintLoad: { band: "material", source: "current-user-structured" },
-      missingPointImpact: { band: "unknown", source: "unavailable" },
+    expect(persisted?.submission.answersJson).toEqual({});
+    expect(persisted?.submission.structuralOutputJson.baselineBands).toMatchObject({
+      internalReadiness: "strong",
+      optionBSupport: "developing",
+      constraintLoad: "material",
     });
+    expect(persisted?.submission.structuralOutputJson).not.toHaveProperty("postureBasis");
+    expect(JSON.stringify(persisted)).not.toContain("Free-text");
 
     const changedRuntime = buildCurrentCaseStructuralSignals({
       externalSnapshot: snapshot,

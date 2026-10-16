@@ -17,6 +17,7 @@ import {
 import type { ExternalSnapshot } from "../client/src/data/customerLanguageFirewall";
 import { trackFounderOps } from "../server/founderOpsApi";
 import { MemoryFounderOpsStore } from "../server/founderOpsStore";
+import { projectInteractivePatch, v2Identity } from "../shared/interactivePrivacy";
 
 const ACTIVE_ID_KEY = "amc_launch_v3_active_submission_id";
 const LEGACY_ID_KEY = "amc_launch_v3_submission_id";
@@ -53,6 +54,18 @@ function createStoreBackedTracker(
   });
 }
 
+// Shaped like the V2 client's track(): identity marker plus the projected
+// (allowlisted) patch; the public route refuses anything else.
+function v2Patch(patch: Record<string, unknown> = {}) {
+  return projectInteractivePatch({
+    ...patch,
+    structuralOutputJson: {
+      ...v2Identity,
+      ...((patch.structuralOutputJson as object) || {}),
+    },
+  });
+}
+
 function journeyEvent(
   eventType: TrackJourneyInput["eventType"],
   patch: Record<string, unknown> = {},
@@ -61,14 +74,9 @@ function journeyEvent(
     eventType,
     language: "en",
     serviceStorageConsent: true,
-    patch,
+    metadata: { ...v2Identity },
+    patch: v2Patch(patch),
   };
-}
-
-function allAnswers(prefix: string) {
-  return Object.fromEntries(
-    Array.from({ length: 29 }, (_, index) => [index + 1, `${prefix} answer ${index + 1}`]),
-  );
 }
 
 function externalSnapshot(
@@ -159,7 +167,11 @@ describe("Founder Ops journey lifecycle", () => {
 
     await track({ ...journeyEvent("preview_started"), newSubmission: true });
     const journeyA = sessionStorage.getItem(ACTIVE_ID_KEY)!;
-    await track(journeyEvent("full_intake_completed", { answersJson: allAnswers("Journey A") }));
+    await track(journeyEvent("full_intake_completed", {
+      caseType: "Entrepreneurship",
+      fullIntakeCompletedAt: new Date().toISOString(),
+      structuralOutputJson: { baselineBands: { financialRoom: "strong" } },
+    }));
     await track(journeyEvent("dashboard_generated", { structuralOutputJson: { changingPlays: [] } }));
     await track(journeyEvent("detailed_report_opened"));
     await track(journeyEvent("print_save_clicked"));
@@ -167,13 +179,34 @@ describe("Founder Ops journey lifecycle", () => {
 
     await track({ ...journeyEvent("preview_started"), newSubmission: true });
     const journeyB = sessionStorage.getItem(ACTIVE_ID_KEY)!;
-    await track(journeyEvent("full_intake_completed", { answersJson: allAnswers("Journey B") }));
+    await track(journeyEvent("full_intake_completed", {
+      caseType: "Overseas Relocation",
+      fullIntakeCompletedAt: new Date().toISOString(),
+      structuralOutputJson: { baselineBands: { financialRoom: "weak" } },
+    }));
     await track(journeyEvent("dashboard_generated", { structuralOutputJson: { changingPlays: [{ family: "resource" }] } }));
 
+    expect(journeyA).toMatch(/^AMC-/);
     expect(journeyB).not.toBe(journeyA);
     expect(store.submissions).toHaveLength(2);
     expect(await store.getSubmission(journeyA)).toEqual(journeyASnapshot);
-    expect((await store.getSubmission(journeyB))?.submission.answersJson).toEqual(allAnswers("Journey B"));
+    expect(journeyASnapshot?.submission).toMatchObject({
+      caseType: "Entrepreneurship",
+      structuralOutputJson: { baselineBands: { financialRoom: "strong" }, changingCount: 0 },
+    });
+    expect(journeyASnapshot?.events.map(event => event.eventType)).toEqual([
+      "preview_started",
+      "full_intake_completed",
+      "dashboard_generated",
+      "detailed_report_opened",
+      "print_save_clicked",
+    ]);
+    const journeyBRecord = (await store.getSubmission(journeyB))?.submission;
+    expect(journeyBRecord).toMatchObject({
+      caseType: "Overseas Relocation",
+      structuralOutputJson: { baselineBands: { financialRoom: "weak" }, changingCount: 1 },
+    });
+    expect(journeyBRecord?.answersJson).toEqual({});
   });
 
   it("resumes one active journey after refresh without duplicating preview_started", async () => {
@@ -187,6 +220,7 @@ describe("Founder Ops journey lifecycle", () => {
     await refreshedPage({ ...journeyEvent("preview_started"), newSubmission: true });
     await refreshedPage(journeyEvent("full_intake_started"));
 
+    expect(activeId).toMatch(/^AMC-/);
     expect(store.submissions).toHaveLength(1);
     expect(sessionStorage.getItem(ACTIVE_ID_KEY)).toBe(activeId);
     expect((await store.getSubmission(activeId!))?.events.map(event => event.eventType)).toEqual([
@@ -206,6 +240,7 @@ describe("Founder Ops journey lifecycle", () => {
     const track = createStoreBackedTracker(store, sessionStorage, legacyStorage);
     await track({ ...journeyEvent("preview_started"), newSubmission: true });
 
+    expect(sessionStorage.getItem(ACTIVE_ID_KEY)).toMatch(/^AMC-/);
     expect(sessionStorage.getItem(ACTIVE_ID_KEY)).not.toBe(historical.submissionId);
     expect(legacyStorage.getItem(LEGACY_ID_KEY)).toBeNull();
     expect(await store.getSubmission(historical.submissionId)).toEqual(historicalSnapshot);
@@ -218,12 +253,13 @@ describe("Founder Ops journey lifecycle", () => {
     await track({ ...journeyEvent("preview_started"), newSubmission: true });
     const firstId = sessionStorage.getItem(ACTIVE_ID_KEY)!;
 
-    const completed = track(journeyEvent("dashboard_generated", { caseType: "First" }));
-    const nextPreview = track({ ...journeyEvent("preview_started", { caseType: "Second" }), newSubmission: true });
+    const completed = track(journeyEvent("dashboard_generated", { caseType: "Entrepreneurship" }));
+    const nextPreview = track({ ...journeyEvent("preview_started", { caseType: "Overseas Relocation" }), newSubmission: true });
     const nextIntake = track(journeyEvent("full_intake_started"));
     await Promise.all([completed, nextPreview, nextIntake]);
     const secondId = sessionStorage.getItem(ACTIVE_ID_KEY)!;
 
+    expect(firstId).toMatch(/^AMC-/);
     expect(secondId).not.toBe(firstId);
     expect((await store.getSubmission(firstId))?.events.map(event => event.eventType)).toEqual([
       "preview_started",
@@ -267,9 +303,11 @@ describe("Founder Ops journey lifecycle", () => {
       language: "en",
       serviceStorageConsent: true,
       eventType: "preview_started",
-      patch: { caseType: "New case" },
+      metadata: { ...v2Identity },
+      patch: v2Patch({ caseType: "Entrepreneurship" }),
     }, store);
 
+    expect(result).toMatchObject({ ok: true, stored: true });
     expect(result.submissionId).not.toBe(historical.submissionId);
     expect(await store.getSubmission(historical.submissionId)).toEqual(historicalSnapshot);
     expect(store.submissions).toHaveLength(2);
@@ -277,41 +315,66 @@ describe("Founder Ops journey lifecycle", () => {
 });
 
 describe("Founder Ops final derived-state synchronization", () => {
-  it("persists the recomputed posture and Changing plays after terminal live evidence", async () => {
+  const startJourney = (store: MemoryFounderOpsStore) => trackFounderOps({
+    language: "en",
+    serviceStorageConsent: true,
+    eventType: "preview_started",
+    newSubmission: true,
+    metadata: { ...v2Identity },
+    patch: v2Patch(),
+  }, store);
+
+  it("refuses the legacy derived patch, which carries raw-text columns, and stores nothing from it", async () => {
     const store = new MemoryFounderOpsStore();
-    const created = await trackFounderOps({
+    const created = await startJourney(store);
+    const before = await store.getSubmission(created.submissionId!);
+    const result = await trackFounderOps({
+      submissionId: created.submissionId,
       language: "en",
       serviceStorageConsent: true,
-      eventType: "preview_started",
-      newSubmission: true,
+      eventType: "dashboard_generated",
+      metadata: { ...v2Identity },
+      patch: { ...derivedPatch("developing", "live"), answersJson: { 1: "Current case" } },
     }, store);
+    expect(result).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(await store.getSubmission(created.submissionId!)).toEqual(before);
+  });
+
+  it("persists the recomputed posture and Changing plays after terminal live evidence", async () => {
+    const store = new MemoryFounderOpsStore();
+    const created = await startJourney(store);
     const initial = derivedPatch("unknown", "unverified", "developing");
     const final = derivedPatch("developing", "live", "developing");
-    const answersJson = { 1: "Current case", 19: "Six months", 20: "Strong return", 21: "Capped" };
     expect(initial.structuralOutputJson.changingPlays).toHaveLength(1);
     expect(final.structuralOutputJson.changingPlays).toHaveLength(2);
+    const initialV2 = v2Patch(initial);
+    const finalV2 = v2Patch(final);
+    expect(finalV2.structuralOutputJson).not.toEqual(initialV2.structuralOutputJson);
 
     await trackFounderOps({
       submissionId: created.submissionId,
       language: "en",
       serviceStorageConsent: true,
       eventType: "dashboard_generated",
-      patch: { ...initial, answersJson },
+      metadata: { ...v2Identity },
+      patch: initialV2,
     }, store);
     await trackFounderOps({
       submissionId: created.submissionId,
       language: "en",
       serviceStorageConsent: true,
       eventType: "external_evidence_live",
-      metadata: { derivedAnalysisSynced: true },
-      patch: final,
+      metadata: { ...v2Identity, derivedAnalysisSynced: true },
+      patch: finalV2,
     }, store);
 
     const persisted = await store.getSubmission(created.submissionId!);
-    expect(persisted?.submission.structuralOutputJson).toEqual(final.structuralOutputJson);
+    expect(persisted?.submission.structuralOutputJson).toEqual(finalV2.structuralOutputJson);
+    expect(persisted?.submission.structuralOutputJson.changingCount).toBe(2);
     expect(persisted?.submission.externalEvidenceMode).toBe("live");
-    expect(persisted?.submission.externalEvidenceJson).toEqual(final.externalEvidenceJson);
-    expect(persisted?.submission.answersJson).toEqual(answersJson);
+    expect(persisted?.submission.externalEvidenceJson).toEqual({});
+    expect(persisted?.submission.answersJson).toEqual({});
+    expect(persisted?.submission.missingPoint).toBeNull();
     expect(persisted?.events.at(-1)).toMatchObject({
       eventType: "external_evidence_live",
       metadataJson: { derivedAnalysisSynced: true },
@@ -320,12 +383,7 @@ describe("Founder Ops final derived-state synchronization", () => {
 
   it("clears stale alternatives when the final current-case result has zero Changing plays", async () => {
     const store = new MemoryFounderOpsStore();
-    const created = await trackFounderOps({
-      language: "en",
-      serviceStorageConsent: true,
-      eventType: "preview_started",
-      newSubmission: true,
-    }, store);
+    const created = await startJourney(store);
     const provisional = derivedPatch("developing", "live");
     const final = derivedPatch("strong", "live");
     expect(provisional.structuralOutputJson.changingPlays).toHaveLength(1);
@@ -337,18 +395,22 @@ describe("Founder Ops final derived-state synchronization", () => {
       language: "en",
       serviceStorageConsent: true,
       eventType: "dashboard_generated",
-      patch: provisional,
+      metadata: { ...v2Identity },
+      patch: v2Patch(provisional),
     }, store);
+    expect((await store.getSubmission(created.submissionId!))?.submission.structuralOutputJson.changingCount).toBe(1);
     await trackFounderOps({
       submissionId: created.submissionId,
       language: "en",
       serviceStorageConsent: true,
       eventType: "external_evidence_live",
-      patch: final,
+      metadata: { ...v2Identity },
+      patch: v2Patch(final),
     }, store);
 
     const persisted = await store.getSubmission(created.submissionId!);
     expect(persisted?.submission.structuralOutputJson.changingPlays).toEqual([]);
+    expect(persisted?.submission.structuralOutputJson.changingCount).toBe(0);
     expect(persisted?.submission.alternativePath).toBeNull();
     expect(founderOpsDerivedFingerprint(final)).not.toBe(founderOpsDerivedFingerprint(provisional));
   });
