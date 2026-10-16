@@ -1,6 +1,6 @@
 # 병합·배포 계획안 (2026-10-16, 제안만 — 병합·배포하지 않음)
 
-대상 PR: #116 레거시 경로 차단(+V1), #117 판단 전환 방향, #118 근거 수집 완료 처리, #119 PDF, #120 운영 기록 허용 목록(작성 중).
+대상 PR: #116 레거시 경로 차단(+V1), #117 판단 전환 방향, #118 근거 수집 완료 처리, #119 PDF, #120 운영 기록 허용 목록.
 기준: `main` = Production `2df6d9a`.
 
 ## 0. 전제: main 병합 = Production 배포
@@ -19,9 +19,9 @@ Vercel Production은 `main`에 자동 배포된다. PR을 `main`에 하나씩 �
 | 2 | #117 판단 전환 방향 | 엔진·모델 2개 파일 | 없음 (clean) |
 | 3 | #118 근거 수집 완료 | AmcInteractiveV2, V2Report, trace, v2-analysis.css | 없음 (clean) |
 | 4 | #119 PDF | V2Report, v2.css, **v2-analysis.css** | **`client/src/styles/v2-analysis.css`**: 두 PR 모두 파일 끝에 인쇄 블록 추가. 해결 = 둘 다 유지(#118 블록 닫은 뒤 #119 블록). `V2Report.tsx`는 자동 병합됨 |
-| 5 | #120 운영 기록 허용 목록 | 서버 `founderOpsApi.ts` + 테스트 다수 | 작성 완료 후 확인. 같은 테스트 파일을 다른 PR이 바꾸지 않아 충돌 가능성 낮음 |
+| 5 | #120 운영 기록 허용 목록 | 서버 `founderOpsApi.ts` + 테스트 다수 | 없음 (로컬 시험 병합: clean) |
 
-로컬 시험 병합 결과(`local/amc-integration-check`, 푸시 안 함): 1~4 병합 후 빌드 성공, 테스트 565/565, `tsc` 통과. 충돌은 위 CSS 1건뿐.
+로컬 시험 병합 결과(`local/amc-integration-check`, 푸시 안 함): 1~5 병합 후 빌드 성공, 테스트 589/589, `tsc` 통과. 충돌은 위 CSS 1건뿐.
 
 4. 릴리스 브랜치 Preview에서 §4 통합 실검색.
 5. `release/2026-10-16` → `main` PR 1개. 소유자가 커밋 SHA와 검증한 Preview URL을 명시해 승인하면 병합(= Production 1회 배포).
