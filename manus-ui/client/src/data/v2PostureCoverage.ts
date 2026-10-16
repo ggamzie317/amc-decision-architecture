@@ -16,12 +16,14 @@ export function v2PostureCoverageNote(core: ProductApplicationV3, language: V2La
   const assumed = known < total
     ? ko
       ? ` 확인되지 않은 ${total - known}개는 중간값으로 가정했습니다. 실제 상태가 확인되면 판단이 달라질 수 있습니다.`
-      : ` The ${total - known} unconfirmed inputs were treated as middle values, so the reading may change once they are confirmed.`
+      : total - known === 1
+        ? " The 1 unconfirmed input was treated as a middle value, so the reading may change once it is confirmed."
+        : ` The ${total - known} unconfirmed inputs were treated as middle values, so the reading may change once they are confirmed.`
     : "";
   const fifwm = fifwmKnown
     ? core.decisionStructure.fifwmSource === "case-adapted"
-      ? ko ? ` 다섯 가지 관점 중 ${fifwmKnown}개는 이 사례에 맞춘 질문의 답을 반영했습니다.` : ` ${fifwmKnown} of the five lenses use your answers to questions adapted to this case.`
-      : ko ? ` 다섯 가지 관점 중 ${fifwmKnown}개는 옮겨 갈 회사·직무 질문의 답을 반영했습니다.` : ` ${fifwmKnown} of the five lenses use your answers about the company and role you would move to.`
+      ? ko ? ` 다섯 가지 관점 중 ${fifwmKnown}개는 이 사례에 맞춘 질문의 답을 반영했습니다.` : ` ${fifwmKnown} of the five lenses ${fifwmKnown === 1 ? "uses" : "use"} your answers to questions adapted to this case.`
+      : ko ? ` 다섯 가지 관점 중 ${fifwmKnown}개는 옮겨 갈 회사·직무 질문의 답을 반영했습니다.` : ` ${fifwmKnown} of the five lenses ${fifwmKnown === 1 ? "uses" : "use"} your answers about the company and role you would move to.`
     : "";
   const lead = level === "limited"
     ? ko ? "근거 제한적: " : "Limited basis: "
