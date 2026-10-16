@@ -41,7 +41,7 @@ function writePersonal(key: string, value: Personal) {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode: keep in memory only */ }
 }
 
-export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2TraceSnapshot; recordId?: string | null }) {
+export default function V2DecisionTrace({ snapshot, recordId, printBlocked = false }: { snapshot: V2TraceSnapshot; recordId?: string | null; printBlocked?: boolean }) {
   const ko = snapshot.language === "ko";
   const say = (k: string, e: string) => (ko ? k : e);
   // Without a record ID, key by the decision itself so one analysis never shows another's notes.
@@ -66,6 +66,7 @@ export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2Tr
   const anchor = (id: string) => `v2-trace-${id.replace(/[^a-z]+/gi, "-").toLowerCase()}`;
 
   const exportHtml = () => {
+    if (printBlocked) return;
     if (!root.current) return;
     // Notes become plain text in the file; controls are removed.
     const clone = root.current.cloneNode(true) as HTMLElement;
@@ -92,6 +93,7 @@ export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2Tr
     setPersonal(emptyPersonal);
   };
   const print = () => {
+    if (printBlocked) return;
     document.body.classList.add("v2-trace-printing");
     const done = () => { document.body.classList.remove("v2-trace-printing"); window.removeEventListener("afterprint", done); };
     window.addEventListener("afterprint", done);
@@ -100,6 +102,7 @@ export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2Tr
 
   return (
     <section ref={root} className="v2-trace" data-testid="v2-decision-trace" aria-label={say("결론 추적", "Decision trace")}>
+      {printBlocked && <p className="v2-print-incomplete" role="note">{say("근거 수집 중 · 미완성 보고서", "Evidence still loading · Incomplete report")}</p>}
       <header className="v2-trace-head">
         <div>
           <p className="v2-trace-kicker">allofmycareer · {say("결론 추적", "Decision trace")}</p>
@@ -108,8 +111,8 @@ export default function V2DecisionTrace({ snapshot, recordId }: { snapshot: V2Tr
             "Follow how this reading was reached, step by step, and what each step relied on. The order and names are the allofmycareer analysis steps.")}</p>
         </div>
         <div className="v2-trace-actions" data-trace-control>
-          <button type="button" onClick={exportHtml}><Download aria-hidden size={15} />{say("파일로 저장", "Save as file")}</button>
-          <button type="button" onClick={print}><Printer aria-hidden size={15} />{say("인쇄·PDF", "Print / PDF")}</button>
+          <button type="button" onClick={exportHtml} disabled={printBlocked}><Download aria-hidden size={15} />{say("파일로 저장", "Save as file")}</button>
+          <button type="button" onClick={print} disabled={printBlocked}><Printer aria-hidden size={15} />{printBlocked ? say("근거 수집 중", "Collecting evidence") : say("인쇄·PDF", "Print / PDF")}</button>
           <button type="button" onClick={clearPersonal}><Trash2 aria-hidden size={15} />{say("메모 모두 지우기", "Clear my notes")}</button>
         </div>
       </header>

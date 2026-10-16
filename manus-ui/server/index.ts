@@ -10,11 +10,7 @@ import {
   sendPreparedEmail,
 } from "./emailSender";
 import { registerFounderOpsRoutes } from "./founderOpsExpress";
-import {
-  buildFallbackSnapshot,
-  parseWebExternalSnapshotRequest,
-  resolveWebExternalSnapshot,
-} from "./externalSnapshotService";
+import { handleExternalSnapshot } from "../api/amc/external-snapshot";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,21 +52,9 @@ async function startServer() {
     void handleV2ExternalIntelligence(req, res);
   });
 
-  app.post("/api/amc/external-snapshot", async (req, res) => {
-    res.setHeader("Cache-Control", "no-store");
-    const request = parseWebExternalSnapshotRequest(req.body);
-    if (!request) {
-      const language = req.body?.language === "kr" ? "kr" : "en";
-      res
-        .status(400)
-        .json(buildFallbackSnapshot(language, "malformed_request"));
-      return;
-    }
-
-    const snapshot = await resolveWebExternalSnapshot(request, {
-      tracking: req.body,
-    });
-    res.status(200).json(snapshot);
+  // Retired legacy route (owner decision 2026-10-16): refused, no provider call.
+  app.all("/api/amc/external-snapshot", (req, res) => {
+    void handleExternalSnapshot(req, res);
   });
 
   app.post("/api/send-email", async (req, res) => {

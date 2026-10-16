@@ -140,6 +140,12 @@ export type ProductApplicationBuildInput = {
   primaryRisk: string;
   primaryRiskMeaning: string;
   decisionConditions: string[];
+  /**
+   * Which option each decision condition argues for, by index: "B" = a reason
+   * to move toward the new path, "A" = a reason to stay or wait. Missing or
+   * null keeps the older position-based wording (legacy surfaces, free text).
+   */
+  decisionConditionSides?: Array<"A" | "B" | null>;
   validationFocus: string;
   externalImplication: string;
   plan: Array<{ period: string; title: string; action: string; output: string }>;
@@ -408,7 +414,7 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
           : `If this condition changes, look again at the opportunity evidence for the new path and the potential loss together. Consider moving further only when the evidence supports it and a way to cover ${guardrailConstraintText} is confirmed.`)
       : postureFamily === "transition"
       ? (ko ? `${optionB} 쪽 근거가 유지되면 단계적으로 계속 옮겨 가고, 약해지면 투입을 줄여 현재 기반을 다시 지킵니다.` : `If it holds, keep moving in stages; if it weakens, scale back and protect your current base again.`)
-      : index < 2
+      : (input.decisionConditionSides?.[index] ? input.decisionConditionSides[index] === "B" : index < 2)
         ? (ko ? `이 조건이 맞으면 ${optionB} 쪽으로 단계적으로 옮겨 가는 데 힘이 실립니다.` : `If this holds, moving in stages becomes better supported.`)
         : (ko ? `약해지면 현재 판단을 다시 보고, ${optionA} 쪽 기반을 더 단단히 지킵니다.` : `If it weakens, revisit the current reading and keep more of your footing in your current role.`),
   }));

@@ -116,9 +116,42 @@ function sanitizePatch(value: unknown): SubmissionPatch {
   return patch;
 }
 
+// Columns that can hold customer free text. The V2 client always sends them
+// empty (shared/interactivePrivacy.ts); a request that fills any of them is
+// refused instead of stored (owner decision 2026-10-16).
+const rawTextFields = [
+  "answersJson",
+  "missingPoint",
+  "alternativePath",
+  "decisionConditionsJson",
+  "externalEvidenceJson",
+  "existingFifwmStructuredData",
+  "externalEvidenceConfidence",
+] as const;
+
+function hasContent(value: unknown) {
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (isRecord(value)) return Object.keys(value).length > 0;
+  return false;
+}
+
+export function rawTextFieldsIn(patch: unknown): string[] {
+  if (!isRecord(patch)) return [];
+  return rawTextFields.filter(key => hasContent(patch[key]));
+}
+
 export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
   if (body.serviceStorageConsent !== true)
     return { ok: true, stored: false, reason: "consent_required" };
+  // Both checks run before storage, so nothing of a refused request is written.
+  if (rawTextFieldsIn(body.patch).length > 0)
+    return { ok: false, stored: false, reason: "raw_text_not_accepted" };
+  const incomingPatch = isRecord(body.patch) ? body.patch : {};
+  // Only the interactive clients (allowlisted fields) may store; the retired
+  // legacy page sent unprojected answers.
+  if (!isInteractive(incomingPatch.structuralOutputJson) && !isInteractive(body.metadata))
+    return { ok: false, stored: false, reason: "unsupported_client" };
   if (!store.available)
     return { ok: true, stored: false, reason: "backend_unavailable" };
   const language: AmcLanguage = body.language === "ko" ? "ko" : "en";
@@ -146,32 +179,43 @@ export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
     submissionId = submission.submissionId;
   }
   const stored = (await store.getSubmission(submissionId))?.submission;
-  const incoming = isRecord(body.patch) ? body.patch : {};
-  const interactive =
-    isInteractive(stored?.structuralOutputJson) ||
-    isInteractive(incoming.structuralOutputJson) ||
-    isInteractive(body.metadata);
+  // Existing legacy rows keep their stored data untouched: projecting over
+  // them would blank or relabel their columns. Only a row that is still in its
+  // freshly created state (no structural data, no raw text) may be adopted.
+  if (
+    stored &&
+    !isInteractive(stored.structuralOutputJson) &&
+    (rawTextFieldsIn(stored).length > 0 ||
+      hasContent(stored.structuralOutputJson) ||
+      hasContent(stored.safetyMarginStructuredData))
+  )
+    return { ok: false, stored: false, reason: "legacy_record" };
   const candidate = simulatorEvents.includes(eventType)
     ? {}
     : sanitizePatch(body.patch);
-  const projected = interactive
-    ? projectInteractivePatch({
-        ...stored,
-        ...candidate,
-        structuralOutputJson: {
-          ...stored?.structuralOutputJson,
-          ...candidate.structuralOutputJson,
-        },
-      })
-    : candidate;
-  const patch = interactive
-    ? (Object.fromEntries(
-        Object.entries(projected).filter(
-          ([key, value]) =>
-            JSON.stringify(value) !== JSON.stringify((stored as any)?.[key])
-        )
-      ) as SubmissionPatch)
-    : candidate;
+  // A client that marks itself only in metadata keeps that identity.
+  const metadataIdentity =
+    !isInteractive(candidate.structuralOutputJson) && isRecord(body.metadata) && isInteractive(body.metadata)
+      ? {
+          experienceVersion: body.metadata.experienceVersion,
+          intakeSchemaVersion: body.metadata.intakeSchemaVersion,
+        }
+      : {};
+  const projected = projectInteractivePatch({
+    ...stored,
+    ...candidate,
+    structuralOutputJson: {
+      ...stored?.structuralOutputJson,
+      ...metadataIdentity,
+      ...candidate.structuralOutputJson,
+    },
+  });
+  const patch = Object.fromEntries(
+    Object.entries(projected).filter(
+      ([key, value]) =>
+        JSON.stringify(value) !== JSON.stringify((stored as any)?.[key])
+    )
+  ) as SubmissionPatch;
   if (Object.keys(patch).length > 0)
     await store.updateSubmission(submissionId, patch);
   const metadata = { ...(boundedObject(body.metadata, 4000) || {}) };
@@ -181,9 +225,7 @@ export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
     eventType,
     simulatorEvents.includes(eventType)
       ? sanitizeSimulatorMetadata(metadata)
-      : interactive
-        ? projectInteractiveMetadata(metadata)
-        : metadata
+      : projectInteractiveMetadata(metadata)
   );
   return { ok: true, stored: true, submissionId };
 }

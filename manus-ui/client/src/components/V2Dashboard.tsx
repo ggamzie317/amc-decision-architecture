@@ -250,6 +250,7 @@ export default function V2Dashboard({
   evidencePhase = intelligence.status,
   evidenceLanguage = state.language,
   onCheckEvidence = () => {},
+  onRetryFailedTopics,
   onReport,
   input,
 }: {
@@ -262,6 +263,8 @@ export default function V2Dashboard({
   evidencePhase?: V2EvidencePhase;
   evidenceLanguage?: V2State["language"];
   onCheckEvidence?: () => void;
+  /** Shown only after a partial search: re-searches the failed topics alone. */
+  onRetryFailedTopics?: () => void;
   onReport: () => void;
   /** Baseline input for engine-derived decision switches. */
   input?: import("../data/amcProductApplicationV3").ProductApplicationBuildInput;
@@ -294,6 +297,11 @@ export default function V2Dashboard({
         {t(v2EvidenceStatusLabel(evidencePhase))}
         {draft && ` · ${say("검색 없이 본 초안", "Draft without public search")}`}
       </div>
+      {onRetryFailedTopics && (
+        <button type="button" className="v2-retry-failed" onClick={onRetryFailedTopics}>
+          {t("retryFailedTopics")}
+        </button>
+      )}
       <V2ExecutiveBrief language={state.language} core={core} analysis={analysis} intelligence={intelligence} input={input} />
       <V2ReadingGuide language={state.language} />
       <details className="v2-overview-detail">

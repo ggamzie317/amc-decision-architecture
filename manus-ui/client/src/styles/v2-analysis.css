@@ -1525,6 +1525,17 @@
   color: var(--teal); background: #e8f2f1; border: 1px solid #b9d6d3;
 }
 .v2-analysis-dashboard > .v2-analysis-status.draft { color: #8f4f1c; background: #fbf1e6; border-color: #e3c4a3; }
+.v2-analysis-dashboard > .v2-retry-failed {
+  margin-left: 10px;
+  border: 1px solid var(--teal);
+  background: var(--navy);
+  color: white;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.v2-analysis-dashboard > .v2-retry-failed:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 
 /* Polish: compact label | content rows and consistent section headings. */
 .v2-changing-analysis dl { display: grid; gap: 0; margin: 8px 0 0; }
@@ -1679,3 +1690,116 @@ figcaption .v2-chart-question, .v2-insight-panel-head .v2-chart-question, .v2-in
 .v2-ind-reading .v2-ind-cond, .v2-ind-reading .v2-ind-how { display: grid; grid-template-columns: 84px 1fr; gap: 6px; align-items: start; }
 .v2-ind-reading .v2-ind-cond b, .v2-ind-reading .v2-ind-how b { min-width: 0; margin: 0; }
 @media print { .v2-ind-reading .v2-ind-cond, .v2-ind-reading .v2-ind-how { grid-template-columns: 70px 1fr; } }
+
+/* Incomplete-report notice: print only, while a topic is still collecting
+   (owner decision 2026-10-16). The on-screen buttons already say so. */
+.v2-print-incomplete {
+  display: none;
+}
+@media print {
+  .v2-print-incomplete {
+    display: block;
+    margin: 0 0 4mm;
+    padding: 2.5mm 4mm;
+    border: 1.5px solid #9a3412;
+    color: #7c2d12;
+    font-size: 11pt;
+    font-weight: 700;
+    break-inside: avoid;
+  }
+}
+
+/* ===== Printed report flow =====
+   Sections follow on from each other instead of each forcing a new page, so a short
+   section tail no longer leaves a near-empty page. Section headings stay with what
+   follows; small units (evidence and source items, card headings, the map figure)
+   stay whole; tall cards and long boards may continue onto the next page. */
+@media print {
+  .v2-analysis-report .v2-paper-page {
+    break-after: auto;
+    page-break-after: auto;
+  }
+  .v2-analysis-report .v2-paper-page + .v2-paper-page {
+    margin-top: 8mm;
+    padding-top: 4mm;
+    border-top: 1.5px solid #9fb3b6;
+  }
+  .v2-analysis-report .v2-paper-page > header,
+  .v2-analysis-report .v2-paper-body > .v2-kicker,
+  .v2-analysis-report .v2-paper-body > h2,
+  .v2-analysis-report .v2-reasoning-heading,
+  .v2-analysis-report .v2-reasoning-basis,
+  .v2-analysis-report .v2-reasoning-source > strong,
+  .v2-analysis-report .v2-pathmap > :first-child,
+  .v2-analysis-report .v2-matrix-legend,
+  .v2-analysis-report .v2-insight-panel figcaption,
+  .v2-analysis-report .v2-insight-panel-head,
+  .v2-analysis-report .v2-reference-title {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  /* The block right after a section title starts on the same page as the title. */
+  .v2-analysis-report .v2-paper-body > h2 + * {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+  .v2-analysis-report .v2-paper-body > h2 + * > :first-child {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Taller than what is left of a page: let them continue instead of jumping to a new page. */
+  .v2-analysis-report .v2-reasoning article,
+  .v2-analysis-report .v2-insight-board,
+  .v2-analysis-report .v2-pathmap {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  /* Side-by-side columns leave one column empty once they run past a page, and a
+     grid that breaks across pages pushes what follows it to a new page. Stack them. */
+  .v2-analysis-report .v2-reasoning,
+  .v2-analysis-report .v2-insight-board,
+  .v2-analysis-report .v2-insight-grid,
+  .v2-analysis-report .v2-pathmap {
+    display: block;
+  }
+  /* The path lane is one column at print width: stack its nodes as blocks so the
+     lane can continue between nodes instead of moving the whole lane. */
+  .v2-analysis-report .v2-path-lane {
+    display: block;
+  }
+  .v2-analysis-report .v2-path-lane > .v2-path-arrow {
+    display: block;
+    margin: 4px auto;
+  }
+  .v2-analysis-report .v2-reasoning > * + *,
+  .v2-analysis-report .v2-insight-board > * + *,
+  .v2-analysis-report .v2-insight-grid > * + *,
+  .v2-analysis-report .v2-pathmap > * + * {
+    margin-top: 8px;
+  }
+  .v2-analysis-report .v2-reasoning-source,
+  .v2-analysis-report .v2-source-references li,
+  .v2-analysis-report .v2-relationship-map,
+  .v2-analysis-report figure.v2-insight-panel,
+  .v2-analysis-report .v2-radar,
+  .v2-analysis-report .v2-plan-experiment,
+  .v2-analysis-report .v2-experiment-now,
+  .v2-analysis-report .v2-path-node,
+  .v2-analysis-report .v2-path-terms,
+  .v2-analysis-report .v2-matrix-legend,
+  .v2-analysis-report .v2-matrix-row,
+  .v2-analysis-report .v2-path-alt li,
+  .v2-analysis-report .v2-paper-priorities article,
+  .v2-analysis-report .v2-paper-band,
+  .v2-analysis-report .v2-paper-note,
+  .v2-analysis-report .v2-paper-context {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* The closing notes travel with the last source so the report never ends on a lone block. */
+  .v2-analysis-report .v2-source-references + .v2-paper-caption,
+  .v2-analysis-report .v2-paper-context {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+}

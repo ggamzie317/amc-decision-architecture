@@ -404,11 +404,15 @@ describe("auxiliary advisory fail-soft contract", () => {
   });
 });
 describe("Founder Ops baseline-only persistence and consent", () => {
-  it("stores no raw answers and records fifteen completed session questions, rejects orphan scenario use, ignores core patches and unbounded metadata", async () => {
+  it("refuses raw answers, records fifteen completed session questions, rejects orphan scenario use, ignores core patches and unbounded metadata", async () => {
     const store = new MemoryFounderOpsStore();
+    const v1 = {
+      intakeSchemaVersion: INTAKE_V4_SCHEMA,
+      experienceVersion: "interactive-v1",
+    };
     expect(
       await trackFounderOps(
-        { serviceStorageConsent: true, eventType: "simulator_opened" },
+        { serviceStorageConsent: true, eventType: "simulator_opened", metadata: v1 },
         store
       )
     ).toMatchObject({ stored: false, reason: "baseline_required" });
@@ -417,36 +421,61 @@ describe("Founder Ops baseline-only persistence and consent", () => {
         eventType: "preview_started",
         newSubmission: true,
         serviceStorageConsent: true,
+        metadata: v1,
       },
       store
     );
     const submissionId = created.submissionId!;
     const base = { submissionId, serviceStorageConsent: true };
+    const started = await store.getSubmission(submissionId);
+    expect(
+      await trackFounderOps(
+        {
+          ...base,
+          eventType: "full_intake_completed",
+          patch: {
+            answersJson: raw,
+            fullIntakeCompletedAt: new Date().toISOString(),
+            structuralOutputJson: v1,
+          },
+        },
+        store
+      )
+    ).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(await store.getSubmission(submissionId)).toEqual(started);
     await trackFounderOps(
       {
         ...base,
         eventType: "full_intake_completed",
         patch: {
-          answersJson: raw,
           fullIntakeCompletedAt: new Date().toISOString(),
-          structuralOutputJson: {
-            intakeSchemaVersion: INTAKE_V4_SCHEMA,
-            experienceVersion: "interactive-v1",
-          },
+          structuralOutputJson: v1,
         },
       },
       store
     );
     const before = await store.getSubmission(submissionId);
+    expect(
+      await trackFounderOps(
+        {
+          ...base,
+          eventType: "scenario_variable_changed",
+          patch: { answersJson: legacy },
+          metadata: { ...v1, variable: "financialRoom" },
+        },
+        store
+      )
+    ).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(await store.getSubmission(submissionId)).toEqual(before);
     await trackFounderOps(
       {
         ...base,
         eventType: "scenario_variable_changed",
         patch: {
-          answersJson: legacy,
           structuralOutputJson: { advisory: "forbidden" },
         },
         metadata: {
+          ...v1,
           variable: "financialRoom",
           baselineBand: "developing",
           newBand: "strong",

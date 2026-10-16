@@ -728,7 +728,7 @@ describe("AMC interactive V2 experience", () => {
     expect(V2_EXPERIENCE).toBe(v2Identity.experienceVersion);
     expect(V2_SCHEMA).toBe(v2Identity.intakeSchemaVersion);
   });
-  it("enforces V2 privacy again on the server even if an event includes raw prose", async () => {
+  it("refuses raw prose on the server and stores nothing, and projects other unlisted content away", async () => {
     const store = new MemoryFounderOpsStore();
     const result = await trackFounderOps(
       {
@@ -750,7 +750,28 @@ describe("AMC interactive V2 experience", () => {
       },
       store
     );
-    const detail = await store.getSubmission(result.submissionId!);
+    expect(result).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(store.submissions.size).toBe(0);
+    expect(store.events).toHaveLength(0);
+    const accepted = await trackFounderOps(
+      {
+        language: "ko",
+        serviceStorageConsent: true,
+        eventType: "preview_started",
+        newSubmission: true,
+        metadata: { ...v2Identity, optionA: "PRIVATE PROSE" },
+        patch: {
+          caseType: "Entrepreneurship",
+          structuralOutputJson: {
+            ...v2Identity,
+            raw: "PRIVATE PROSE",
+            externalEvidenceStatus: "unavailable",
+          },
+        },
+      },
+      store
+    );
+    const detail = await store.getSubmission(accepted.submissionId!);
     expect(detail?.submission.answersJson).toEqual({});
     expect(detail?.submission.structuralOutputJson).toMatchObject({
       ...v2Identity,
@@ -808,10 +829,25 @@ describe("AMC interactive V2 experience", () => {
           serviceStorageConsent: true,
           eventType,
           metadata: rawMetadata,
-          patch: { answersJson: { 1: "PRIVATE PROSE" } },
+          patch: { structuralOutputJson: { ...v2Identity, why: "PRIVATE PROSE" } },
         },
         store
       );
+    const eventCount = store.events.length;
+    expect(
+      await trackFounderOps(
+        {
+          submissionId: started.submissionId,
+          language: "en",
+          serviceStorageConsent: true,
+          eventType: "scenario_evaluated",
+          metadata: rawMetadata,
+          patch: { answersJson: { 1: "PRIVATE PROSE" } },
+        },
+        store
+      )
+    ).toEqual({ ok: false, stored: false, reason: "raw_text_not_accepted" });
+    expect(store.events).toHaveLength(eventCount);
     const detail = await store.getSubmission(started.submissionId!);
     expect(
       detail?.events.find(event => event.eventType === "scenario_evaluated")
@@ -839,8 +875,31 @@ describe("AMC interactive V2 experience", () => {
   it("keeps separate legacy, V1 and V2 founder funnels", async () => {
     const store = new MemoryFounderOpsStore();
     const ids = [] as string[];
+    // Legacy rows are historical only: the route refuses the legacy client,
+    // so the legacy funnel is seeded directly in the store.
+    const legacyIdentity = { experienceVersion: "legacy" };
+    expect(
+      await trackFounderOps(
+        {
+          language: "en",
+          serviceStorageConsent: true,
+          eventType: "preview_started",
+          newSubmission: true,
+          metadata: legacyIdentity,
+          patch: { structuralOutputJson: legacyIdentity },
+        },
+        store
+      )
+    ).toEqual({ ok: false, stored: false, reason: "unsupported_client" });
+    expect(store.submissions.size).toBe(0);
+    const legacyRow = await store.createSubmission("en", true);
+    await store.updateSubmission(legacyRow.submissionId, {
+      structuralOutputJson: legacyIdentity,
+    });
+    await store.addEvent(legacyRow.submissionId, "preview_started", {});
+    await store.addEvent(legacyRow.submissionId, "dashboard_generated", {});
+    ids.push(legacyRow.submissionId);
     for (const identity of [
-      { experienceVersion: "legacy" },
       {
         experienceVersion: "interactive-v1",
         intakeSchemaVersion: "AMC-INTAKE-V4-15",

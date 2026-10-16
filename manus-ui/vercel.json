@@ -10,6 +10,14 @@
       "maxDuration": 60
     }
   },
+  "redirects": [
+    { "source": "/amc-web-mvp", "destination": "/amc-interactive-v2", "permanent": false },
+    { "source": "/amc-interactive-v1", "destination": "/amc-interactive-v2", "permanent": false },
+    { "source": "/intake", "destination": "/amc-interactive-v2", "permanent": false },
+    { "source": "/format-handoff", "destination": "/amc-interactive-v2", "permanent": false },
+    { "source": "/payment-handoff", "destination": "/amc-interactive-v2", "permanent": false },
+    { "source": "/payment-success", "destination": "/amc-interactive-v2", "permanent": false }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/.*).*)",

@@ -4,12 +4,13 @@ import NotFound from "@/pages/NotFound";
 import { Redirect, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import AmcWebMvp from "./pages/AmcWebMvp";
 import AmcInteractiveV2 from "./pages/AmcInteractiveV2";
 import AmcAdmin from "./pages/AmcAdmin";
 
+// The legacy /amc-web-mvp and /amc-interactive-v1 pages and the old aliases are
+// retired (owner decisions 2026-10-16); they open V2 instead. vercel.json redirects them server-side too.
 function LegacyProductRedirect() {
-  return <Redirect to="/amc-web-mvp" replace />;
+  return <Redirect to={`/amc-interactive-v2${typeof window === "undefined" ? "" : window.location.search}`} replace />;
 }
 
 function Router() {
@@ -17,9 +18,9 @@ function Router() {
     <Switch>
       {/* The customer entry point is V2 (owner decision 2026-10-14); keep ?lang. */}
       <Route path={"/"}>{() => <Redirect to={`/amc-interactive-v2${typeof window === "undefined" ? "" : window.location.search}`} />}</Route>
-      <Route path={"/amc-web-mvp"} component={AmcWebMvp} />
+      <Route path={"/amc-web-mvp"} component={LegacyProductRedirect} />
       <Route path="/amc-interactive-v2" component={AmcInteractiveV2} />
-      <Route path="/amc-interactive-v1">{() => <AmcWebMvp key="interactive-v1" interactive />}</Route>
+      <Route path="/amc-interactive-v1" component={LegacyProductRedirect} />
       <Route path={"/amc-admin"} component={AmcAdmin} />
       <Route path={"/intake"} component={LegacyProductRedirect} />
       <Route path={"/format-handoff"} component={LegacyProductRedirect} />

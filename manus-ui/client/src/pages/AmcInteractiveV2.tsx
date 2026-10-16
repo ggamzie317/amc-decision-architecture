@@ -144,6 +144,9 @@ export default function AmcInteractiveV2() {
   const [evidenceLoadingLanguage, setEvidenceLoadingLanguage] =
     useState<V2Language | null>(null);
   const evidencePending = useRef(false);
+  // dashboard_generated is recorded once per page: a retry, a re-render or a
+  // double click never records it again.
+  const dashboardRecorded = useRef(false);
   // Per-topic results of the last search, so "search again" re-requests only
   // the topics that are missing or failed and merges them into what exists.
   const topicRun = useRef<{
@@ -310,6 +313,16 @@ export default function AmcInteractiveV2() {
     : evidenceLoadingLanguage !== null && evidenceByLanguage[researchLanguage]?.status !== "live"
       ? "loading"
       : (evidenceByLanguage[researchLanguage]?.status ?? "not_checked");
+  // While any topic is still searching, a printout would be incomplete.
+  const evidenceCollecting = topicStates.some(topic => topic.state === "running");
+  // The search finished with some topics found and others failed: the failed
+  // ones can be searched again alone (the resume path in checkCurrentEvidence).
+  const canRetryFailedTopics =
+    !demoMode &&
+    evidenceLoadingLanguage === null &&
+    evidencePhase === "live" &&
+    topicStates.some(topic => topic.state === "empty") &&
+    topicStates.some(topic => topic.state === "done");
   const input = useMemo(
     () => buildV2Input(state, intelligence, fifwmAssessment),
     [state, intelligence, fifwmAssessment]
@@ -815,13 +828,16 @@ export default function AmcInteractiveV2() {
     decisionSwitchCount: summaryCore.decisionSwitches.length,
     externalEvidenceStatus,
   });
-  // dashboard_generated is recorded only when results actually open: after the
-  // evidence analysis settles, or after an explicit structural-draft choice.
-  const openDashboard = (
+  // dashboard_generated is recorded only after every topic search has settled
+  // (with the final evidence), or on an explicit structural-draft choice. The
+  // results may open earlier, at the first usable topic, without recording it.
+  const recordDashboard = (
     summaryInput: typeof input,
     summaryCore: typeof core,
     externalEvidenceStatus: ExternalIntelligenceV2["status"]
   ) => {
+    if (dashboardRecorded.current) return;
+    dashboardRecorded.current = true;
     track(
       "dashboard_generated",
       {
@@ -837,19 +853,31 @@ export default function AmcInteractiveV2() {
         ),
       }
     );
+  };
+  const showDashboard = () => {
     setPhase("dashboard");
     window.scrollTo(0, 0);
+  };
+  const openDashboard = (
+    summaryInput: typeof input,
+    summaryCore: typeof core,
+    externalEvidenceStatus: ExternalIntelligenceV2["status"]
+  ) => {
+    recordDashboard(summaryInput, summaryCore, externalEvidenceStatus);
+    showDashboard();
   };
   const runEvidenceAnalysis = async () => {
     setPhase("processing");
     window.scrollTo(0, 0);
     let opened = false;
-    const outcome = await checkCurrentEvidence(firstLive => {
+    const outcome = await checkCurrentEvidence(() => {
       opened = true;
-      openDashboard(firstLive.input, firstLive.core, "live");
+      showDashboard();
     });
-    if (!opened && outcome?.result.status === "live")
-      openDashboard(outcome.input, outcome.core, "live");
+    if (outcome?.result.status === "live") {
+      recordDashboard(outcome.input, outcome.core, "live");
+      if (!opened) showDashboard();
+    }
   };
   const finish = (withEvidence = true) => {
     if (!v2AllBandsAnswered(state)) {
@@ -886,7 +914,7 @@ export default function AmcInteractiveV2() {
   type EvidenceOutcome = { result: ExternalIntelligenceV2; input: typeof input; core: typeof core };
   // Each topic is its own request (its own serverless time budget). Results
   // fill in as topics arrive; results open after the first usable topic.
-  const checkCurrentEvidence = async (onFirstLive?: (outcome: EvidenceOutcome) => void): Promise<EvidenceOutcome | null> => {
+  const checkCurrentEvidence = async (onFirstLive?: () => void): Promise<EvidenceOutcome | null> => {
     if (demoMode || evidencePending.current) return null;
     const fresh = buildV2EvidenceRequest({ ...state, language });
     if (!fresh) {
@@ -940,7 +968,7 @@ export default function AmcInteractiveV2() {
     if (resume) {
       publish();
       first = false;
-      onFirstLive?.(outcomeFor(merged()));
+      onFirstLive?.();
     }
     await Promise.all(toRun.map(async (index, order) => {
       const areas = groups[index];
@@ -975,7 +1003,7 @@ export default function AmcInteractiveV2() {
       if (lives.some(Boolean)) publish();
       if (result.status === "live" && first) {
         first = false;
-        onFirstLive?.(outcomeFor(merged()));
+        onFirstLive?.();
       }
     }));
     const final = lives.some(Boolean)
@@ -1392,6 +1420,7 @@ export default function AmcInteractiveV2() {
           evidencePhase={evidencePhase}
           evidenceLanguage={evidenceTextLanguage}
           recordId={activeAmcSubmissionId("interactive-v2")}
+          printBlocked={evidenceCollecting}
         />
       )}
       {phase === "dashboard" && resultView === "dashboard" && (
@@ -1406,6 +1435,7 @@ export default function AmcInteractiveV2() {
             evidenceLanguage={evidenceTextLanguage}
             evidencePhase={evidencePhase}
             onCheckEvidence={() => void checkCurrentEvidence()}
+            onRetryFailedTopics={canRetryFailedTopics ? () => void checkCurrentEvidence() : undefined}
             input={input}
             onReport={() => {
               track("detailed_report_opened", {
@@ -1485,7 +1515,9 @@ export default function AmcInteractiveV2() {
             setPhase("dashboard");
             window.scrollTo(0, 0);
           }}
+          printBlocked={evidenceCollecting}
           onPrint={() => {
+            if (evidenceCollecting) return;
             track("print_save_clicked", {
               currentStage: "print_save_clicked",
               printSaveClickedAt: new Date().toISOString(),
