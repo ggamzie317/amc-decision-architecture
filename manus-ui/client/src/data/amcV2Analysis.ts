@@ -783,7 +783,11 @@ export function buildV2Analysis(
   });
   const uncovered = researchCoverage.filter(item => item.status === "none").map(item => item.title);
   const pendingTitles = researchCoverage.filter(item => item.status === "pending").map(item => item.title);
-  const coverageReading = !searched ? say(
+  // A search that ran and failed must not read as "not searched yet".
+  const coverageReading = !searched && phase === "unavailable" ? say(
+    "확인 가능한 출처를 찾지 못했습니다. 지금 판단은 답한 내용만으로 계산했습니다.",
+    "No evidence with a usable source was found. This reading uses your answers only."
+  ) : !searched ? say(
     "아직 공개 자료를 찾지 않았습니다. 지금 판단은 답한 내용만으로 계산했습니다.",
     "Public sources have not been searched yet. This reading uses your answers only."
   ) : pendingTitles.length && !uncovered.length ? say(
