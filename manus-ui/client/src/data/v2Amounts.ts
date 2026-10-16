@@ -16,13 +16,16 @@ const afterConsonant = String.raw`(?=$|[^가-힣]|(?:은|을|과|으로|${shared
 const afterVowel = String.raw`(?=$|[^가-힣]|(?:가|는|를|로|와|도|예|${sharedParticles}))`; // 파운드, 달러, 유로
 const koreanUnit = String.raw`(?:\d+\s?억(?:\s?(?:${number})\s?(?:천만|만))?|(?:${number})\s?(?:천만|만))\s?원${afterConsonant}`;
 const plainKorean = String.raw`(?:${number})\s?(?:원|엔)${afterConsonant}|(?:${number})\s?(?:파운드|달러|유로)${afterVowel}`;
-const englishWord = String.raw`(?:${number})\s?(?:dollars|pounds|euros|won|yen)\b`;
+// English scale words stay part of the amount: "KRW 22.2 million" must not be
+// shown as "KRW 22.2".
+const scaleWord = String.raw`\s?(?:million|billion|thousand|trillion|mn|bn)\b`;
+const englishWord = String.raw`(?:${number})(?:${scaleWord})?\s?(?:dollars|pounds|euros|won|yen)\b`;
 
 export const v2AmountPattern = new RegExp(
   [
-    String.raw`${symbol}\s?(?:${number})(?:\s?(?:만|억|천|k|K|m|M)\b)?`,
-    String.raw`${iso}\s?(?:${number})`,
-    String.raw`(?:${number})\s?${iso}\b`,
+    String.raw`${symbol}\s?(?:${number})(?:${scaleWord}|\s?(?:만|억|천|k|K|m|M)\b)?`,
+    String.raw`${iso}\s?(?:${number})(?:${scaleWord}|\s?(?:k|K|m|M)\b)?`,
+    String.raw`(?:${number})(?:${scaleWord})?\s?${iso}\b`,
     koreanUnit,
     plainKorean,
     englishWord,
