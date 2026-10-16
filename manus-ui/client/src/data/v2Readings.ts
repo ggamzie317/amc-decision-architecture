@@ -21,7 +21,7 @@ const pick = (pair: Pair, language: V2Language) => pair[language === "ko" ? 0 : 
 
 export type V2FrameworkPart = "posture" | "missing" | "safety" | "changing" | "switching" | "experiment" | "fifwm";
 const plain: Record<V2FrameworkPart, Pair> = {
-  posture: ["지금 조건에 가장 잘 맞는 움직임은 무엇인가요?", "Which move fits your current conditions best?"],
+  posture: ["지금 조건에서는 어느 쪽이 더 뒷받침되나요?", "Under your current conditions, which direction is better supported?"],
   missing: ["아직 모르지만, 알게 되면 판단이 달라질 수 있는 것은 무엇인가요?", "What is still unknown that could change the reading once known?"],
   safety: ["예상과 다르게 흘러가도 계속할 여유가 얼마나 있나요?", "How much room is left to keep going if things go differently than planned?"],
   changing: ["지금 가진 것을 다르게 조합하면 어떤 선택지가 생기나요?", "What options appear if you recombine what you already have?"],

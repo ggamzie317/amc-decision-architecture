@@ -349,10 +349,10 @@ function deriveChangingPlays(input: ProductApplicationBuildInput, presentation: 
       ? ["Full role change → scope adjustment check", "역할 전면 변경 → 범위 조정 확인"]
       : ["Exit decision → role redesign check", "퇴사 결정 → 역할 재설계 확인"], presentation.protects, ["A concrete scope proposal", "구체적인 역할 범위 제안"], ["One internal decision cycle", "한 번의 내부 결정 주기"]);
   else if (pathwayEligible && (externalNeedsValidation || reversibilityNeedsProtection)) add("pathway", ["Try an intermediate route", "경로 재구성"], [`Before moving fully, try an intermediate route that builds evidence for the new path.`, `${withKoreanParticle(optionB, "으로/로")} 완전히 전환하기 전에, 근거를 만들 수 있는 중간 경로를 먼저 확인합니다.`], ["Direct conversion → intermediate route", "직접 전환 → 중간 경로"], presentation.protects, ["Comparable outcome evidence", "비교 가능한 결과 근거"], ["One intermediate step only", "중간 경로 한 번만 확인"]);
-  else if (externalNeedsValidation) add("parallel-validation", ["Test it alongside your current job", "병행 검증"], [`Keep your current role as your base while checking the new path against real evidence.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서, ${withKoreanParticle(optionB, "이/가")} 맞는지 실제 근거로 확인합니다.`], ["Assumption → direct check", "가정 → 직접 확인"], presentation.protects, ["External proof", "외부 근거"], ["One short checking period", "한 번의 짧은 확인 기간"]);
+  else if (externalNeedsValidation) add("parallel-validation", ["Test it alongside your current job", "병행 검증"], [`Your current role stays the base while the new path is checked against real evidence.`, `${withKoreanParticle(optionA, "을/를")} 유지하면서, ${withKoreanParticle(optionB, "이/가")} 맞는지 실제 근거로 확인합니다.`], ["Assumption → direct check", "가정 → 직접 확인"], presentation.protects, ["External proof", "외부 근거"], ["One short checking period", "한 번의 짧은 확인 기간"]);
 
   if (safetyNeedsProtection || downsideNeedsProtection) add("resource", ["Build up your safety margin first", "자원 재구성"], ["Build up the room you need to protect before committing more.", "투입을 늘리기 전에 지켜야 할 여유부터 늘립니다."], ["Current room → protected room", "현재 여유 → 지켜야 할 여유"], [optionAProtection, optionAProtection], ["Time, funding, or support", "시간, 자금 또는 지원"], ["No irreversible decisions yet", "되돌릴 수 없는 결정은 아직 하지 않음"]);
-  if (reversibilityNeedsProtection) add("timing", ["Adjust the timing", "시기 재구성"], ["Hold off on a fixed move date until the way back is clearer.", "돌아올 길이 분명해질 때까지 옮기는 시점을 늦춥니다."], ["Fixed date → timing set by evidence", "정해 둔 날짜 → 근거를 보고 정하는 시점"], presentation.protects, ["A clear way back", "분명하게 확인한 돌아올 길"], ["Review before deciding", "확정하기 전에 다시 보기"]);
+  if (reversibilityNeedsProtection) add("timing", ["Adjust the timing", "시기 재구성"], ["The move date stays open until the way back is clearer.", "돌아올 길이 분명해질 때까지 옮기는 시점을 늦춥니다."], ["Fixed date → timing set by evidence", "정해 둔 날짜 → 근거를 보고 정하는 시점"], presentation.protects, ["A clear way back", "분명하게 확인한 돌아올 길"], ["Review before deciding", "확정하기 전에 다시 보기"]);
   return plays;
 }
 
@@ -410,13 +410,13 @@ export function buildProductApplicationV3(input: ProductApplicationBuildInput): 
     signal,
     direction: postureAssessment.guardrailApplied
       ? (ko
-          ? `이 조건이 달라지면 ${optionB} 쪽 기회 근거와 손실 위험을 함께 다시 봅니다. 더 본격적으로 옮기는 것은 근거가 뒷받침하고 ${withKoreanParticle(guardrailConstraintText, "을/를")} 보완할 방법이 확인될 때만 검토하세요.`
-          : `If this condition changes, look again at the opportunity evidence for the new path and the potential loss together. Consider moving further only when the evidence supports it and a way to cover ${guardrailConstraintText} is confirmed.`)
+          ? `이 조건이 달라지면 ${optionB} 쪽 기회 근거와 손실 위험을 함께 다시 봅니다. 더 본격적으로 옮기는 것은 근거가 뒷받침하고 ${withKoreanParticle(guardrailConstraintText, "을/를")} 보완할 방법이 확인될 때에야 더 본격적으로 옮기는 것을 검토할 조건이 됩니다.`
+          : `If this condition changes, look again at the opportunity evidence for the new path and the potential loss together. Moving further becomes worth considering only once the evidence supports it and a way to cover ${guardrailConstraintText} is confirmed.`)
       : postureFamily === "transition"
-      ? (ko ? `${optionB} 쪽 근거가 유지되면 단계적으로 계속 옮겨 가고, 약해지면 투입을 줄여 현재 기반을 다시 지킵니다.` : `If it holds, keep moving in stages; if it weakens, scale back and protect your current base again.`)
+      ? (ko ? `${optionB} 쪽 근거가 유지되면 단계적으로 옮겨 가는 쪽이 계속 뒷받침되고, 약해지면 현재 기반을 지키는 쪽으로 판단이 돌아갑니다.` : `If it holds, moving in stages stays better supported; if it weakens, the reading shifts back toward protecting your current base.`)
       : (input.decisionConditionSides?.[index] ? input.decisionConditionSides[index] === "B" : index < 2)
         ? (ko ? `이 조건이 맞으면 ${optionB} 쪽으로 단계적으로 옮겨 가는 데 힘이 실립니다.` : `If this holds, moving in stages becomes better supported.`)
-        : (ko ? `약해지면 현재 판단을 다시 보고, ${optionA} 쪽 기반을 더 단단히 지킵니다.` : `If it weakens, revisit the current reading and keep more of your footing in your current role.`),
+        : (ko ? `이 조건이 맞으면 ${optionA}의 기반을 지키며 확인하는 쪽이 더 잘 뒷받침됩니다.` : `If this holds, keeping your base in your current role is better supported.`),
   }));
 
   const changingPlays = deriveChangingPlays(input, concise, missingValidation, optionAProtection);

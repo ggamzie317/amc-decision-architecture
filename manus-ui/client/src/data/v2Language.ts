@@ -18,7 +18,7 @@ export const v2Copy = {
   change: ["Change", "유형 바꾸기"],
   consent: ["I agree that de-identified analysis results and service usage may be stored. My written answers are not stored.", "작성한 답변 원문은 저장되지 않습니다. 개인을 알아볼 수 없게 처리한 분석 결과와 서비스 이용 기록을 저장하는 데 동의합니다."],
   research: ["Optional: my de-identified decision patterns may be used in aggregated research.", "선택: 개인을 알아볼 수 없게 처리한 결정 패턴을 집계 연구에 쓰는 데 동의합니다."],
-  privacy: ["allofmycareer does not store your written answers. Public search runs only when you ask for it. It then sends the search target, the place and a few decision details to an outside AI and search service. Do not enter confidential company information or sensitive personal data.", "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 공개 자료 검색은 요청할 때만 실행합니다. 이때 검색 대상과 지역 등 결정에 필요한 일부 내용이 외부 AI·검색 서비스로 전달됩니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요."],
+  privacy: ["allofmycareer does not store your written answers. Public search runs only when you press ‘Search public sources and analyze’ at the last step. It then sends the search target, the place and a few decision details to an outside AI and search service. Do not enter confidential company information or sensitive personal data.", "작성한 답변 원문은 allofmycareer에 저장되지 않습니다. 공개 자료 검색은 마지막 단계에서 ‘공개 자료를 찾아 분석하기’를 누를 때만 실행합니다. 이때 검색 대상과 지역 등 결정에 필요한 일부 내용이 외부 AI·검색 서비스로 전달됩니다. 회사 기밀이나 민감한 개인정보는 입력하지 마세요."],
   begin: ["Start the questions", "질문 시작하기"],
   complete: ["Done", "답변 완료"],
   oneSelectionNeeded: ["1 item still needs an answer", "1개 항목에 답해 주세요"],
@@ -130,7 +130,7 @@ export const v2Copy = {
   retryEvidence: ["Check public sources again", "공개 자료 다시 확인하기"],
   evidenceRetryHint: ["No evidence with a usable source was found. The current reading stays the same. You can check again later.", "확인 가능한 출처를 찾지 못했습니다. 현재 판단은 그대로이며, 나중에 다시 확인할 수 있습니다."],
   evidenceDisclosure: [
-    "Public search sends the visible search topic, selected areas and geography (if given) to allofmycareer's connected search provider. Personal notes and internal financial or readiness conditions are not sent. allofmycareer does not store your written answers.",
+    "Public search sends the visible search topic, selected areas and geography (if given) to allofmycareer's connected search provider. Personal notes and internal financial or readiness conditions are not sent. allofmycareer does not store your written answers. Use public role, institution or industry keywords as the search topic.",
     "공개 검색 주제, 선택한 확인 항목, 대상 지역(입력한 경우)이 allofmycareer에 연결된 검색 제공자에게 전달됩니다. 개인 메모와 내부 재정·준비 조건은 전송하지 않으며, 작성한 답변 원문은 allofmycareer에 저장하지 않습니다. 검색 주제에는 공개된 직무·기관·산업 키워드를 사용하세요.",
   ],
   evidenceOptionalLater: [
@@ -271,7 +271,7 @@ export const v2Copy = {
   inputHint: ["Fill in two fields. Then choose from options.", "두 칸만 적어 주세요. 나머지는 보기에서 고르면 됩니다."],
   fromContext: ["From your setup", "입력한 결정"],
   selectUpTo: ["Choose all that apply", "해당하는 것을 모두 고르세요"],
-  reportSubtitle: ["What to check, and what to do next", "무엇을 확인하고 무엇을 할지"],
+  reportSubtitle: ["What to check next, and what would change the reading", "다음에 확인할 것과 판단이 바뀌는 조건"],
   executiveBoard: ["Decision board", "핵심 판단 보드"],
   optionComparison: ["Current role and the career you are considering", "현재 직무와 고민하는 커리어 비교"],
   readinessSafety: ["Readiness and Safety Margin", "실행 준비도와 안전 여유"],

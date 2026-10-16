@@ -122,7 +122,7 @@ const demoText = {
         "Compensation",
         "The move may interrupt your income",
         "This example has no confirmed offer or pay benchmark for the target role.",
-        "Keep your income steady while you collect real offers and pay information.",
+        "While you collect real offers and pay information, whether your income continues is a key condition.",
       ],
       [
         "Geography",
@@ -142,7 +142,7 @@ const demoText = {
         "보상",
         "옮기면 소득이 끊길 수 있습니다",
         "이 예시에는 목표 직무의 확인된 제안이나 보상 기준이 없습니다.",
-        "실제 제안과 보상 수준을 확인하는 동안 지금 소득을 지키세요.",
+        "실제 제안과 보상 수준을 확인하는 동안에는 소득이 이어지는지가 중요한 조건입니다.",
       ],
       [
         "지역",

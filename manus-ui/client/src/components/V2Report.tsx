@@ -448,7 +448,7 @@ export default function V2Report({
         say("경로 조정 (Changing) · 다음 확인", "Path options (Changing) · Next check"),
         say(
           "목표는 그대로 두고 방법 바꾸기",
-          "Keep the goal, change how you get there"
+          "The goal stays; the way there can change"
         ),
         <>
           <V2ChangingView analysis={analysis} />
