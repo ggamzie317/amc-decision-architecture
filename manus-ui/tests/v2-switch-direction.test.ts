@@ -32,9 +32,9 @@ const directions = (s: V2State) =>
   buildProductApplicationV3(buildV2Input(s)).decisionSwitches.map(sw => sw.direction);
 
 const moveKo = "쪽으로 단계적으로 옮겨 가는 데 힘이 실립니다";
-const stayKo = "쪽 기반을 더 단단히 지킵니다";
+const stayKo = "의 기반을 지키며 확인하는 쪽이 더 잘 뒷받침됩니다";
 const moveEn = "moving in stages becomes better supported";
-const stayEn = "keep more of your footing in your current role";
+const stayEn = "keeping your base in your current role is better supported";
 
 describe("decision switch direction follows the condition's side", () => {
   it("a stay-side condition is not shown as support for moving (KO)", () => {

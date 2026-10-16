@@ -495,11 +495,11 @@ describe("AMC interactive V2 experience", () => {
         onPrint: () => {},
       })
     );
-    expect(report).toContain("<h1>Keep the current plan for now</h1>");
+    expect(report).toContain("<h1>More to confirm before a move</h1>");
     expect(report).toContain("Reading from your answers");
     expect(report).toContain("Hypothetical scenario");
     expect(report).toContain(
-      "Keep the current plan for now → A stronger case for moving"
+      "More to confirm before a move → A stronger case for moving"
     );
     expect(report).toContain(
       "This shows a changed condition only. It is not new evidence."

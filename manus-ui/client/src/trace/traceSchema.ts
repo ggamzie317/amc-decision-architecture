@@ -180,7 +180,7 @@ export const v2TraceStages: TraceStage[] = [
   {
     id: "Current Structural Posture",
     term: ["현재 구조 판단", "Current reading"],
-    question: ["지금 조건에 가장 잘 맞는 움직임은 무엇인가요?", "Which move fits your current conditions best?"],
+    question: ["지금 조건에서는 어느 쪽이 더 뒷받침되나요?", "Under your current conditions, which direction is better supported?"],
     reads: ["analysis.posture", "core.currentStructuralPosture", "core.postureBasis", "core.why", "sensitivity"],
     feeds: ["Changing", "Safety Margin", "Decision Switches"],
     conclusion: s => s.analysis.posture,

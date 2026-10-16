@@ -119,8 +119,8 @@ export default function V2Processing({
   // or failed. Later steps stay pending until results really open.
   const steps: { icon: LucideIcon; label: [string, string]; detail: [string, string]; state: StepState }[] = [
     { icon: ShieldCheck, label: ["Answers checked", "답변 확인"], detail: ["Required answers and consent are in place", "필수 답변과 동의를 확인했습니다"], state: "done" },
-    { icon: FileSearch, label: ["Public search and source check", "공개 검색·출처 확인"], detail: ["We search with the target only, then check that each cited page opens", "검색 대상만으로 검색하고, 인용한 페이지가 실제로 열리는지 확인합니다"], state: running ? "running" : "failed" },
-    { icon: Network, label: ["Place evidence beside your answers", "내 조건과 함께 정리"], detail: ["Evidence sits next to your answers. Sources do not change scores", "근거를 내 조건 옆에 놓습니다. 출처는 점수를 바꾸지 않습니다"], state: "pending" },
+    { icon: FileSearch, label: ["Public search and source check", "공개 검색·출처 확인"], detail: ["We search with the target, place and topics, then check that each cited page opens", "검색 대상·지역과 고른 주제로 검색하고, 인용한 페이지가 실제로 열리는지 확인합니다"], state: running ? "running" : "failed" },
+    { icon: Network, label: ["Place evidence beside your answers", "내 조건과 함께 정리"], detail: ["Evidence sits next to your answers. Confirmed sources inform only the market-evidence level; they never change your own answers", "근거를 내 조건 옆에 놓습니다. 확인된 출처는 ‘시장 근거’ 단계에만 반영되고, 내가 답한 조건은 바꾸지 않습니다"], state: "pending" },
     { icon: GitBranch, label: ["Open your analysis", "분석 결과 열기"], detail: ["The dashboard, simulator and report use the same result", "대시보드, 시뮬레이터, 보고서가 같은 결과를 씁니다"], state: "pending" },
   ];
   const StateIcon = ({ state }: { state: StepState }) =>

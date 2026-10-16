@@ -111,17 +111,17 @@ export function v2CustomerPosture(
   if (language !== "ko")
     return {
       label: ({
-        "Preserve and Validate": "Keep the current plan for now",
-        "Protect and Reconfigure": "Adjust the path while protecting your margin",
+        "Preserve and Validate": "More to confirm before a move",
+        "Protect and Reconfigure": "Adjusting the path while protecting your margin",
         "Stronger Transition Case": "A stronger case for moving",
       } as Record<string, string>)[label] ?? label,
       sentence,
     };
   if (label === "보존하며 검증")
     return {
-      label: "현재 계획 유지",
+      label: "옮기기 전에 확인이 더 필요함",
       sentence: sentence.includes("기반을 지키면서") || sentence.includes("기반을 보존하면서")
-        ? `현재 계획을 유지하면서 ${optionB}에 필요한 외부 근거를 먼저 확인하세요. 지금 조건에서는 이 순서가 더 잘 뒷받침됩니다.`
+        ? `지금 조건에서는 현재 기반을 지키면서 ${optionB}에 필요한 외부 근거를 먼저 확인하는 순서가 더 잘 뒷받침됩니다.`
         : sentence
             .replaceAll("Safety Margin", "안전 여유")
             .replaceAll("현재 자세", "현재 판단"),
@@ -142,7 +142,7 @@ export function v2CustomerPosture(
 const koreanPlayText: Record<string, string> = {
   "역할 / 범위 재구성": "현재 역할 조정",
   "경로 재구성": "중간 경로 검토",
-  "병행 검증": "현재 계획을 유지하며 대안 확인",
+  "병행 검증": "현재 직무를 이어 가며 대안 확인",
   "시기 재구성": "실행 시기 조정",
   "자원 재구성": "자원과 안전 여유 조정",
   "현재 여유 → 지켜야 할 여유": "지금 가진 여유 가운데 지켜야 할 몫을 먼저 따로 떼어 둡니다.",

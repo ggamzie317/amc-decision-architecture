@@ -105,7 +105,14 @@ function pairSwitches(
         if (!bandA || !bandB) continue;
         const scenario = evaluateScenario(input, { [a]: bandA, [b]: bandB } as ScenarioOverrides);
         if (scenario.currentStructuralPosture.label === core.currentStructuralPosture.label) continue;
-        const part = (v: string, band: string) => `${v2t(language, labelKey[v])} ${v2ConditionLevel(v, bands[v], language, b => v2t(language, b as V2CopyKey))} → ${v2ConditionLevel(v, band, language, b => v2t(language, b as V2CopyKey))}`;
+        const part = (v: string, band: string) => {
+          const level = (b: string) => v2ConditionLevel(v, b, language, x => v2t(language, x as V2CopyKey));
+          const from = level(bands[v]);
+          // "시장 근거 근거 확인 전" would repeat 근거: such a level follows a colon without it.
+          return ko && from.startsWith("근거")
+            ? `${v2t(language, labelKey[v])}: ${from.replace(/^근거가?\s?/, "")} → ${level(band)}`
+            : `${v2t(language, labelKey[v])} ${from} → ${level(band)}`;
+        };
         out.push({
           variable: `${a}+${b}`,
           labels: [v2t(language, labelKey[a]), v2t(language, labelKey[b])],

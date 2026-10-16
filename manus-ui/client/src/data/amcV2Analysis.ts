@@ -932,7 +932,7 @@ export function buildV2Analysis(
   const playCopy: Record<string, { changes: string; needs: string; evidence: string; exposure: string }> = {
     "parallel-validation": {
       changes: say(`${withKoreanParticle(current, "을/를")} 그만두지 않고, ${considered}에 필요한 조건을 작은 단계로 하나씩 확인합니다.`,
-        `Stay in your current role and check, one small step at a time, what the new path requires.`),
+        `Your current role continues while what the new path requires is checked one small step at a time.`),
       needs: say(`${withKoreanParticle(`‘${missingPoint.point}’`, "을/를")} 보여 줄 실제 근거 1개 이상${firstAction ? `. 예: ${v2CustomerEvidenceText(state.language, firstAction)}` : ""}`,
         `At least one real piece of evidence for “${missingPoint.point}”${firstAction ? `. For example: ${firstAction}` : ""}`),
       evidence: say(`${withKoreanParticle(`‘${missingPoint.point}’`, "이/가")} ${considered}에서도 통하는지 보여 줄 자료·응답·제안. ${missingPoint.why}`,
@@ -950,7 +950,7 @@ export function buildV2Analysis(
     },
     timing: {
       changes: say(`옮길 날짜를 먼저 정하지 않고, 돌아올 길(지금 ${bandText("reversibility")})을 확인한 뒤 시점을 정합니다.`,
-        `Do not fix a date first; set the timing once a way back (now ${bandText("reversibility")}) is confirmed.`),
+        `No date is fixed first; timing is set once a way back (now ${bandText("reversibility")}) is confirmed.`),
       needs: say("돌아올 길 — 예: 휴직·복직 제도, 재지원 가능 여부, 계약 조건", "A confirmed way back, such as a leave-and-return policy, re-application or contract terms"),
       evidence: say("돌아올 조건과 기한을 확인한 기록", "A record of the terms and deadlines for coming back"),
       exposure: say("돌아올 길이 확인될 때까지는 되돌릴 수 있는 일만 합니다.", "Until the way back is confirmed, do only what can be undone."),

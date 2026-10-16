@@ -403,7 +403,7 @@ export default function V2Dashboard({
           say("경로 조정 (Changing)", "Path options (Changing)"),
           say(
             "목표는 그대로 두고 방법을 바꾸는 길",
-            "Keep the goal, change how you get there"
+            "The goal stays; the way there can change"
           )
         )}
         <V2ChangingView analysis={analysis} />

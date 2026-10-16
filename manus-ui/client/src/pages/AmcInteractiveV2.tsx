@@ -1104,7 +1104,7 @@ export default function AmcInteractiveV2() {
                 [Compass, language === "ko" ? "구조부터 보는 커리어 결정 분석" : "Structure First", "정답을 대신 고르지 않습니다. 무엇을 지키고 무엇을 얻는지, 위험이 어디에 있는지 보여 줍니다.", "We do not choose for you. We show what the choice keeps, what it opens and where the risk sits."],
                 [Layers, language === "ko" ? "다섯 가지 관점" : "Five lenses", "기회의 조건 · 연결 가능성 · 구조 적합성 · 실행 현실성 · 버틸 수 있는가", "Opportunity conditions · connection · structural fit · execution reality · staying power"],
                 [FileSearch, language === "ko" ? "확인할 수 있는 공개 자료" : "Public sources you can check", "인용한 페이지가 실제로 열리는 공개 자료만 근거로 씁니다.", "We only use public sources whose cited pages actually open."],
-                [Lock, language === "ko" ? "답변 원문은 저장하지 않음" : "Your words stay private", "작성한 답변 원문은 저장하지 않습니다. 검색에는 검색 대상만 씁니다.", "Your written answers are not stored. Only the search target is used to search."],
+                [Lock, language === "ko" ? "답변 원문은 저장하지 않음" : "Your written answers are not stored", "작성한 답변 원문은 저장하지 않습니다. 검색에는 검색 대상·지역·결정 유형과 보기에서 고른 일부 답만 보냅니다.", "Your written answers are not stored. Search sends only the search target, place, decision type and some of the options you picked."],
               ] as const).map(([Icon, title, ko, en]) => (
                 <li key={en}>
                   <Icon aria-hidden size={18} />

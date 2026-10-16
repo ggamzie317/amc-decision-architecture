@@ -38,8 +38,8 @@ function distance(support: number, ko: boolean) {
   if (support <= 1) return ko ? "재정비 판단 기준에 도달" : "At the level that calls for reorganizing";
   const toTransition = 8 - support;
   return ko
-    ? toTransition <= 2 ? "전환 판단 기준에 가까움" : "중간 구간 · 현재 계획 유지"
-    : toTransition <= 2 ? "Close to the level needed for a move" : "Middle range · keep the current plan";
+    ? toTransition <= 2 ? "전환 판단 기준에 가까움" : "중간 구간 · 옮기기 전 확인 단계"
+    : toTransition <= 2 ? "Close to the level needed for a move" : "Middle range · more to confirm before a move";
 }
 
 export default function V2ScenarioExplain({
