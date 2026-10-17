@@ -6,6 +6,7 @@ type LaunchResponse =
   | {
       backendAvailable: false;
       configuration?: LaunchOpsSummary["configuration"];
+      testRecords?: LaunchOpsSummary["testRecords"];
     };
 export type { LaunchResponse };
 const percent = (value: number | null) => (value === null ? "—" : `${value}%`);
@@ -13,6 +14,18 @@ const duration = (value: number | null) =>
   value === null ? "Unknown" : `${Math.round(value / 6000) / 10} min`;
 const timestamp = (value: string | null) =>
   value ? new Date(value).toLocaleString() : "Unknown";
+
+/** Marks a journey the owner ran as a test (known id or `?test=1`). */
+export function TestBadge() {
+  return (
+    <span
+      title="Test record"
+      className="ml-2 inline-block border border-amber-400 bg-amber-50 px-1.5 py-0.5 align-middle text-[10px] font-semibold tracking-wide text-amber-900"
+    >
+      TEST
+    </span>
+  );
+}
 
 function Metric({
   label,
@@ -74,17 +87,60 @@ function Pattern({
     </section>
   );
 }
+type FunnelRow = LaunchOpsSummary["funnel"][number];
+function FunnelTable({ stages }: { stages: FunnelRow[] }) {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full min-w-[480px] text-left text-sm">
+        <thead>
+          <tr className="border-b border-border text-xs text-muted-foreground">
+            <th className="py-3 font-medium">Stage</th>
+            <th className="px-3 font-medium">Journeys</th>
+            <th className="px-3 font-medium">From previous</th>
+            <th className="px-3 font-medium">From start</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stages.map(stage => (
+            <tr key={stage.key} className="border-b border-border">
+              <td className="py-3">
+                <span>{stage.label}</span>
+                <div
+                  aria-hidden="true"
+                  className="mt-2 h-1 max-w-60 bg-secondary"
+                >
+                  <div
+                    className="h-1 bg-foreground/70"
+                    style={{ width: `${stage.startRate ?? 0}%` }}
+                  />
+                </div>
+              </td>
+              <td className="px-3 font-semibold">{stage.count}</td>
+              <td className="px-3">{percent(stage.previousRate)}</td>
+              <td className="px-3">{percent(stage.startRate)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 const integrityLabels: Record<string, string> = {
   suspiciousLifecycle: "Duplicate starts / missing or out-of-order stages",
   completedAnswerCountMismatch:
     "Completed intake with invalid schema-specific answer count",
   completedMissingStructuralOutput:
     "Dashboard missing complete structural output",
-  liveMissingDerivedSync: "Live evidence missing final derived sync",
+  liveMissingDerivedSync: "Legacy: live evidence missing final derived sync",
   reportPrintMissingOrStaleDerived:
-    "Report / Print before final sync or missing output",
+    "Legacy: Report / Print before final sync or missing output",
   malformedJson: "Malformed JSONB / unexpected payload shape",
   finalChangingUnavailable: "Final Changing array unavailable",
+  v2DashboardWithoutIntakeCompleted:
+    "V2: dashboard generated without Full Intake completed",
+  v2CompletedMissingStructuralOutput:
+    "V2: completed journey missing projected structural output",
+  v2PrintBeforeDashboard: "V2: Print / Save before dashboard generated",
   orphanEvents: "Orphan usage events in selected period",
 };
 
@@ -109,7 +165,7 @@ export default function LaunchOps({
             ["Launch mode", config?.launchMode ?? "Loading"],
             ["Pricing", "FREE"],
             ["External provider", config?.provider ?? "Loading"],
-            ["Current preset", config?.preset ?? "Loading"],
+            [config?.presetLabel ?? "V2 search preset", config?.preset ?? "Loading"],
             ["Research", "OPT-IN ONLY"],
             ["Customer accounts", "NONE"],
           ].map(([label, value]) => (
@@ -144,9 +200,9 @@ export default function LaunchOps({
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Metric
-              label="Measurable journey starts"
+              label="V2 journey starts"
               value={data.funnel[0].count}
-              detail="Unique Preview Started journeys"
+              detail={`Unique V2 journeys with Preview Started · ${data.experienceCounts.legacy} legacy journeys in this period`}
             />
             <Metric
               label="Full Intake completion"
@@ -164,44 +220,25 @@ export default function LaunchOps({
             />
           </div>
           <section className="rounded border border-border bg-card p-5">
-            <h2 className="text-base font-semibold">Launch funnel</h2>
+            <h2 className="text-base font-semibold">Launch funnel · V2</h2>
             <p className="mt-2 max-w-3xl text-xs leading-5 text-muted-foreground">
               {data.cohortDescription} Conversion uses journeys present in both
-              stages. Missing prior-stage events are flagged below.
+              stages, so no rate exceeds 100%. V2 has no separate preview step
+              (Preview Completed does not apply). Missing prior-stage events are
+              flagged below.
             </p>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[480px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground">
-                    <th className="py-3 font-medium">Stage</th>
-                    <th className="px-3 font-medium">Journeys</th>
-                    <th className="px-3 font-medium">From previous</th>
-                    <th className="px-3 font-medium">From start</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.funnel.map(stage => (
-                    <tr key={stage.key} className="border-b border-border">
-                      <td className="py-3">
-                        <span>{stage.label}</span>
-                        <div
-                          aria-hidden="true"
-                          className="mt-2 h-1 max-w-60 bg-secondary"
-                        >
-                          <div
-                            className="h-1 bg-foreground/70"
-                            style={{ width: `${stage.startRate ?? 0}%` }}
-                          />
-                        </div>
-                      </td>
-                      <td className="px-3 font-semibold">{stage.count}</td>
-                      <td className="px-3">{percent(stage.previousRate)}</td>
-                      <td className="px-3">{percent(stage.startRate)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <FunnelTable stages={data.funnel} />
+            <details className="mt-5 text-sm">
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                Legacy MVP / V1 funnel (retired) ·{" "}
+                {data.experienceCounts.legacy} journeys
+              </summary>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Historical journeys from the retired legacy routes, which had a
+                separate Preview Completed step.
+              </p>
+              <FunnelTable stages={data.legacyFunnel} />
+            </details>
           </section>
           <section>
             <h2 className="mb-3 text-base font-semibold">Journey quality</h2>
@@ -230,55 +267,86 @@ export default function LaunchOps({
           </section>
           <section className="rounded border border-border bg-card p-5">
             <h2 className="text-base font-semibold">
-              External Evidence health
+              External Evidence health · V2
             </h2>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Journey outcomes include history. Request diagnostics apply only
-              when server metadata was recorded; older requests remain unknown.
-              No dollar costs are estimated.
+              From V2 journey events (evidence requested / live / fallback).
+              V2 does not record provider latency or provider diagnostics, by
+              design. No dollar costs are estimated.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Metric
-                label="Live journeys"
-                value={data.evidence.liveJourneys}
-                detail={`${percent(data.evidence.livePercent)} of live/fallback journeys`}
+                label="Evidence requests"
+                value={data.evidence.v2.requests}
+                detail={`${data.evidence.v2.requestJourneys} journeys`}
               />
               <Metric
-                label="Fallback journeys"
-                value={data.evidence.fallbackJourneys}
-                detail={`${percent(data.evidence.fallbackPercent)} of live/fallback journeys`}
+                label="Results: live / fallback"
+                value={`${data.evidence.v2.liveResults} / ${data.evidence.v2.fallbackResults}`}
+                detail={`${percent(data.evidence.v2.livePercent)} live`}
               />
               <Metric
-                label="Recorded evidence requests"
-                value={data.evidence.requests}
+                label="Journeys with a live result"
+                value={data.evidence.v2.liveJourneys}
+                detail={`${percent(data.evidence.v2.liveJourneyPercent)} of journeys with a result · ${data.evidence.v2.fallbackOnlyJourneys} fallback only`}
               />
               <Metric
-                label="Requests: live / fallback / unknown"
-                value={`${data.evidence.liveRuns} / ${data.evidence.fallbackRuns} / ${data.evidence.unknownRuns}`}
-              />
-              <Metric
-                label="Provider failures"
-                value={data.evidence.providerFailures}
-                detail={`${data.evidence.timeouts} recorded timeouts`}
-              />
-              <Metric
-                label="Invalid provider responses"
-                value={data.evidence.invalidResponses}
-              />
-              <Metric
-                label="Missing configuration"
-                value={data.evidence.missingConfiguration}
-              />
-              <Metric
-                label="Average / recent latency"
-                value={`${data.evidence.averageLatencyMs ?? "—"} / ${data.evidence.recentLatencyMs ?? "—"}`}
-                detail="Milliseconds, when recorded"
+                label="Most recent live result"
+                value={timestamp(data.evidence.v2.recentLiveEvent)}
+                detail="Latency / provider diagnostics: not recorded for V2"
               />
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Recent verified live success:{" "}
-              {timestamp(data.evidence.recentLiveSuccess)}
-            </p>
+            <details className="mt-5 text-sm">
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                Legacy route provider diagnostics (retired)
+              </summary>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Legacy journeys only. Request diagnostics apply only when server
+                metadata was recorded; older requests remain unknown.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Metric
+                  label="Live journeys"
+                  value={data.evidence.liveJourneys}
+                  detail={`${percent(data.evidence.livePercent)} of live/fallback journeys`}
+                />
+                <Metric
+                  label="Fallback journeys"
+                  value={data.evidence.fallbackJourneys}
+                  detail={`${percent(data.evidence.fallbackPercent)} of live/fallback journeys`}
+                />
+                <Metric
+                  label="Recorded evidence requests"
+                  value={data.evidence.requests}
+                />
+                <Metric
+                  label="Requests: live / fallback / unknown"
+                  value={`${data.evidence.liveRuns} / ${data.evidence.fallbackRuns} / ${data.evidence.unknownRuns}`}
+                />
+                <Metric
+                  label="Provider failures"
+                  value={data.evidence.providerFailures}
+                  detail={`${data.evidence.timeouts} recorded timeouts`}
+                />
+                <Metric
+                  label="Invalid provider responses"
+                  value={data.evidence.invalidResponses}
+                />
+                <Metric
+                  label="Missing configuration"
+                  value={data.evidence.missingConfiguration}
+                />
+                <Metric
+                  label="Average / recent latency"
+                  value={`${data.evidence.averageLatencyMs ?? "—"} / ${data.evidence.recentLatencyMs ?? "—"}`}
+                  detail="Milliseconds, when recorded"
+                />
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                Recent verified live success (legacy):{" "}
+                {timestamp(data.evidence.recentLiveSuccess)}
+              </p>
+            </details>
           </section>
           <section>
             <h2 className="text-base font-semibold">Decision patterns</h2>
@@ -329,9 +397,10 @@ export default function LaunchOps({
               Data integrity · observation only
             </h2>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Review flags, not automatic corrections. Historical missing sync
-              markers and reports opened while evidence was pending may be
-              flagged. Counts overlap; no rows are changed.
+              Review flags, not automatic corrections. V2 journeys are checked
+              against the V2 lifecycle; legacy-only checks (Preview Completed
+              order, derived sync markers, 29 answers) apply to legacy rows
+              only. Counts overlap; no rows are changed.
             </p>
             <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
               {Object.entries(data.integrity).map(([key, count]) => (
@@ -367,6 +436,7 @@ export default function LaunchOps({
                   <tr className="border-b border-border text-muted-foreground">
                     {[
                       "Journey / created",
+                      "Experience",
                       "Case Type",
                       "Language",
                       "Stage",
@@ -396,11 +466,13 @@ export default function LaunchOps({
                         >
                           {row.submissionId}
                         </button>
+                        {row.isTest ? <TestBadge /> : null}
                         <p className="text-muted-foreground">
                           {timestamp(row.createdAt)}
                         </p>
                       </td>
                       {[
+                        row.experience,
                         row.caseType,
                         row.language,
                         row.stage,

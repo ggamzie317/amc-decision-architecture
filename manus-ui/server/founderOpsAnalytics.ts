@@ -31,8 +31,6 @@ export function buildOperationsSummary(
   const fullIntakeStarts = eventCount("full_intake_started");
   const fullIntakeCompletions = eventCount("full_intake_completed");
   const reportsGenerated = eventCount("dashboard_generated");
-  const evidenceRequested = eventCount("external_evidence_requested");
-  const evidenceLive = eventCount("external_evidence_live");
   const researchConsents = submissions.filter(
     item => item.researchUseConsent
   ).length;
@@ -60,6 +58,25 @@ export function buildOperationsSummary(
       detailed_report_opened: 0,
       print_save_clicked: 0,
     };
+  // Rates are per journey: journeys that reached both stages over journeys
+  // that reached the earlier one, so none can exceed 100%. V2 has no separate
+  // preview step (no preview_completed); its preview gate is preview_started.
+  const journeysWith = (eventType: string) =>
+    new Set(
+      events
+        .filter(event => event.eventType === eventType)
+        .map(event => event.submissionId)
+    );
+  const both = (from: Set<string>, to: Set<string>) =>
+    rate(Array.from(from).filter(id => to.has(id)).length, from.size);
+  const isV2 = (id: string) => experienceById.get(id) === "interactive-v2";
+  const previewGate = new Set([
+    ...Array.from(journeysWith("preview_completed")).filter(id => !isV2(id)),
+    ...Array.from(journeysWith("preview_started")).filter(isV2),
+  ]);
+  const fullStarted = journeysWith("full_intake_started");
+  const fullCompleted = journeysWith("full_intake_completed");
+  const evidenceRequestedJourneys = journeysWith("external_evidence_requested");
   const seen = new Set<string>();
   for (const event of events) {
     const experience = experienceById.get(event.submissionId);
@@ -91,10 +108,13 @@ export function buildOperationsSummary(
       printSaveClicks: eventCount("print_save_clicked"),
     },
     rates: {
-      previewToFullIntake: rate(fullIntakeStarts, previewCompletions),
-      fullIntakeCompletion: rate(fullIntakeCompletions, fullIntakeStarts),
-      reportGeneration: rate(reportsGenerated, fullIntakeCompletions),
-      externalEvidenceLive: rate(evidenceLive, evidenceRequested),
+      previewToFullIntake: both(previewGate, fullStarted),
+      fullIntakeCompletion: both(fullStarted, fullCompleted),
+      reportGeneration: both(fullCompleted, journeysWith("dashboard_generated")),
+      externalEvidenceLive: both(
+        evidenceRequestedJourneys,
+        journeysWith("external_evidence_live")
+      ),
       researchConsent: rate(researchConsents, submissions.length),
     },
     languageDistribution,

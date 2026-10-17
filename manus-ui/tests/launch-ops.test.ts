@@ -116,9 +116,12 @@ describe("Launch Ops aggregates", () => {
       null,
       now
     );
-    expect(result.funnel.map(x => x.count)).toEqual([5, 4, 4, 4, 4, 4, 4]);
-    expect(result.funnel[1]).toMatchObject({ previousRate: 80, startRate: 80 });
-    expect(result.funnel[6]).toMatchObject({
+    // The fixture rows are legacy (no V2 identity): they form the secondary
+    // legacy funnel, which keeps Preview Completed; the V2 funnel is empty.
+    expect(result.legacyFunnel.map(x => x.count)).toEqual([5, 4, 4, 4, 4, 4, 4]);
+    expect(result.funnel.map(x => x.count)).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(result.legacyFunnel[1]).toMatchObject({ previousRate: 80, startRate: 80 });
+    expect(result.legacyFunnel[6]).toMatchObject({
       previousRate: 100,
       startRate: 80,
     });
@@ -267,6 +270,9 @@ describe("Launch Ops aggregates", () => {
       reportPrintMissingOrStaleDerived: 1,
       malformedJson: 1,
       finalChangingUnavailable: 1,
+      v2DashboardWithoutIntakeCompleted: 0,
+      v2CompletedMissingStructuralOutput: 0,
+      v2PrintBeforeDashboard: 0,
       orphanEvents: 1,
     });
     expect(JSON.stringify(data)).toBe(before);
@@ -374,7 +380,10 @@ describe("Launch Ops privacy and provider event persistence", () => {
       store
     );
     expect(r.state.body.windowDays).toBe(7);
-    expect(r.state.body.configuration.preset).toBe("fast");
+    // V2 search preset (PERPLEXITY_V2_AGENT_PRESET, default medium), not the
+    // retired legacy route's PERPLEXITY_AGENT_PRESET.
+    expect(r.state.body.configuration.preset).toBe("medium");
+    expect(r.state.body.configuration.presetLabel).toBe("V2 search preset");
     expect(r.state.body.configuration).not.toHaveProperty("productionSha");
     await handleAdminSubmissions({ method: "GET", headers }, r.response, store);
     expect(JSON.stringify(r.state.body)).not.toContain("PRIVATE ANSWER");

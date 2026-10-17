@@ -19,6 +19,7 @@ import {
   type SubmissionPatch,
   type UsageEventType,
 } from "./founderOpsTypes.js";
+import { filterTestRecords, isTestRecord } from "./testRecords.js";
 
 type TrackBody = {
   submissionId?: unknown;
@@ -233,17 +234,22 @@ export async function trackFounderOps(body: TrackBody, store: FounderOpsStore) {
 export async function founderSummary(
   store: FounderOpsStore,
   windowDays: 7 | 30 | null,
-  researchOnly: boolean
+  researchOnly: boolean,
+  excludeTests = false
 ) {
   if (!store.available) return { backendAvailable: false };
-  const submissions = await store.listSubmissions({ windowDays }, 10_000);
+  const listed = await store.listSubmissions({ windowDays }, 10_000);
+  const { submissions, testRecords } = filterTestRecords(listed, [], excludeTests);
   const eventGroups = await Promise.all(
     submissions.map(item => store.getSubmission(item.submissionId))
   );
   const events = eventGroups.flatMap(group => group?.events || []);
-  return researchOnly
-    ? buildResearchSummary(submissions, events)
-    : buildOperationsSummary(submissions, events);
+  return {
+    ...(researchOnly
+      ? buildResearchSummary(submissions, events)
+      : buildOperationsSummary(submissions, events)),
+    testRecords,
+  };
 }
 
 export function parseSubmissionFilters(
@@ -305,6 +311,7 @@ export function buildSubmissionsCsv(
     "decision_conditions",
     "safety_margin",
     "framework_structured_data",
+    "is_test",
     ...(full ? ["answers", "structural_output", "external_evidence"] : []),
   ];
   const lines = rows.map(raw => {
@@ -331,6 +338,7 @@ export function buildSubmissionsCsv(
       item.decisionConditionsJson,
       item.safetyMarginStructuredData,
       item.existingFifwmStructuredData,
+      isTestRecord(raw),
       ...(full
         ? [
             item.answersJson,

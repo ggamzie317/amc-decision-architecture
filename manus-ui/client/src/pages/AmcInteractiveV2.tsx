@@ -113,6 +113,9 @@ export default function AmcInteractiveV2() {
       ? "ko"
       : "en";
   const [language, setLanguage] = useState<V2Language>(initialLanguage);
+  // `?test=1` marks this journey as a test run for the founder dashboard.
+  // Read once, so the tag holds for the whole journey. Nothing visible changes.
+  const [testRun] = useState(() => params.get("test") === "1");
   // A language toggle changes presentation, not the research snapshot or its identity.
   const [researchLanguage, setResearchLanguage] = useState<V2Language>(initialLanguage);
   const [kind, setKind] = useState<V2DemoKind>(initialKind);
@@ -254,6 +257,7 @@ export default function AmcInteractiveV2() {
         structuralOutputJson: {
           ...v2Identity,
           ...((patch.structuralOutputJson as object) || {}),
+          ...(testRun ? { testRun: true } : {}),
         },
       }),
     }, observation => {

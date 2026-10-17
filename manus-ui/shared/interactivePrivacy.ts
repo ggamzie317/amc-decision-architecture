@@ -137,6 +137,9 @@ export function projectInteractivePatch(value: unknown): Record<string, any> {
     selectedIdentity(s) === v2Identity
   )
     out.structuralOutputJson.externalEvidenceStatus = s.externalEvidenceStatus;
+  // Test journeys (`?test=1`) are tagged so aggregate reviews can exclude
+  // them. Only the literal `true` is kept; any other value is dropped.
+  if (s.testRun === true) out.structuralOutputJson.testRun = true;
   if (postures.includes(obj(s.currentStructuralPosture).label))
     out.structuralOutputJson.currentStructuralPosture = {
       label: s.currentStructuralPosture.label,

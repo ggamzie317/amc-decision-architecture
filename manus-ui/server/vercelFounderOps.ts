@@ -1,7 +1,12 @@
 import { isInteractive, projectInteractivePatch, projectInteractiveMetadata } from "../shared/interactivePrivacy.js";
 import { sanitizeSimulatorMetadata } from "./simulatorAnalytics.js";
 import { buildLaunchOpsSummary } from "./launchOpsAnalytics.js";
-import { configuredAgentPreset } from "./externalSnapshotService.js";
+import { configuredV2AgentPreset } from "./externalIntelligenceV2Service.js";
+import {
+  excludeTestsRequested,
+  filterTestRecords,
+  isTestRecord,
+} from "./testRecords.js";
 import {
   ADMIN_COOKIE_NAME,
   adminAuthConfigured,
@@ -176,7 +181,16 @@ export async function handleAdminSummary(
     const window =
       req.query?.window === "7" ? 7 : req.query?.window === "30" ? 30 : null;
     const research = req.query?.mode === "research";
-    res.status(200).json(await founderSummary(store, window, research));
+    res
+      .status(200)
+      .json(
+        await founderSummary(
+          store,
+          window,
+          research,
+          excludeTestsRequested(req.query)
+        )
+      );
   } catch {
     res.status(200).json({ backendAvailable: false });
   }
@@ -205,16 +219,19 @@ export async function handleAdminSubmissions(
     return;
   }
   try {
-    const submissions = await store.listSubmissions(
-      parseSubmissionFilters(req.query || {}),
-      500
+    const { submissions, testRecords } = filterTestRecords(
+      await store.listSubmissions(parseSubmissionFilters(req.query || {}), 500),
+      [],
+      excludeTestsRequested(req.query)
     );
     // Overview responses carry metadata only. Raw answers and derived narratives
     // remain behind the explicit authenticated detail/export actions.
     res.status(200).json({
       backendAvailable: true,
+      testRecords,
       submissions: submissions.map(row => ({
         submissionId: row.submissionId,
+        isTest: isTestRecord(row),
         createdAt: row.createdAt,
         language: row.language,
         caseType: row.caseType,
@@ -254,10 +271,12 @@ export async function handleAdminSubmission(
       res.status(404).json({ error: "Submission not found" });
       return;
     }
+    const isTest = isTestRecord(detail.submission);
     res.status(200).json(isInteractive(detail.submission.structuralOutputJson) ? {
       submission: {...detail.submission, ...projectInteractivePatch(detail.submission)},
       events: detail.events.map(e => ({...e, metadataJson:{...projectInteractiveMetadata(e.metadataJson),...sanitizeSimulatorMetadata(e.metadataJson)}})),
-    } : detail);
+      isTest,
+    } : { ...detail, isTest });
   } catch {
     res.status(503).json({ error: "Data backend unavailable" });
   }
@@ -276,9 +295,10 @@ export async function handleAdminExport(
   }
   try {
     const full = req.query?.mode === "full";
-    const rows = await store.listSubmissions(
-      parseSubmissionFilters(req.query || {}),
-      10_000
+    const { submissions: rows } = filterTestRecords(
+      await store.listSubmissions(parseSubmissionFilters(req.query || {}), 10_000),
+      [],
+      excludeTestsRequested(req.query)
     );
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
@@ -303,7 +323,10 @@ export async function handleAdminLaunchOps(
   if (!method(req, res, ["GET"]) || !requireAdmin(req, res)) return;
   const configuration = {
     provider: "Perplexity Agent API",
-    preset: configuredAgentPreset(),
+    // The live search route is V2; the retired legacy route's preset
+    // (PERPLEXITY_AGENT_PRESET) no longer describes production searches.
+    preset: configuredV2AgentPreset(),
+    presetLabel: "V2 search preset",
     launchMode: "FREE PUBLIC",
     ...(process.env.VERCEL_ENV === "production" &&
     /^[a-f0-9]{40}$/.test(process.env.VERCEL_GIT_COMMIT_SHA ?? "")
@@ -315,13 +338,19 @@ export async function handleAdminLaunchOps(
     return;
   }
   try {
-    const { submissions, events } = await store.readLaunchData();
+    const data = await store.readLaunchData();
     const windowDays =
       req.query?.window === "7" ? 7 : req.query?.window === "30" ? 30 : null;
+    const { submissions, events, testRecords } = filterTestRecords(
+      data.submissions,
+      data.events,
+      excludeTestsRequested(req.query)
+    );
     res
       .status(200)
       .json({
         ...buildLaunchOpsSummary(submissions, events, windowDays),
+        testRecords,
         configuration,
       });
   } catch {

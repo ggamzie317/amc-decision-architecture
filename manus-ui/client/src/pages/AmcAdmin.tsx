@@ -1,7 +1,7 @@
 import SimulatorAnalytics from "../components/SimulatorAnalytics";
 import { isInteractive, v2Identity } from "../../../shared/interactivePrivacy";
 import { intake15Questions, INTAKE_V4_SCHEMA } from "../data/amcIntakeV4";
-import LaunchOps, { type LaunchResponse } from "../components/LaunchOps";
+import LaunchOps, { TestBadge, type LaunchResponse } from "../components/LaunchOps";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Summary = {
@@ -17,7 +17,9 @@ type Summary = {
   safetyMarginDistribution?: Record<string, number>;
   frameworkSignalDistributions?: Record<string, Record<string, number>>;
   alternativePathSurfaced?: Record<string, number>;
+  testRecords?: TestRecords;
 };
+type TestRecords = { count: number; excluded: boolean };
 
 type Submission = {
   submissionId: string;
@@ -44,6 +46,7 @@ type Submission = {
 };
 
 type Detail = {
+  isTest?: boolean;
   submission: Submission;
   events: Array<{ eventId: string; eventType: string; createdAt: string }>;
 };
@@ -60,7 +63,7 @@ type SubmissionOverview = Pick<
   | "reportGeneratedAt"
   | "printSaveClickedAt"
   | "researchUseConsent"
->;
+> & { isTest?: boolean };
 type Health = {
   database: "connected" | "not_configured" | "error";
   schema: "ready" | "missing_migration";
@@ -94,7 +97,7 @@ const metricLabels: Record<string, string> = {
   reportsGenerated: "Reports generated",
   detailedReportsOpened: "Detailed reports opened",
   printSaveClicks: "Print / Save clicks",
-  previewToFullIntake: "Preview → Full Intake",
+  previewToFullIntake: "Preview → Full Intake (journeys)",
   fullIntakeCompletion: "Full Intake completion",
   reportGeneration: "Report generation",
   externalEvidenceLive: "Evidence live success",
@@ -108,6 +111,17 @@ async function api<T>(url: string, options?: RequestInit): Promise<T> {
   };
   if (!response.ok) throw new Error(body.error || "Request failed");
   return body;
+}
+
+/** Builds admin query strings; `excludeTests=1` is sent only when on. */
+export function adminQuery(
+  base: Record<string, string>,
+  excludeTests: boolean
+) {
+  return new URLSearchParams({
+    ...base,
+    ...(excludeTests ? { excludeTests: "1" } : {}),
+  }).toString();
 }
 
 function Distribution({
@@ -146,6 +160,9 @@ export default function AmcAdmin() {
   const [notice, setNotice] = useState("");
   const [tab, setTab] = useState<Tab>("launch");
   const [windowDays, setWindowDays] = useState("all");
+  // Default ON: test journeys are left out of every count and export.
+  const [excludeTests, setExcludeTests] = useState(true);
+  const [testRecords, setTestRecords] = useState<TestRecords | null>(null);
   const [launch, setLaunch] = useState<LaunchResponse | null>(null);
   const loadId = useRef(0);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -167,8 +184,11 @@ export default function AmcAdmin() {
     Object.entries(filters).forEach(([key, value]) => {
       if (value) params.set(key, value);
     });
+    if (excludeTests) params.set("excludeTests", "1");
     return params.toString();
-  }, [filters, windowDays]);
+  }, [filters, windowDays, excludeTests]);
+  const windowParam: Record<string, string> =
+    windowDays !== "all" ? { window: windowDays } : {};
 
   const load = async () => {
     const requestId = ++loadId.current;
@@ -176,21 +196,28 @@ export default function AmcAdmin() {
     try {
       const [ops, patterns, list, status, launchData] = await Promise.all([
         api<Summary>(
-          `/api/amc/admin/summary?${new URLSearchParams({ ...(windowDays !== "all" ? { window: windowDays } : {}) })}`
+          `/api/amc/admin/summary?${adminQuery(windowParam, excludeTests)}`
         ),
         api<Summary>(
-          `/api/amc/admin/summary?${new URLSearchParams({ mode: "research", ...(windowDays !== "all" ? { window: windowDays } : {}) })}`
+          `/api/amc/admin/summary?${adminQuery({ mode: "research", ...windowParam }, excludeTests)}`
         ),
         api<{ backendAvailable: boolean; submissions: SubmissionOverview[] }>(
           `/api/amc/admin/submissions?${query}`
         ),
         api<Health>("/api/amc/admin/health"),
-        api<LaunchResponse>(`/api/amc/admin/launch?window=${windowDays}`),
+        api<LaunchResponse>(
+          `/api/amc/admin/launch?${adminQuery({ window: windowDays }, excludeTests)}`
+        ),
       ]);
       if (loadId.current !== requestId) return;
       setAuthenticated(true);
       setLaunch(launchData);
       setSummary(ops);
+      setTestRecords(
+        ("testRecords" in launchData ? launchData.testRecords : undefined) ??
+          ops.testRecords ??
+          null
+      );
       setResearch(patterns);
       setSubmissions(list.submissions);
       setHealth(status);
@@ -360,6 +387,20 @@ export default function AmcAdmin() {
               )
             )}
           </div>
+          <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={excludeTests}
+              onChange={event => setExcludeTests(event.target.checked)}
+            />
+            테스트 기록 제외 / Exclude test records
+            <span className="text-xs text-muted-foreground">
+              {testRecords
+                ? `${testRecords.count} test record${testRecords.count === 1 ? "" : "s"} · ${testRecords.excluded ? "excluded" : "included"}`
+                : ""}
+            </span>
+          </label>
           <select
             aria-label="Analytics period"
             value={windowDays}
@@ -370,6 +411,7 @@ export default function AmcAdmin() {
             <option value="30">Last 30 days</option>
             <option value="7">Last 7 days</option>
           </select>
+          </div>
         </div>
 
         {tab === "launch" ? (
@@ -650,6 +692,7 @@ export default function AmcAdmin() {
                         >
                           {item.submissionId}
                         </button>
+                        {item.isTest ? <TestBadge /> : null}
                       </td>
                       <td className="px-3 py-3">
                         {new Date(item.createdAt).toLocaleDateString()}
@@ -692,6 +735,7 @@ export default function AmcAdmin() {
                 </p>
                 <h2 className="mt-2 text-xl font-semibold">
                   {detail.submission.submissionId}
+                  {detail.isTest ? <TestBadge /> : null}
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {detail.submission.productVersion} ·{" "}
