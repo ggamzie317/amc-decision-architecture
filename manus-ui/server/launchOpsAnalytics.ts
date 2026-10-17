@@ -1,5 +1,6 @@
-import { completedInteractive } from "../shared/interactivePrivacy.js";
+import { completedInteractive, v2Identity } from "../shared/interactivePrivacy.js";
 import { expectedIntakeAnswers, buildSimulatorAnalytics } from "./simulatorAnalytics.js";
+import { isTestRecord } from "./testRecords.js";
 import type { SubmissionRecord, UsageEventRecord } from "./founderOpsTypes.js";
 
 export const funnelStages = [
@@ -11,6 +12,33 @@ export const funnelStages = [
   ["detailed_report_opened", "Detailed Report Opened"],
   ["print_save_clicked", "Print / Save"],
 ] as const;
+/**
+ * V2 has no separate preview step: it records preview_started and
+ * full_intake_started together and never emits preview_completed. Its funnel
+ * therefore skips that stage instead of counting every V2 journey as missing it.
+ */
+export const v2FunnelStages = funnelStages.filter(
+  ([key]) => key !== "preview_completed"
+);
+type Stage = readonly [string, string];
+/** "v2" for interactive-v2 journeys; "legacy" for the retired MVP and V1. */
+export const journeyExperience = (row: Pick<SubmissionRecord, "structuralOutputJson">) =>
+  record(row.structuralOutputJson).experienceVersion ===
+  v2Identity.experienceVersion
+    ? ("v2" as const)
+    : ("legacy" as const);
+/**
+ * V2 lifecycle prerequisites (first occurrence of each event). The detailed
+ * report may open before dashboard_generated (that event waits for every
+ * evidence topic), but printing is blocked until it is recorded.
+ */
+const v2Prerequisites: Record<string, string> = {
+  full_intake_started: "preview_started",
+  full_intake_completed: "full_intake_started",
+  dashboard_generated: "full_intake_completed",
+  detailed_report_opened: "full_intake_completed",
+  print_save_clicked: "dashboard_generated",
+};
 const cases = [
   "Corporate Stay vs Exit",
   "MBA / EMBA / PhD Decision",
@@ -99,27 +127,60 @@ export function buildLaunchOpsSummary(
   byId.forEach(list =>
     list.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
   );
-  const reached = funnelStages.map(
-    ([key]) =>
+  const reachedBy = new Map(
+    funnelStages.map(([key]) => [
+      key as string,
       new Set(
         events
           .filter(event => event.eventType === key)
           .map(event => event.submissionId)
-      )
+      ),
+    ])
   );
+  const reached = (key: (typeof funnelStages)[number][0]) => reachedBy.get(key)!;
   const intersection = (a: Set<string>, b: Set<string>) =>
     Array.from(a).filter(id => b.has(id)).length;
-  const conversion = (from: number, to: number) =>
-    rate(intersection(reached[from], reached[to]), reached[from].size);
-  const funnel = funnelStages.map(([key, label], index) => ({
-    key,
-    label,
-    count: reached[index].size,
-    previousRate: index ? conversion(index - 1, index) : null,
-    startRate: conversion(0, index),
-  }));
+  // Every rate is "journeys present in both stages / journeys in the earlier
+  // stage", so no conversion can exceed 100%.
+  const conversion = (
+    from: (typeof funnelStages)[number][0],
+    to: (typeof funnelStages)[number][0]
+  ) => rate(intersection(reached(from), reached(to)), reached(from).size);
+  const experienceIds = {
+    v2: new Set(
+      submissions
+        .filter(row => journeyExperience(row) === "v2")
+        .map(row => row.submissionId)
+    ),
+    legacy: new Set(
+      submissions
+        .filter(row => journeyExperience(row) === "legacy")
+        .map(row => row.submissionId)
+    ),
+  };
+  const buildFunnel = (stages: readonly Stage[], members: Set<string>) => {
+    const sets = stages.map(
+      ([key]) =>
+        new Set(Array.from(reachedBy.get(key)!).filter(id => members.has(id)))
+    );
+    const step = (from: number, to: number) =>
+      rate(intersection(sets[from], sets[to]), sets[from].size);
+    return stages.map(([key, label], index) => ({
+      key,
+      label,
+      count: sets[index].size,
+      previousRate: index ? step(index - 1, index) : null,
+      startRate: step(0, index),
+    }));
+  };
+  // Primary funnel: V2 journeys. Legacy MVP / V1 rows keep their own funnel
+  // (with Preview Completed) as a secondary, historical view.
+  const funnel = buildFunnel(v2FunnelStages, experienceIds.v2);
+  const legacyFunnel = buildFunnel(funnelStages, experienceIds.legacy);
   const completed = submissions.filter(
-    row => row.fullIntakeCompletedAt || reached[3].has(row.submissionId)
+    row =>
+      row.fullIntakeCompletedAt ||
+      reached("full_intake_completed").has(row.submissionId)
   );
   const distributions = {
     caseType: {} as Record<string, number>,
@@ -192,6 +253,9 @@ export function buildLaunchOpsSummary(
     reportPrintMissingOrStaleDerived: 0,
     malformedJson: 0,
     finalChangingUnavailable: 0,
+    v2DashboardWithoutIntakeCompleted: 0,
+    v2CompletedMissingStructuralOutput: 0,
+    v2PrintBeforeDashboard: 0,
     orphanEvents: allEvents.filter(
       event => !allIds.has(event.submissionId) && within(event.createdAt)
     ).length,
@@ -210,9 +274,10 @@ export function buildLaunchOpsSummary(
       durations.push(
         Date.parse(finished.createdAt) - Date.parse(started.createdAt)
       );
+    const isV2 = journeyExperience(row) === "v2";
     if (
-      reached[0].has(row.submissionId) &&
-      !reached[3].has(row.submissionId) &&
+      reached("preview_started").has(row.submissionId) &&
+      !reached("full_intake_completed").has(row.submissionId) &&
       !row.fullIntakeCompletedAt
     ) {
       incomplete++;
@@ -227,19 +292,33 @@ export function buildLaunchOpsSummary(
     const ordered = stages.filter(
       (event): event is UsageEventRecord => !!event
     );
+    const duplicateStart =
+      journey.filter(event => event.eventType === "preview_started").length > 1;
+    const v2LifecycleBroken = () =>
+      Object.entries(v2Prerequisites).some(([key, prior]) => {
+        const event = first(key);
+        if (!event) return false;
+        const before = first(prior);
+        return (
+          !before || Date.parse(event.createdAt) < Date.parse(before.createdAt)
+        );
+      });
     if (
-      journey.filter(event => event.eventType === "preview_started").length >
-        1 ||
-      ordered.some(
-        (event, index) =>
-          index > 0 &&
-          Date.parse(event.createdAt) < Date.parse(ordered[index - 1].createdAt)
-      ) ||
-      stages.some((event, index) => event && index > 0 && !stages[index - 1])
+      duplicateStart ||
+      (isV2
+        ? v2LifecycleBroken()
+        : ordered.some(
+            (event, index) =>
+              index > 0 &&
+              Date.parse(event.createdAt) <
+                Date.parse(ordered[index - 1].createdAt)
+          ) ||
+          stages.some((event, index) => event && index > 0 && !stages[index - 1]))
     )
       integrity.suspiciousLifecycle++;
     const full =
-      !!row.fullIntakeCompletedAt || reached[3].has(row.submissionId);
+      !!row.fullIntakeCompletedAt ||
+      reached("full_intake_completed").has(row.submissionId);
     const output = record(row.structuralOutputJson);
     const outputValid =
       Object.keys(output).length > 0 &&
@@ -255,8 +334,31 @@ export function buildLaunchOpsSummary(
         ))
     )
       integrity.completedAnswerCountMismatch++;
-    if (reached[4].has(row.submissionId) && !outputValid)
+    const dashboard = reached("dashboard_generated").has(row.submissionId);
+    if (dashboard && !outputValid)
       integrity.completedMissingStructuralOutput++;
+    if (isV2) {
+      if (dashboard && !reached("full_intake_completed").has(row.submissionId))
+        integrity.v2DashboardWithoutIntakeCompleted++;
+      // The allowlisted projection a completed V2 journey must carry.
+      if (
+        (full || dashboard) &&
+        !(
+          completedInteractive(output) &&
+          !!record(output.currentStructuralPosture).label &&
+          Array.isArray(output.changingPlays)
+        )
+      )
+        integrity.v2CompletedMissingStructuralOutput++;
+      const print = first("print_save_clicked");
+      const generated = first("dashboard_generated");
+      if (
+        print &&
+        (!generated ||
+          Date.parse(print.createdAt) < Date.parse(generated.createdAt))
+      )
+        integrity.v2PrintBeforeDashboard++;
+    }
     const syncs = journey.filter(
       event =>
         ["external_evidence_live", "external_evidence_fallback"].includes(
@@ -267,7 +369,9 @@ export function buildLaunchOpsSummary(
       .filter(event => event.eventType === "external_evidence_requested")
       .at(-1);
     const lastSync = syncs.at(-1);
+    // derivedAnalysisSynced was a legacy-route marker; V2 never sends it.
     if (
+      !isV2 &&
       row.externalEvidenceMode === "live" &&
       (!lastSync ||
         lastSync.eventType !== "external_evidence_live" ||
@@ -279,6 +383,7 @@ export function buildLaunchOpsSummary(
       ["detailed_report_opened", "print_save_clicked"].includes(event.eventType)
     );
     if (
+      !isV2 &&
       reportEvents.length &&
       (!outputValid ||
         reportEvents.some(event => {
@@ -315,12 +420,17 @@ export function buildLaunchOpsSummary(
       !Array.isArray(row.decisionConditionsJson)
     )
       integrity.malformedJson++;
-    if ((full || reached[4].has(row.submissionId)) && plays(row) === null)
+    if ((full || dashboard) && plays(row) === null)
       integrity.finalChangingUnavailable++;
   }
   durations.sort((a, b) => a - b);
+  const isV2Journey = (id: string) => experienceIds.v2.has(id);
+  // Provider diagnostics exist only for the retired legacy route; V2 does not
+  // persist provider observations (privacy, by design).
   const requests = events.filter(
-    event => event.eventType === "external_evidence_requested"
+    event =>
+      event.eventType === "external_evidence_requested" &&
+      !isV2Journey(event.submissionId)
   );
   const observations = requests
     .map(event => record(record(event.metadataJson).providerObservation))
@@ -343,12 +453,38 @@ export function buildLaunchOpsSummary(
   const latestObservation = [...observations].sort(
     (a, b) => (time(b.completedAt) ?? 0) - (time(a.completedAt) ?? 0)
   )[0];
-  const liveJourneys = submissions.filter(
+  const legacyRows = submissions.filter(row => !isV2Journey(row.submissionId));
+  const liveJourneys = legacyRows.filter(
     row => row.externalEvidenceMode === "live"
   ).length;
-  const fallbackJourneys = submissions.filter(
+  const fallbackJourneys = legacyRows.filter(
     row => row.externalEvidenceMode === "fallback"
   ).length;
+  // V2 evidence health comes from journey events only.
+  const v2Events = (type: string) =>
+    events.filter(
+      event => event.eventType === type && isV2Journey(event.submissionId)
+    );
+  const v2Requested = v2Events("external_evidence_requested");
+  const v2Live = v2Events("external_evidence_live");
+  const v2Fallback = v2Events("external_evidence_fallback");
+  const v2LiveJourneyIds = new Set(v2Live.map(event => event.submissionId));
+  const v2ResultJourneyIds = new Set(
+    [...v2Live, ...v2Fallback].map(event => event.submissionId)
+  );
+  const v2Evidence = {
+    requests: v2Requested.length,
+    requestJourneys: new Set(v2Requested.map(event => event.submissionId)).size,
+    liveResults: v2Live.length,
+    fallbackResults: v2Fallback.length,
+    livePercent: rate(v2Live.length, v2Live.length + v2Fallback.length),
+    liveJourneys: v2LiveJourneyIds.size,
+    fallbackOnlyJourneys: v2ResultJourneyIds.size - v2LiveJourneyIds.size,
+    liveJourneyPercent: rate(v2LiveJourneyIds.size, v2ResultJourneyIds.size),
+    recentLiveEvent: latest(v2Live.map(event => event.createdAt)),
+    recentFallbackEvent: latest(v2Fallback.map(event => event.createdAt)),
+    diagnosticsRecorded: false as const,
+  };
   const researchConsented = completed.filter(
     row => row.researchUseConsent
   ).length;
@@ -361,10 +497,24 @@ export function buildLaunchOpsSummary(
     cohortDescription:
       "Journeys created in this period, followed through now. Funnel counts unique journeys; repeat clicks do not inflate conversion. Site visitors are not measured.",
     funnel,
+    legacyFunnel,
+    experienceCounts: {
+      v2: experienceIds.v2.size,
+      legacy: experienceIds.legacy.size,
+    },
     quality: {
-      intakeCompletionRate: conversion(2, 3),
-      dashboardReportRate: conversion(4, 5),
-      reportPrintRate: conversion(5, 6),
+      intakeCompletionRate: conversion(
+        "full_intake_started",
+        "full_intake_completed"
+      ),
+      dashboardReportRate: conversion(
+        "dashboard_generated",
+        "detailed_report_opened"
+      ),
+      reportPrintRate: conversion(
+        "detailed_report_opened",
+        "print_save_clicked"
+      ),
       incomplete,
       inactiveIncomplete,
       completionTimeSamples: durations.length,
@@ -384,6 +534,8 @@ export function buildLaunchOpsSummary(
       percent: rate(researchConsented, completed.length),
     },
     evidence: {
+      v2: v2Evidence,
+      // Fields below: legacy MVP route only (provider observations).
       requests: requests.length,
       liveRuns: liveRuns.length,
       fallbackRuns: fallbackRuns.length,
@@ -424,6 +576,8 @@ export function buildLaunchOpsSummary(
       .map(row => ({
         submissionId: row.submissionId,
         createdAt: row.createdAt,
+        experience: journeyExperience(row) === "v2" ? "V2" : "Legacy",
+        isTest: isTestRecord(row),
         caseType: safeCase(row),
         language:
           row.language === "ko"
@@ -442,16 +596,19 @@ export function buildLaunchOpsSummary(
         evidence: row.externalEvidenceMode ?? "unknown",
         safetyMargin: safety(row),
         changingCount: plays(row)?.length ?? null,
-        reportOpened: reached[5].has(row.submissionId),
-        printed: reached[6].has(row.submissionId),
+        reportOpened: reached("detailed_report_opened").has(row.submissionId),
+        printed: reached("print_save_clicked").has(row.submissionId),
         researchConsent: row.researchUseConsent,
       })),
   };
 }
 
 export type LaunchOpsSummary = ReturnType<typeof buildLaunchOpsSummary> & {
+  testRecords?: import("./testRecords.js").TestRecordCount;
   configuration?: {
+    /** V2 search preset (PERPLEXITY_V2_AGENT_PRESET, default medium). */
     preset: string;
+    presetLabel?: string;
     provider: string;
     launchMode: string;
     productionSha?: string;

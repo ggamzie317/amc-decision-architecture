@@ -431,3 +431,53 @@ describe("draft paths keep recording dashboard_generated once", () => {
     expect(one(V2Dashboard).props.onRetryFailedTopics).toBeUndefined();
   });
 });
+
+// Owner decision 4 (2026-10-17): a journey opened with ?test=1 is tagged so
+// founder aggregates can exclude it. Nothing visible changes.
+describe("test-run tag (?test=1)", () => {
+  async function trackedJourney() {
+    const groups = atLastStep();
+    searchButton().props.onClick();
+    render();
+    await waitFor(() => calls.length === 1);
+    calls[0].resolve(liveResponse(bodyOf(calls[0])));
+    await waitFor(() => calls.length === groups.length);
+    for (const call of calls.slice(1)) call.resolve(liveResponse(bodyOf(call)));
+    await waitFor(() => events("dashboard_generated").length > 0);
+    one(V2Dashboard).props.onReport();
+    render();
+    return tracked;
+  }
+  const testRunOf = (event: { patch: Record<string, unknown> }) =>
+    (event.patch.structuralOutputJson as Record<string, unknown>).testRun;
+
+  it("tags every track patch of the journey with testRun: true", async () => {
+    (window as any).location.search = "?lang=en&test=1";
+    const html = (() => { render(); return textOf(tree); })();
+    const sent = await trackedJourney();
+    expect(sent.map(e => e.eventType)).toEqual(expect.arrayContaining([
+      "external_evidence_requested", "external_evidence_live", "dashboard_generated", "detailed_report_opened",
+    ]));
+    expect(sent.every(event => testRunOf(event) === true)).toBe(true);
+    // The tag is read once: a later URL change does not untag the journey.
+    (window as any).location.search = "?lang=en";
+    one(V2Report).props.onPrint();
+    expect(testRunOf(events("print_save_clicked")[0])).toBe(true);
+    // No customer-visible difference.
+    runner.slots = [];
+    (window as any).location.search = "?lang=en";
+    render();
+    expect(textOf(tree)).toBe(html);
+  });
+  it("sends no testRun without ?test=1 (or with another value)", async () => {
+    for (const search of ["?lang=en", "?lang=en&test=0", "?lang=en&test=true"]) {
+      runner.slots = [];
+      tracked.length = 0;
+      calls = [];
+      (window as any).location.search = search;
+      const sent = await trackedJourney();
+      expect(sent.length).toBeGreaterThan(2);
+      expect(sent.some(event => "testRun" in (event.patch.structuralOutputJson as object))).toBe(false);
+    }
+  });
+});
