@@ -46,6 +46,17 @@ const patchColumns: Record<keyof SubmissionPatch, string> = {
   existingFifwmStructuredData: "existing_fifwm_structured_data",
 };
 
+/**
+ * JEV allowance. JEV is an auxiliary reading and never changes the AMC analysis.
+ * The owner can change either number here (owner decision 2026-10-17).
+ */
+// At most this many JEV assessments are reserved for one journey (submission_id).
+export const JEV_PER_JOURNEY_LIMIT = 6;
+// Service-wide safety ceiling: reservations across all journeys in a rolling 24 hours.
+export const JEV_DAILY_LIMIT = 200;
+export type JevLimits = { perJourney: number; daily: number };
+const defaultJevLimits: JevLimits = { perJourney: JEV_PER_JOURNEY_LIMIT, daily: JEV_DAILY_LIMIT };
+
 export class DataBackendUnavailableError extends Error {
   constructor() {
     super("Data backend not configured");
@@ -155,7 +166,10 @@ function mapEvent(row: Record<string, unknown>): UsageEventRecord {
 export class PostgresFounderOpsStore implements FounderOpsStore {
   readonly available = true;
 
-  constructor(private readonly sql: Sql) {}
+  constructor(
+    private readonly sql: Sql,
+    private readonly jevLimits: JevLimits = defaultJevLimits
+  ) {}
 
   async createSubmission(
     language: AmcLanguage,
@@ -203,12 +217,25 @@ export class PostgresFounderOpsStore implements FounderOpsStore {
     return rows.length === 1;
   }
 
-  // Atomic, durable pilot allowance. Reservation survives provider timeout or restart.
+  // Atomic, durable JEV allowance (per journey + rolling 24h service ceiling).
+  // A reservation survives provider timeout or restart.
   async reserveJevScenario(submissionId: string, fingerprint: string) {
+    const limits = this.jevLimits;
     return this.sql.begin(async tx => {
       await tx`SELECT pg_advisory_xact_lock(590059)`;
-      const rows = await tx`SELECT metadata_json FROM usage_events WHERE event_type = 'jev_assessment_requested' AND metadata_json ? 'packetFingerprint'`;
-      if (rows.length >= 6 || rows.some(row => row.metadata_json.packetFingerprint === fingerprint)) return false;
+      const [journey] = await tx`
+        SELECT COUNT(*)::int AS reserved,
+               COALESCE(BOOL_OR(metadata_json->>'packetFingerprint' = ${fingerprint}), false) AS duplicate
+        FROM usage_events
+        WHERE event_type = 'jev_assessment_requested' AND metadata_json ? 'packetFingerprint'
+          AND submission_id = ${submissionId}`;
+      if (journey.duplicate || journey.reserved >= limits.perJourney) return false;
+      const [day] = await tx`
+        SELECT COUNT(*)::int AS reserved
+        FROM usage_events
+        WHERE event_type = 'jev_assessment_requested' AND metadata_json ? 'packetFingerprint'
+          AND created_at > NOW() - INTERVAL '24 hours'`;
+      if (day.reserved >= limits.daily) return false;
       await tx`INSERT INTO usage_events (event_id, submission_id, event_type, metadata_json) VALUES (${randomUUID()}, ${submissionId}, 'jev_assessment_requested', ${tx.json({packetFingerprint:fingerprint})})`;
       return true;
     }) as Promise<boolean>;
@@ -301,6 +328,8 @@ export class MemoryFounderOpsStore implements FounderOpsStore {
   readonly submissions = new Map<string, SubmissionRecord>();
   readonly events: UsageEventRecord[] = [];
 
+  constructor(private readonly jevLimits: JevLimits = defaultJevLimits) {}
+
   async createSubmission(
     language: AmcLanguage,
     serviceStorageConsent: boolean
@@ -349,9 +378,13 @@ export class MemoryFounderOpsStore implements FounderOpsStore {
     return true;
   }
 
+  // Mirrors the Postgres allowance (single-threaded, so no lock is needed).
   async reserveJevScenario(submissionId: string, fingerprint: string) {
     const reserved = this.events.filter(e => e.eventType === "jev_assessment_requested" && e.metadataJson.packetFingerprint);
-    if (reserved.length >= 6 || reserved.some(e => e.metadataJson.packetFingerprint === fingerprint)) return false;
+    const journey = reserved.filter(e => e.submissionId === submissionId);
+    if (journey.length >= this.jevLimits.perJourney || journey.some(e => e.metadataJson.packetFingerprint === fingerprint)) return false;
+    const since = Date.now() - 24 * 60 * 60 * 1000;
+    if (reserved.filter(e => Date.parse(e.createdAt) > since).length >= this.jevLimits.daily) return false;
     await this.addEvent(submissionId, "jev_assessment_requested", {packetFingerprint:fingerprint});
     return true;
   }

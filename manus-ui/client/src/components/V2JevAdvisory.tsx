@@ -40,8 +40,6 @@ export default function V2JevAdvisory({
   scenario: ProductApplicationV3;
   overrides: ScenarioOverrides;
 }) {
-  const ko = language === "ko";
-  const say = (k: string, e: string) => (ko ? k : e);
   const jevInput = useMemo(
     () => makeJevInput(input, scenarioInput, baseline, scenario, overrides),
     [input, scenarioInput, baseline, scenario, overrides]
@@ -57,6 +55,21 @@ export default function V2JevAdvisory({
     }, 700);
     return () => { live = false; window.clearTimeout(timer); };
   }, [changed, jevInput]);
+  return <V2JevAdvisoryPanel language={language} changed={changed} result={result} />;
+}
+
+/** Renders only an available advisory for a changed scenario; otherwise nothing. */
+export function V2JevAdvisoryPanel({
+  language,
+  changed,
+  result,
+}: {
+  language: V2Language;
+  changed: boolean;
+  result: JevResult | null;
+}) {
+  const ko = language === "ko";
+  const say = (k: string, e: string) => (ko ? k : e);
   if (!changed || result?.status !== "available") return null;
   const a = result.advisory;
   const fits = (text: string) => (ko ? /[가-힣]/.test(text) : !/[가-힣]/.test(text));

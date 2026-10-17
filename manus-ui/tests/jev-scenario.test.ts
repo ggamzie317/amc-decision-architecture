@@ -267,7 +267,7 @@ describe("approved JEV boundary", () => {
     if (["missing-key", "disabled"].includes(failure))
       expect(fetcher).not.toHaveBeenCalled();
   });
-  it("deduplicates concurrent requests, reserves across handlers, stops after six dispatches", async () => {
+  it("deduplicates concurrent requests, reserves across handlers, and caps per journey, not service-wide", async () => {
     const { store, id } = await setup();
     let release!: () => void;
     const waiting = new Promise<void>(resolve => (release = resolve));
@@ -286,12 +286,14 @@ describe("approved JEV boundary", () => {
     expect((await call(createJevScenarioHandler(opts), id)).value.status).toBe(
       "unavailable"
     );
+    // Owner decision 2026-10-17: the former service-wide pilot cap of six is
+    // replaced by a per-journey cap, so seven other journeys are all served.
     for (let i = 0; i < 7; i++) {
       const s = await setup();
       store.submissions.set(s.id, s.store.submissions.get(s.id)!);
       await call(h, s.id);
     }
-    expect(fetcher).toHaveBeenCalledTimes(6);
+    expect(fetcher).toHaveBeenCalledTimes(8);
   });
   it("refuses missing baseline and non-POST without external work", async () => {
     const fetcher = vi.fn();
