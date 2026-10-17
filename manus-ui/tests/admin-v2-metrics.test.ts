@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LaunchOps from "../client/src/components/LaunchOps";
 import { adminQuery } from "../client/src/pages/AmcAdmin";
 import { buildLaunchOpsSummary } from "../server/launchOpsAnalytics";
@@ -18,6 +18,7 @@ import { MemoryFounderOpsStore } from "../server/founderOpsStore";
 import { buildSubmissionsCsv, trackFounderOps } from "../server/founderOpsApi";
 import {
   KNOWN_TEST_SUBMISSION_IDS,
+  TEST_PERIOD_END,
   isTestRecord,
 } from "../server/testRecords";
 import { ADMIN_COOKIE_NAME, createAdminSession } from "../server/founderAdminAuth";
@@ -35,7 +36,31 @@ import {
   v2Identity,
 } from "../shared/interactivePrivacy";
 
-afterEach(() => vi.unstubAllEnvs());
+// Journeys created before TEST_PERIOD_END are test records by definition, so
+// these tests run on a clock after it (only Date is faked; timers stay real).
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z"));
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.useRealTimers();
+});
+
+describe("pre-launch test period (owner decision 2026-10-17)", () => {
+  it("every journey created before the cutoff is a test record", () => {
+    expect(TEST_PERIOD_END).toBe("2026-10-17T15:00:00.000Z");
+    expect(isTestRecord({ submissionId: "AMC-20260828-AAAAAAAA", createdAt: "2026-08-28T03:00:00.000Z", structuralOutputJson: {} })).toBe(true);
+    expect(isTestRecord({ submissionId: "AMC-20261017-BBBBBBBB", createdAt: "2026-10-17T14:59:59.000Z", structuralOutputJson: {} })).toBe(true);
+  });
+  it("after the cutoff only ?test=1 journeys or listed ids are tests", () => {
+    expect(isTestRecord({ submissionId: "AMC-20261017-CCCCCCCC", createdAt: "2026-10-17T15:00:00.000Z", structuralOutputJson: {} })).toBe(false);
+    expect(isTestRecord({ submissionId: "AMC-20261020-DDDDDDDD", createdAt: "2026-10-20T00:00:00.000Z", structuralOutputJson: { testRun: true } })).toBe(true);
+  });
+  it("a row without createdAt falls back to the other rules", () => {
+    expect(isTestRecord({ submissionId: "AMC-20261020-EEEEEEEE", structuralOutputJson: {} })).toBe(false);
+  });
+});
 (globalThis as any).React = React;
 
 const summaryOutput = {
