@@ -120,6 +120,8 @@ export type ResearchSummary = OperationsSummary & {
 export type FounderOpsStore = {
   readonly available: boolean;
   reserveJevScenario?(submissionId: string, fingerprint: string): Promise<boolean>;
+  /** Reserve one Perplexity provider call under the service-wide daily ceiling. */
+  reservePerplexityCall?(submissionId: string): Promise<boolean>;
   readLaunchData?(): Promise<{
     submissions: SubmissionRecord[];
     events: UsageEventRecord[];
@@ -151,3 +153,17 @@ export type FounderOpsStore = {
     events: UsageEventRecord[];
   } | null>;
 };
+
+/**
+ * Server-authored Perplexity allowance rows (`external_evidence_requested` with
+ * `metadata.providerCall === true`). They count provider calls, not customer
+ * evidence requests, so analytics excludes them.
+ */
+export function isProviderCallEvent(event: Pick<UsageEventRecord, "eventType" | "metadataJson">) {
+  return (
+    event.eventType === "external_evidence_requested" &&
+    !!event.metadataJson &&
+    typeof event.metadataJson === "object" &&
+    (event.metadataJson as Record<string, unknown>).providerCall === true
+  );
+}

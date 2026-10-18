@@ -30,6 +30,8 @@ import { v2KeyFactHints } from "../shared/v2KeyFacts.js";
 import type {
   V2EvidenceExecution, v2EvidenceDiagnostics, v2EvidenceDiagnosticFields,
 } from "../shared/v2EvidenceProtocol.js";
+import { getFounderOpsStore } from "./founderOpsStore.js";
+import type { FounderOpsStore } from "./founderOpsTypes.js";
 
 type ResolveOptions = {
   /** Base delay for staggering and 429 retries; tests set it to 0. */
@@ -43,6 +45,10 @@ type ResolveOptions = {
   onReason?: (reason: Reason) => void;
   onDiagnostics?: (execution: V2EvidenceExecution) => void;
   sourceAvailable?: (url: string, signal: AbortSignal) => Promise<boolean>;
+  /** Journey id from the browser (`x-amc-submission-id`); required when the store is available. */
+  submissionId?: string | null;
+  /** Store holding the Perplexity daily allowance; defaults to the deployment's store. */
+  store?: FounderOpsStore;
 };
 type Source = {
   url: string;
@@ -55,7 +61,70 @@ type Reason =
   | "provider_not_configured"
   | "provider_failure"
   | "source_unavailable"
-  | "invalid_provider_response";
+  | "invalid_provider_response"
+  | ProviderCallRefusal;
+
+/**
+ * Perplexity daily allowance outcomes (owner request 2026-10-18):
+ * - daily_limit: the service-wide rolling 24h ceiling is reached.
+ * - daily_limit_unverifiable: the allowance cannot be checked (production
+ *   without a data store, or the store failed), so no call is made.
+ * - journey_required: the store is available but the request carries no
+ *   valid, consented journey to count the call against.
+ */
+export type ProviderCallRefusal = "daily_limit" | "daily_limit_unverifiable" | "journey_required";
+type ProviderCallAdmission =
+  | { refused: ProviderCallRefusal }
+  | { refused?: undefined; reserve: () => Promise<ProviderCallRefusal | null> };
+
+const SUBMISSION_ID = /^AMC-\d{8}-[A-F0-9]{8}$/;
+
+/**
+ * Decide whether this request may call Perplexity at all, and return the
+ * per-call reservation used before every provider attempt (including each 429
+ * retry). With a data store (production) every call is counted against the
+ * service-wide daily ceiling and must belong to an existing, consented
+ * journey. Without one (Preview / local, DATABASE_URL unset) calls are not
+ * counted; Preview sits behind Vercel login. Production without a store fails
+ * closed instead.
+ */
+export async function admitV2ProviderCalls(options: {
+  store?: FounderOpsStore;
+  submissionId?: string | null;
+  env?: Record<string, string | undefined>;
+} = {}): Promise<ProviderCallAdmission> {
+  const env = options.env ?? process.env;
+  let store: FounderOpsStore;
+  try {
+    store = options.store ?? getFounderOpsStore();
+  } catch {
+    return { refused: "daily_limit_unverifiable" };
+  }
+  if (!store.available)
+    return env.VERCEL_ENV === "production"
+      ? { refused: "daily_limit_unverifiable" }
+      : { reserve: async () => null };
+  const id = options.submissionId;
+  if (typeof id !== "string" || !SUBMISSION_ID.test(id)) return { refused: "journey_required" };
+  let consented = false;
+  try {
+    consented = (await store.getSubmission(id))?.submission.serviceStorageConsent === true;
+  } catch {
+    return { refused: "daily_limit_unverifiable" };
+  }
+  if (!consented) return { refused: "journey_required" };
+  const reservePerplexityCall = store.reservePerplexityCall?.bind(store);
+  if (!reservePerplexityCall) return { refused: "daily_limit_unverifiable" };
+  return {
+    reserve: async () => {
+      try {
+        return (await reservePerplexityCall(id)) ? null : "daily_limit";
+      } catch {
+        return "daily_limit_unverifiable";
+      }
+    },
+  };
+}
 
 export type V2ResponseDiagnostic = {
   category: (typeof v2EvidenceDiagnostics)[number];
@@ -343,6 +412,12 @@ export async function resolveV2ExternalIntelligence(
     return result;
   };
   if (!apiKey) return finish(unavailable(), "provider_not_configured");
+  const admission = await admitV2ProviderCalls({
+    store: options.store,
+    submissionId: options.submissionId,
+  });
+  if (admission.refused) return finish(unavailable(), admission.refused);
+  const reserve = admission.reserve;
 
   const controller = new AbortController();
   const timer = setTimeout(() => {
@@ -353,6 +428,7 @@ export async function resolveV2ExternalIntelligence(
   }, options.timeoutMs ?? 240_000);
   let result = unavailable();
   let reason: Reason = "provider_failure";
+  let limitedBy: ProviderCallRefusal | undefined;
   try {
     stage = "provider";
     // Topic fan-out: each group is one narrower search, run in parallel.
@@ -392,6 +468,11 @@ export async function resolveV2ExternalIntelligence(
             }),
           }
         );
+        // Every provider attempt (first call and each retry) takes one slot
+        // of the daily allowance first; a refused slot stops this group.
+        if (controller.signal.aborted) throw new Error("aborted");
+        const refused = await reserve();
+        if (refused) return { status: undefined, limited: refused };
         // Rate limit (429): wait as the provider asks (or a short jittered
         // delay) and retry up to twice while the overall time budget allows.
         let response = await send();
@@ -401,6 +482,9 @@ export async function resolveV2ExternalIntelligence(
             ? retryAfter * 1000
             : (options.retryDelayMs ?? 2000) * (attempt + 1) + Math.floor(Math.random() * (options.retryDelayMs ?? 2000) / 2);
           await pause(wait, controller.signal);
+          if (controller.signal.aborted) throw new Error("aborted");
+          const retryRefused = await reserve();
+          if (retryRefused) return { status: undefined, limited: retryRefused };
           response = await send();
         }
         if (!response.ok) return { status: response.status, diagnostic: { category: "upstream_http" } as V2ResponseDiagnostic };
@@ -416,6 +500,7 @@ export async function resolveV2ExternalIntelligence(
         return { status: undefined, diagnostic: { category: "transport_error" } as V2ResponseDiagnostic };
       }
     }));
+    limitedBy = outcomes.find(outcome => outcome.limited)?.limited;
     upstreamHttpStatus = outcomes.find(outcome => outcome.status)?.status;
     // Normalization starts only if at least one provider response arrived.
     const anyResponse = outcomes.some(outcome => outcome.normalized || outcome.diagnostic?.category === "response_json");
@@ -492,6 +577,14 @@ export async function resolveV2ExternalIntelligence(
     result = unavailable();
     reason = "provider_failure";
     responseDiagnostic = { category: "timeout" };
+  }
+  // Allowance refused before a group could search: topics that finished keep
+  // their results (normal partial merge); otherwise the refusal is the reason.
+  if (limitedBy && result.status !== "live") {
+    result = unavailable();
+    reason = limitedBy;
+    responseDiagnostic = undefined;
+    sourceFailureCategory = undefined;
   }
   return finish(result, reason);
 }

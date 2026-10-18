@@ -2,6 +2,7 @@ import type { V2State } from "./amcV2Model";
 import { v2KeyFactIds } from "../../../shared/v2KeyFacts";
 import { v2t, type V2CopyKey } from "./v2Language";
 import { v2PublicSearchTarget } from "./amcV2Analysis";
+import { activeAmcSubmissionId } from "./amcFounderOps";
 import {
   unavailableIntelligence,
   type ExternalIntelligenceV2,
@@ -48,9 +49,15 @@ export async function requestV2Evidence(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 270_000);
   try {
+    // The journey id counts provider calls against the service-wide daily
+    // allowance. It travels as a header; the request body is unchanged.
+    const submissionId = activeAmcSubmissionId("interactive-v2");
     const response = await fetchImpl("/api/amc/external-intelligence-v2", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(submissionId ? { "x-amc-submission-id": submissionId } : {}),
+      },
       cache: "no-store",
       signal: controller.signal,
       body: JSON.stringify(request),

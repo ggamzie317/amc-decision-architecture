@@ -1,7 +1,7 @@
 import { completedInteractive, v2Identity } from "../shared/interactivePrivacy.js";
 import { expectedIntakeAnswers, buildSimulatorAnalytics } from "./simulatorAnalytics.js";
 import { isTestRecord } from "./testRecords.js";
-import type { SubmissionRecord, UsageEventRecord } from "./founderOpsTypes.js";
+import { isProviderCallEvent, type SubmissionRecord, type UsageEventRecord } from "./founderOpsTypes.js";
 
 export const funnelStages = [
   ["preview_started", "Preview Started"],
@@ -97,7 +97,9 @@ export function buildLaunchOpsSummary(
   allSubmissions: SubmissionRecord[],
   allEvents: UsageEventRecord[],
   windowDays: 7 | 30 | null,
-  now = new Date()
+  now = new Date(),
+  /** Service-wide Perplexity allowance use (all journeys, tests included). */
+  providerUsage?: { callsLast24h: number; dailyLimit: number }
 ) {
   const end = now.getTime();
   const cutoff = windowDays ? end - windowDays * 86_400_000 : 0;
@@ -112,8 +114,12 @@ export function buildLaunchOpsSummary(
   );
   const ids = new Set(submissions.map(row => row.submissionId));
   const allIds = new Set(allSubmissions.map(row => row.submissionId));
+  // Server-authored Perplexity allowance rows (metadata.providerCall) count
+  // provider calls, not customer evidence requests; they never enter the
+  // funnel, integrity checks or evidence counts.
   const events = allEvents.filter(
     event =>
+      !isProviderCallEvent(event) &&
       ids.has(event.submissionId) &&
       time(event.createdAt) !== null &&
       Date.parse(event.createdAt) <= end
@@ -484,6 +490,12 @@ export function buildLaunchOpsSummary(
     recentLiveEvent: latest(v2Live.map(event => event.createdAt)),
     recentFallbackEvent: latest(v2Fallback.map(event => event.createdAt)),
     diagnosticsRecorded: false as const,
+    ...(providerUsage
+      ? {
+          providerCallsLast24h: providerUsage.callsLast24h,
+          providerCallDailyLimit: providerUsage.dailyLimit,
+        }
+      : {}),
   };
   const researchConsented = completed.filter(
     row => row.researchUseConsent
@@ -614,3 +626,11 @@ export type LaunchOpsSummary = ReturnType<typeof buildLaunchOpsSummary> & {
     productionSha?: string;
   };
 };
+
+/** Perplexity provider calls reserved in the rolling 24 hours before `now`. */
+export function providerCallsLast24h(events: UsageEventRecord[], now = new Date()) {
+  const since = now.getTime() - 86_400_000;
+  return events.filter(
+    event => isProviderCallEvent(event) && Date.parse(event.createdAt) > since
+  ).length;
+}

@@ -1,4 +1,5 @@
 import { buildSimulatorAnalytics } from "./simulatorAnalytics.js";
+import { isProviderCallEvent } from "./founderOpsTypes.js";
 import type {
   OperationsSummary,
   ResearchSummary,
@@ -22,8 +23,10 @@ function rate(numerator: number, denominator: number) {
 
 export function buildOperationsSummary(
   submissions: SubmissionRecord[],
-  events: UsageEventRecord[]
+  allEvents: UsageEventRecord[]
 ): OperationsSummary {
+  // Server-authored Perplexity allowance rows are provider calls, not customer actions.
+  const events = allEvents.filter(event => !isProviderCallEvent(event));
   const eventCount = (eventType: string) =>
     events.filter(event => event.eventType === eventType).length;
   const previewStarts = eventCount("preview_started");

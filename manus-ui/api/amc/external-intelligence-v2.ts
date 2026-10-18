@@ -2,7 +2,11 @@ import { unavailableIntelligence } from "../../client/src/data/externalIntellige
 import type { V2EvidenceLanguage } from "../../shared/externalIntelligenceV2Request.js";
 import { caseTypes } from "../../shared/interactivePrivacy.js";
 
-type VercelRequest = { method?: string; body?: unknown };
+type VercelRequest = {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string | string[] | undefined>;
+};
 type VercelResponse = {
   status(code: number): VercelResponse;
   json(body: unknown): void;
@@ -78,8 +82,16 @@ export async function handleV2ExternalIntelligence(
       return;
     }
     res.setHeader("X-AMC-Evidence-Stage", "execution");
+    // Journey id for the Perplexity daily allowance; never part of the body contract.
+    const rawId = req.headers?.["x-amc-submission-id"];
+    const submissionId = typeof rawId === "string" ? rawId : null;
+    let reason: string | undefined;
     const result = await service.resolveV2ExternalIntelligence(request, {
-      onReason: reason => res.setHeader("X-AMC-Evidence-Reason", reason),
+      submissionId,
+      onReason: code => {
+        reason = code;
+        res.setHeader("X-AMC-Evidence-Reason", code);
+      },
       onDiagnostics: execution => {
         res.setHeader("X-AMC-Evidence-Stage", execution.stage);
         if (execution.diagnostic) res.setHeader("X-AMC-Evidence-Diagnostic", execution.diagnostic);
@@ -88,7 +100,15 @@ export async function handleV2ExternalIntelligence(
         if (execution.upstreamStatus) res.setHeader("X-AMC-Upstream-Status", String(execution.upstreamStatus));
       },
     });
-    res.status(result.status === "live" ? 200 : 503).json(result);
+    res.status(
+      result.status === "live"
+        ? 200
+        : reason === "daily_limit"
+          ? 429
+          : reason === "journey_required"
+            ? 400
+            : 503
+    ).json(result);
   } catch {
     res.setHeader("X-AMC-Evidence-Reason", "service_execution_error");
     res.status(503).json(unavailable());

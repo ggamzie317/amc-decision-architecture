@@ -18,13 +18,18 @@ import {
 import type { V2EvidenceHttpObservation } from "../../../shared/v2EvidenceProtocol";
 import { v2t, type V2CopyKey, type V2Language } from "../data/v2Language";
 
-type FailureKind = "no_evidence" | "sources" | "timeout" | "service" | "response";
+type FailureKind = "no_evidence" | "sources" | "timeout" | "service" | "response" | "daily_limit";
 
 /** Customer-safe failure category; never shows provider text, URLs or input. */
 export function v2ProcessingFailureKind(
   observation: V2EvidenceHttpObservation | null | undefined
 ): FailureKind {
   if (!observation) return "service";
+  // Service-wide daily allowance used up. An allowance that cannot be checked
+  // or a missing journey reads as the generic service failure.
+  if (observation.reason === "daily_limit") return "daily_limit";
+  if (observation.reason === "daily_limit_unverifiable" || observation.reason === "journey_required")
+    return "service";
   if (observation.diagnostic === "no_evidence") return "no_evidence";
   if (observation.diagnostic === "source_probe_failure" || observation.stage === "sources")
     return "sources";
@@ -61,7 +66,18 @@ const failureCopy: Record<FailureKind, [en: string, ko: string]> = {
     "The search response could not be verified in the required format, so it was not used as evidence.",
     "검색 응답을 필요한 형식으로 확인할 수 없어 근거로 사용하지 않았습니다.",
   ],
+  // Owner-requested copy (2026-10-18).
+  daily_limit: [
+    "So many searches ran today that the daily limit is used up. Search again tomorrow, or see the result now as a draft without public search.",
+    "많은 분이 이용해 오늘 검색 가능한 횟수를 모두 사용했습니다. 내일 다시 검색하거나, 지금은 ‘검색 없이 본 초안’으로 결과를 볼 수 있습니다.",
+  ],
 };
+
+/** Failure headline; only the daily allowance has its own (owner request 2026-10-18). */
+const dailyLimitHeadline: [en: string, ko: string] = [
+  "Today's public search limit has been reached",
+  "오늘의 공개 자료 검색 한도에 도달했습니다",
+];
 
 type StepState = "done" | "running" | "pending" | "failed";
 
@@ -107,6 +123,7 @@ export default function V2Processing({
   const ko = language === "ko";
   const say = (k: string, e: string) => (ko ? k : e);
   const kind = v2ProcessingFailureKind(observation);
+  const dailyLimit = !running && kind === "daily_limit";
   // Rotates which lens is introduced; it is explanatory content, not progress.
   const [lens, setLens] = useState(0);
   useEffect(() => {
@@ -141,7 +158,9 @@ export default function V2Processing({
         <h1>
           {running
             ? say("공개 자료를 검색하고 출처를 확인하고 있습니다", "Searching public sources and checking them")
-            : say("이번 검색에서는 쓸 수 있는 공개 자료를 찾지 못했습니다", "This search found no public sources we could use")}
+            : dailyLimit
+              ? dailyLimitHeadline[ko ? 1 : 0]
+              : say("이번 검색에서는 쓸 수 있는 공개 자료를 찾지 못했습니다", "This search found no public sources we could use")}
         </h1>
         <ol className="v2-processing-steps">
           {steps.map(({ icon: Icon, label, detail, state }) => (
@@ -187,20 +206,24 @@ export default function V2Processing({
         ) : (
           <>
             <p className="v2-processing-failure" data-failure-kind={kind}>{failureCopy[kind][ko ? 1 : 0]}</p>
-            <p className="v2-guidance">
-              {say(
-                "다시 검색하거나 검색 대상을 고칠 수 있습니다. 검색 없이 본 초안을 볼 수도 있으며, 이때 결과에 ‘검색 없이 본 초안’으로 표시됩니다.",
-                "You can search again or edit the search target. You can also see a draft without public search. It will be marked as a draft."
-              )}
-            </p>
+            {/* The daily-limit copy already says what to do next. */}
+            {!dailyLimit && (
+              <p className="v2-guidance">
+                {say(
+                  "다시 검색하거나 검색 대상을 고칠 수 있습니다. 검색 없이 본 초안을 볼 수도 있으며, 이때 결과에 ‘검색 없이 본 초안’으로 표시됩니다.",
+                  "You can search again or edit the search target. You can also see a draft without public search. It will be marked as a draft."
+                )}
+              </p>
+            )}
             <div className="v2-module-nav">
               <button type="button" onClick={onEditTarget}>
                 {say("검색 대상 수정", "Edit search target")}
               </button>
-              <button type="button" onClick={onDraft}>
+              {/* At the daily limit the draft is the useful next step, not another search. */}
+              <button type="button" className={dailyLimit ? "v2-primary" : undefined} onClick={onDraft}>
                 {say("검색 없이 본 초안 보기", "See draft without public search")}
               </button>
-              <button type="button" className="v2-primary" onClick={onRetry}>
+              <button type="button" className={dailyLimit ? undefined : "v2-primary"} onClick={onRetry}>
                 {say("다시 검색", "Search again")}
               </button>
             </div>
