@@ -32,7 +32,8 @@ export function v2WithCaseType(state: V2State, caseType: V2State["caseType"]): V
 /**
  * One automatic retry per topic only when another attempt can plausibly
  * help: no response (timeout/network), 429, a 5xx other than "provider not
- * configured", or a successful response without usable evidence.
+ * configured", or a successful response without usable evidence. Never
+ * after a daily-allowance or journey refusal.
  */
 export function v2ShouldRetryTopic(
   observation: V2EvidenceHttpObservation | null,
@@ -41,6 +42,14 @@ export function v2ShouldRetryTopic(
   if (result.status === "live") return false;
   if (!observation) return true;
   if (observation.reason === "provider_not_configured") return false;
+  // The daily allowance is used up or cannot be checked, or the journey is
+  // missing: another attempt would be refused the same way.
+  if (
+    observation.reason === "daily_limit" ||
+    observation.reason === "daily_limit_unverifiable" ||
+    observation.reason === "journey_required"
+  )
+    return false;
   const status = observation.status;
   if (status === 429) return true;
   if (status >= 500) return true;

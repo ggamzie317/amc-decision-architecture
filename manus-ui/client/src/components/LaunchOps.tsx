@@ -295,6 +295,13 @@ export default function LaunchOps({
                 value={timestamp(data.evidence.v2.recentLiveEvent)}
                 detail="Latency / provider diagnostics: not recorded for V2"
               />
+              {data.evidence.v2.providerCallDailyLimit !== undefined && (
+                <Metric
+                  label="Perplexity calls · last 24h"
+                  value={`${data.evidence.v2.providerCallsLast24h ?? 0} / ${data.evidence.v2.providerCallDailyLimit}`}
+                  detail="Service-wide daily limit (all journeys, tests included). Searches stop at the limit."
+                />
+              )}
             </div>
             <details className="mt-5 text-sm">
               <summary className="cursor-pointer text-xs text-muted-foreground">

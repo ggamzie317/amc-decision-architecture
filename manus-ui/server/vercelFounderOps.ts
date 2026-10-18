@@ -1,6 +1,6 @@
 import { isInteractive, projectInteractivePatch, projectInteractiveMetadata } from "../shared/interactivePrivacy.js";
 import { sanitizeSimulatorMetadata } from "./simulatorAnalytics.js";
-import { buildLaunchOpsSummary } from "./launchOpsAnalytics.js";
+import { buildLaunchOpsSummary, providerCallsLast24h } from "./launchOpsAnalytics.js";
 import { configuredV2AgentPreset } from "./externalIntelligenceV2Service.js";
 import {
   excludeTestsRequested,
@@ -25,8 +25,8 @@ import {
 } from "./founderOpsApi.js";
 import { sendFounderReportNotification } from "./founderNotification.js";
 import { founderHealth, type DatabaseInspection } from "./founderOpsHealth.js";
-import { getFounderOpsStore } from "./founderOpsStore.js";
-import type { SubmissionPatch } from "./founderOpsTypes.js";
+import { getFounderOpsStore, perplexityDailyLimit } from "./founderOpsStore.js";
+import { isProviderCallEvent, type SubmissionPatch } from "./founderOpsTypes.js";
 import type { FounderOpsStore } from "./founderOpsTypes.js";
 
 export type ApiRequest = {
@@ -274,9 +274,10 @@ export async function handleAdminSubmission(
     const isTest = isTestRecord(detail.submission);
     res.status(200).json(isInteractive(detail.submission.structuralOutputJson) ? {
       submission: {...detail.submission, ...projectInteractivePatch(detail.submission)},
-      events: detail.events.map(e => ({...e, metadataJson:{...projectInteractiveMetadata(e.metadataJson),...sanitizeSimulatorMetadata(e.metadataJson)}})),
+      // Perplexity allowance rows are provider calls, not journey actions.
+      events: detail.events.filter(e => !isProviderCallEvent(e)).map(e => ({...e, metadataJson:{...projectInteractiveMetadata(e.metadataJson),...sanitizeSimulatorMetadata(e.metadataJson)}})),
       isTest,
-    } : { ...detail, isTest });
+    } : { ...detail, events: detail.events.filter(e => !isProviderCallEvent(e)), isTest });
   } catch {
     res.status(503).json({ error: "Data backend unavailable" });
   }
@@ -349,7 +350,11 @@ export async function handleAdminLaunchOps(
     res
       .status(200)
       .json({
-        ...buildLaunchOpsSummary(submissions, events, windowDays),
+        // Allowance use is service-wide, so it is counted before test filtering.
+        ...buildLaunchOpsSummary(submissions, events, windowDays, new Date(), {
+          callsLast24h: providerCallsLast24h(data.events),
+          dailyLimit: perplexityDailyLimit(),
+        }),
         testRecords,
         configuration,
       });

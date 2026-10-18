@@ -57,6 +57,26 @@ export const JEV_DAILY_LIMIT = 200;
 export type JevLimits = { perJourney: number; daily: number };
 const defaultJevLimits: JevLimits = { perJourney: JEV_PER_JOURNEY_LIMIT, daily: JEV_DAILY_LIMIT };
 
+/**
+ * Perplexity allowance (owner request 2026-10-18). Service-wide safety ceiling
+ * on provider calls (each HTTP request to Perplexity, including every 429
+ * retry) across all journeys in a rolling 24 hours. One customer search uses
+ * about 2–4 provider calls (2 topic groups plus possible single-topic
+ * retries), so 300 calls is roughly 75–150 searches a day.
+ * The owner can change the number here, or set AMC_PERPLEXITY_DAILY_LIMIT to a
+ * positive integer; any other env value is ignored.
+ */
+export const PERPLEXITY_DAILY_LIMIT = 300;
+// The Perplexity allowance uses advisory lock key 590060 (JEV uses 590059).
+
+/** Effective daily limit, read at call time. */
+export function perplexityDailyLimit(env: Record<string, string | undefined> = process.env) {
+  const raw = env.AMC_PERPLEXITY_DAILY_LIMIT?.trim() ?? "";
+  if (!/^\d+$/.test(raw)) return PERPLEXITY_DAILY_LIMIT;
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value > 0 ? value : PERPLEXITY_DAILY_LIMIT;
+}
+
 export class DataBackendUnavailableError extends Error {
   constructor() {
     super("Data backend not configured");
@@ -241,6 +261,24 @@ export class PostgresFounderOpsStore implements FounderOpsStore {
     }) as Promise<boolean>;
   }
 
+  // Atomic, durable Perplexity allowance (rolling 24h service ceiling). One
+  // server-authored row per provider call; the public track route cannot write
+  // `providerCall` (its metadata projection drops unknown keys).
+  async reservePerplexityCall(submissionId: string) {
+    const daily = perplexityDailyLimit();
+    return this.sql.begin(async tx => {
+      await tx`SELECT pg_advisory_xact_lock(590060)`;
+      const [day] = await tx`
+        SELECT COUNT(*)::int AS reserved
+        FROM usage_events
+        WHERE event_type = 'external_evidence_requested' AND metadata_json ? 'providerCall'
+          AND created_at > NOW() - INTERVAL '24 hours'`;
+      if (day.reserved >= daily) return false;
+      await tx`INSERT INTO usage_events (event_id, submission_id, event_type, metadata_json) VALUES (${randomUUID()}, ${submissionId}, 'external_evidence_requested', ${tx.json({ providerCall: true })})`;
+      return true;
+    }) as Promise<boolean>;
+  }
+
   async addEvent(
     submissionId: string,
     eventType: UsageEventType,
@@ -386,6 +424,20 @@ export class MemoryFounderOpsStore implements FounderOpsStore {
     const since = Date.now() - 24 * 60 * 60 * 1000;
     if (reserved.filter(e => Date.parse(e.createdAt) > since).length >= this.jevLimits.daily) return false;
     await this.addEvent(submissionId, "jev_assessment_requested", {packetFingerprint:fingerprint});
+    return true;
+  }
+
+  // Mirrors the Postgres Perplexity allowance.
+  async reservePerplexityCall(submissionId: string) {
+    if (!this.submissions.has(submissionId)) return false;
+    const since = Date.now() - 24 * 60 * 60 * 1000;
+    const used = this.events.filter(e =>
+      e.eventType === "external_evidence_requested" &&
+      Object.prototype.hasOwnProperty.call(e.metadataJson, "providerCall") &&
+      Date.parse(e.createdAt) > since
+    ).length;
+    if (used >= perplexityDailyLimit()) return false;
+    await this.addEvent(submissionId, "external_evidence_requested", { providerCall: true });
     return true;
   }
 

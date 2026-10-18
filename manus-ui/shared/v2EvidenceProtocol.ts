@@ -21,7 +21,8 @@ export const v2SourceFailures = [
 export const v2EvidenceReasons = [
   "live", "provider_not_configured", "provider_failure", "source_unavailable",
   "invalid_provider_response", "malformed_request", "service_load_error",
-  "service_execution_error",
+  "service_execution_error", "daily_limit", "daily_limit_unverifiable",
+  "journey_required",
 ] as const;
 
 export type V2EvidenceExecution = {
