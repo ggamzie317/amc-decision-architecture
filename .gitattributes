@@ -1,1 +1,20 @@
+# Keep LF line endings on every OS (Windows checkouts included), so tests
+# that read source files behave the same on macOS, Windows and CI.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files are never converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+
 templates/*.docx filter=lfs diff=lfs merge=lfs -text
